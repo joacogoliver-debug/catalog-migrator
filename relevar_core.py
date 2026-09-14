@@ -309,10 +309,21 @@ def _iso_duration_to_seconds(s):
 # Parseo (distribuidora / álbum / año / sello)  — autocontenido
 # ============================================================
 
-_RE_PHONO_YEAR = re.compile(r"℗\s*(\d{4})(?:\s+(.+))?")
 _RE_PHONO_LINE = re.compile(r"^\s*℗\s*(.+)$", re.MULTILINE)
-_RE_LEADING_YEAR = re.compile(r"^\d{4}\s+")
+# Año al principio de la línea ℗, seguido del sello si lo hay. El (?!\d) es lo
+# que importa: sin él, "℗ 5358533 Records DK" —el sello placeholder que pone
+# DistroKid cuando el artista no cargó ninguno— se leía como el año 5358.
+_RE_ANIO_SELLO = re.compile(r"^(\d{4})(?!\d)\s*(.*)$")
 _RE_RELEASED = re.compile(r"Released on:\s*(\d{4})-\d{2}-\d{2}")
+
+
+def _anio_plausible(a):
+    """Un año de lanzamiento que pueda existir.
+
+    La grabación más vieja que puede tener un ISRC es de fines del siglo XIX, y
+    un lanzamiento futuro más allá del año que viene es un error de carga. Todo
+    lo de afuera es basura que se coló del texto, no un dato."""
+    return 1900 <= a <= date.today().year + 1
 
 
 def _normalize(s):
@@ -340,20 +351,28 @@ def parse_description(desc):
         if cand and not cand.startswith("℗") and not cand.lower().startswith("released on:"):
             res["album"] = cand
 
-    # Año + sello. La etiqueta (sello) es opcional: una línea ℗ que sólo trae el
-    # año (p. ej. "℗ 2023") igual aporta release_year, sin inventar un sello.
-    m = _RE_PHONO_YEAR.search(desc)
-    if m:
-        res["release_year"] = int(m.group(1))
-        label = (m.group(2) or "").strip()
-        res["label"] = label or None
-    else:
-        pm = _RE_PHONO_LINE.search(desc)
-        if pm:
-            res["label"] = _RE_LEADING_YEAR.sub("", pm.group(1).strip()).strip()
+    # Año + sello, de la línea ℗.
+    #
+    # El sello es opcional: "℗ 2023" a secas aporta el año sin inventar un sello.
+    # Y el año también: DistroKid escribe "℗ 5358533 Records DK", donde ese
+    # número es el id de la cuenta del artista. Por eso no alcanza con buscar
+    # cuatro dígitos, hay que exigir que no siga otro y que el valor sea un año
+    # que pueda existir. Si no lo es, la línea entera es el sello.
+    pm = _RE_PHONO_LINE.search(desc)
+    if pm:
+        linea = pm.group(1).strip()
+        m = _RE_ANIO_SELLO.match(linea)
+        if m and _anio_plausible(int(m.group(1))):
+            res["release_year"] = int(m.group(1))
+            res["label"] = (m.group(2) or "").strip() or None
+        else:
+            res["label"] = linea or None
+
+    # "Released on:" es la fecha real del lanzamiento y es la fuente preferida
+    # cuando la línea ℗ no trae año, que es el caso de todo DistroKid.
     if not res["release_year"]:
         rm = _RE_RELEASED.search(desc)
-        if rm:
+        if rm and _anio_plausible(int(rm.group(1))):
             res["release_year"] = int(rm.group(1))
     return res
 
