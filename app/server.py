@@ -486,10 +486,13 @@ def api_relevar(body):
         raise ValueError("Pegá el link del canal de YouTube.")
     if len(url) > 2048:
         raise ValueError("Ese link es demasiado largo para ser un canal de YouTube.")
+    # El estado del servidor se mira antes que la configuración: si ya hay algo
+    # corriendo, eso es lo que hay que decir, y además así el rechazo no depende
+    # de si la clave está cargada o no.
+    _sin_trabajo_en_curso()
     clave = leer_clave()
     if not clave:
         raise ValueError("Falta configurar la clave de la API de YouTube.")
-    _sin_trabajo_en_curso()
     con_codigos = bool(body.get("con_codigos", True))
 
     def trabajo(job):
