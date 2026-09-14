@@ -1,57 +1,49 @@
 /* ============================================================
-   Espaciado, forma y movimiento — DESIGN-SYSTEM.md §5, §6 y §8.
+   Espaciado, forma y movimiento — DESIGN.md §5 y §7.
 
-   Base de 4 px: toda medida del sistema es múltiplo de 4.
+   Base de 4. La escala se aprieta respecto de la versión anterior porque la
+   densidad es el punto: donde antes había 24 ahora suele haber 16, y el aire
+   grande queda para separar secciones, que es donde de verdad comunica.
 
-   La relación entre separación y jerarquía es la regla que más ordena una
-   pantalla: elementos de un mismo grupo se separan 8 o 12, grupos dentro de un
-   bloque 24, bloques entre sí 48, secciones mayores 64 o 96. Dos cosas a la
-   misma distancia se leen como del mismo nivel, y eso comunica más que
-   cualquier título.
-
-   Radios bajos porque la marca es geométrica y recta. Sombras: sólo tres, y
-   sólo para lo que flota de verdad. Las cards no llevan sombra, se separan del
-   fondo con borde y cambio de superficie.
+   Radios bajos, porque el mundo es técnico. Una sola declaración de elevación
+   por elemento: o borde, o cambio de superficie, nunca las dos.
    ============================================================ */
 
 :root {
-  --space-1:  4px;
-  --space-2:  8px;
-  --space-3:  12px;
-  --space-4:  16px;
-  --space-6:  24px;
-  --space-8:  32px;
-  --space-12: 48px;
-  --space-16: 64px;
-  --space-24: 96px;
+  --e-1:  4px;
+  --e-2:  8px;
+  --e-3:  12px;
+  --e-4:  16px;
+  --e-5:  24px;
+  --e-6:  32px;
+  --e-8:  48px;
+  --e-10: 64px;
 
-  /* ---- Contenedores (§5) ---- */
-  --container-max:  1440px;
-  --container-read: 720px;
-  --container-form: 480px;
-  --container-pad:  32px;
+  /* ---- Contenedores ---- */
+  --ancho-app:     1440px;
+  --ancho-lectura: 760px;
+  --ancho-forma:   480px;
+  --pad-lateral:   32px;
 
-  /* ---- Forma (§6) ---- */
-  --radius-none: 0;
-  --radius-sm:   2px;
-  --radius-md:   4px;
-  --radius-lg:   8px;
-  --radius-full: 9999px;
+  /* ---- Forma ---- */
+  --r-marca:   2px;   /* badges, marcas de registro */
+  --r-control: 4px;   /* botones, campos */
+  --r-panel:   6px;   /* paneles y bloques */
 
-  --shadow-dropdown: 0 4px 12px rgba(20, 20, 20, 0.10);
-  --shadow-modal:    0 16px 40px rgba(20, 20, 20, 0.18);
-  --shadow-toast:    0 8px 24px rgba(20, 20, 20, 0.14);
+  /* Sólo para lo que flota de verdad. Con desplazamiento y desenfoque: un halo
+     de color sin offset es decoración, no profundidad. */
+  --sombra-menu:  0 8px 24px -8px rgba(0, 0, 0, .55);
+  --sombra-modal: 0 24px 60px -20px rgba(0, 0, 0, .7);
 
-  /* ---- Movimiento (§8) ---- */
-  --motion-instant: 100ms ease-out;
-  --motion-fast:    160ms cubic-bezier(0.2, 0, 0, 1);
-  --motion-base:    240ms cubic-bezier(0.2, 0, 0, 1);
-  --motion-slow:    400ms cubic-bezier(0.4, 0, 0.2, 1);
+  /* ---- Movimiento ---- */
+  --m-rapido: 100ms cubic-bezier(.2, 0, 0, 1);
+  --m-base:   180ms cubic-bezier(.2, 0, 0, 1);
+  /* El único momento con autoría: la barra de un trabajo largo. */
+  --m-trabajo: 600ms cubic-bezier(.16, 1, .3, 1);
 
-  /* ---- Alturas de control (§7) ---- */
-  --control-h-denso: 32px;
-  --control-h:       40px;
-  --control-h-form:  48px;
-  --fila-h:          48px;
-  --fila-h-densa:    36px;
+  /* ---- Alturas de control ---- */
+  --h-denso:  28px;
+  --h-control:34px;
+  --h-grande: 42px;
+  --h-fila:   40px;
 }

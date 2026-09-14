@@ -1,63 +1,50 @@
 /* ============================================================
-   Tipografía — DESIGN-SYSTEM.md §4.
+   Tipografía — DESIGN.md §4.
 
-   Tres familias, cada una con un trabajo:
-     Archivo     display y números grandes (600/700, tracking -0.02em de 30px arriba)
-     Geist       interfaz y cuerpo (400/500/600)
-     Geist Mono  cualquier valor que se compare en columna
+   Archivo para titulares. Geist para interfaz y cuerpo. Geist Mono para todo lo
+   que se cuenta o se compara: ISRC, UPC, años, duraciones, cantidades, y las
+   etiquetas de sección que se apoyan sobre la regla.
 
-   La escala es modular de razón 1.2 redondeada a enteros cómodos. Los valores
-   van en px y no en rem a propósito: la tabla de §4.2 está en px y una app de
-   escritorio no necesita escalar con la preferencia del navegador, que acá no
-   existe.
+   El mono no está de disfraz. Son datos, son la mitad de la pantalla, y
+   tratarlos como texto corrido era el error de la versión anterior.
+
+   La escala se aprieta: la interfaz baja a 13 px porque la densidad es el
+   punto, y el título de vista sube, para que el contraste entre lo que se lee
+   una vez y lo que se escanea mil sea evidente.
    ============================================================ */
 
 :root {
-  --font-display: 'Archivo', system-ui, sans-serif;
-  --font-ui:      'Geist', system-ui, sans-serif;
-  --font-mono:    'Geist Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  --display: 'Archivo', system-ui, sans-serif;
+  --sans:    'Geist', system-ui, sans-serif;
+  --mono:    'Geist Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
 
-  /* Alias, para que el nombre de la familia no se repita por el CSS. */
-  --font-body: var(--font-ui);
-  --font-sans: var(--font-ui);
+  /* ---- Escala ---- */
+  --t-vista:   40px;   /* título de vista, Archivo 700 */
+  --t-seccion: 22px;   /* sección, Archivo 600 */
+  --t-bloque:  16px;   /* título de bloque, Geist 600 */
+  --t-cuerpo:  14px;   /* texto corrido */
+  --t-ui:      13px;   /* interfaz, tabla, controles */
+  --t-dato:    13px;   /* mono */
+  --t-micro:   11px;   /* etiquetas de sección, badges, metadatos */
+  --t-metrica: 28px;   /* cifra de resumen, mono */
 
-  /* ---- Escala (§4.2) ---- */
-  --text-display: 48px;
-  --text-h1:      38px;
-  --text-h2:      30px;
-  --text-h3:      24px;
-  --text-h4:      20px;
-  --text-body-lg: 18px;
-  --text-body:    16px;
-  --text-body-sm: 14px;
-  --text-caption: 13px;
-  --text-micro:   11px;
+  /* ---- Interlineados ---- */
+  --i-vista:   1.02;
+  --i-seccion: 1.12;
+  --i-cuerpo:  1.6;
+  --i-ui:      1.45;
+  --i-apretado:1.2;
 
-  --text-metric:    30px;
-  --text-metric-sm: 16px;
+  --p-regular: 400;
+  --p-medio:   500;
+  --p-semi:    600;
+  --p-bold:    700;
 
-  /* ---- Interlineados de la misma tabla ---- */
-  --leading-display: 1.05;
-  --leading-h1:      1.1;
-  --leading-h2:      1.15;
-  --leading-h3:      1.2;
-  --leading-h4:      1.3;
-  --leading-body:    1.55;
-  --leading-body-lg: 1.6;
-  --leading-sm:      1.5;
-  --leading-caption: 1.45;
-  --leading-micro:   1.4;
-  --leading-metric:  1;
+  /* Sólo en display, de 30 px para arriba. El piso es -0.04em; -0.03 lee mejor. */
+  --tracking-display: -0.03em;
+  /* Las etiquetas en mono necesitan lo contrario: un poco de aire. */
+  --tracking-mono: 0.06em;
 
-  --weight-regular:  400;
-  --weight-medium:   500;
-  --weight-semibold: 600;
-  --weight-bold:     700;
-
-  /* Sólo en display: de 30px para arriba (§4.1). */
-  --tracking-display: -0.02em;
-
-  /* Medida de línea máxima en texto corrido (§4.3). */
-  --medida: 72ch;
-  --medida-angosta: 60ch;
+  /* Medida de lectura, 65 a 75 caracteres. */
+  --medida: 68ch;
 }

@@ -304,7 +304,8 @@ def escribir_pagina():
   const CAT = () => adoptarCatalogo(JSON.parse(JSON.stringify(CATALOGO)));
   let DESPUES = null;
 
-  document.documentElement.setAttribute('data-theme', tema === 'oscuro' ? 'dark' : 'light');
+  if (tema === 'claro') document.documentElement.setAttribute('data-theme', 'claro');
+  else document.documentElement.removeAttribute('data-theme');
 
   /* app.js arranca de forma asincrónica; esperamos a que tenga su config y
      recién ahí ponemos el estado de la vista que queremos fotografiar.

@@ -165,19 +165,23 @@ function temaGuardado() {
   try { return localStorage.getItem('tema') || ''; } catch (_) { return ''; }
 }
 
+/** Oscuro es el modo por defecto, no el del sistema.
+ *
+ *  Sale de la escena de uso y no de la categoria: esta app se abre de noche
+ *  para hacer trabajo de inventario. Por eso el oscuro no lleva atributo y el
+ *  claro es el que se declara. */
 function aplicarTema(t) {
   const raiz = document.documentElement;
-  if (t === 'claro') raiz.setAttribute('data-theme', 'light');
-  else if (t === 'oscuro') raiz.setAttribute('data-theme', 'dark');
+  if (t === 'claro') raiz.setAttribute('data-theme', 'claro');
   else raiz.removeAttribute('data-theme');
 
   const btn = $('#btn-tema');
   if (!btn) return;
-  const oscuroAhora = raiz.getAttribute('data-theme') === 'dark'
-    || (!raiz.hasAttribute('data-theme')
-        && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-  btn.innerHTML = ico(oscuroAhora ? 'sol' : 'luna')
-    + '<span class="sr">Cambiar entre claro y oscuro</span>';
+  const enOscuro = !raiz.hasAttribute('data-theme');
+  const destino = enOscuro ? 'claro' : 'oscuro';
+  btn.innerHTML = ico(enOscuro ? 'sol' : 'luna')
+    + '<span class="sr">Cambiar a modo ' + destino + '</span>';
+  btn.title = 'Cambiar a modo ' + destino;
 }
 
 /* ------------------------------------------------------------ stepper */
@@ -445,8 +449,7 @@ function textoTerminos() {
 function vistaTerminos(primeraVez) {
   if (primeraVez) {
     return `<div class="card doc fade">
-      <div class="accent-bar"></div>
-      <h2>Términos de uso</h2>
+        <h2>Términos de uso</h2>
       <p class="muted" style="margin-bottom:24px">Se leen una vez. Después no vuelven
       a aparecer, y quedan siempre disponibles desde el pie de la ventana.</p>
       ${textoTerminos()}
@@ -458,7 +461,6 @@ function vistaTerminos(primeraVez) {
   }
 
   return `<div class="card doc fade">
-    <div class="accent-bar"></div>
     <h2>Términos de uso</h2>
     ${textoTerminos()}
     <div class="row" style="margin-top:32px">
@@ -474,7 +476,6 @@ function vistaClave() {
 
   return `
   <div class="card card-hero fade">
-    <div class="accent-bar"></div>
     <div class="card-head">
       <h1>${puedeVolver ? 'Usar tu propia clave de YouTube' : 'Conectá tu clave de YouTube'}</h1>
       <p>${puedeVolver
@@ -541,7 +542,6 @@ function vistaPaso1() {
   const corriendo = S.ocupado;
   return `
   <div class="card card-hero fade">
-    <div class="accent-bar"></div>
     <div class="card-head">
       <h1>¿Qué catálogo querés migrar?</h1>
       <p>Pegá el link del canal de YouTube del artista. Lo ideal es el
@@ -588,7 +588,9 @@ function vistaPaso1() {
 
 function bloqueProgreso(conCancelar = true) {
   const j = S.job || { progreso: 0, mensaje: 'Preparando', log: [] };
-  const indef = !j.progreso;
+  // La barra aparece cuando hay algo que medir. Antes de eso el spinner y el
+  // log ya dicen que esta trabajando, y una barra que no mide nada es adorno.
+  const conBarra = (j.progreso || 0) > 0;
   const log = (j.log || []).slice(-60).join('\n');
   return `
   <div style="margin-top:24px">
@@ -598,9 +600,11 @@ function bloqueProgreso(conCancelar = true) {
       <span class="muted small mono">${j.progreso ? Math.round(j.progreso * 100) + '%' : ''}</span>
       ${conCancelar ? '<button class="btn btn-ghost btn-sm" style="margin-left:auto" data-accion="cancelar">Cancelar</button>' : ''}
     </div>
-    <div class="barra ${indef ? 'barra-indef' : ''}">
-      <div class="barra-fill" style="width:${Math.round((j.progreso || 0) * 100)}%"></div>
-    </div>
+    ${conBarra ? `
+      <div class="barra" role="progressbar" aria-valuemin="0" aria-valuemax="100"
+           aria-valuenow="${Math.round(j.progreso * 100)}">
+        <div class="barra-fill" style="transform:scaleX(${j.progreso.toFixed(3)})"></div>
+      </div>` : ''}
     ${log ? `<div class="log" id="log">${esc(log)}</div>` : ''}
   </div>`;
 }
@@ -652,7 +656,6 @@ function avisoCanal() {
 function kpi(label, valor, sub, negativo) {
   return `
     <div class="kpi">
-      <div class="accent-bar--metric" aria-hidden="true"></div>
       <div class="kpi-label">${esc(label)}</div>
       <div class="kpi-valor${negativo ? ' negativo' : ''}">${valor}${sub !== undefined && sub !== '' ? `<span class="kpi-sub"> / ${sub}</span>` : ''}</div>
     </div>`;
@@ -685,10 +688,10 @@ function vistaPaso2() {
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-head">
-        <h2>Elegí qué productos migrar</h2>
-        <p>Podés marcarlos a mano, o filtrar por fecha o por distribuidora y llevarte todo lo que quede.</p>
+    <div class="seccion">
+      <div class="seccion-etiqueta">
+        <span>Productos del catálogo</span>
+        <span class="der">${ps.length} de ${c.productos.length}</span>
       </div>
 
       <div class="row row-wrap" style="margin-bottom:16px">
@@ -697,7 +700,7 @@ function vistaPaso2() {
           <button class="${S.filtro.modo === 'fechas' ? 'activo' : ''}" data-modo="fechas">Por fecha</button>
           <button class="${S.filtro.modo === 'distribuidora' ? 'activo' : ''}" data-modo="distribuidora">Por distribuidora</button>
         </div>
-        <div class="grow" style="min-width:200px;max-width:340px">
+        <div class="grow" style="min-width:200px;max-width:320px">
           <input class="input" id="buscar" type="search" placeholder="Título, ISRC o UPC"
                  aria-label="Buscar en el catálogo" value="${esc(S.filtro.texto)}" />
         </div>
@@ -737,7 +740,7 @@ function panelFiltro() {
       return alerta('warn', 'alerta', 'Ningún producto tiene año de lanzamiento declarado. Usá otro filtro.');
     }
     return `
-    <div class="card" style="margin-bottom:16px;background:var(--bg-app)">
+    <div class="panel" style="margin-bottom:16px">
       <div class="row row-wrap">
         <div class="field" style="max-width:140px">
           <label for="anio-desde">Desde el año</label>
@@ -761,7 +764,7 @@ function panelFiltro() {
         <span class="check-texto"><strong>${esc(d.name)}</strong><span class="sub">${d.count} producto${d.count === 1 ? '' : 's'}</span></span>
       </label>`).join('');
     return `
-    <div class="card" style="margin-bottom:16px;background:var(--bg-app)">
+    <div class="panel" style="margin-bottom:16px">
       <div class="row row-wrap">${items}</div>
     </div>`;
   }
@@ -852,39 +855,18 @@ function vistaPaso3() {
            ${sel.reduce((a, p) => a + p.tracks, 0)} tracks.</p>
       </div>
 
+      <div class="seccion-etiqueta"><span>Contenido del paquete</span></div>
+
       <div class="opciones">
-        <div class="opcion ${o.planilla ? 'elegida' : ''}" data-opcion="planilla">
-          <div class="opcion-icono">${ico('planilla')}</div>
-          <label class="check">
-            <input type="checkbox" ${o.planilla ? 'checked' : ''} data-opcion-check="planilla" />
-            <span class="check-texto"><strong>Planilla y validación</strong>
-              <span class="sub">Excel con los datos y códigos, hoja de ingesta en CSV para la distribuidora, y el informe de validación previa.</span>
-            </span>
-          </label>
-        </div>
+        ${opcion('planilla', 'planilla', o.planilla, false, 'Planilla y validación',
+          'Excel con los datos y códigos, hoja de ingesta en CSV para la distribuidora, y el informe de validación previa.')}
 
-        <div class="opcion ${o.portadas ? 'elegida' : ''}" data-opcion="portadas">
-          <div class="opcion-icono">${ico('imagen')}</div>
-          <label class="check">
-            <input type="checkbox" ${o.portadas ? 'checked' : ''} data-opcion-check="portadas" />
-            <span class="check-texto"><strong>Portadas</strong>
-              <span class="sub">La resolución más alta que tenga Apple Music. Te avisamos si queda por debajo del mínimo de ingesta.</span>
-            </span>
-          </label>
-        </div>
+        ${opcion('portadas', 'imagen', o.portadas, false, 'Portadas',
+          'La resolución más alta que tenga Apple Music. Te avisamos si queda por debajo del mínimo de ingesta.')}
 
-        ${audioOn ? `
-        <div class="opcion ${o.audio ? 'elegida' : ''} ${puedeAudio ? '' : 'deshabilitada'}" data-opcion="audio">
-          <div class="opcion-icono">${ico('musica')}</div>
-          <label class="check">
-            <input type="checkbox" ${o.audio ? 'checked' : ''} ${puedeAudio ? '' : 'disabled'} data-opcion-check="audio" />
-            <span class="check-texto"><strong>Audios</strong>
-              <span class="sub">${puedeAudio
-                ? 'FLAC lossless con tu propia cuenta de Tidal. La referencia de YouTube casi siempre falla, porque YouTube la bloquea.'
-                : faltaParaAudio()}</span>
-            </span>
-          </label>
-        </div>` : ''}
+        ${audioOn ? opcion('audio', 'musica', o.audio, !puedeAudio, 'Audios', puedeAudio
+          ? 'FLAC lossless con tu propia cuenta de Tidal. La referencia de YouTube casi siempre falla, porque YouTube la bloquea.'
+          : faltaParaAudio()) : ''}
       </div>
 
       ${o.audio && audioOn ? bloqueTidal(tidalOk) : ''}
@@ -901,6 +883,22 @@ function vistaPaso3() {
       </div>
     </div>
   </div>`;
+}
+
+/** Una opción de descarga. Es una fila de una lista, no una tarjeta: tres cajas
+ *  iguales de icono, titulo y texto son el andamio perezoso de siempre, y era
+ *  buena parte de lo que hacia que esta pantalla se viera como cualquier otra. */
+function opcion(clave, icono, elegida, deshabilitada, titulo, detalle) {
+  return `
+    <div class="opcion ${elegida ? 'elegida' : ''} ${deshabilitada ? 'deshabilitada' : ''}" data-opcion="${clave}">
+      <span class="opcion-icono">${ico(icono)}</span>
+      <label class="check grow">
+        <input type="checkbox" ${elegida ? 'checked' : ''} ${deshabilitada ? 'disabled' : ''} data-opcion-check="${clave}" />
+        <span class="check-texto"><strong>${esc(titulo)}</strong>
+          <span class="sub">${detalle}</span>
+        </span>
+      </label>
+    </div>`;
 }
 
 /** Qué falta para poder bajar audio, con el comando concreto para resolverlo.
@@ -1043,7 +1041,11 @@ function panelValidacion(v) {
       </div>
     </details>`;
 
-  return `<div style="margin-top:24px">
+  return `<div class="seccion">
+    <div class="seccion-etiqueta">
+      <span>Validación previa</span>
+      <span class="der">${v.resumen.errores} error${v.resumen.errores === 1 ? '' : 'es'} · ${v.resumen.avisos} aviso${v.resumen.avisos === 1 ? '' : 's'}</span>
+    </div>
     ${cabecera}
     <div style="margin-top:16px">
       ${grupo(errores, 'Errores', true)}
@@ -1121,13 +1123,12 @@ async function _pollTidal() {
 
 const ACCIONES = {
   'cambiar-tema'() {
-    // Tres estados en ciclo: sistema, oscuro, claro.
-    const actual = temaGuardado();
-    const siguiente = actual === '' ? 'oscuro' : (actual === 'oscuro' ? 'claro' : '');
+    // Dos estados, no tres. "Seguir al sistema" sonaba respetuoso pero en la
+    // practica significaba que ninguno de los dos temas era el principal.
+    const siguiente = temaGuardado() === 'claro' ? 'oscuro' : 'claro';
     try {
-      if (siguiente) localStorage.setItem('tema', siguiente);
-      else localStorage.removeItem('tema');
-    } catch (_) { /* la preferencia no se puede guardar, pero el tema se aplica igual */ }
+      localStorage.setItem('tema', siguiente);
+    } catch (_) { /* no se pudo guardar la preferencia; el tema se aplica igual */ }
     aplicarTema(siguiente);
   },
 
@@ -1279,9 +1280,16 @@ function actualizarProgreso() {
   const j = S.job;
   if (!j) return;
   const barra = $('.barra-fill');
-  if (barra) barra.style.width = Math.round((j.progreso || 0) * 100) + '%';
-  const cont = $('.barra');
-  if (cont) cont.classList.toggle('barra-indef', !j.progreso);
+  if (barra) {
+    barra.style.transform = 'scaleX(' + (j.progreso || 0).toFixed(3) + ')';
+    const cont = $('.barra');
+    if (cont) cont.setAttribute('aria-valuenow', Math.round((j.progreso || 0) * 100));
+  } else if (j.progreso > 0) {
+    // Llego el primer avance y la barra todavia no existe en el DOM. Se dibuja
+    // una sola vez; de ahi en adelante entra por la rama de arriba.
+    render();
+    return;
+  }
   const msj = $('#progreso-mensaje');
   if (msj) msj.textContent = j.mensaje || 'Trabajando';
   const log = $('#log');
