@@ -20,6 +20,10 @@ build/CON_AUDIO
 # partir de la variable MIGRADOR_CLAVE_YT (un secreto de GitHub en el CI).
 build/terceros/clave_yt.dat
 
+# Pagina temporal que usa build/capturas.py. Se borra sola al terminar, pero si
+# el generador se corta a la mitad no tiene que quedar commiteada.
+app/web/_capturas.html
+
 # Harness temporales de desarrollo
 _dev_*.py
 _smoke*.py

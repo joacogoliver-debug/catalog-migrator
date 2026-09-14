@@ -153,7 +153,7 @@
     --info-soft:       var(--teal-900);
 
     --text-on-hover:     #67ACAB;
-    --badge-accent-bg:   var(--teal-800);
+    --badge-accent-bg:   var(--teal-700);
     --badge-accent-text: var(--teal-200);
 
     --focus-ring: rgba(93, 160, 158, 0.45);
@@ -193,7 +193,7 @@
   --info-soft:       var(--teal-900);
 
   --text-on-hover:     #67ACAB;
-  --badge-accent-bg:   var(--teal-800);
+  --badge-accent-bg:   var(--teal-700);
   --badge-accent-text: var(--teal-200);
 
   --focus-ring: rgba(93, 160, 158, 0.45);

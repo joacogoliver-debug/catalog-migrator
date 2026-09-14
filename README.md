@@ -11,6 +11,12 @@ Código abierto y sin costo.
 
 ![tests](https://github.com/joacogoliver-debug/catalog-migrator/actions/workflows/tests.yml/badge.svg)
 
+![El catálogo relevado, con los productos a los que les falta algo ya marcados](docs/capturas/02-catalogo.png)
+
+<sub>Las capturas usan un catálogo de ejemplo. El artista, los títulos y los
+códigos son inventados, para no publicar el catálogo de nadie. Se generan con
+`python build/capturas.py`, sobre la app real corriendo.</sub>
+
 ---
 
 ## Descargar
@@ -27,8 +33,35 @@ y bajá el archivo de tu sistema.
 
 ### macOS y Linux
 
-Un solo archivo, sin instalador. Bajalo y abrilo. En macOS y Linux puede hacer
-falta darle permiso de ejecución con `chmod +x`.
+Acá la experiencia es peor que en Windows, y conviene decirlo antes de que lo
+descubras vos.
+
+Lo que se publica es **un ejecutable suelto, no un `.app` ni un `.deb`**. No hay
+instalador, no aparece en el Launchpad y doble clic en el Finder no hace lo que
+esperás: abre una ventana de Terminal. Se corre así, desde la terminal, una vez
+por descarga:
+
+```bash
+chmod +x Migrador-de-Catalogos-macos-completa
+./Migrador-de-Catalogos-macos-completa
+```
+
+En **macOS** además está sin firmar y **sin notarizar**, así que Gatekeeper lo va
+a bloquear la primera vez. Si el clic derecho → "Abrir" no alcanza:
+
+```bash
+xattr -d com.apple.quarantine Migrador-de-Catalogos-macos-completa
+```
+
+Notarizar requiere la cuenta de desarrollador de Apple, que es paga, y esta
+herramienta es gratis. Empaquetarlo como `.app` sí está pendiente y no depende
+de plata.
+
+En **Linux**, la ventana nativa necesita GTK y WebKit instalados. Si no están, la
+app se abre en tu navegador por defecto y funciona igual.
+
+Si nada de esto te cierra, en macOS y Linux conviene correrla desde el código
+(ver más abajo): son dos comandos y te evitás todo lo anterior.
 
 ### Las dos variantes
 
@@ -71,6 +104,8 @@ Es la misma postura que usa `yt-dlp`.
 
 **1. Pegás el link** del canal, Topic o `@handle` del artista.
 
+![La pantalla de entrada](docs/capturas/01-pegar-link.png)
+
 **2. Elegís qué productos migrar.** El catálogo aparece agrupado en productos
 (álbum / EP / single). Podés marcarlos uno por uno, filtrar por rango de años,
 por distribuidora, o buscar por título, ISRC o UPC. Cada producto se puede
@@ -79,7 +114,11 @@ desplegar para ver sus tracks.
 **3. Elegís qué descargar**: planilla y validación, portadas, y audios si
 activaste ese módulo.
 
+![Las tres cosas que se pueden descargar](docs/capturas/03-que-bajar.png)
+
 **4. Descargás un ZIP** organizado con una carpeta por producto.
+
+![El paquete listo, con el resumen de la validación](docs/capturas/04-listo.png)
 
 ```
 Artista - Migracion 2026-09-14/
@@ -258,6 +297,8 @@ Sin frameworks ni build step, para que empaquetar sea copiar archivos:
   usuario, así que no hacen falta ASGI ni workers, y a cambio el ejecutable no
   depende de los imports dinámicos de uvicorn, que son la causa habitual de que
   un binario ande en desarrollo y falle empaquetado.
+![La misma pantalla en modo oscuro](docs/capturas/05-catalogo-oscuro.png)
+
 - **Frontend**: JavaScript vanilla y CSS sobre los tokens de
   [DESIGN-SYSTEM.md](DESIGN-SYSTEM.md). Nada de CDN, ni siquiera para las
   tipografías: los cuatro `.woff2` viajan adentro, así la app se ve igual sin
@@ -280,7 +321,7 @@ Sin frameworks ni build step, para que empaquetar sea copiar archivos:
 | `portadas.py` | Portadas vía iTunes Search API |
 | `paquete.py` | Planillas, hoja de ingesta, reportes y ZIP |
 | `audio.py` | Módulo de audio opcional |
-| `build/` | Empaquetado, instalador e icono |
+| `build/` | Empaquetado, instalador, icono y capturas |
 
 ### Sobre la seguridad del servidor local
 

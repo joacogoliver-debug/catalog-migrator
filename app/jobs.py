@@ -38,6 +38,9 @@ class Job:
         self.log = []
         self.resultado = None
         self.error = ""
+        # Clasificación del error, cuando quien lo levantó la dio. La interfaz la
+        # usa para ofrecer la salida concreta en vez de sólo mostrar un texto.
+        self.codigo_error = ""
         self.creado = time.time()
         self.terminado_en = None
         self._cancelar = threading.Event()
@@ -81,6 +84,7 @@ class Job:
                 "progreso": round(self.progreso, 3),
                 "mensaje": self.mensaje,
                 "error": self.error,
+                "codigo_error": self.codigo_error,
             }
             if con_log:
                 d["log"] = list(self.log)
@@ -128,6 +132,7 @@ class Registry:
                 job.estado = "cancelado"
             except Exception as e:                      # noqa: BLE001
                 job.error = str(e) or e.__class__.__name__
+                job.codigo_error = getattr(e, "codigo", "") or ""
                 job.mensaje = "Hubo un error."
                 # El traceback va al log del trabajo, no a la cara del usuario.
                 job.log.append("TRACEBACK\n" + traceback.format_exc())

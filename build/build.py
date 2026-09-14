@@ -30,7 +30,7 @@ DIST = os.path.join(RAIZ, "dist")
 
 TESTS = ["test_parse_description.py", "test_productos.py", "test_validar.py",
          "test_portadas.py", "test_paquete.py", "test_app.py",
-         "test_migrar_core.py", "test_audio_tidal.py"]
+         "test_migrar_core.py", "test_audio_tidal.py", "test_errores_youtube.py"]
 
 
 def paso(texto):

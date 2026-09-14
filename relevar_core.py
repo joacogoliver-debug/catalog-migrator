@@ -41,7 +41,17 @@ API = "https://www.googleapis.com/youtube/v3"
 
 
 class RelevarError(Exception):
-    """Error de negocio (canal no encontrado, clave inválida, etc.) para mostrar al usuario."""
+    """Error de negocio (canal no encontrado, clave inválida, etc.) para mostrar al usuario.
+
+    `codigo` clasifica el error para que la interfaz pueda ofrecer la salida que
+    corresponde en vez de sólo mostrar un texto. Hoy se usa "cuota", que es el
+    único caso donde la app puede proponer algo concreto: cargar una clave
+    propia.
+    """
+
+    def __init__(self, mensaje, codigo=""):
+        super().__init__(mensaje)
+        self.codigo = codigo
 
 
 # ============================================================
@@ -72,15 +82,10 @@ def api_get(endpoint, params, key, intentos=3):
                 return json.loads(resp.read().decode("utf-8"))
         except urllib.error.HTTPError as e:
             body = e.read().decode("utf-8", "ignore")
-            msg = body
-            try:
-                msg = json.loads(body)["error"]["message"]
-            except Exception:
-                pass
             if e.code in _HTTP_REINTENTABLE and intento < intentos - 1:
                 time.sleep(1.5 * (intento + 1))
                 continue
-            raise RelevarError(f"ERROR de la API de YouTube ({e.code}): {msg}")
+            raise _error_de_youtube(e.code, body)
         except (urllib.error.URLError, TimeoutError, ValueError) as e:
             # URLError cubre DNS y conexion; ValueError, una respuesta que no es
             # JSON (un portal cautivo devolviendo HTML, por ejemplo).
@@ -89,9 +94,72 @@ def api_get(endpoint, params, key, intentos=3):
                 time.sleep(1.5 * (intento + 1))
                 continue
             raise RelevarError(
-                "No pude hablar con la API de YouTube. Revisa la conexion a "
-                f"internet. ({type(e).__name__}: {e})")
+                "No pude hablar con la API de YouTube. Revisá que haya conexión "
+                f"a internet. ({type(e).__name__}: {e})")
     raise RelevarError(f"No pude hablar con la API de YouTube. ({ultimo})")
+
+
+# Lo que devuelve Google no está pensado para mostrarse: viene en inglés, con
+# jerga y a veces con HTML adentro. Estos son los casos que de verdad le pasan a
+# un usuario, traducidos y con la salida concreta al lado.
+_MOTIVOS_YOUTUBE = {
+    "quotaExceeded": (
+        "cuota",
+        "Se agotó el cupo diario de la API de YouTube. Si esta copia trae una "
+        "clave compartida, el cupo se reparte entre todos los que la usan. "
+        "Cargando tu propia clave tenés el cupo entero para vos, es gratis y se "
+        "saca en tres pasos."),
+    "dailyLimitExceeded": (
+        "cuota",
+        "Se agotó el cupo diario de la API de YouTube. Cargando tu propia clave "
+        "tenés el cupo entero para vos, es gratis y se saca en tres pasos."),
+    "rateLimitExceeded": (
+        "",
+        "YouTube está recibiendo demasiadas consultas seguidas desde esta clave. "
+        "Esperá un minuto y probá de nuevo."),
+    "keyInvalid": (
+        "clave",
+        "YouTube rechazó la clave. Revisá que la hayas copiado entera y que sea "
+        "una clave de API, no un ID de cliente."),
+    "accessNotConfigured": (
+        "clave",
+        "El proyecto de esta clave no tiene habilitada la YouTube Data API v3. "
+        "Entrá a Google Cloud Console, buscá esa API en la biblioteca y "
+        "habilitala."),
+    "ipRefererBlocked": (
+        "clave",
+        "Las restricciones de esta clave no permiten usarla desde esta "
+        "computadora. En Google Cloud Console, dejá la restricción de "
+        "aplicación en «Ninguna» y restringila sólo por API."),
+    "forbidden": (
+        "",
+        "YouTube no permitió la consulta con esta clave."),
+}
+
+
+def _error_de_youtube(codigo_http, body):
+    """Convierte un error de la API en algo que se pueda mostrar y accionar."""
+    motivo, mensaje = "", ""
+    try:
+        err = json.loads(body)["error"]
+        mensaje = err.get("message") or ""
+        errores = err.get("errors") or []
+        if errores:
+            motivo = errores[0].get("reason") or ""
+    except Exception:
+        pass
+
+    if motivo in _MOTIVOS_YOUTUBE:
+        codigo, texto = _MOTIVOS_YOUTUBE[motivo]
+        return RelevarError(texto, codigo)
+
+    if codigo_http == 400 and "API key not valid" in mensaje:
+        return RelevarError(_MOTIVOS_YOUTUBE["keyInvalid"][1], "clave")
+
+    # Sin traducción conocida mostramos lo de Google, pero limpio: el texto suele
+    # traer un <a href> adentro que en la interfaz se vería como HTML crudo.
+    mensaje = re.sub(r"<[^>]+>", "", mensaje).strip() or body[:200]
+    return RelevarError(f"YouTube respondió un error ({codigo_http}). {mensaje}")
 
 
 def resolve_channel(url, key):

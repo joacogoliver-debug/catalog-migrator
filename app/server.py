@@ -682,7 +682,14 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(cuerpo)
 
     def _error(self, mensaje, codigo=HTTPStatus.BAD_REQUEST):
-        self._json({"error": str(mensaje)}, codigo)
+        cuerpo = {"error": str(mensaje)}
+        # Los errores clasificados viajan con su código, así la interfaz puede
+        # ofrecer la salida que corresponde (por ejemplo, cargar una clave propia
+        # cuando se agotó el cupo).
+        marca = getattr(mensaje, "codigo", "")
+        if marca:
+            cuerpo["codigo_error"] = marca
+        self._json(cuerpo, codigo)
 
     def _leer_body(self):
         """Lee y consume el cuerpo del pedido. Devuelve {} si viene vacío.

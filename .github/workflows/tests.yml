@@ -46,6 +46,9 @@ jobs:
       - name: Contrato del orquestador
         run: python test_migrar_core.py
 
+      - name: Traducción de errores de la YouTube Data API
+        run: python test_errores_youtube.py
+
       - name: Contrato con tiddl
         # Sin tiddl instalado el test se saltea solo: verifica el contrato con la
         # librería cuando está presente, y no obliga a instalarla en CI.

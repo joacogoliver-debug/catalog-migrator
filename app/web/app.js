@@ -27,6 +27,7 @@ const S = {
   job: null,
   resultado: null,
   error: '',
+  errorCodigo: '',          // 'cuota' | 'clave' | '' — decide qué salida ofrecer
   tidal: null,
   ocupado: false,
   // Pantallas que se superponen al flujo normal.
@@ -119,7 +120,11 @@ async function api(ruta, cuerpo, ms = 30000) {
   }
   let datos = {};
   try { datos = await r.json(); } catch (_) { /* respuesta sin cuerpo */ }
-  if (!r.ok) throw new Error(datos.error || `Error ${r.status}`);
+  if (!r.ok) {
+    const e = new Error(datos.error || `Error ${r.status}`);
+    e.codigo = datos.codigo_error || '';
+    throw e;
+  }
   return datos;
 }
 
@@ -143,7 +148,11 @@ async function esperarJob(job, alAvanzar) {
     S.job = j;
     if (alAvanzar) alAvanzar(j);
     if (j.estado === 'listo') return j.resultado;
-    if (j.estado === 'error') throw new Error(j.error || 'El proceso falló.');
+    if (j.estado === 'error') {
+      const e = new Error(j.error || 'El proceso falló.');
+      e.codigo = j.codigo_error || '';
+      throw e;
+    }
     if (j.estado === 'cancelado') throw new Error('CANCELADO');
   }
 }
@@ -500,6 +509,23 @@ function vistaClave() {
 
 /* ------------------------------------------------------------ paso 1 */
 
+/** El error del relevamiento, con la salida concreta cuando la sabemos.
+ *
+ *  Un cartel que dice "se agotó el cupo" y nada más es un callejón sin salida,
+ *  justo en el caso más probable cuando muchos usan la misma copia. La solución
+ *  existe, es gratis y son tres pasos, así que el botón va acá y no en la
+ *  documentación. */
+function bloqueError(titulo) {
+  if (!S.error) return '';
+  const puedeCargarClave = S.errorCodigo === 'cuota' || S.errorCodigo === 'clave';
+  return alerta('danger', 'error', `
+    <strong>${esc(titulo)}</strong><br>${esc(S.error)}
+    ${puedeCargarClave ? `
+      <div class="row" style="margin-top:12px">
+        <button class="btn btn-secondary btn-sm" data-accion="ver-clave">Cargar mi propia clave</button>
+      </div>` : ''}`);
+}
+
 function avisoClaveIncluida() {
   if (!S.config || !S.config.clave_incluida) return '';
   return alerta('', 'info', `
@@ -551,7 +577,7 @@ function vistaPaso1() {
 
     ${avisoClaveIncluida()}
 
-    ${S.error ? alerta('danger', 'error', `<strong>No se pudo relevar.</strong><br>${esc(S.error)}`) : ''}
+    ${bloqueError('No se pudo relevar.')}
 
     ${corriendo ? bloqueProgreso() : `
       <div class="row" style="margin-top:24px">
@@ -1147,7 +1173,7 @@ const ACCIONES = {
     const campo = $('#url');
     const url = campo ? campo.value.trim() : '';
     if (!url) { S.error = 'Pegá el link del canal.'; render(); return; }
-    S.error = ''; S.ocupado = true; S.job = null; render();
+    S.error = ''; S.errorCodigo = ''; S.ocupado = true; S.job = null; render();
     try {
       const conCodigos = $('#con-codigos') ? $('#con-codigos').checked : true;
       const { job } = await api('/api/relevar', { url, con_codigos: conCodigos });
@@ -1158,6 +1184,7 @@ const ACCIONES = {
     } catch (e) {
       S.ocupado = false;
       S.error = e.message === 'CANCELADO' ? '' : e.message;
+      S.errorCodigo = e.codigo || '';
       render();
     }
   },
@@ -1171,7 +1198,7 @@ const ACCIONES = {
     if (!sug) return;
     // Relevamos el Topic con el mismo flujo del paso 1, sin que tenga que ir a
     // buscar el link a mano.
-    S.paso = 1; S.error = ''; S.ocupado = true; S.job = null; render();
+    S.paso = 1; S.error = ''; S.errorCodigo = ''; S.ocupado = true; S.job = null; render();
     try {
       const { job } = await api('/api/relevar', { url: sug.url, con_codigos: true });
       adoptarCatalogo(await esperarJob(job, () => actualizarProgreso()));
@@ -1179,14 +1206,15 @@ const ACCIONES = {
     } catch (e) {
       S.ocupado = false;
       S.error = e.message === 'CANCELADO' ? '' : e.message;
+      S.errorCodigo = e.codigo || '';
       render();
     }
   },
 
-  'volver-1'() { S.paso = 1; S.error = ''; S.resultado = null; render(); },
-  'volver-2'() { S.paso = 2; S.error = ''; render(); },
-  'volver-3'() { S.paso = 3; S.error = ''; render(); },
-  'ir-3'() { S.paso = 3; S.error = ''; render(); },
+  'volver-1'() { S.paso = 1; S.error = ''; S.errorCodigo = ''; S.resultado = null; render(); },
+  'volver-2'() { S.paso = 2; S.error = ''; S.errorCodigo = ''; render(); },
+  'volver-3'() { S.paso = 3; S.error = ''; S.errorCodigo = ''; render(); },
+  'ir-3'() { S.paso = 3; S.error = ''; S.errorCodigo = ''; render(); },
 
   'sel-todo'() { productosFiltrados().forEach((p) => S.seleccion.add(p.id)); render(); },
   'sel-nada'() { productosFiltrados().forEach((p) => S.seleccion.delete(p.id)); render(); },
@@ -1226,7 +1254,7 @@ const ACCIONES = {
   async generar() {
     const ids = seleccionados().map((p) => p.id);
     if (!ids.length) { S.error = 'No hay productos elegidos.'; render(); return; }
-    S.error = ''; S.resultado = null; S.ocupado = true; S.paso = 4; S.job = null; render();
+    S.error = ''; S.errorCodigo = ''; S.resultado = null; S.ocupado = true; S.paso = 4; S.job = null; render();
     try {
       const { job } = await api('/api/preparar', {
         ids,
@@ -1239,6 +1267,7 @@ const ACCIONES = {
     } catch (e) {
       S.ocupado = false;
       S.error = e.message === 'CANCELADO' ? 'Cancelado.' : e.message;
+      S.errorCodigo = e.codigo || '';
       render();
     }
   },
