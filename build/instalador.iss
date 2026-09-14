@@ -26,7 +26,9 @@
   #define MiVariante "completa"
 #endif
 #ifndef MiVersion
-  #define MiVersion "1.0.0"
+  ; build.py la pasa leyendola de app/server.py. Si alguien corre ISCC a mano
+  ; sin definirla, mejor que se note en el nombre a que mienta un numero.
+  #define MiVersion "0.0.0-sin-definir"
 #endif
 
 #define MiNombre "Migrador de Catalogos"

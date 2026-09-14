@@ -111,6 +111,22 @@ def empaquetar():
         sys.exit("PyInstaller falló.")
 
 
+def version():
+    """La version de la app, leida de app/server.py.
+
+    Es la unica fuente: el instalador, el release y lo que muestra la interfaz
+    tienen que decir lo mismo. Escribirla en dos lados garantiza que tarde o
+    temprano digan cosas distintas.
+    """
+    import re
+    ruta = os.path.join(RAIZ, "app", "server.py")
+    with open(ruta, encoding="utf-8") as f:
+        m = re.search(r'^VERSION\s*=\s*"([^"]+)"', f.read(), re.M)
+    if not m:
+        sys.exit("No encontre VERSION en app/server.py.")
+    return m.group(1)
+
+
 def _iscc():
     """Dónde está el compilador de Inno Setup, o None."""
     if os.name != "nt":
@@ -176,8 +192,11 @@ def instalador(variante):
         return
     paso("Armando el instalador de Windows")
     terminos_txt()
+    v = version()
+    print(f"    version: {v}")
     r = subprocess.run([exe, ISS,
                         f"/DMiVariante={variante}",
+                        f"/DMiVersion={v}",
                         f"/DMiRaiz={RAIZ}"], cwd=RAIZ)
     if r.returncode != 0:
         sys.exit("Inno Setup falló.")
