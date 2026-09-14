@@ -11,11 +11,12 @@ Código abierto y sin costo.
 
 ![tests](https://github.com/joacogoliver-debug/catalog-migrator/actions/workflows/tests.yml/badge.svg)
 
-![El catálogo relevado, con los productos a los que les falta algo ya marcados](docs/capturas/02-catalogo.png)
+![El catálogo relevado, con los productos a los que les falta algo ya marcados](docs/capturas/05-catalogo-2.png)
 
 <sub>Las capturas usan un catálogo de ejemplo. El artista, los títulos y los
 códigos son inventados, para no publicar el catálogo de nadie. Se generan con
-`python build/capturas.py`, sobre la app real corriendo.</sub>
+`python build/capturas.py` sobre la app real corriendo, así que no pueden quedar
+desactualizadas sin que se note.</sub>
 
 ---
 
@@ -104,7 +105,7 @@ Es la misma postura que usa `yt-dlp`.
 
 **1. Pegás el link** del canal, Topic o `@handle` del artista.
 
-![La pantalla de entrada](docs/capturas/01-pegar-link.png)
+![La pantalla de entrada](docs/capturas/01-entrada.png)
 
 **2. Elegís qué productos migrar.** El catálogo aparece agrupado en productos
 (álbum / EP / single). Podés marcarlos uno por uno, filtrar por rango de años,
@@ -114,11 +115,13 @@ desplegar para ver sus tracks.
 **3. Elegís qué descargar**: planilla y validación, portadas, y audios si
 activaste ese módulo.
 
-![Las tres cosas que se pueden descargar](docs/capturas/03-que-bajar.png)
+![Las tres cosas que se pueden descargar](docs/capturas/12-descargar.png)
 
 **4. Descargás un ZIP** organizado con una carpeta por producto.
 
-![El paquete listo, con el resumen de la validación](docs/capturas/04-listo.png)
+![El paquete listo, con el resumen de la validación](docs/capturas/17-listo-1.png)
+
+![El detalle de la validación, error por error](docs/capturas/17-listo-2.png)
 
 ```
 Artista - Migracion 2026-09-14/
@@ -297,7 +300,7 @@ Sin frameworks ni build step, para que empaquetar sea copiar archivos:
   usuario, así que no hacen falta ASGI ni workers, y a cambio el ejecutable no
   depende de los imports dinámicos de uvicorn, que son la causa habitual de que
   un binario ande en desarrollo y falle empaquetado.
-![La misma pantalla en modo oscuro](docs/capturas/05-catalogo-oscuro.png)
+![El avance de un trabajo largo, con el paso actual escrito](docs/capturas/16-progreso.png)
 
 - **Frontend**: JavaScript vanilla y CSS sobre los tokens de
   [DESIGN-SYSTEM.md](DESIGN-SYSTEM.md). Nada de CDN, ni siquiera para las
