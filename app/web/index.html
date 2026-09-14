@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Migrador de Catálogos</title>
+<!-- El servidor reemplaza este valor al servir la página. Es lo que separa a la
+     app de cualquier otra pestaña del navegador que quiera hablarle: sin este
+     token, /api/ responde 403. Ver la nota de seguridad en app/server.py. -->
+<meta name="app-token" content="{{TOKEN}}" />
+<link rel="stylesheet" href="app.css" />
+<link rel="icon" href="assets/icono.png" />
+</head>
+<body>
+
+<div class="app">
+  <header class="header">
+    <div class="container header-inner">
+      <span class="header-marca">
+        <span class="accent-bar" aria-hidden="true"></span>
+        <span class="header-title">Migrador de catálogos</span>
+      </span>
+      <div class="header-right">
+        <span class="header-version" id="version"></span>
+        <button type="button" class="btn-icono" id="btn-tema"
+                data-accion="cambiar-tema" title="Cambiar entre claro y oscuro">
+          <span class="sr">Cambiar entre claro y oscuro</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <nav class="stepper" id="stepper" aria-label="Pasos"></nav>
+      <div id="pantalla"></div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <span>Hecho por
+        <a href="https://www.linkedin.com/in/joaquingarciaoliver/" target="_blank" rel="noopener noreferrer">Joaquín García Oliver</a>
+      </span>
+      <a href="#" data-accion="ver-terminos">Términos de uso</a>
+      <span class="der" id="pie-estado"></span>
+    </div>
+  </footer>
+</div>
+
+<!-- JavaScript sin frameworks ni CDN: la app se empaqueta como ejecutable y
+     tiene que funcionar sin internet una vez abierta. -->
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+# Dependencias OPCIONALES del módulo de audio. No hacen falta para usar la
+# herramienta: el relevamiento, la planilla, la validación, la hoja de ingesta y
+# las portadas funcionan sólo con requirements-app.txt.
+#
+# Estas se instalan aparte, a criterio de cada usuario y en su propia máquina:
+#
+#     pip install -r requirements-audio.txt
+#
+# Además hace falta ffmpeg en el PATH (no es un paquete de pip):
+#     https://ffmpeg.org/download.html
+#
+# La app detecta con `audio.verificar_entorno()` qué hay disponible y no ofrece
+# opciones que no puedan funcionar. La variante esencial del release NO los
+# incluye y arranca con el módulo de audio apagado (ver MIGRADOR_AUDIO en el
+# README).
+
+# Descarga desde Tidal en FLAC lossless. Requiere que el usuario conecte su
+# propia cuenta paga; no se comparte una cuenta entre usuarios.
+tiddl>=3.4.1
+
+# Descarga del audio de referencia (lossy) de YouTube.
+yt-dlp>=2024.1.0
+
+# ffmpeg como paquete, para que el build --con-audio lo empaquete adentro del
+# ejecutable y el usuario no tenga que instalarlo aparte. Trae la build
+# "essentials" de gyan.dev (GPLv3): se distribuye sin modificar y se invoca como
+# programa separado. Ver build/terceros/FFMPEG-LICENCIA.txt.
+#
+# Si preferís usar el ffmpeg del sistema, no lo instales: la app usa el del PATH
+# cuando existe y sólo cae al incluido si no encuentra ninguno.
+imageio-ffmpeg>=0.6

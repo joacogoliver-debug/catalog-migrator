@@ -1,0 +1,200 @@
+/* ============================================================
+   Paleta — DESIGN-SYSTEM.md §3 y §13.
+
+   Tres colores de marca y nada más: grafito, hueso y teal. Los neutros son
+   grises de temperatura cálida (matiz 82) para que no se vean sucios al lado
+   del hueso, y los semánticos están elegidos para no competir con el teal en
+   el matiz.
+
+   Regla dura de contraste (§3.2): el teal de marca #387F7E da 4.17 sobre hueso
+   y NO alcanza el mínimo AA de 4.5 para texto chico. Por eso texto y botones
+   primarios usan teal-600; el 500 queda para barras, iconos grandes y series
+   de datos, donde el mínimo exigible es 3.
+
+   No existe un color "informativo": lo informativo es teal (§3.4). Eso mantiene
+   la paleta en cuatro familias y refuerza el acento cada vez que la app
+   comunica algo neutro.
+   ============================================================ */
+
+:root {
+  /* ---- Marca ---- */
+  --grafito: #141414;
+  --hueso:   #F5F2ED;
+  --teal:    #387F7E;
+
+  /* ---- Rampa teal (matiz 194 en OKLCH, el 500 es la marca literal) ---- */
+  --teal-50:  #E9F7F6;
+  --teal-100: #D2EDEC;
+  --teal-200: #B4DCDB;
+  --teal-300: #8CC2C0;
+  --teal-400: #5DA09E;
+  --teal-500: #387F7E;
+  --teal-600: #206969;
+  --teal-700: #155251;
+  --teal-800: #0D3B3A;
+  --teal-900: #0A2929;
+
+  /* ---- Neutrales cálidos ---- */
+  --neutral-0:   #F5F2ED;
+  --neutral-50:  #EDEBE6;
+  --neutral-100: #E1DED8;
+  --neutral-200: #CFCCC6;
+  --neutral-300: #B4B1AB;
+  --neutral-400: #94928D;
+  --neutral-500: #767471;
+  --neutral-600: #5C5B58;
+  --neutral-700: #434240;
+  --neutral-800: #2C2B2A;
+  --neutral-900: #141414;
+
+  /* ---- Semánticos ---- */
+  --negative-strong: #B63132;
+  --negative-mid:    #D54A47;
+  --negative-soft:   #FFDEDB;
+  --warning-strong:  #B77600;
+  --warning-mid:     #DF9C27;
+  --warning-soft:    #FCE8CA;
+  --positive-strong: #357A43;
+  --positive-mid:    #4E9A5B;
+  --positive-soft:   #D7F0D9;
+
+  /* Lo informativo es teal (§3.4): no hay una cuarta familia para eso, así que
+     el "soft" informativo sale de la rampa de marca. */
+  --info-strong:     var(--teal-600);
+  --info-soft:       var(--teal-50);
+
+  /* ---- Series de datos ---- */
+  --series-1: #387F7E;
+  --series-2: #254A6E;
+  --series-3: #A66125;
+  --series-4: #973069;
+  --series-5: #50B0AF;
+  --series-6: #6D9358;
+
+  /* ---- Roles de superficie y texto, modo claro ---- */
+  --bg-app:         var(--neutral-0);
+  --bg-surface:     var(--neutral-50);
+  --bg-overlay:     var(--neutral-0);
+  --bg-hover:       var(--teal-50);
+  --bg-inverse:     var(--grafito);
+
+  --text-primary:   var(--neutral-900);
+  --text-secondary: var(--neutral-600);
+  --text-tertiary:  var(--neutral-500);
+  --text-placeholder: var(--neutral-400);
+  --text-accent:    var(--teal-600);
+  --text-on-accent: var(--hueso);
+  --text-on-inverse:var(--hueso);
+
+  --border-subtle:  var(--neutral-100);
+  --border-default: var(--neutral-200);
+  --border-strong:  var(--neutral-300);
+  --border-focus:   var(--teal-600);
+
+  /* El acento de superficie: barras, indicadores, iconos grandes. Nunca texto
+     chico (§3.2). */
+  --accent-surface: var(--teal-500);
+  --accent-press:   var(--teal-800);
+
+  /* Texto sobre una superficie ya teñida de teal (fila activa, pestaña activa).
+     Es un token propio porque el valor se invierte entre claro y oscuro, y sin
+     él hace falta una regla por tema que después le gana a los semánticos. */
+  --text-on-hover:   var(--teal-700);
+  --badge-accent-bg:   var(--teal-100);
+  --badge-accent-text: var(--teal-700);
+
+  /* Anillo de foco: 2px teal-600 más 2px de separación (§11). */
+  --focus-ring: rgba(32, 105, 105, 0.35);
+}
+
+/* ============================================================
+   Modo oscuro (§3.6).
+
+   No es el claro invertido: es el esquema de marca con fondo grafito. Las
+   superficies elevadas llevan un tinte teal casi imperceptible, que es lo que
+   evita que el oscuro se vea como un gris genérico de plantilla.
+
+   Se define dos veces a propósito: por preferencia del sistema (respetando una
+   elección explícita de claro) y por atributo, para que el interruptor de la
+   app gane en las dos direcciones.
+   ============================================================ */
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg-app:         #141414;
+    --bg-surface:     #1D2020;
+    --bg-overlay:     #272B2B;
+    --bg-hover:       #0D3B3A;
+    --bg-inverse:     #0A0A0A;
+
+    --text-primary:   #F5F2ED;
+    --text-secondary: #B4B1AB;
+    --text-tertiary:  #94928D;
+    --text-placeholder: #767471;
+    --text-accent:    #67ACAB;
+    --text-on-accent: #0A2929;
+    --text-on-inverse:#F5F2ED;
+
+    --border-subtle:  #272B2B;
+    --border-default: #393E3E;
+    --border-strong:  #4A5150;
+    --border-focus:   #5DA09E;
+
+    --accent-surface: var(--teal-400);
+    --accent-press:   var(--teal-200);
+
+    --negative-strong: #E3645E;
+    --warning-strong:  #E1A536;
+    --positive-strong: #60AC6D;
+    --negative-soft:   #2A1614;
+    --warning-soft:    #2A2008;
+    --positive-soft:   #13240F;
+    --info-strong:     #67ACAB;
+    --info-soft:       var(--teal-900);
+
+    --text-on-hover:     #67ACAB;
+    --badge-accent-bg:   var(--teal-800);
+    --badge-accent-text: var(--teal-200);
+
+    --focus-ring: rgba(93, 160, 158, 0.45);
+  }
+}
+
+[data-theme="dark"] {
+  --bg-app:         #141414;
+  --bg-surface:     #1D2020;
+  --bg-overlay:     #272B2B;
+  --bg-hover:       #0D3B3A;
+  --bg-inverse:     #0A0A0A;
+
+  --text-primary:   #F5F2ED;
+  --text-secondary: #B4B1AB;
+  --text-tertiary:  #94928D;
+  --text-placeholder: #767471;
+  --text-accent:    #67ACAB;
+  --text-on-accent: #0A2929;
+  --text-on-inverse:#F5F2ED;
+
+  --border-subtle:  #272B2B;
+  --border-default: #393E3E;
+  --border-strong:  #4A5150;
+  --border-focus:   #5DA09E;
+
+  --accent-surface: var(--teal-400);
+  --accent-press:   var(--teal-200);
+
+  --negative-strong: #E3645E;
+  --warning-strong:  #E1A536;
+  --positive-strong: #60AC6D;
+  --negative-soft:   #2A1614;
+  --warning-soft:    #2A2008;
+  --positive-soft:   #13240F;
+  --info-strong:     #67ACAB;
+  --info-soft:       var(--teal-900);
+
+  --text-on-hover:     #67ACAB;
+  --badge-accent-bg:   var(--teal-800);
+  --badge-accent-text: var(--teal-200);
+
+  --focus-ring: rgba(93, 160, 158, 0.45);
+}

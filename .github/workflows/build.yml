@@ -1,0 +1,219 @@
+name: build
+
+# Compila la app para Windows, macOS y Linux, y arma el instalador de Windows.
+#
+# Se corre a mano o al publicar un tag vX.Y.Z. Los binarios se compilan acá, en
+# GitHub, desde el código público: cualquiera puede leer el log y verificar que
+# el ejecutable que descarga sale de este repo y no de la máquina de alguien.
+#
+# No se firma el binario (un certificado EV de Windows y la cuenta de Apple
+# cuestan plata, y el proyecto es gratis). En su lugar publicamos el SHA256 y una
+# atestación de procedencia, que es gratis y verificable con `gh attestation`.
+#
+# La clave de YouTube de la variante completa NO está en el repositorio: viene
+# del secreto MIGRADOR_CLAVE_YT y entra recién al empaquetar. Si el secreto no
+# está configurado, la variante completa igual se compila, sólo que sin clave, y
+# la app le pide la suya al usuario.
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  id-token: write        # necesario para la atestación de procedencia
+  attestations: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+        # Dos variantes por plataforma:
+        #   completa = módulo de audio, ffmpeg adentro y la clave de YouTube ya
+        #              configurada. Se abre y funciona, sin instalar ni crear
+        #              nada. Incluye un binario GPLv3 (ver la licencia de FFmpeg).
+        #   esencial = relevamiento, planilla, validación, ingesta y portadas.
+        #              Más liviana y sin clave incluida: cada quien usa la suya.
+        variante: [completa, esencial]
+        include:
+          - os: windows-latest
+            nombre: windows
+          - os: macos-latest
+            nombre: macos
+          - os: ubuntu-latest
+            nombre: linux
+
+    runs-on: ${{ matrix.os }}
+    name: build (${{ matrix.nombre }} · ${{ matrix.variante }})
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          # 3.13 y no 3.12: tiddl 3.x declara Requires-Python >=3.13, y en 3.12
+          # pip resuelve a la 2.8.0, que no tiene la clase TidalAPI que usa el
+          # módulo de audio. Se compilaba la variante sin audio y fallaba la
+          # completa con "No matching distribution found for tiddl".
+          python-version: "3.13"
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-app.txt
+          pip install pyinstaller
+
+      - name: Instalar dependencias de audio
+        if: matrix.variante == 'completa'
+        # tiddl + yt-dlp + el ffmpeg que se empaqueta adentro.
+        run: pip install -r requirements-audio.txt imageio-ffmpeg
+
+      - name: Instalar Inno Setup
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "C:\Program Files (x86)\Inno Setup 6\ISCC.exe")) {
+            choco install innosetup --no-progress -y
+          } else {
+            Write-Output "Inno Setup ya esta en la imagen"
+          }
+
+      - name: ¿Está configurada la clave de YouTube?
+        id: clave
+        shell: bash
+        env:
+          K: ${{ secrets.MIGRADOR_CLAVE_YT }}
+        run: |
+          # Un secreto no se puede evaluar en un `if:`, así que lo traducimos a
+          # una salida del step. Nunca se imprime el valor.
+          if [ -n "$K" ]; then echo "hay=si" >> "$GITHUB_OUTPUT"; else echo "hay=no" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Compilar
+        shell: bash
+        env:
+          MIGRADOR_CLAVE_YT: ${{ secrets.MIGRADOR_CLAVE_YT }}
+        run: |
+          # build.py corre los tests antes de empaquetar y aborta si alguno falla.
+          FLAGS="--instalador"
+          if [ "${{ matrix.variante }}" = "completa" ]; then
+            FLAGS="$FLAGS --con-audio"
+            if [ "${{ steps.clave.outputs.hay }}" = "si" ]; then
+              FLAGS="$FLAGS --con-clave"
+            else
+              echo "::warning::Sin el secreto MIGRADOR_CLAVE_YT: la variante completa sale sin clave incluida."
+            fi
+          fi
+          echo "flags: $FLAGS"
+          python build/build.py $FLAGS
+
+      - name: Renombrar con la plataforma y la variante
+        shell: bash
+        run: |
+          cd dist
+          rm -f *.sha256
+          # Sólo el portable: el instalador ya sale con su nombre definitivo.
+          if [ -f "Migrador de Catalogos.exe" ]; then
+            mv "Migrador de Catalogos.exe" "Migrador-de-Catalogos-${{ matrix.nombre }}-${{ matrix.variante }}.exe"
+          elif [ -f "Migrador de Catalogos" ]; then
+            mv "Migrador de Catalogos" "Migrador-de-Catalogos-${{ matrix.nombre }}-${{ matrix.variante }}"
+          fi
+          ls -la
+
+      - name: Publicar hash
+        shell: bash
+        run: |
+          cd dist
+          for f in Migrador-de-Catalogos-*; do
+            case "$f" in *.sha256) continue;; esac
+            if command -v sha256sum >/dev/null; then sha256sum "$f" | tee "$f.sha256";
+            else shasum -a 256 "$f" | tee "$f.sha256"; fi
+          done
+
+      # Sólo corre en repos públicos: GitHub no permite atestaciones en repos
+      # privados de cuentas personales ("Feature not available for user-owned
+      # private repositories"). Mientras el repo sea privado se saltea y el
+      # release igual sale con su SHA256; al pasarlo a público se activa solo.
+      # continue-on-error además evita que un cambio de GitHub en esto bloquee
+      # una publicación: la atestación es un extra, no el entregable.
+      - name: Atestación de procedencia
+        if: ${{ github.event.repository.private == false }}
+        continue-on-error: true
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist/Migrador-de-Catalogos-*
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: migrador-${{ matrix.nombre }}-${{ matrix.variante }}
+          path: dist/*
+          if-no-files-found: error
+
+  publicar:
+    # Sólo al empujar un tag: adjunta los binarios al release.
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artefactos
+
+      - name: Adjuntar al release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artefactos/**/*
+          generate_release_notes: true
+          body: |
+            ## Cuál bajar
+
+            **Windows, la recomendada**:
+            `Migrador-de-Catalogos-windows-completa-instalador.exe`. Doble clic,
+            Siguiente, y queda en el menú Inicio con su desinstalador. No pide
+            permisos de administrador.
+
+            Si preferís no instalar nada, el portable es el `.exe` sin
+            `-instalador`. En macOS y Linux hay un único archivo, sin instalador.
+
+            | Variante | Qué trae |
+            |---|---|
+            | **completa** | Todo, más el módulo de audio con ffmpeg adentro y una clave de YouTube ya configurada. Se abre y funciona. |
+            | **esencial** | Relevamiento, planilla, validación, hoja de ingesta y portadas. Más liviana, sin ffmpeg y sin clave incluida. |
+
+            Para bajar los audios en FLAC necesitás además tu propia cuenta paga
+            de Tidal. El módulo viene desactivado y es opcional.
+
+            La clave de YouTube que trae la variante completa es compartida, está
+            restringida a la YouTube Data API v3 y **cualquiera que baje el
+            binario la puede extraer**. Si preferís no depender de eso, usá la
+            variante `esencial` o cargá la tuya desde la app.
+
+            La versión completa incluye FFmpeg, software de terceros bajo
+            licencia GPLv3, que se distribuye sin modificaciones y como programa
+            separado.
+
+            ### El sistema va a avisar que el programa "no es reconocido"
+
+            Es esperable: el binario no está firmado porque firmar cuesta plata y
+            esto es gratis. El código es público y el ejecutable se compila acá
+            en GitHub Actions desde ese código.
+
+            - **Windows**: "Más información" → "Ejecutar de todas formas".
+            - **macOS**: clic derecho → "Abrir", o Configuración → Privacidad y
+              seguridad → "Abrir de todos modos".
+
+            ### Verificar que el binario es el de este repo
+
+            Compará el SHA256 con el `.sha256` publicado, o usá la atestación:
+
+            ```
+            gh attestation verify Migrador-de-Catalogos-windows-completa.exe --repo ${{ github.repository }}
+            ```
+
+            ### Términos de uso
+
+            Esta herramienta es para administración de catálogos. No avala ni
+            habilita la piratería. El detalle está en `TERMINOS.md`, y la app los
+            muestra la primera vez que se abre.

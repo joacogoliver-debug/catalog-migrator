@@ -1,0 +1,57 @@
+/* ============================================================
+   Espaciado, forma y movimiento — DESIGN-SYSTEM.md §5, §6 y §8.
+
+   Base de 4 px: toda medida del sistema es múltiplo de 4.
+
+   La relación entre separación y jerarquía es la regla que más ordena una
+   pantalla: elementos de un mismo grupo se separan 8 o 12, grupos dentro de un
+   bloque 24, bloques entre sí 48, secciones mayores 64 o 96. Dos cosas a la
+   misma distancia se leen como del mismo nivel, y eso comunica más que
+   cualquier título.
+
+   Radios bajos porque la marca es geométrica y recta. Sombras: sólo tres, y
+   sólo para lo que flota de verdad. Las cards no llevan sombra, se separan del
+   fondo con borde y cambio de superficie.
+   ============================================================ */
+
+:root {
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-24: 96px;
+
+  /* ---- Contenedores (§5) ---- */
+  --container-max:  1440px;
+  --container-read: 720px;
+  --container-form: 480px;
+  --container-pad:  32px;
+
+  /* ---- Forma (§6) ---- */
+  --radius-none: 0;
+  --radius-sm:   2px;
+  --radius-md:   4px;
+  --radius-lg:   8px;
+  --radius-full: 9999px;
+
+  --shadow-dropdown: 0 4px 12px rgba(20, 20, 20, 0.10);
+  --shadow-modal:    0 16px 40px rgba(20, 20, 20, 0.18);
+  --shadow-toast:    0 8px 24px rgba(20, 20, 20, 0.14);
+
+  /* ---- Movimiento (§8) ---- */
+  --motion-instant: 100ms ease-out;
+  --motion-fast:    160ms cubic-bezier(0.2, 0, 0, 1);
+  --motion-base:    240ms cubic-bezier(0.2, 0, 0, 1);
+  --motion-slow:    400ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ---- Alturas de control (§7) ---- */
+  --control-h-denso: 32px;
+  --control-h:       40px;
+  --control-h-form:  48px;
+  --fila-h:          48px;
+  --fila-h-densa:    36px;
+}

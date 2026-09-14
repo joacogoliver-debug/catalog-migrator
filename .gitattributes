@@ -1,0 +1,18 @@
+# Normalización de saltos de línea.
+#
+# Por defecto, texto normalizado a LF en el repositorio. Dos excepciones que
+# importan de verdad:
+#   - los .sh corren en macOS y Linux, y con CRLF el shell falla con un
+#     "bad interpreter" que no dice nada útil;
+#   - los .bat y el .iss son de Windows y quieren CRLF.
+* text=auto eol=lf
+
+*.sh  text eol=lf
+*.bat text eol=crlf
+*.iss text eol=crlf
+
+# Binarios: que git no intente normalizar nada.
+*.woff2 binary
+*.ico   binary
+*.png   binary
+*.jpg   binary

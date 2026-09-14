@@ -1,0 +1,88 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  tests:
+    name: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          # Alineado con el workflow de build: tiddl 3.x pide >=3.13.
+          python-version: "3.13"
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          # Sólo openpyxl: los extras de audio (tiddl / yt-dlp / ffmpeg) NO se
+          # instalan a propósito. Los tests son offline y tienen que pasar sin
+          # ellos, lo que además demuestra que la degradación es correcta.
+          pip install openpyxl
+
+      - name: Parseo de descripciones de YouTube
+        run: python test_parse_description.py
+
+      - name: Agrupación en productos y filtros
+        run: python test_productos.py
+
+      - name: Validación pre-entrega
+        run: python test_validar.py
+
+      - name: Resolución real de las portadas
+        run: python test_portadas.py
+
+      - name: Estructura del entregable
+        run: python test_paquete.py
+
+      - name: Backend (trabajos, HTTP, token y Host)
+        run: python test_app.py
+
+      - name: Contrato del orquestador
+        run: python test_migrar_core.py
+
+      - name: Contrato con tiddl
+        # Sin tiddl instalado el test se saltea solo: verifica el contrato con la
+        # librería cuando está presente, y no obliga a instalarla en CI.
+        run: python test_audio_tidal.py
+
+      - name: Los módulos importan sin los extras de audio
+        run: |
+          python -c "import productos, portadas, audio, paquete; \
+            e = audio.verificar_entorno(); \
+            assert e['puede_flac'] is False, 'sin tiddl/ffmpeg no debe habilitar FLAC'; \
+            print('degradacion correcta:', e)"
+
+      - name: El icono se puede regenerar desde el código
+        # No se comparan bytes contra el commiteado: dos versiones de Pillow
+        # pueden escribir el mismo PNG con bytes distintos y el test se volvería
+        # inestable por algo que no es un problema. Lo que importa es que el
+        # script corra y produzca los tamaños que Windows y el instalador piden.
+        run: |
+          pip install pillow
+          python build/icono.py
+          python - <<'PY'
+          from PIL import Image
+          tam = sorted(Image.open("app/web/assets/icono.ico").ico.sizes())
+          assert (256, 256) in tam and (16, 16) in tam, tam
+          png = Image.open("app/web/assets/icono.png")
+          assert png.size == (512, 512), png.size
+          print("icono ok:", tam)
+          PY
+
+      - name: No quedan claves en el repositorio
+        # Red de seguridad barata: la clave de YouTube vive como secreto del CI y
+        # no tiene que aparecer nunca en el árbol de archivos.
+        run: |
+          if git ls-files | grep -q 'clave_yt.dat'; then
+            echo "Hay una clave commiteada"; exit 1
+          fi
+          if git grep -nE 'AIza[0-9A-Za-z_-]{30,}' -- . ; then
+            echo "Parece haber una clave de API en el código"; exit 1
+          fi
+          echo "sin claves en el repo"
