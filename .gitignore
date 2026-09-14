@@ -27,3 +27,10 @@ app/web/_capturas.html
 # Harness temporales de desarrollo
 _dev_*.py
 _smoke*.py
+
+# Skills de terceros instaladas con `npx skills add`. Son herramientas de quien
+# desarrolla, no parte del programa: no tienen por que viajar en un repo publico
+# ni arrastrar sus licencias.
+.agents/
+.claude/
+skills-lock.json
