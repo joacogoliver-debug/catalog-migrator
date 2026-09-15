@@ -1,5 +1,5 @@
 """
-distributors.py — Listas de clasificación de distribuidoras (copia autocontenida).
+distributors.py: Listas de clasificación de distribuidoras (copia autocontenida).
 
 Bundleada dentro del proyecto para que NO dependa de ningún repo externo. Si actualizás
 las listas en el repo principal (config/distributors.py), sincronizá acá.

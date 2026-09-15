@@ -165,7 +165,7 @@ def main():
         check("diag2.loguea_el_cambio",
               any("relev" in a and "Topic" in a for a in avisos2), f"avisos={avisos2}")
         check("diag2.loguea_descartados",
-              any("descart" in a for a in avisos2), f"avisos={avisos2}")
+              any("afuera" in a and "7 videos" in a for a in avisos2), f"avisos={avisos2}")
         expect("diag2.cobertura_cero", diag2["cobertura_metadata"], 0.0)
         check("diag2.sugiere_topic",
               (diag2["topic_sugerido"] or {}).get("titulo") == "Artista Doble - Topic",

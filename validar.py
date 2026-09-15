@@ -3,8 +3,8 @@ Validación pre-entrega: chequea el catálogo contra los requisitos que usan las
 distribuidoras, para saber qué va a ser rechazado ANTES de mandarlo.
 
 Dos niveles:
-  error  — la distribuidora lo va a rechazar. Hay que corregirlo.
-  aviso  — pasa la ingesta pero conviene revisarlo.
+  error , la distribuidora lo va a rechazar. Hay que corregirlo.
+  aviso , pasa la ingesta pero conviene revisarlo.
 
 Todo se valida sin red y sin dependencias extra: los códigos se verifican por
 sus reglas de formato y dígito verificador, y las dimensiones de las portadas se
@@ -81,7 +81,7 @@ def upc_valido(upc):
 
 
 # ============================================================
-# Portadas — dimensiones y espacio de color desde la cabecera
+# Portadas, dimensiones y espacio de color desde la cabecera
 # ============================================================
 
 def medir_imagen(data):
@@ -138,32 +138,32 @@ def validar_portada(p):
 
     if not data:
         out.append(_hallazgo("aviso", "portada_falta",
-                             f"sin portada ({p.get('cover_status', 'no buscada')})", nombre))
+                             f"Sin portada: {p.get('cover_status', 'no se buscó')}.", nombre))
         return out
 
     medida = medir_imagen(data)
     if not medida:
         out.append(_hallazgo("error", "portada_ilegible",
-                             "no pude leer las dimensiones de la portada "
-                             "(¿formato no soportado?)", nombre))
+                             "No se pudieron leer las dimensiones de la portada. "
+                             "Puede ser un formato no soportado.", nombre))
         return out
 
     ancho, alto, comps = medida
 
     if ancho != alto:
         out.append(_hallazgo("error", "portada_no_cuadrada",
-                             f"la portada es {ancho}x{alto} y tiene que ser cuadrada", nombre))
+                             f"La portada es de {ancho}x{alto} y tiene que ser cuadrada.", nombre))
     if min(ancho, alto) < COVER_MIN:
         out.append(_hallazgo("error", "portada_chica",
-                             f"la portada es {ancho}x{alto}, por debajo del mínimo "
-                             f"de {COVER_MIN}x{COVER_MIN}", nombre))
+                             f"La portada es de {ancho}x{alto}, por debajo del mínimo "
+                             f"de {COVER_MIN}x{COVER_MIN}.", nombre))
     elif min(ancho, alto) < COVER_RECOMENDADO:
         out.append(_hallazgo("aviso", "portada_bajo_recomendado",
-                             f"la portada es {ancho}x{alto}: entra, pero el recomendado "
-                             f"es {COVER_RECOMENDADO}x{COVER_RECOMENDADO}", nombre))
+                             f"La portada es de {ancho}x{alto}. Entra, pero el recomendado "
+                             f"es {COVER_RECOMENDADO}x{COVER_RECOMENDADO}.", nombre))
     if comps == 4:
         out.append(_hallazgo("error", "portada_cmyk",
-                             "la portada parece estar en CMYK y tiene que ser RGB", nombre))
+                             "La portada parece estar en CMYK y tiene que ser RGB.", nombre))
     return out
 
 
@@ -182,44 +182,44 @@ def validar(productos, artista=""):
 
         if not (p.get("title") or "").strip():
             out.append(_hallazgo("error", "producto_sin_titulo",
-                                 "el producto no tiene título", nombre))
+                                 "El producto no tiene título.", nombre))
 
         upc = (p.get("upc") or "").strip()
         if not upc:
             out.append(_hallazgo("aviso", "upc_falta",
-                                 "sin UPC: la distribuidora va a asignar uno nuevo "
-                                 "(se pierde la continuidad del release)", nombre))
+                                 "Sin UPC. La distribuidora va a asignar uno nuevo "
+                                 "y se pierde la continuidad del release.", nombre))
         else:
             ok, motivo = upc_valido(upc)
             if not ok:
                 out.append(_hallazgo("error", "upc_invalido",
-                                     f"UPC '{upc}' inválido: {motivo}", nombre))
+                                     f"El UPC {upc} no es válido: {motivo}.", nombre))
 
         anio = p.get("release_year")
         if not anio:
             out.append(_hallazgo("aviso", "anio_falta",
-                                 "sin año de lanzamiento", nombre))
+                                 "Sin año de lanzamiento.", nombre))
         else:
             try:
                 a = int(anio)
                 if a > anio_actual:
                     out.append(_hallazgo("error", "anio_futuro",
-                                         f"el año de lanzamiento ({a}) está en el futuro", nombre))
+                                         f"El año de lanzamiento ({a}) está en el futuro.", nombre))
                 elif a < ANIO_MIN:
                     out.append(_hallazgo("error", "anio_absurdo",
-                                         f"el año de lanzamiento ({a}) no es plausible", nombre))
+                                         f"El año de lanzamiento ({a}) no es plausible.", nombre))
             except (TypeError, ValueError):
                 out.append(_hallazgo("error", "anio_invalido",
-                                     f"el año de lanzamiento ('{anio}') no es un número", nombre))
+                                     f"El año de lanzamiento ({anio}) no es un número.", nombre))
 
         if not (p.get("label") or "").strip():
             out.append(_hallazgo("aviso", "sello_falta",
-                                 "sin sello (℗): varias distribuidoras lo piden", nombre))
+                                 "Sin sello (℗). Varias distribuidoras lo piden.", nombre))
 
         if p.get("order_unconfirmed"):
             out.append(_hallazgo("aviso", "orden_sin_confirmar",
-                                 "el orden de los tracks es estimado por fecha de subida, "
-                                 "no confirmado", nombre))
+                                 "El orden de los tracks es estimado por fecha de subida "
+                                 "y no está confirmado.", nombre))
 
         out.extend(validar_portada(p))
 
@@ -229,33 +229,33 @@ def validar(productos, artista=""):
 
             if not (t.get("track") or "").strip():
                 out.append(_hallazgo("error", "track_sin_titulo",
-                                     "el track no tiene título", nombre, titulo))
+                                     "El track no tiene título.", nombre, titulo))
 
             isrc = (t.get("isrc") or "").strip()
             if not isrc:
                 out.append(_hallazgo("aviso", "isrc_falta",
-                                     "sin ISRC: la distribuidora va a asignar uno nuevo "
-                                     "(se pierde el historial de la grabación)", nombre, titulo))
+                                     "Sin ISRC. La distribuidora va a asignar uno nuevo "
+                                     "y se pierde el historial de la grabación.", nombre, titulo))
             elif not isrc_valido(isrc):
                 out.append(_hallazgo("error", "isrc_invalido",
-                                     f"ISRC '{isrc}' no tiene formato válido "
-                                     "(se esperan 12 caracteres: CC-XXX-YY-NNNNN)",
+                                     f"El ISRC {isrc} no tiene el formato de 12 caracteres "
+                                     "(CC-XXX-YY-NNNNN).",
                                      nombre, titulo))
 
             dur = int(t.get("duration_s") or 0)
             if dur <= 0:
                 out.append(_hallazgo("error", "duracion_falta",
-                                     "sin duración", nombre, titulo))
+                                     "Sin duración.", nombre, titulo))
             elif dur > DURACION_MAX_SOSPECHOSA:
                 out.append(_hallazgo("aviso", "duracion_larga",
-                                     f"dura {dur // 60} min: puede ser un mix o un álbum "
-                                     "entero en un solo video, no un track",
+                                     f"Dura {dur // 60} minutos: puede ser un mix o un álbum "
+                                     "entero en un solo video, no un track.",
                                      nombre, titulo))
 
             if RE_RUIDO_TITULO.search(titulo):
                 out.append(_hallazgo("aviso", "titulo_con_ruido",
-                                     "el título arrastra texto de YouTube "
-                                     "(ej. 'Official Video'): conviene limpiarlo",
+                                     "El título arrastra texto de YouTube, como (Official Video). "
+                                     "Conviene limpiarlo.",
                                      nombre, titulo))
 
     out.extend(_duplicados(productos))
@@ -326,7 +326,7 @@ def _sin_acentos(s):
 
 def reporte_validacion(res, artista=""):
     """Reporte de texto de la validación, para incluir en el ZIP."""
-    L = [f"VALIDACIÓN PRE-ENTREGA — {artista}", f"Generado: {date.today().isoformat()}",
+    L = [f"VALIDACIÓN PRE-ENTREGA: {artista}", f"Generado: {date.today().isoformat()}",
          "=" * 68, ""]
     r = res["resumen"]
     L.append(f"Productos revisados : {r['productos']}")

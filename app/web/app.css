@@ -60,7 +60,6 @@ body {
 :focus-visible {
   outline: 2px solid var(--foco);
   outline-offset: 2px;
-  border-radius: var(--r-control);
 }
 
 h1, h2, h3, h4 { margin: 0; font-weight: var(--p-semi); }
@@ -195,7 +194,7 @@ main > .container > #pantalla > * { padding-bottom: var(--e-6); }
 
 .btn-icono {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px; padding: 0;
+  width: 32px; height: 32px; padding: 0;
   background: transparent; border: 1px solid transparent;
   border-radius: var(--r-control);
   color: var(--texto-2); cursor: pointer;
@@ -350,8 +349,10 @@ button.step.activo:hover { background: var(--acento); color: var(--sobre-acento)
   border-radius: var(--r-control);
   border: 1px solid transparent;
   cursor: pointer; white-space: nowrap; text-decoration: none;
-  transition: background var(--m-rapido), color var(--m-rapido), border-color var(--m-rapido);
+  transition: background var(--m-rapido), color var(--m-rapido), border-color var(--m-rapido),
+              transform var(--m-rapido);
 }
+.btn:active:not(:disabled) { transform: translateY(1px); }
 /* Apagado, no desaparecido: conserva forma y color a media opacidad. */
 .btn:disabled { opacity: .45; cursor: not-allowed; }
 
@@ -396,6 +397,8 @@ button.step.activo:hover { background: var(--acento); color: var(--sobre-acento)
   outline: none;
   border-color: var(--acento-fuerte);
   background: var(--fondo);
+  /* El mismo peso de foco que los botones, sin pisar el borde. */
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--acento-fuerte) 25%, transparent);
 }
 .input::placeholder { color: var(--texto-3); }
 .input-lg {
@@ -403,6 +406,7 @@ button.step.activo:hover { background: var(--acento); color: var(--sobre-acento)
   font-family: var(--mono); padding: 0 var(--e-4);
 }
 .input.error { border-color: var(--negativo); }
+.hint-error { color: var(--negativo); }
 
 .row { display: flex; gap: var(--e-3); align-items: center; }
 .row-wrap { flex-wrap: wrap; }
@@ -540,8 +544,9 @@ table.tabla thead th {
 }
 table.tabla thead th.td-num { text-align: right; }
 
-table.tabla tbody tr { counter-increment: fila; }
-table.tabla tbody tr.fila-detalle { counter-increment: none; }
+/* Solo las filas propias: `tbody tr` a secas tambien contaba las de la subtabla
+   de tracks, que es descendiente de este tbody, y la numeracion saltaba. */
+table.tabla > tbody > tr:not(.fila-detalle) { counter-increment: fila; }
 
 table.tabla tbody td {
   padding: var(--e-2) var(--e-3);
@@ -551,7 +556,7 @@ table.tabla tbody td {
   color: var(--texto-2);
 }
 table.tabla tbody tr:last-child td { border-bottom: none; }
-table.tabla tbody tr:hover td { background: var(--panel); }
+table.tabla tbody tr:hover td { background: var(--panel-alto); }
 table.tabla tbody tr.elegida td { background: var(--fila-elegida); }
 table.tabla tbody tr.elegida .celda-titulo { color: var(--texto); }
 
@@ -566,7 +571,8 @@ tbody .td-check::before {
   font-variant-numeric: tabular-nums;
 }
 tr.elegida .td-check::before { color: var(--acento-fuerte); }
-.td-check .check { vertical-align: middle; }
+/* La casilla mide 15, pero el area que responde al dedo es de 31. */
+.td-check .check { vertical-align: middle; padding: var(--e-2); margin: calc(var(--e-2) * -1); }
 
 .td-exp { width: var(--w-expandir); }
 .td-num { text-align: right; font-family: var(--mono); }
@@ -575,7 +581,7 @@ tr.elegida .td-check::before { color: var(--acento-fuerte); }
 
 .btn-expandir {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 22px; height: 22px; padding: 0;
+  width: 28px; height: 28px; padding: 0;
   background: none; border: none; border-radius: var(--r-marca);
   color: var(--texto-3); cursor: pointer;
   transition: color var(--m-rapido);
@@ -726,14 +732,16 @@ details.acordeon > summary:hover { color: var(--texto); }
   color: var(--texto-3);
 }
 .footer-inner { display: flex; gap: var(--e-4); flex-wrap: wrap; align-items: center; }
-.footer a { color: var(--texto-2); text-decoration: none; }
-.footer a:hover { color: var(--texto-acento); }
+.footer a, .link-pie { color: var(--texto-2); text-decoration: none; }
+.link-pie { background: none; border: none; padding: 0; font: inherit; cursor: pointer; }
+.footer a:hover, .link-pie:hover { color: var(--texto-acento); }
 .footer .der { margin-left: auto; }
 
 /* ---------------------------------------------------------- documento largo */
 
 .doc { max-width: var(--ancho-lectura); margin-inline: auto; }
-.doc h2 { margin-bottom: var(--e-4); }
+.doc-head { display: flex; align-items: center; gap: var(--e-4); margin-bottom: var(--e-4); }
+.doc-head h2 { margin: 0; }
 .doc h4 {
   margin: var(--e-6) 0 var(--e-2);
   font-family: var(--mono); font-size: var(--t-micro);

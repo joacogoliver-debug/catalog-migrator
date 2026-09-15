@@ -27,7 +27,7 @@ import relevar_core
 
 
 # ============================================================
-# Paso 1 + 2 — relevar y agrupar
+# Paso 1 + 2, relevar y agrupar
 # ============================================================
 
 def relevar_catalogo(url, yt_key, with_codes=True, progress=None, use_musicbrainz=False):
@@ -45,7 +45,7 @@ def relevar_catalogo(url, yt_key, with_codes=True, progress=None, use_musicbrain
     tracks = res["tracks"]
     artista = res["artist"]
     prods = productos_mod.group_products(tracks, artist=artista)
-    log(f"[productos] {len(prods)} productos a partir de {len(tracks)} tracks")
+    log(f"{len(prods)} productos a partir de {len(tracks)} tracks")
 
     # Diagnóstico del canal: si no trae descripciones auto-generadas, el
     # catálogo sale sin álbumes ni códigos y hay que avisarlo.
@@ -61,9 +61,9 @@ def relevar_catalogo(url, yt_key, with_codes=True, progress=None, use_musicbrain
         "descartados": int(res.get("descartados") or 0),
     }
     if diag["via_topic"]:
-        log(f"[canal] pegaste «{diag['canal_pedido']}» pero relevé su Topic: «{diag['canal']}»")
+        log(f"Pegaste «{diag['canal_pedido']}»; se relevó su Topic, «{diag['canal']}»")
     if diag["descartados"]:
-        log(f"[canal] descarté {diag['descartados']} videos que no son lanzamientos")
+        log(f"Quedaron afuera {diag['descartados']} videos que no son lanzamientos")
     return prods, artista, tracks, diag
 
 
@@ -79,7 +79,7 @@ def opciones_de_filtro(prods):
 
 
 # ============================================================
-# Paso 3 — preparar el contenido pedido
+# Paso 3, preparar el contenido pedido
 # ============================================================
 
 def preparar(seleccion, artista, quiere_planilla=True, quiere_audio=False,
@@ -100,15 +100,15 @@ def preparar(seleccion, artista, quiere_planilla=True, quiere_audio=False,
         con_tidal = bool(tidal_session and tidal_session.conectada)
         if con_tidal:
             if not entorno["puede_flac"]:
-                log("[audio] falta ffmpeg: no puedo extraer FLAC. Revisá la instalación.")
+                log("Audio: falta ffmpeg: no puedo extraer FLAC. Revisá la instalación.")
             else:
                 indice, _ = audio_mod.construir_indice_isrc(tidal_session, artista, log=log)
                 audio_mod.matchear_por_isrc(seleccion, indice, log=log)
         else:
-            log("[audio] sin cuenta de Tidal conectada: el audio será de referencia (lossy)")
+            log("Audio: sin cuenta de Tidal conectada: el audio será de referencia (lossy)")
 
         if not entorno["puede_referencia"] and not con_tidal:
-            log("[audio] falta yt-dlp o ffmpeg: no puedo bajar ni la referencia")
+            log("Audio: falta yt-dlp o ffmpeg: no puedo bajar ni la referencia")
         else:
             _, dir_audio = audio_mod.fetch_audio(
                 seleccion, session=tidal_session if con_tidal else None,
@@ -119,7 +119,7 @@ def preparar(seleccion, artista, quiere_planilla=True, quiere_audio=False,
 
 
 # ============================================================
-# Paso 4 — empaquetar
+# Paso 4, empaquetar
 # ============================================================
 
 def empaquetar(seleccion, artista, out_path=None, entorno=None, con_tidal=False,
@@ -158,7 +158,7 @@ def migrar(url, yt_key, ids=None, year_from=None, year_to=None, distributors=Non
     )
     if not seleccion:
         raise relevar_core.RelevarError("La selección quedó vacía: revisá los filtros.")
-    log(f"[seleccion] {len(seleccion)} de {len(prods)} productos")
+    log(f"Seleccionados {len(seleccion)} de {len(prods)} productos")
 
     seleccion, dir_audio, entorno = preparar(
         seleccion, artista, quiere_planilla=quiere_planilla, quiere_audio=quiere_audio,

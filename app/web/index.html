@@ -8,6 +8,9 @@
      app de cualquier otra pestaña del navegador que quiera hablarle: sin este
      token, /api/ responde 403. Ver la nota de seguridad en app/server.py. -->
 <meta name="app-token" content="{{TOKEN}}" />
+<!-- El tema se decide antes de pintar: si esperara a app.js, al final del body,
+     el primer frame en modo claro saldria oscuro. -->
+<script>try{if(localStorage.getItem('tema')==='claro')document.documentElement.setAttribute('data-theme','claro')}catch(e){}</script>
 <link rel="stylesheet" href="app.css" />
 <link rel="icon" href="assets/icono.png" />
 </head>
@@ -43,7 +46,7 @@
       <span>Hecho por
         <a href="https://www.linkedin.com/in/joaquingarciaoliver/" target="_blank" rel="noopener noreferrer">Joaquín García Oliver</a>
       </span>
-      <a href="#" data-accion="ver-terminos">Términos de uso</a>
+      <button type="button" class="link-pie" data-accion="ver-terminos">Términos de uso</button>
       <span class="der" id="pie-estado"></span>
     </div>
   </footer>

@@ -1,5 +1,5 @@
 """
-relevar_core.py — Motor de relevamiento de catálogos (sin CLI), para la app web.
+relevar_core.py: Motor de relevamiento de catálogos (sin CLI), para la app web.
 
 Toma la URL de un canal de YouTube (Topic / Official Artist Channel / @handle),
 enumera sus productos vía la YouTube Data API, opcionalmente enriquece con Deezer
@@ -306,15 +306,16 @@ def _iso_duration_to_seconds(s):
 
 
 # ============================================================
-# Parseo (distribuidora / álbum / año / sello)  — autocontenido
+# Parseo (distribuidora / álbum / año / sello) : autocontenido
 # ============================================================
 
 _RE_PHONO_LINE = re.compile(r"^\s*℗\s*(.+)$", re.MULTILINE)
 # Año al principio de la línea ℗, seguido del sello si lo hay. El (?!\d) es lo
-# que importa: sin él, "℗ 5358533 Records DK" —el sello placeholder que pone
-# DistroKid cuando el artista no cargó ninguno— se leía como el año 5358.
+# que importa: sin él, "℗ 5358533 Records DK" ,el sello placeholder que pone
+# DistroKid cuando el artista no cargó ninguno, se leía como el año 5358.
 _RE_ANIO_SELLO = re.compile(r"^(\d{4})(?!\d)\s*(.*)$")
 _RE_RELEASED = re.compile(r"Released on:\s*(\d{4})-\d{2}-\d{2}")
+_RE_SELLO_RELLENO = re.compile(r"^\d{5,}\s+Records DK$", re.IGNORECASE)
 
 
 def _anio_plausible(a):
@@ -367,6 +368,11 @@ def parse_description(desc):
             res["label"] = (m.group(2) or "").strip() or None
         else:
             res["label"] = linea or None
+        # "5358533 Records DK" no es un sello: es el relleno que pone DistroKid con
+        # el id de la cuenta cuando el artista no declaro ninguno. Mostrarlo como
+        # sello en la planilla y en la interfaz era mentir con cara de dato.
+        if res["label"] and _RE_SELLO_RELLENO.match(res["label"]):
+            res["label"] = None
 
     # "Released on:" es la fecha real del lanzamiento y es la fuente preferida
     # cuando la línea ℗ no trae año, que es el caso de todo DistroKid.
@@ -423,7 +429,7 @@ def build_tracks(videos):
 
 
 # ============================================================
-# Enriquecimiento de códigos (ISRC + UPC) — Deezer + respaldo MusicBrainz
+# Enriquecimiento de códigos (ISRC + UPC): Deezer + respaldo MusicBrainz
 # ============================================================
 # Sin claves: Deezer y MusicBrainz son APIs públicas (adiós "se quedó sin
 # créditos"). Deezer es la fuente principal (rápida y en paralelo: el ISRC viene
@@ -460,7 +466,7 @@ _RE_TITLE_NOISE = re.compile(
 
 def _clean_title(title):
     t = _RE_TITLE_NOISE.sub("", title or "")
-    return re.sub(r"\s+", " ", t).strip(" -–·")
+    return re.sub(r"\s+", " ", t).strip(" --·")
 
 
 def _http_json(url, headers=None, retries=3):
@@ -584,7 +590,7 @@ def enrich_with_codes(tracks, artist, log=print, use_musicbrainz=False):
                     matched += 1
 
     # 2) UPC por álbum (Deezer, en paralelo).
-    log(f"  Deezer: {matched}/{n} matcheados · UPC de {len(album_ids)} álbumes…")
+    log(f"Deezer: códigos para {matched} de {n} tracks, UPC de {len(album_ids)} álbumes")
     upcs = deezer_album_upcs(list(album_ids.keys()))
     for aid, ts in album_ids.items():
         for t in ts:
@@ -594,7 +600,7 @@ def enrich_with_codes(tracks, artist, log=print, use_musicbrainz=False):
     if use_musicbrainz:
         pendientes = [t for t in tracks if not t["isrc"]]
         if pendientes:
-            log(f"  MusicBrainz (respaldo): {len(pendientes)} sin ISRC…")
+            log(f"MusicBrainz (respaldo): {len(pendientes)} sin ISRC")
             for t in pendientes:
                 isrc = musicbrainz_isrc(t, artist)
                 if isrc:
@@ -676,7 +682,7 @@ def build_resumen(wb, tracks, artist):
     total_videos = len(tracks)
     total_views = sum(t["views"] for t in tracks)
     years = sorted({t["release_year"] for t in tracks if t["release_year"]})
-    period = f"{years[0]} – {years[-1]}" if years else "s/d"
+    period = f"{years[0]} - {years[-1]}" if years else "s/d"
     gen = date.today().strftime("%d/%m/%Y")
 
     agg = _aggregate_distributors(tracks)
@@ -686,14 +692,14 @@ def build_resumen(wb, tracks, artist):
 
     # --- Título ---
     ws.merge_cells("B2:G2")
-    _set(ws, "B2", f"{artist.upper()} — ANÁLISIS DE CATÁLOGO (TOPIC)", _f(18, True, NAVY), _fill(PANEL))
+    _set(ws, "B2", f"{artist.upper()}: ANÁLISIS DE CATÁLOGO (TOPIC)", _f(18, True, NAVY), _fill(PANEL))
     ws.merge_cells("B3:G3")
-    subtitle = f"Dataset: {total_videos} videos  ·  Período: {period}  ·  Generado: {gen}"
+    subtitle = f"Dataset: {total_videos} videos | Período: {period} | Generado: {gen}"
     isrc_n = sum(1 for t in tracks if t.get("isrc"))
     if isrc_n:
         upc_n = sum(1 for t in tracks if t.get("upc"))
-        subtitle += (f"  ·  ISRC: {isrc_n}/{total_videos}"
-                     f"  ·  UPC: {upc_n}/{total_videos} (vía Deezer)")
+        subtitle += (f" | ISRC: {isrc_n}/{total_videos}"
+                     f" | UPC: {upc_n}/{total_videos} (vía Deezer)")
     _set(ws, "B3", subtitle, _f(9, False, GRAY), _fill(PANEL))
     _fill_range(ws, "B2:G2", _fill(PANEL))
     _fill_range(ws, "B3:G3", _fill(PANEL))
@@ -722,13 +728,13 @@ def build_resumen(wb, tracks, artist):
             ws.merge_cells(f"{a}:{b}")
         sv = spot_data["videos"]
         svw = spot_data["views"]
-        _set(ws, "B13", f"VIDEOS — {spot_name.upper()[:22]}", _f(8, False, RED), _fill(RED_BG1))
+        _set(ws, "B13", f"VIDEOS: {spot_name.upper()[:22]}", _f(8, False, RED), _fill(RED_BG1))
         _set(ws, "B14", sv, _f(18, True, RED_BRIGHT), _fill(RED_BG1), numfmt=NUMFMT)
         _set(ws, "B15", f"{sv/total_videos*100:.1f}% del total", _f(9, False, RED), _fill(RED_BG1))
-        _set(ws, "D13", f"VISTAS — {spot_name.upper()[:22]}", _f(8, False, RED), _fill(RED_BG1))
+        _set(ws, "D13", f"VISTAS: {spot_name.upper()[:22]}", _f(8, False, RED), _fill(RED_BG1))
         _set(ws, "D14", svw, _f(18, True, RED_BRIGHT), _fill(RED_BG1), numfmt=NUMFMT)
         _set(ws, "D15", f"{(svw/total_views*100 if total_views else 0):.1f}% del total", _f(9, False, RED), _fill(RED_BG1))
-        _set(ws, "F13", f"TOP VIDEO — {spot_name.upper()[:18]}", _f(8, False, RED), _fill(RED_BG1))
+        _set(ws, "F13", f"TOP VIDEO: {spot_name.upper()[:18]}", _f(8, False, RED), _fill(RED_BG1))
         _set(ws, "F14", spot_data["top"], _f(18, True, RED_BRIGHT), _fill(RED_BG1), numfmt=NUMFMT)
         _set(ws, "F15", spot_data["top_title"][:40], _f(9, False, RED), _fill(RED_BG1), wrap=True)
 
@@ -826,8 +832,8 @@ def slugify(name):
 def relevar(url, yt_key, with_codes=True, progress=None, use_musicbrainz=False):
     """Releva el catálogo completo de un canal.
 
-    with_codes — buscar ISRC/UPC (Deezer; sin clave). use_musicbrainz — respaldo
-    lento opcional. progress(msg, frac) — callback de avance (0.0–1.0).
+    with_codes: buscar ISRC/UPC (Deezer; sin clave). use_musicbrainz: respaldo
+    lento opcional. progress(msg, frac): callback de avance (0.0-1.0).
     Devuelve dict: artist, channel_title, tracks, distribs, total_views, units, codes.
     Lanza RelevarError ante problemas mostrables al usuario.
     """

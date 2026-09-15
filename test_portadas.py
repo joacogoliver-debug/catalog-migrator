@@ -6,7 +6,7 @@ Sale 0 si todo pasa, 1 si algo falla. No necesita claves ni internet.
 
 Lo importante que cubre: que el estado de la portada reporte la resolución
 REAL y no la pedida. Apple sirve el tamaño máximo que tiene y responde 200
-aunque sea más chico que el pedido — pedir 3000x3000 puede devolver 600x604.
+aunque sea más chico que el pedido, pedir 3000x3000 puede devolver 600x604.
 Reportar el tamaño pedido haría que la planilla diga que la portada cumple el
 mínimo de ingesta cuando en realidad la van a rechazar.
 """
@@ -81,7 +81,7 @@ def main():
 
     # Caso real de Radiohead: Apple sí tiene 3000.
     p = con_resolucion(3000)
-    check("estado.3000_es_ok", p["cover_status"].startswith("ok 3000x3000"), p["cover_status"])
+    check("estado.3000_es_ok", p["cover_status"].startswith("3000x3000"), p["cover_status"])
     expect("estado.3000_px", p["cover_px"], 3000)
 
     # Caso real de Daft Punk: pedimos 3000, Apple tiene 1500. Entra en ingesta
@@ -111,7 +111,7 @@ def main():
     PT.buscar_portada = lambda artista, album, upc="": None
     p = {"title": "Disco Inexistente", "upc": ""}
     PT.fetch_portadas([p], "Artista", log=lambda *_: None)
-    check("estado.sin_match", "sin match" in p["cover_status"], p["cover_status"])
+    check("estado.sin_match", "no está en Apple Music" in p["cover_status"], p["cover_status"])
     expect("estado.sin_match_sin_bytes", p["cover_bytes"], None)
 
     if fails:

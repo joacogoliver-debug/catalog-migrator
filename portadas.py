@@ -2,7 +2,7 @@
 Descarga de portadas vía iTunes Search API (pública, sin clave).
 
 Lógica portada de `fchavonet/full_stack-itunes_artwork_finder`: la API devuelve
-`artworkUrl100` (100x100) y el tamaño se cambia reescribiendo la URL —
+`artworkUrl100` (100x100) y el tamaño se cambia reescribiendo la URL ,
 `100x100bb.jpg` → `3000x3000bb.jpg`. No es un truco frágil: es el esquema de
 nombres del CDN de Apple y es la forma estándar de pedir alta resolución.
 
@@ -53,7 +53,7 @@ def _strip_ruido(titulo):
         r"en vivo|live|explicit)\b[^\)\]]*[\)\]]",
         "", titulo or "", flags=re.I,
     )
-    return re.sub(r"\s+", " ", t).strip(" -–—|")
+    return re.sub(r"\s+", " ", t).strip(" --,|")
 
 
 def _http_json(url, retries=3):
@@ -171,30 +171,30 @@ def fetch_portadas(productos, artista, log=print):
         info = buscar_portada(artista, p.get("title", ""), p.get("upc", ""))
         if not info:
             p["cover_bytes"], p["cover_px"] = None, 0
-            p["cover_status"] = "sin match en iTunes"
+            p["cover_status"] = "no está en Apple Music"
             return p
         data, px = descargar_portada(info["url100"])
         p["cover_bytes"], p["cover_px"] = data, px
         p["cover_match"] = info["match"]
         if not data:
-            p["cover_status"] = "match encontrado pero falló la descarga"
+            p["cover_status"] = "está en Apple Music pero falló la descarga"
         elif px < COVER_MIN_INGESTA:
             # Se avisa acá además de en el validador: es la diferencia entre una
             # portada usable y una que la distribuidora rechaza.
-            p["cover_status"] = (f"{px}x{px} — DEBAJO DEL MINIMO de ingesta "
+            p["cover_status"] = (f"{px}x{px}, DEBAJO DEL MINIMO de ingesta "
                                  f"({COVER_MIN_INGESTA}x{COVER_MIN_INGESTA})")
         elif px < RESOLUCIONES[0]:
-            p["cover_status"] = f"ok {px}x{px} (Apple no tiene mas resolucion)"
+            p["cover_status"] = f"{px}x{px}, el máximo que tiene Apple"
         else:
-            p["cover_status"] = f"ok {px}x{px} (match {info['match']})"
+            p["cover_status"] = f"{px}x{px}"
         return p
 
     with ThreadPoolExecutor(max_workers=PORTADAS_WORKERS) as ex:
         for i, p in enumerate(ex.map(una, productos), 1):
             # Sin caracteres fuera de cp1252 en los logs: la consola de Windows
             # los rechaza y tiraría UnicodeEncodeError en medio de la migración.
-            log(f"[portadas] {i}/{len(productos)} {p['title'][:40]} -> {p['cover_status']}")
+            log(f"Portada {i} de {len(productos)}, {p['title'][:40]}: {p['cover_status']}")
 
     ok = sum(1 for p in productos if p.get("cover_bytes"))
-    log(f"[portadas] listas {ok}/{len(productos)}")
+    log(f"Portadas: {ok} de {len(productos)}")
     return productos

@@ -1,6 +1,6 @@
 # Términos de uso
 
-**Migrador de Catálogos** — versión 1.0 de estos términos, vigente desde el 14 de
+**Migrador de Catálogos**, versión 1.0 de estos términos, vigente desde el 14 de
 septiembre de 2026.
 
 Este documento es la copia canónica. El mismo texto aparece dentro de la

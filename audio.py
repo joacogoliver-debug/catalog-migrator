@@ -2,11 +2,11 @@
 Descarga de audio para la migración, en dos niveles de calidad claramente
 separados y etiquetados.
 
-  NIVEL A — Tidal (FLAC lossless).  Requiere que el usuario conecte SU PROPIA
+  NIVEL A, Tidal (FLAC lossless).  Requiere que el usuario conecte SU PROPIA
     cuenta paga de Tidal. Es el único audio apto para entregar a una
     distribuidora, porque es el máster distribuido sin pérdida.
 
-  NIVEL B — YouTube (lossy).  No requiere credenciales, sirve para cualquiera.
+  NIVEL B, YouTube (lossy).  No requiere credenciales, sirve para cualquiera.
     Es audio ya comprimido por YouTube (Opus/AAC ~128-160 kbps): vale como
     referencia, inventario o verificación, NUNCA como entrega.
 
@@ -38,9 +38,9 @@ from concurrent.futures import ThreadPoolExecutor
 # Formatos que consideramos aptos para entrega (lossless real).
 FORMATOS_LOSSLESS = {".flac"}
 
-ETIQUETA_LOSSLESS = "Tidal FLAC (lossless) — apto para entrega"
-ETIQUETA_LOSSY_TIDAL = "Tidal AAC (lossy — sin máster lossless en Tidal) — NO apto para entrega"
-ETIQUETA_YOUTUBE = "YouTube (lossy) — REFERENCIA, NO apto para entrega"
+ETIQUETA_LOSSLESS = "Tidal FLAC (lossless), apto para entrega"
+ETIQUETA_LOSSY_TIDAL = "Tidal AAC (lossy, sin máster lossless en Tidal), NO apto para entrega"
+ETIQUETA_YOUTUBE = "YouTube (lossy), REFERENCIA, NO apto para entrega"
 
 # Tidal corta si le pegamos muy en paralelo, y además el límite de streams
 # concurrentes por cuenta es bajo. Con 2 hilos va estable.
@@ -191,7 +191,7 @@ def clases_tidal():
 
 
 # ============================================================
-# Sesión de Tidal — aislada por usuario
+# Sesión de Tidal, aislada por usuario
 # ============================================================
 
 class TidalSession:
@@ -316,7 +316,7 @@ class TidalSession:
 
 
 # ============================================================
-# Índice por ISRC — el corazón del matcheo exacto
+# Índice por ISRC, el corazón del matcheo exacto
 # ============================================================
 
 def _norm(s):
@@ -487,7 +487,7 @@ def matchear_por_isrc(productos, indice, log=print):
 
 
 # ============================================================
-# Descarga NIVEL A — Tidal FLAC
+# Descarga NIVEL A, Tidal FLAC
 # ============================================================
 
 def bajar_flac(session, track_id, dest_dir, calidad="LOSSLESS"):
@@ -526,7 +526,7 @@ def bajar_flac(session, track_id, dest_dir, calidad="LOSSLESS"):
 
 
 # ============================================================
-# Descarga NIVEL B — YouTube (referencia lossy)
+# Descarga NIVEL B, YouTube (referencia lossy)
 # ============================================================
 
 def _falla(motivo, video_id, log, errores):

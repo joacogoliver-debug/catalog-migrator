@@ -6,8 +6,8 @@ Sale 0 si todo pasa, 1 si algo falla. No necesita red ni claves.
 
 Por qué existe: lo que devuelve Google viene en inglés, con jerga y a veces con
 un `<a href>` adentro del mensaje. Mostrarlo tal cual deja a la persona sin saber
-qué hacer, y el caso más probable —el cupo diario agotado cuando muchos usan la
-misma copia— es justo el que tiene solución simple. Este test fija que esa
+qué hacer, y el caso más probable,el cupo diario agotado cuando muchos usan la
+misma copiaes justo el que tiene solución simple. Este test fija que esa
 traducción exista y que el código que la acompaña sea el correcto, porque de ese
 código depende que la interfaz ofrezca el botón para cargar una clave propia.
 """

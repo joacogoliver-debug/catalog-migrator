@@ -194,7 +194,7 @@ def main():
         print("FALLARON:")
         print("\n".join(fails))
         return 1
-    print("OK — agrupación en productos y filtros")
+    print("OK, agrupación en productos y filtros")
     return 0
 
 

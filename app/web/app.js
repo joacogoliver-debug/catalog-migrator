@@ -27,7 +27,8 @@ const S = {
   job: null,
   resultado: null,
   error: '',
-  errorCodigo: '',          // 'cuota' | 'clave' | '' : decide qué salida ofrecer
+  errorCodigo: '',
+  errorCampo: '',           // error de validacion del link, va bajo el campo          // 'cuota' | 'clave' | '' : decide qué salida ofrecer
   tidal: null,
   ocupado: false,
   // Pantallas que se superponen al flujo normal.
@@ -186,7 +187,7 @@ function aplicarTema(t) {
 
 /* ------------------------------------------------------------ stepper */
 
-const PASOS = ['Pegá el link', 'Elegí productos', 'Elegí qué bajar', 'Descargá'];
+const PASOS = ['Pegá el link', 'Elegí productos', 'Elegí qué descargar', 'Descargá'];
 
 /** ¿Se puede ir a ese paso? Nada de saltar a un paso sin los datos que
  *  necesita. Volver atrás siempre se puede, y el estado de los pasos anteriores
@@ -311,8 +312,23 @@ function render() {
   devolverFoco(foco);
 }
 
+/* El area que scrollea es main, no la ventana. */
+function arriba() { const m = document.querySelector('main'); if (m) m.scrollTop = 0; }
+
+function tituloDocumento() {
+  const base = 'Migrador de Catálogos';
+  if (S.vista === 'terminos') return 'Términos de uso, ' + base;
+  if (S.vista === 'clave') return 'Clave de YouTube, ' + base;
+  const a = S.catalogo && S.catalogo.artista;
+  if (S.paso === 2 && a) return a + ', elegir productos';
+  if (S.paso === 3 && a) return a + ', qué descargar';
+  if (S.paso === 4 && a) return a + (S.ocupado ? ', armando el paquete' : ', paquete listo');
+  return base;
+}
+
 function dibujar() {
   renderStepper();
+  document.title = tituloDocumento();
   const v = $('#version');
   if (v) v.textContent = S.config ? 'v' + S.config.version : '';
 
@@ -449,7 +465,7 @@ function textoTerminos() {
 function vistaTerminos(primeraVez) {
   if (primeraVez) {
     return `<div class="card doc fade">
-        <h2>Términos de uso</h2>
+      <div class="doc-head"><h2>Términos de uso</h2></div>
       <p class="muted mb-5">Se leen una vez. Después no vuelven
       a aparecer, y quedan siempre disponibles desde el pie de la ventana.</p>
       ${textoTerminos()}
@@ -461,7 +477,10 @@ function vistaTerminos(primeraVez) {
   }
 
   return `<div class="card doc fade">
-    <h2>Términos de uso</h2>
+    <div class="doc-head">
+      <h2>Términos de uso</h2>
+      <button class="btn btn-secondary btn-sm a-la-derecha" data-accion="cerrar-vista">Volver</button>
+    </div>
     ${textoTerminos()}
     <div class="row mt-6">
       <button class="btn btn-secondary" data-accion="cerrar-vista">Volver</button>
@@ -529,6 +548,8 @@ function bloqueError(titulo) {
 
 function avisoClaveIncluida() {
   if (!S.config || !S.config.clave_incluida) return '';
+  // Con el error de cupo a la vista ya hay un boton para cargar la clave propia.
+  if (S.error && (S.errorCodigo === 'cuota' || S.errorCodigo === 'clave')) return '';
   return alerta('', 'info', `
     Esta copia trae una clave de YouTube ya configurada, así que no hace falta
     cargar ninguna. El cupo diario es compartido entre todos los que usen esta
@@ -551,11 +572,18 @@ function vistaPaso1() {
 
     <div class="field">
       <label for="url">Link del canal</label>
-      <input class="input input-lg" id="url" type="url" spellcheck="false"
+      <input class="input input-lg${S.errorCampo ? ' error' : ''}" id="url" type="url" spellcheck="false"
              placeholder="https://www.youtube.com/channel/UC…"
+             ${S.errorCampo ? 'aria-invalid="true" aria-describedby="url-error"' : ''}
              ${corriendo ? 'disabled' : ''} />
-      <span class="hint">Acepta la URL del canal o un <span class="mono">@handle</span>.</span>
+      ${S.errorCampo
+        ? `<span class="hint hint-error" id="url-error">${esc(S.errorCampo)}</span>`
+        : '<span class="hint">Acepta la URL del canal o un <span class="mono">@handle</span>.</span>'}
     </div>
+
+    ${S.catalogo && !corriendo ? alerta('', 'info', `
+      Tenés relevado el catálogo de <strong>${esc(S.catalogo.artista)}</strong>. Relevar otro lo reemplaza.
+      <div class="row mt-3"><button class="btn btn-ghost btn-sm" data-accion="volver-2">Volver a ese catálogo</button></div>`) : ''}
 
     ${alerta('', 'info', `
       <strong>Conviene pegar el canal Topic.</strong>
@@ -568,9 +596,9 @@ function vistaPaso1() {
       Topic directo eso no pasa.</p>`)}
 
     <label class="check mt-5">
-      <input type="checkbox" id="con-codigos" checked ${corriendo ? 'disabled' : ''} />
+      <input type="checkbox" id="con-codigos" aria-labelledby="con-codigos-l" checked ${corriendo ? 'disabled' : ''} />
       <span class="check-texto">
-        <strong>Buscar códigos ISRC y UPC</strong>
+        <strong id="con-codigos-l">Buscar códigos ISRC y UPC</strong>
         <span class="sub">Los busca en Deezer, sin clave ni costo. Tarda un poco más, pero son los códigos que la distribuidora nueva necesita.</span>
       </span>
     </label>
@@ -596,12 +624,12 @@ function bloqueProgreso(conCancelar = true) {
   <div class="mt-5">
     <div class="row mb-3">
       <span class="spinner"></span>
-      <strong id="progreso-mensaje">${esc(j.mensaje || 'Trabajando')}</strong>
-      <span class="muted small mono">${j.progreso ? Math.round(j.progreso * 100) + '%' : ''}</span>
+      <strong id="progreso-mensaje" aria-live="polite">${esc(j.mensaje || 'Trabajando')}</strong>
+      <span class="muted small mono" id="progreso-pct">${j.progreso ? Math.round(j.progreso * 100) + '%' : ''}</span>
       ${conCancelar ? '<button class="btn btn-ghost btn-sm a-la-derecha" data-accion="cancelar">Cancelar</button>' : ''}
     </div>
     ${conBarra ? `
-      <div class="barra" role="progressbar" aria-valuemin="0" aria-valuemax="100"
+      <div class="barra" role="progressbar" aria-label="Avance del trabajo" aria-valuemin="0" aria-valuemax="100"
            aria-valuenow="${Math.round(j.progreso * 100)}">
         <div class="barra-fill" style="transform:scaleX(${j.progreso.toFixed(3)})"></div>
       </div>` : ''}
@@ -697,9 +725,9 @@ function vistaPaso2() {
 
       <div class="row row-wrap mb-4">
         <div class="segmented" role="group" aria-label="Modo de selección">
-          <button class="${S.filtro.modo === 'manual' ? 'activo' : ''}" data-modo="manual">Uno por uno</button>
-          <button class="${S.filtro.modo === 'fechas' ? 'activo' : ''}" data-modo="fechas">Por fecha</button>
-          <button class="${S.filtro.modo === 'distribuidora' ? 'activo' : ''}" data-modo="distribuidora">Por distribuidora</button>
+          <button class="${S.filtro.modo === 'manual' ? 'activo' : ''}" aria-pressed="${S.filtro.modo === 'manual'}" data-modo="manual">Uno por uno</button>
+          <button class="${S.filtro.modo === 'fechas' ? 'activo' : ''}" aria-pressed="${S.filtro.modo === 'fechas'}" data-modo="fechas">Por fecha</button>
+          <button class="${S.filtro.modo === 'distribuidora' ? 'activo' : ''}" aria-pressed="${S.filtro.modo === 'distribuidora'}" data-modo="distribuidora">Por distribuidora</button>
         </div>
         <div class="grow buscador">
           <input class="input" id="buscar" type="search" placeholder="Título, ISRC o UPC"
@@ -723,8 +751,8 @@ function vistaPaso2() {
         ${sel.reduce((a, p) => a + p.tracks, 0)} tracks
       </div>
       <div class="acciones">
-        <button class="btn btn-secondary" data-accion="sel-todo">Marcar todo</button>
-        <button class="btn btn-secondary" data-accion="sel-nada">Desmarcar</button>
+        <button class="btn btn-secondary" data-accion="sel-todo">Marcar todos</button>
+        <button class="btn btn-secondary" data-accion="sel-nada">Desmarcar todos</button>
         <button class="btn btn-primary" data-accion="ir-3" ${sel.length ? '' : 'disabled'}>Continuar</button>
       </div>
     </div>
@@ -780,14 +808,16 @@ function tablaProductos(ps) {
     const elegido = S.seleccion.has(p.id);
     const abierto = S.expandidos.has(p.id);
     const avisos = [];
-    if (!p.upc) avisos.push('<span class="badge badge-danger">sin UPC</span>');
-    if (p.con_isrc < p.tracks) avisos.push(`<span class="badge badge-danger">ISRC ${p.con_isrc} de ${p.tracks}</span>`);
+    // Un codigo que falta es un aviso: la distribuidora asigna uno nuevo y no
+    // rechaza. El rojo queda para lo que la validacion marca como error.
+    if (!p.upc) avisos.push('<span class="badge badge-warn">sin UPC</span>');
+    if (p.con_isrc < p.tracks) avisos.push(`<span class="badge badge-warn">ISRC ${p.con_isrc} de ${p.tracks}</span>`);
     if (p.orden_estimado) avisos.push('<span class="badge badge-warn">orden estimado</span>');
 
     const detalle = abierto ? `
       <tr class="fila-detalle"><td colspan="7"><div class="detalle-inner">
         <table class="sub">
-          <thead><tr><th>N</th><th>Track</th><th>ISRC</th><th>Duración</th><th class="td-num">Reproducciones</th></tr></thead>
+          <thead><tr><th scope="col">N</th><th scope="col">Track</th><th scope="col">ISRC</th><th scope="col">Duración</th><th scope="col" class="td-num">Reproducciones</th></tr></thead>
           <tbody>${p.detalle.map((t) => `
             <tr>
               <td class="mono" data-col="N">${esc(t.n)}</td>
@@ -826,11 +856,11 @@ function tablaProductos(ps) {
   <div class="tabla-wrap" id="tabla-wrap">
     <table class="tabla">
       <thead><tr>
-        <th class="td-check"><label class="check"><input type="checkbox" id="check-todos"
+        <th scope="col" class="td-check"><label class="check"><input type="checkbox" id="check-todos"
           ${todos ? 'checked' : ''} ${!todos && algunos ? 'data-indeterminado="1"' : ''} />
           <span class="sr">Marcar todos los productos del filtro</span></label></th>
-        <th class="td-exp"></th>
-        <th>Producto</th><th>Tipo</th><th>Año</th><th>UPC</th><th>Pendientes</th>
+        <th scope="col" class="td-exp"></th>
+        <th scope="col">Producto</th><th scope="col">Tipo</th><th scope="col">Año</th><th scope="col">UPC</th><th scope="col">Pendientes</th>
       </tr></thead>
       <tbody>${filas}</tbody>
     </table>
@@ -982,7 +1012,7 @@ function vistaPaso4() {
     <div class="card">
       <div class="card-head">
         <h1>Tu paquete está listo</h1>
-        <p>${r.productos} producto${r.productos === 1 ? '' : 's'}, ${pesoLegible(r.bytes)}.</p>
+        <p>${r.productos} producto${r.productos === 1 ? '' : 's'} en <span class="mono">${esc(r.archivo)}</span>, ${pesoLegible(r.bytes)}.</p>
       </div>
 
       <div class="kpis mb-5">
@@ -993,7 +1023,7 @@ function vistaPaso4() {
       </div>
 
       <a class="btn btn-primary btn-lg" href="${esc(r.descarga)}" download>
-        ${ico('descargar')} Descargar ${esc(r.archivo)}
+        ${ico('descargar')} Descargar el paquete (${pesoLegible(r.bytes)})
       </a>
     </div>
 
@@ -1011,7 +1041,7 @@ function vistaPaso4() {
 
 function panelValidacion(v) {
   if (v.apto && !v.resumen.avisos) {
-    return alerta('ok', 'ok', '<strong>Validación sin observaciones.</strong> No encontré nada de lo que las distribuidoras suelen rechazar.');
+    return alerta('ok', 'ok', '<strong>Validación sin observaciones.</strong> Nada de lo que las distribuidoras suelen rechazar.');
   }
 
   const errores = v.hallazgos.filter((h) => h.nivel === 'error');
@@ -1029,7 +1059,7 @@ function panelValidacion(v) {
       <div class="acordeon-body">
         <div class="tabla-wrap" style="max-height:340px">
           <table class="tabla">
-            <thead><tr><th>Producto</th><th>Track</th><th>Qué pasa</th></tr></thead>
+            <thead><tr><th scope="col">Producto</th><th scope="col">Track</th><th scope="col">Qué pasa</th></tr></thead>
             <tbody>${lista.map((h) => `
               <tr>
                 <td data-col="Producto">${esc(h.producto)}</td>
@@ -1045,7 +1075,7 @@ function panelValidacion(v) {
   return `<div class="seccion">
     <div class="seccion-etiqueta">
       <span>Validación previa</span>
-      <span class="der">${v.resumen.errores} error${v.resumen.errores === 1 ? '' : 'es'} · ${v.resumen.avisos} aviso${v.resumen.avisos === 1 ? '' : 's'}</span>
+      <span class="der">${v.resumen.errores} error${v.resumen.errores === 1 ? '' : 'es'}, ${v.resumen.avisos} aviso${v.resumen.avisos === 1 ? '' : 's'}</span>
     </div>
     ${cabecera}
     <div class="mt-4">
@@ -1135,9 +1165,9 @@ const ACCIONES = {
 
   recargar() { window.location.reload(); },
 
-  'ver-terminos'() { S.vista = 'terminos'; render(); window.scrollTo(0, 0); },
+  'ver-terminos'() { S.vista = 'terminos'; render(); arriba(); },
   'ver-clave'() { S.vista = 'clave'; render(); window.scrollTo(0, 0); },
-  'cerrar-vista'() { S.vista = null; render(); },
+  'cerrar-vista'() { S.vista = null; render(); arriba(); },
 
   async 'aceptar-terminos'() {
     await api('/api/terminos', { aceptar: true });
@@ -1174,20 +1204,30 @@ const ACCIONES = {
   async relevar() {
     const campo = $('#url');
     const url = campo ? campo.value.trim() : '';
-    if (!url) { S.error = 'Pegá el link del canal.'; render(); return; }
-    S.error = ''; S.errorCodigo = ''; S.ocupado = true; S.job = null; render();
+    if (!url) {
+      S.errorCampo = 'Pegá el link del canal.'; render();
+      const c = $('#url'); if (c) c.focus();
+      return;
+    }
+    S.error = ''; S.errorCodigo = ''; S.errorCampo = ''; S.ocupado = true; S.job = null; render();
     try {
       const conCodigos = $('#con-codigos') ? $('#con-codigos').checked : true;
       const { job } = await api('/api/relevar', { url, con_codigos: conCodigos });
       const cat = await esperarJob(job, () => actualizarProgreso());
       adoptarCatalogo(cat);          // arranca con todo elegido
       S.ocupado = false;
-      render();
+      render(); arriba();
     } catch (e) {
       S.ocupado = false;
-      S.error = e.message === 'CANCELADO' ? '' : e.message;
+      // Un link que el servidor no reconoce es un problema del campo, no del mundo.
+      if (/^Pegá el link/.test(e.message || '')) {
+        S.errorCampo = e.message; S.error = '';
+      } else {
+        S.error = e.message === 'CANCELADO' ? '' : e.message;
+      }
       S.errorCodigo = e.codigo || '';
       render();
+      if (S.errorCampo) { const c = $('#url'); if (c) c.focus(); }
     }
   },
 
@@ -1213,10 +1253,10 @@ const ACCIONES = {
     }
   },
 
-  'volver-1'() { S.paso = 1; S.error = ''; S.errorCodigo = ''; S.resultado = null; render(); },
-  'volver-2'() { S.paso = 2; S.error = ''; S.errorCodigo = ''; render(); },
-  'volver-3'() { S.paso = 3; S.error = ''; S.errorCodigo = ''; render(); },
-  'ir-3'() { S.paso = 3; S.error = ''; S.errorCodigo = ''; render(); },
+  'volver-1'() { S.paso = 1; S.error = ''; S.errorCodigo = ''; S.resultado = null; render(); arriba(); },
+  'volver-2'() { S.paso = 2; S.error = ''; S.errorCodigo = ''; render(); arriba(); },
+  'volver-3'() { S.paso = 3; S.error = ''; S.errorCodigo = ''; render(); arriba(); },
+  'ir-3'() { S.paso = 3; S.error = ''; S.errorCodigo = ''; render(); arriba(); },
 
   'sel-todo'() { productosFiltrados().forEach((p) => S.seleccion.add(p.id)); render(); },
   'sel-nada'() { productosFiltrados().forEach((p) => S.seleccion.delete(p.id)); render(); },
@@ -1293,6 +1333,8 @@ function actualizarProgreso() {
   }
   const msj = $('#progreso-mensaje');
   if (msj) msj.textContent = j.mensaje || 'Trabajando';
+  const pct = $('#progreso-pct');
+  if (pct) pct.textContent = j.progreso ? Math.round(j.progreso * 100) + '%' : '';
   const log = $('#log');
   if (log) {
     const pegadoAbajo = log.scrollHeight - log.scrollTop - log.clientHeight < 30;
@@ -1408,6 +1450,11 @@ document.addEventListener('change', (ev) => {
 });
 
 document.addEventListener('input', (ev) => {
+  if (ev.target.id === 'url' && S.errorCampo) {
+    S.errorCampo = '';
+    ev.target.classList.remove('error');
+    const h = $('#url-error'); if (h) h.remove();
+  }
   if (ev.target.id === 'buscar') {
     S.filtro.texto = ev.target.value;
     clearTimeout(document.__buscarTimer);

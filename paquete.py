@@ -126,8 +126,8 @@ def planilla_maestra_bytes(productos, artista):
     ws.title = "Catálogo"
     hoy = date.today().isoformat()
     fila = _encabezado(
-        ws, f"{artista} — Catálogo para migración",
-        f"Generado el {hoy} · {len(productos)} productos · "
+        ws, f"{artista}: Catálogo para migración",
+        f"Generado el {hoy}, {len(productos)} productos, "
         f"{sum(p['track_count'] for p in productos)} tracks",
     )
     for p in productos:
@@ -140,7 +140,7 @@ def planilla_maestra_bytes(productos, artista):
 
 
 # ============================================================
-# Hoja de ingesta — CSV para cargar en la distribuidora nueva
+# Hoja de ingesta, CSV para cargar en la distribuidora nueva
 # ============================================================
 #
 # Las distribuidoras ingestan por planilla propia o por DDEX ERN. DDEX quedó
@@ -222,9 +222,9 @@ def planilla_producto_bytes(p, artista):
     ws = wb.active
     ws.title = "Producto"
     fila = _encabezado(
-        ws, f"{artista} — {p['title']}",
-        f"{p['kind'].upper()} · {p.get('release_year', 's/f')} · "
-        f"UPC {p.get('upc') or '(sin UPC)'} · {p['track_count']} tracks",
+        ws, f"{artista}: {p['title']}",
+        f"{p['kind'].upper()}, {p.get('release_year', 's/f')}, "
+        f"UPC {p.get('upc') or '(sin UPC)'}, {p['track_count']} tracks",
     )
     _filas_producto(ws, fila, p)
     buf = BytesIO()
@@ -245,7 +245,7 @@ def reporte_texto(productos, artista, entorno=None, con_tidal=False):
     ref = [t for t in tracks if t.get("audio_path") and t not in aptos]
     sin_audio = [t for t in tracks if not t.get("audio_path")]
 
-    L.append(f"REPORTE DE MIGRACIÓN — {artista}")
+    L.append(f"REPORTE DE MIGRACIÓN: {artista}")
     L.append(f"Generado: {date.today().isoformat()}")
     L.append("=" * 68)
     L.append("")
@@ -269,7 +269,7 @@ def reporte_texto(productos, artista, entorno=None, con_tidal=False):
     elif ref:
         L.append("! Algunos tracks bajaron en AAC y no en FLAC: Tidal no tiene máster")
         L.append("  lossless para esas grabaciones. Están marcados como lossy y NO")
-        L.append("  son aptos para entrega — hay que pedir el máster al sello/artista.")
+        L.append("  son aptos para entrega, hay que pedir el máster al sello/artista.")
         L.append("")
 
     L.append("PENDIENTES POR PRODUCTO")
@@ -288,7 +288,7 @@ def reporte_texto(productos, artista, entorno=None, con_tidal=False):
             # otra fuente o si el video simplemente ya no está.
             for t in sin:
                 if t.get("audio_error"):
-                    faltas.append(f"    · {t.get('track', '')[:40]}: {t['audio_error']}")
+                    faltas.append(f"   , {t.get('track', '')[:40]}: {t['audio_error']}")
         lossy = [t for t in p["tracks"]
                  if t.get("audio_path") and (t.get("audio_format") or "") not in FORMATOS_LOSSLESS]
         if lossy:
@@ -309,8 +309,8 @@ def reporte_texto(productos, artista, entorno=None, con_tidal=False):
     if entorno:
         L.append("")
         L.append("ENTORNO")
-        L.append(f"  ffmpeg: {'sí' if entorno.get('ffmpeg') else 'NO'} · "
-                 f"tiddl: {'sí' if entorno.get('tiddl') else 'NO'} · "
+        L.append(f"  ffmpeg: {'sí' if entorno.get('ffmpeg') else 'NO'}, "
+                 f"tiddl: {'sí' if entorno.get('tiddl') else 'NO'}, "
                  f"yt-dlp: {'sí' if entorno.get('yt_dlp') else 'NO'}")
     return "\n".join(L) + "\n"
 
@@ -351,10 +351,10 @@ salir de fuentes públicas está marcado con <<COMPLETAR>>:
 
   Genre, Language, Explicit, Composer, Publisher, C Line
 
-Esos campos los tiene que llenar el dueño del catálogo — están marcados en vez
+Esos campos los tiene que llenar el dueño del catálogo, están marcados en vez
 de vacíos o inventados justamente para que no pasen desapercibidos.
 
-SOBRE LA CALIDAD DEL AUDIO — LEER ANTES DE ENTREGAR
+SOBRE LA CALIDAD DEL AUDIO: LEER ANTES DE ENTREGAR
 ---------------------------------------------------
 La columna "Fuente / Calidad" de las planillas dice, track por track, de dónde
 salió el audio:
@@ -438,8 +438,8 @@ def build_zip(productos, artista, out_path, entorno=None, con_tidal=False,
                     if t.get("audio_format") not in FORMATOS_LOSSLESS:
                         nombre = f"{n:02d} - {_slug_archivo(t.get('track'))} [REFERENCIA-LOSSY]{ext}"
                     z.write(ruta, f"{carpeta}/{nombre}", compress_type=zipfile.ZIP_STORED)
-            log(f"[zip] {p['folder']}")
+            log(f"Carpeta {p['folder']}")
 
     tam = os.path.getsize(out_path)
-    log(f"[zip] listo: {out_path} ({tam / 1e6:.1f} MB)")
+    log(f"ZIP listo, {tam / 1e6:.1f} MB")
     return out_path, tam

@@ -176,13 +176,13 @@ def filter_products(productos, ids=None, year_from=None, year_to=None,
 
 
 def distributor_options(productos):
-    """Distribuidoras presentes, con su conteo — para armar el filtro en la UI."""
+    """Distribuidoras presentes, con su conteo, para armar el filtro en la UI."""
     c = Counter(p["distributor"] for p in productos if p.get("distributor"))
     return [{"name": n, "count": k} for n, k in c.most_common()]
 
 
 def year_range(productos):
-    """(mín, máx) de años presentes, o (None, None) — para el slider de fechas."""
+    """(mín, máx) de años presentes, o (None, None), para el slider de fechas."""
     años = sorted({int(p["release_year"]) for p in productos if p.get("release_year")})
     return (años[0], años[-1]) if años else (None, None)
 

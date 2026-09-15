@@ -557,11 +557,25 @@ def api_preparar(body):
         job.avance("Preparando", 0.05)
         dir_audio = None
         carpeta = None
+
+        # Las portadas son lo que mas tarda y `preparar` solo escribe un log, asi que
+        # la fraccion se lee de sus propias lineas ("Portada 3 de 10, ..."): entre
+        # 0.05 y 0.85, y el ZIP toma el resto. Sin esto la barra se quedaba en 5 %
+        # durante casi todo el trabajo y saltaba a 90.
+        re_portada = re.compile(r"^Portada (\d+) de (\d+)")
+
+        def avance_preparar(m):
+            mm = re_portada.match(m)
+            if mm and int(mm.group(2)) > 0:
+                job.avance(m, 0.05 + 0.8 * int(mm.group(1)) / int(mm.group(2)))
+            else:
+                job.avance(m)
+
         try:
             _, dir_audio, ent = M.preparar(
                 copias, artista, quiere_planilla=quiere_planilla,
                 quiere_audio=quiere_audio, quiere_portadas=quiere_portadas,
-                tidal_session=ses, log=lambda m: job.avance(m))
+                tidal_session=ses, log=avance_preparar)
             if dir_audio:
                 ESTADO.registrar_temporal(dir_audio)
 
