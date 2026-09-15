@@ -50,5 +50,6 @@
 
   /* Medida de lectura, 65 a 75 caracteres. `ch` mide el cero, que es mas
      ancho que la media: 68ch daban 85 caracteres. */
-  --medida: 58ch;   /* 58 ceros de Geist son unos 72 caracteres reales */
+  --medida: 58ch;
+  --medida-ancha: 76ch;   /* alertas y lecturas a 13 px */   /* 58 ceros de Geist son unos 72 caracteres reales */
 }

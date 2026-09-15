@@ -179,13 +179,14 @@ main > .container > #pantalla > * { padding-bottom: var(--e-6); }
 }
 .header-inner { display: flex; align-items: center; gap: var(--e-4); height: 58px; }
 .header-marca { display: flex; align-items: center; gap: var(--e-3); flex: 0 0 auto; }
+/* El nombre en la misma familia que los titulos, en caja normal: es la marca,
+   no una etiqueta de seccion. */
 .header-title {
-  font-family: var(--mono);
-  font-size: var(--t-micro);
-  font-weight: var(--p-medio);
-  letter-spacing: var(--tracking-mono);
-  text-transform: uppercase;
-  color: var(--texto-2);
+  font-family: var(--display);
+  font-size: var(--t-cuerpo);
+  font-weight: var(--p-semi);
+  letter-spacing: -0.01em;
+  color: var(--texto);
 }
 .header-right { margin-left: auto; display: flex; align-items: center; gap: var(--e-2); }
 .header-version {
@@ -266,32 +267,41 @@ button.step.activo:hover { background: var(--acento); color: var(--sobre-acento)
 .card + .card { margin-top: var(--e-8); }
 
 .card-head { margin-bottom: var(--e-4); }
+.card-head.row { align-items: flex-start; }
+.card-head.row > .btn { margin-top: 6px; }
 .card-head h1 { margin-bottom: var(--e-2); }
 .card-head h2 { margin-bottom: var(--e-2); }
 .card-head p { color: var(--texto-2); font-size: var(--t-cuerpo); max-width: var(--medida); }
 
-/* El bloque de entrada: columna de lectura centrada, sin caja. */
-.card-hero { max-width: var(--ancho-lectura); margin-inline: auto; }
+/* El bloque de entrada: columna de lectura alineada con el resto de la app, no
+   centrada. Cabecera, pie y el paso 2 empiezan en el mismo borde; el titulo no
+   tiene por que saltar de lugar entre un paso y el otro. */
+.card-hero { max-width: var(--ancho-lectura); }
 
 /* La regla con etiqueta. Se aplica al contenedor del bloque. */
 .seccion {
   border-top: 1px solid var(--linea);
   /* Mas aire arriba que abajo: la regla pertenece a lo que viene, no a lo que
      termino. */
-  padding-top: var(--e-3);
-  margin-top: var(--e-10);
+  padding-top: var(--e-4);
+  margin-top: var(--e-8);
 }
+/* El titulo de seccion es un titulo: Archivo 22, caja normal. Las versalitas
+   mono quedan para lo que es dato (cabeceras de tabla, badges, contadores). */
 .seccion-etiqueta {
   display: flex; align-items: baseline; gap: var(--e-3);
+  margin-bottom: var(--e-4);
+}
+.seccion-etiqueta h2 { margin: 0; }
+.seccion-etiqueta .der {
+  margin-left: auto;
   font-family: var(--mono); font-size: var(--t-micro);
   letter-spacing: var(--tracking-mono); text-transform: uppercase;
   color: var(--texto-3);
-  margin-bottom: var(--e-4);
 }
-.seccion-etiqueta .der { margin-left: auto; }
 /* Los avisos del relevamiento son notas, no bloques: van juntos y
    separados del resto. */
-.kpis + .alerta { margin-top: var(--e-6); }
+.card + .alerta { margin-top: var(--e-5); }
 
 /* Un panel de verdad, para lo que sí necesita separarse del fondo. Una sola
    declaración de elevación: cambio de superficie, sin borde. */
@@ -305,37 +315,18 @@ button.step.activo:hover { background: var(--acento); color: var(--sobre-acento)
 .panel + .tabla-wrap { margin-top: var(--e-2); }
 
 /* ---------------------------------------------------------- resumen */
-/* No es la plantilla de métrica. Es una lectura de instrumento: las cifras en
-   una línea, separadas por reglas verticales, del tamaño justo para leerse de
-   un vistazo sin comerse la pantalla. */
+/* La lectura del catalogo es una oracion con las cifras en mono, no una fila
+   de cinco numeros grandes con etiqueta chica (la plantilla de metrica que
+   DESIGN.md prohibe). Se lee una vez; despues lo que importa esta en la tabla. */
 
-.kpis {
-  margin-top: var(--e-5);
-  display: flex; flex-wrap: wrap;
-  border-radius: var(--r-panel);
-  background: var(--panel);
-  overflow: hidden;
+.lectura {
+  margin-top: var(--e-3);
+  font-size: var(--t-cuerpo); line-height: var(--i-cuerpo);
+  color: var(--texto-2); max-width: var(--medida-ancha);
 }
-.kpi {
-  flex: 1 1 140px; min-width: 0;
-  padding: var(--e-3) var(--e-4);
-  border-left: 1px solid var(--linea);
-}
-.kpi:first-child { border-left: none; }
-.kpi-label {
-  font-family: var(--mono); font-size: var(--t-micro);
-  letter-spacing: var(--tracking-mono); text-transform: uppercase;
-  color: var(--texto-3);
-  margin-bottom: var(--e-1);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.kpi-valor {
-  font-family: var(--mono); font-size: var(--t-metrica);
-  line-height: 1.05; font-weight: var(--p-medio);
-  color: var(--texto);
-}
-.kpi-valor.negativo { color: var(--negativo); }
-.kpi-sub { font-size: var(--t-ui); color: var(--texto-3); font-weight: var(--p-regular); }
+.lectura .n { font-family: var(--mono); color: var(--texto); font-weight: var(--p-medio); }
+.lectura .n.negativo { color: var(--negativo); }
+.lectura .n.atencion { color: var(--atencion); }
 
 /* ---------------------------------------------------------- botones */
 
@@ -376,9 +367,8 @@ button.step.activo:hover { background: var(--acento); color: var(--sobre-acento)
 
 .field { display: flex; flex-direction: column; gap: var(--e-2); }
 .field label {
-  font-family: var(--mono); font-size: var(--t-micro);
-  letter-spacing: var(--tracking-mono); text-transform: uppercase;
-  color: var(--texto-3);
+  font-size: var(--t-ui); font-weight: var(--p-medio);
+  color: var(--texto-2);
 }
 .field .hint { font-size: var(--t-micro); color: var(--texto-2); }
 
@@ -519,11 +509,13 @@ button.step.activo:hover { background: var(--acento); color: var(--sobre-acento)
    y todo lo demas se aparta. Reglas finas, sin cebrado; la tabla vive sobre su
    propia superficie con el radio de panel, como los demas bloques. */
 
+/* Sin alto maximo: el scroll lo da main, y la cabecera sigue pegada porque el
+   ancestro con scroll es main. Un scroll adentro de otro scroll era lo peor de
+   la pantalla con un catalogo real. */
 .tabla-wrap {
   background: var(--panel);
   border-radius: var(--r-panel);
-  overflow: auto;
-  max-height: 58vh;
+  overflow-x: auto;
 }
 table.tabla {
   width: 100%; border-collapse: separate; border-spacing: 0;
@@ -570,7 +562,6 @@ tbody .td-check::before {
   margin-right: var(--e-2);
   font-variant-numeric: tabular-nums;
 }
-tr.elegida .td-check::before { color: var(--acento-fuerte); }
 /* La casilla mide 15, pero el area que responde al dedo es de 31. */
 .td-check .check { vertical-align: middle; padding: var(--e-2); margin: calc(var(--e-2) * -1); }
 
@@ -578,6 +569,9 @@ tr.elegida .td-check::before { color: var(--acento-fuerte); }
 .td-num { text-align: right; font-family: var(--mono); }
 .celda-titulo { color: var(--texto); font-weight: var(--p-medio); }
 .celda-sub { font-size: var(--t-micro); color: var(--texto-3); margin-top: 1px; }
+/* El tipo de producto es un dato, no un estado: mono chico sin borde. */
+.tipo { font-family: var(--mono); font-size: var(--t-micro); letter-spacing: var(--tracking-mono); text-transform: uppercase; color: var(--texto-3); }
+.leyenda { margin-top: var(--e-3); font-size: var(--t-micro); color: var(--texto-3); }
 
 .btn-expandir {
   display: inline-flex; align-items: center; justify-content: center;
@@ -622,7 +616,7 @@ table.sub td {
 }
 .alerta + .alerta { margin-top: var(--e-3); }
 .alerta + .card { margin-top: var(--e-6); }
-.alerta > div { min-width: 0; }
+.alerta > div { min-width: 0; max-width: var(--medida-ancha); }
 .alerta-icono { color: var(--acento-fuerte); padding-top: 1px; }
 .alerta strong { color: var(--texto); font-weight: var(--p-medio); }
 .alerta ol, .alerta ul { margin: var(--e-2) 0 0; padding-left: var(--e-5); line-height: 1.7; }
@@ -659,7 +653,7 @@ table.sub td {
 }
 .log {
   margin-top: var(--e-3);
-  max-height: 180px; overflow-y: auto;
+  min-height: 200px; max-height: calc(100vh - 380px); overflow-y: auto;
   background: var(--panel); color: var(--texto-2);
   border-radius: var(--r-panel);
   padding: var(--e-3);
@@ -703,12 +697,20 @@ table.sub td {
 details.acordeon { border-top: 1px solid var(--linea); }
 details.acordeon > summary {
   cursor: pointer; padding: var(--e-3) 0;
-  font-family: var(--mono); font-size: var(--t-micro);
-  letter-spacing: var(--tracking-mono); text-transform: uppercase;
-  color: var(--texto-2);
+  font-size: var(--t-ui); font-weight: var(--p-medio);
+  color: var(--texto);
   display: flex; align-items: center; gap: var(--e-2);
   list-style: none;
 }
+details.acordeon > summary .cuenta {
+  font-family: var(--mono); font-size: var(--t-micro); font-weight: var(--p-regular);
+  color: var(--texto-3);
+}
+details.acordeon > summary .cuenta.negativo { color: var(--negativo); }
+.hallazgo-mensaje { color: var(--texto-2); max-width: var(--medida); margin-bottom: var(--e-3); }
+.lista-hallazgos { margin: 0; padding: 0; list-style: none; columns: 2; column-gap: var(--e-6); }
+.lista-hallazgos li { padding: 3px 0; break-inside: avoid; font-size: var(--t-ui); color: var(--texto); }
+.lista-hallazgos li .muted { color: var(--texto-3); }
 details.acordeon > summary::-webkit-details-marker { display: none; }
 details.acordeon > summary .ico { color: var(--texto-3); transition: transform var(--m-rapido); }
 details.acordeon[open] > summary .ico { transform: rotate(90deg); }
@@ -733,21 +735,22 @@ details.acordeon > summary:hover { color: var(--texto); }
 }
 .footer-inner { display: flex; gap: var(--e-4); flex-wrap: wrap; align-items: center; }
 .footer a, .link-pie { color: var(--texto-2); text-decoration: none; }
-.link-pie { background: none; border: none; padding: 0; font: inherit; cursor: pointer; }
+.link-pie, .link-inline { background: none; border: none; padding: 0; font: inherit; cursor: pointer; }
+.link-inline { color: var(--texto-acento); text-decoration: underline; text-underline-offset: 3px; }
 .footer a:hover, .link-pie:hover { color: var(--texto-acento); }
 .footer .der { margin-left: auto; }
+.footer .header-version { color: var(--texto-3); }
 
 /* ---------------------------------------------------------- documento largo */
 
-.doc { max-width: var(--ancho-lectura); margin-inline: auto; }
+.doc { max-width: var(--ancho-lectura); }
 .doc-head { display: flex; align-items: center; gap: var(--e-4); margin-bottom: var(--e-4); }
 .doc-head h2 { margin: 0; }
 .doc h4 {
   margin: var(--e-6) 0 var(--e-2);
-  font-family: var(--mono); font-size: var(--t-micro);
-  letter-spacing: var(--tracking-mono); text-transform: uppercase;
-  color: var(--texto-3); font-weight: var(--p-medio);
-  border-top: 1px solid var(--linea); padding-top: var(--e-3);
+  font-family: var(--sans); font-size: var(--t-bloque);
+  color: var(--texto); font-weight: var(--p-semi);
+  border-top: 1px solid var(--linea); padding-top: var(--e-4);
 }
 .doc p, .doc li {
   color: var(--texto-2); font-size: var(--t-cuerpo);

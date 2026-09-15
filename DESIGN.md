@@ -18,9 +18,10 @@ Esta versión la trata como **un instrumento de medición**. Quien la usa está
 inventariando: cuenta, compara, marca lo que falta. El diseño lo dice con tres
 gestos, y ninguno es decorativo.
 
-**La regla.** Una línea de 1 px separa las secciones, y la etiqueta de la
-sección se apoya sobre la regla en mono, como en un plano. Reemplaza a la
-tarjeta: no hay contenedor, hay estructura.
+**La regla.** Una línea de 1 px separa las secciones, y el título de la
+sección se apoya sobre la regla en Archivo, en caja normal. Reemplaza a la
+tarjeta: no hay contenedor, hay estructura. Las versalitas en mono quedan
+para lo que es dato: cabeceras de tabla, badges y contadores.
 
 **La escala.** El borde izquierdo de los bloques de datos lleva marcas de
 registro numeradas en mono, como el eje de un gráfico o el margen de una regla.
@@ -87,11 +88,10 @@ evidente.
 |---|---|---|
 | Título de vista | 42 px | Archivo 700 |
 | Sección | 22 px | Archivo 600 |
-| Etiqueta de sección sobre la regla | 11 px | Geist Mono 500, versalitas |
+| Contador junto al título de sección | 11 px | Geist Mono 500, versalitas |
 | Cuerpo | 14 px | Geist |
 | Interfaz y tabla | 13 px | Geist |
 | Dato y código | 13 px | Geist Mono, tabular |
-| Métrica | 28 px | Geist Mono 500 |
 | Micro | 11 px | Geist Mono |
 
 Medida de lectura de 65 a 75 caracteres en texto corrido. Fuera de eso, el ancho

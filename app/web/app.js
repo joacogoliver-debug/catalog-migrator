@@ -550,13 +550,9 @@ function avisoClaveIncluida() {
   if (!S.config || !S.config.clave_incluida) return '';
   // Con el error de cupo a la vista ya hay un boton para cargar la clave propia.
   if (S.error && (S.errorCodigo === 'cuota' || S.errorCodigo === 'clave')) return '';
-  return alerta('', 'info', `
-    Esta copia trae una clave de YouTube ya configurada, así que no hace falta
-    cargar ninguna. El cupo diario es compartido entre todos los que usen esta
-    misma versión, y alcanza para unos 500 catálogos por día.
-    <div class="row mt-3">
-      <button class="btn btn-ghost btn-sm" data-accion="ver-clave">Prefiero usar mi propia clave</button>
-    </div>`);
+  // Una linea y un link: quien no tiene problema no necesita un bloque entero.
+  return `<p class="small muted mt-5">Esta copia trae una clave de YouTube compartida, con cupo para unos 500 catálogos por día entre todos.
+    <button type="button" class="link-inline" data-accion="ver-clave">Prefiero usar la mía</button></p>`;
 }
 
 function vistaPaso1() {
@@ -680,15 +676,6 @@ function avisoCanal() {
   return partes.join('');
 }
 
-/** Una métrica con su barra de acento arriba del número (§7). */
-function kpi(label, valor, sub, negativo) {
-  return `
-    <div class="kpi">
-      <div class="kpi-label">${esc(label)}</div>
-      <div class="kpi-valor${negativo ? ' negativo' : ''}">${valor}${sub !== undefined && sub !== '' ? `<span class="kpi-sub"> / ${sub}</span>` : ''}</div>
-    </div>`;
-}
-
 function vistaPaso2() {
   const c = S.catalogo;
   const ps = productosFiltrados();
@@ -702,16 +689,15 @@ function vistaPaso2() {
         <div class="grow">
           <h1>${esc(c.artista)}</h1>
           <p>Catálogo relevado. Los datos salen de YouTube, Deezer y Apple.</p>
+          <p class="lectura">
+            <span class="n">${num(r.products)}</span> producto${r.products === 1 ? '' : 's'} y
+            <span class="n">${num(r.tracks)}</span> tracks, con
+            <span class="n">${num(r.views)}</span> reproducciones.
+            UPC en <span class="n${r.with_upc < r.products ? ' atencion' : ''}">${r.with_upc} de ${r.products}</span> productos,
+            ISRC en <span class="n${r.with_isrc < r.tracks ? ' atencion' : ''}">${r.with_isrc} de ${r.tracks}</span> tracks.
+          </p>
         </div>
         <button class="btn btn-ghost" data-accion="volver-1">Relevar otro artista</button>
-      </div>
-
-      <div class="kpis">
-        ${kpi('Productos', num(r.products))}
-        ${kpi('Tracks', num(r.tracks))}
-        ${kpi('Con UPC', r.with_upc, r.products)}
-        ${kpi('Con ISRC', r.with_isrc, r.tracks)}
-        ${kpi('Reproducciones', num(r.views))}
       </div>
     </div>
 
@@ -719,14 +705,14 @@ function vistaPaso2() {
 
     <div class="seccion">
       <div class="seccion-etiqueta">
-        <span>Productos del catálogo</span>
-        <span class="der">${ps.length} de ${c.productos.length}</span>
+        <h2>Productos</h2>
+        <span class="der">Mostrando ${ps.length} de ${c.productos.length}</span>
       </div>
 
       <div class="row row-wrap mb-4">
-        <div class="segmented" role="group" aria-label="Modo de selección">
-          <button class="${S.filtro.modo === 'manual' ? 'activo' : ''}" aria-pressed="${S.filtro.modo === 'manual'}" data-modo="manual">Uno por uno</button>
-          <button class="${S.filtro.modo === 'fechas' ? 'activo' : ''}" aria-pressed="${S.filtro.modo === 'fechas'}" data-modo="fechas">Por fecha</button>
+        <div class="segmented" role="group" aria-label="Filtro">
+          <button class="${S.filtro.modo === 'manual' ? 'activo' : ''}" aria-pressed="${S.filtro.modo === 'manual'}" data-modo="manual">Todos</button>
+          <button class="${S.filtro.modo === 'fechas' ? 'activo' : ''}" aria-pressed="${S.filtro.modo === 'fechas'}" data-modo="fechas">Por año</button>
           <button class="${S.filtro.modo === 'distribuidora' ? 'activo' : ''}" aria-pressed="${S.filtro.modo === 'distribuidora'}" data-modo="distribuidora">Por distribuidora</button>
         </div>
         <div class="grow buscador">
@@ -742,7 +728,8 @@ function vistaPaso2() {
           <h4>Ningún producto coincide con el filtro</h4>
           <p>Probá ampliar el rango de años o limpiar la búsqueda.</p>
           <button class="btn btn-primary" data-accion="limpiar-filtro">Limpiar el filtro</button>
-        </div>` : tablaProductos(ps)}
+        </div>` : tablaProductos(ps) + `
+        <p class="leyenda">Lo que falta se completa en la distribuidora nueva: la app no inventa códigos ni orden.</p>`}
     </div>
 
     <div class="barra-accion">
@@ -845,10 +832,10 @@ function tablaProductos(ps) {
         <div class="celda-titulo">${esc(p.titulo)}</div>
         <div class="celda-sub">${p.tracks} track${p.tracks === 1 ? '' : 's'}${p.sello ? ', ' + esc(p.sello) : ''}</div>
       </td>
-      <td data-col="Tipo"><span class="badge badge-accent">${esc(p.tipo)}</span></td>
+      <td data-col="Tipo"><span class="tipo">${esc(p.tipo)}</span></td>
       <td data-col="Año" class="nowrap mono">${esc(p.anio) || '<span class="muted">sin fecha</span>'}</td>
       <td data-col="UPC" class="mono">${p.upc ? esc(p.upc) : '<span class="muted">sin UPC</span>'}</td>
-      <td data-col="Pendientes"><span class="badges">${avisos.join('') || '<span class="badge badge-ok">completo</span>'}</span></td>
+      <td data-col="Faltantes"><span class="badges">${avisos.join('') || '<span class="badge badge-ok">completo</span>'}</span></td>
     </tr>${detalle}`;
   }).join('');
 
@@ -860,7 +847,7 @@ function tablaProductos(ps) {
           ${todos ? 'checked' : ''} ${!todos && algunos ? 'data-indeterminado="1"' : ''} />
           <span class="sr">Marcar todos los productos del filtro</span></label></th>
         <th scope="col" class="td-exp"></th>
-        <th scope="col">Producto</th><th scope="col">Tipo</th><th scope="col">Año</th><th scope="col">UPC</th><th scope="col">Pendientes</th>
+        <th scope="col">Producto</th><th scope="col">Tipo</th><th scope="col">Año</th><th scope="col">UPC</th><th scope="col">Faltantes</th>
       </tr></thead>
       <tbody>${filas}</tbody>
     </table>
@@ -886,7 +873,7 @@ function vistaPaso3() {
            ${sel.reduce((a, p) => a + p.tracks, 0)} tracks.</p>
       </div>
 
-      <div class="seccion-etiqueta"><span>Contenido del paquete</span></div>
+      <div class="seccion-etiqueta"><h2>Contenido del paquete</h2></div>
 
       <div class="opciones">
         ${opcion('planilla', 'planilla', o.planilla, false, 'Planilla y validación',
@@ -1012,19 +999,14 @@ function vistaPaso4() {
     <div class="card">
       <div class="card-head">
         <h1>Tu paquete está listo</h1>
-        <p>${r.productos} producto${r.productos === 1 ? '' : 's'} en <span class="mono">${esc(r.archivo)}</span>, ${pesoLegible(r.bytes)}.</p>
+        <p><span class="mono">${esc(r.archivo)}</span>, ${pesoLegible(r.bytes)}.</p>
+        <p class="lectura">
+          <span class="n">${num(r.productos)}</span> producto${r.productos === 1 ? '' : 's'},
+          portadas para <span class="n${r.portadas < r.productos ? ' atencion' : ''}">${r.portadas} de ${r.productos}</span>.
+          La validación encontró <span class="n${v.resumen.errores ? ' negativo' : ''}">${v.resumen.errores} error${v.resumen.errores === 1 ? '' : 'es'}</span>
+          y <span class="n${v.resumen.avisos ? ' atencion' : ''}">${v.resumen.avisos} aviso${v.resumen.avisos === 1 ? '' : 's'}</span>.
+        </p>
       </div>
-
-      <div class="kpis mb-5">
-        ${kpi('Productos', num(r.productos))}
-        ${kpi('Portadas', r.portadas, r.productos)}
-        ${kpi('Errores', v.resumen.errores, '', v.resumen.errores > 0)}
-        ${kpi('Avisos', v.resumen.avisos)}
-      </div>
-
-      <a class="btn btn-primary btn-lg" href="${esc(r.descarga)}" download>
-        ${ico('descargar')} Descargar el paquete (${pesoLegible(r.bytes)})
-      </a>
     </div>
 
     ${panelValidacion(v)}
@@ -1032,12 +1014,30 @@ function vistaPaso4() {
     <div class="barra-accion">
       <div class="resumen">El ZIP queda disponible mientras la app esté abierta.</div>
       <div class="acciones">
-        <button class="btn btn-secondary" data-accion="volver-2">Elegir otros productos</button>
         <button class="btn btn-ghost" data-accion="volver-1">Relevar otro artista</button>
+        <button class="btn btn-secondary" data-accion="volver-2">Elegir otros productos</button>
+        <a class="btn btn-primary" href="${esc(r.descarga)}" download>
+          ${ico('descargar')} Descargar el paquete (${pesoLegible(r.bytes)})
+        </a>
       </div>
     </div>
   </div>`;
 }
+
+/* Titulo corto por codigo de hallazgo, para la cabecera de cada grupo. Si un
+   codigo no esta, se usa el mensaje del primero. */
+const TITULOS_HALLAZGO = {
+  upc_falta: 'Sin UPC', isrc_falta: 'Sin ISRC', sello_falta: 'Sin sello',
+  anio_falta: 'Sin año de lanzamiento', orden_sin_confirmar: 'Orden de tracks estimado',
+  portada_falta: 'Sin portada', portada_bajo_recomendado: 'Portada por debajo del recomendado',
+  portada_chica: 'Portada por debajo del mínimo', portada_no_cuadrada: 'Portada no cuadrada',
+  portada_cmyk: 'Portada en CMYK', portada_ilegible: 'Portada ilegible',
+  titulo_con_ruido: 'Título con texto de YouTube', duracion_larga: 'Duración sospechosa',
+  duracion_falta: 'Sin duración', isrc_invalido: 'ISRC inválido', upc_invalido: 'UPC inválido',
+  isrc_duplicado: 'ISRC repetido', upc_duplicado: 'UPC repetido', anio_futuro: 'Año en el futuro',
+  anio_absurdo: 'Año imposible', anio_invalido: 'Año no numérico', producto_sin_titulo: 'Producto sin título',
+  track_sin_titulo: 'Track sin título',
+};
 
 function panelValidacion(v) {
   if (v.apto && !v.resumen.avisos) {
@@ -1053,34 +1053,46 @@ function panelValidacion(v) {
         <span class="mono">_Validacion pre-entrega.txt</span>, dentro del ZIP.`)
     : alerta('ok', 'ok', `<strong>Sin errores de rechazo.</strong> Hay ${avisos.length} aviso${avisos.length === 1 ? '' : 's'} para revisar.`);
 
-  const grupo = (lista, titulo, abierto) => !lista.length ? '' : `
+  // Agrupados por tipo de hallazgo: 41 filas de "sin ISRC" no se leen; "Sin
+  // ISRC, 30 tracks en 8 productos" si, y adentro esta cada uno.
+  const porTipo = (lista) => {
+    const m = new Map();
+    lista.forEach((h) => {
+      if (!m.has(h.codigo)) m.set(h.codigo, { codigo: h.codigo, items: [] });
+      m.get(h.codigo).items.push(h);
+    });
+    return [...m.values()];
+  };
+  const cuenta = (g) => {
+    const prods = new Set(g.items.map((h) => h.producto)).size;
+    const tracks = g.items.filter((h) => h.track).length;
+    if (tracks && tracks === g.items.length) return `${tracks} track${tracks === 1 ? '' : 's'} en ${prods} producto${prods === 1 ? '' : 's'}`;
+    return `${prods} producto${prods === 1 ? '' : 's'}`;
+  };
+  const grupo = (lista, nivel, abierto) => porTipo(lista).map((g) => {
+    const mensajes = new Set(g.items.map((h) => h.mensaje));
+    return `
     <details class="acordeon" ${abierto ? 'open' : ''}>
-      <summary>${ico('flecha', 'ico-sm')}${titulo}, ${lista.length} en total</summary>
+      <summary>${ico('flecha', 'ico-sm')}${esc(TITULOS_HALLAZGO[g.codigo] || g.items[0].mensaje)}
+        <span class="cuenta${nivel === 'error' ? ' negativo' : ''}">${cuenta(g)}</span></summary>
       <div class="acordeon-body">
-        <div class="tabla-wrap" style="max-height:340px">
-          <table class="tabla">
-            <thead><tr><th scope="col">Producto</th><th scope="col">Track</th><th scope="col">Qué pasa</th></tr></thead>
-            <tbody>${lista.map((h) => `
-              <tr>
-                <td data-col="Producto">${esc(h.producto)}</td>
-                <td data-col="Track">${h.track ? esc(h.track) : '<span class="muted">todo el producto</span>'}</td>
-                <td data-col="Qué pasa">${esc(h.mensaje)}</td>
-              </tr>`).join('')}
-            </tbody>
-          </table>
-        </div>
+        ${mensajes.size === 1 ? `<p class="hallazgo-mensaje">${esc(g.items[0].mensaje)}</p>` : ''}
+        <ul class="lista-hallazgos">${g.items.map((h) => `
+          <li><strong>${esc(h.producto)}</strong>${h.track ? ` <span class="muted">${esc(h.track)}</span>` : ''}${mensajes.size > 1 ? `<div class="muted">${esc(h.mensaje)}</div>` : ''}</li>`).join('')}
+        </ul>
       </div>
     </details>`;
+  }).join('');
 
   return `<div class="seccion">
     <div class="seccion-etiqueta">
-      <span>Validación previa</span>
+      <h2>Validación previa</h2>
       <span class="der">${v.resumen.errores} error${v.resumen.errores === 1 ? '' : 'es'}, ${v.resumen.avisos} aviso${v.resumen.avisos === 1 ? '' : 's'}</span>
     </div>
     ${cabecera}
     <div class="mt-4">
-      ${grupo(errores, 'Errores', true)}
-      ${grupo(avisos, 'Avisos', false)}
+      ${grupo(errores, 'error', true)}
+      ${grupo(avisos, 'aviso', false)}
     </div>
   </div>`;
 }

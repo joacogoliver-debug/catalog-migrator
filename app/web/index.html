@@ -9,8 +9,9 @@
      token, /api/ responde 403. Ver la nota de seguridad en app/server.py. -->
 <meta name="app-token" content="{{TOKEN}}" />
 <!-- El tema se decide antes de pintar: si esperara a app.js, al final del body,
-     el primer frame en modo claro saldria oscuro. -->
-<script>try{if(localStorage.getItem('tema')==='claro')document.documentElement.setAttribute('data-theme','claro')}catch(e){}</script>
+     el primer frame en modo claro saldria oscuro. Va en un archivo y no inline
+     porque la CSP no permite scripts inline. -->
+<script src="tema.js"></script>
 <link rel="stylesheet" href="app.css" />
 <link rel="icon" href="assets/icono.png" />
 </head>
@@ -26,7 +27,6 @@
       </span>
       <nav class="stepper" id="stepper" aria-label="Pasos"></nav>
       <div class="header-right">
-        <span class="header-version" id="version"></span>
         <button type="button" class="btn-icono" id="btn-tema"
                 data-accion="cambiar-tema" title="Cambiar entre claro y oscuro">
           <span class="sr">Cambiar entre claro y oscuro</span>
@@ -48,6 +48,7 @@
       </span>
       <button type="button" class="link-pie" data-accion="ver-terminos">Términos de uso</button>
       <span class="der" id="pie-estado"></span>
+      <span class="header-version" id="version"></span>
     </div>
   </footer>
   </div>
