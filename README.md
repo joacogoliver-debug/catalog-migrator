@@ -307,8 +307,8 @@ Sin frameworks ni build step, para que empaquetar sea copiar archivos:
 
 - **Frontend**: JavaScript vanilla y CSS sobre los tokens de `app/web/tokens/`,
   que siguen a [DESIGN.md](DESIGN.md). Nada de CDN, ni siquiera para las
-  tipografías: los cuatro `.woff2` viajan adentro, así la app se ve igual sin
-  internet.
+  tipografías: los tres `.woff2` viajan adentro (56 KB en total), así la app se
+  ve igual sin internet.
 - **Trabajos largos** (relevar, empaquetar) corren en hilos con progreso y
   cancelación; el frontend consulta el estado cada 400 ms.
 
@@ -319,7 +319,7 @@ Sin frameworks ni build step, para que empaquetar sea copiar archivos:
 | `app/jobs.py` | Trabajos en segundo plano con progreso y cancelación |
 | `app/web/` | La interfaz (html, css, js) |
 | `app/web/tokens/` | Paleta, tipografía, espaciado y forma |
-| `app/web/fonts/` | Archivo, Geist y Geist Mono, hospedadas localmente |
+| `app/web/fonts/` | Public Sans y DM Mono, hospedadas localmente |
 | `docs/marca/` | El logotipo, tal como vino del estudio |
 | `migrar_core.py` | Orquesta los 4 pasos |
 | `relevar_core.py` | Relevamiento de YouTube + ISRC/UPC por Deezer |
@@ -369,9 +369,13 @@ para verificar que el núcleo no dependa de ellos.
   [`fchavonet/full_stack-itunes_artwork_finder`](https://github.com/fchavonet/full_stack-itunes_artwork_finder).
 - El módulo opcional de audio lossless usa
   [`oskvr37/tiddl`](https://github.com/oskvr37/tiddl) (Apache 2.0) como librería.
-- Tipografías [Archivo](https://github.com/Omnibus-Type/Archivo) y
-  [Geist](https://github.com/vercel/geist-font), las dos bajo SIL Open Font
+- Tipografías [Public Sans](https://github.com/uswds/public-sans) y
+  [DM Mono](https://github.com/googlefonts/dm-mono), las dos bajo SIL Open Font
   License 1.1.
+- Los iconos de la interfaz son trazados a mano a partir de
+  [Lucide](https://lucide.dev) (licencia ISC). La app declara una CSP que no
+  permite pedir nada afuera, así que una librería por CDN estaba descartada y
+  traer una entera por trece glifos no se justificaba.
 - La variante completa incluye [FFmpeg](https://ffmpeg.org) (GPLv3), sin
   modificar y como programa separado.
 

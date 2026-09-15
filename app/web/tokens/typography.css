@@ -1,55 +1,55 @@
 /* ============================================================
-   Tipografía : DESIGN.md §4.
+   Tipografía, DESIGN.md §4.
 
-   Archivo para titulares. Geist para interfaz y cuerpo. Geist Mono para todo lo
-   que se cuenta o se compara: ISRC, UPC, años, duraciones, cantidades, y las
-   etiquetas de sección que se apoyan sobre la regla.
+   Public Sans para todo lo que se lee, DM Mono para todo lo que se cuenta o se
+   compara en columna: ISRC, UPC, años, duraciones, cantidades, y las etiquetas
+   que se apoyan en el borde de la pantalla.
 
-   El mono no está de disfraz. Son datos, son la mitad de la pantalla, y
-   tratarlos como texto corrido era el error de la versión anterior.
+   El titular es grande y liviano. Ese contraste, peso 300 a 44 px contra
+   interfaz de 14 en peso 400, es lo que arma la jerarquía: no hace falta
+   gritar con negritas si la escala ya lo dice.
 
-   La escala se aprieta: la interfaz baja a 13 px porque la densidad es el
-   punto, y el título de vista sube, para que el contraste entre lo que se lee
-   una vez y lo que se escanea mil sea evidente.
+   El mono en versalitas con tracking ancho no es decoración. Es lo que ancla
+   las etiquetas al borde y lo que hace que un ISRC se pueda comparar de un
+   renglón al otro sin leerlo entero.
    ============================================================ */
 
 :root {
-  --display: 'Archivo', system-ui, sans-serif;
-  --sans:    'Geist', system-ui, sans-serif;
-  --mono:    'Geist Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  --sans:    'Public Sans', system-ui, -apple-system, sans-serif;
+  --display: 'Public Sans', system-ui, -apple-system, sans-serif;
+  --mono:    'DM Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
 
   /* ---- Escala ---- */
-  --t-vista:   42px;   /* título de vista */
-  --t-seccion: 22px;   /* sección, Archivo 600 */
-  --t-bloque:  16px;   /* título de bloque, Geist 600 */
-  --t-cuerpo:  14px;   /* texto corrido */
-  --t-ui:      13px;   /* interfaz, tabla, controles */
+  --t-vista:   44px;   /* título de vista, peso 300 */
+  --t-seccion: 15px;   /* título de sección, en la banda de la tarjeta */
+  --t-bloque:  15px;
+  --t-cuerpo:  14px;
+  --t-ui:      14px;
   --t-dato:    13px;   /* mono */
-  --t-micro:   11px;   /* etiquetas de sección, badges, metadatos */
-  --t-metrica: 28px;   /* cifra de resumen, mono */
+  --t-micro:   11px;   /* etiquetas mono, badges */
+  --t-nano:    10px;   /* etiquetas de borde y numeración de fila */
 
   /* ---- Interlineados ---- */
-  --i-vista:   1.0;
-  --i-seccion: 1.12;
+  --i-vista:   1.1;
+  --i-seccion: 1.3;
   --i-cuerpo:  1.6;
   --i-ui:      1.45;
-  --i-apretado:1.2;
-  --i-micro:   1.5;    /* etiquetas y textos de 11 px */
+  --i-micro:   1.5;
+  --i-apretado: 1.2;
 
+  --p-liviano: 300;
   --p-regular: 400;
   --p-medio:   500;
   --p-semi:    600;
   --p-bold:    700;
 
-  /* Sólo en display, de 30 px para arriba. El piso es -0.04em; -0.03 lee mejor. */
-  --tracking-display: -0.04em;
-  /* Para la seccion (22 px), que queda por debajo del piso de 30. */
-  --tracking-seccion: -0.02em;
-  /* Las etiquetas en mono necesitan lo contrario: un poco de aire. */
-  --tracking-mono: 0.06em;
+  /* Negativo sólo en el titular, que es lo único grande. */
+  --tracking-display: -0.02em;
+  --tracking-seccion: 0;
+  /* Las etiquetas en mono necesitan lo contrario, y bastante: es lo que las
+     convierte en una marca de borde y no en texto chico. */
+  --tracking-mono: 0.14em;
 
-  /* Medida de lectura, 65 a 75 caracteres. `ch` mide el cero, que es mas
-     ancho que la media: 68ch daban 85 caracteres. */
-  --medida: 58ch;
-  --medida-ancha: 76ch;   /* alertas y lecturas a 13 px */   /* 58 ceros de Geist son unos 72 caracteres reales */
+  --medida: 62ch;
+  --medida-ancha: 80ch;
 }

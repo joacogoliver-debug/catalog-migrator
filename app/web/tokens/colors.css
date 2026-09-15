@@ -1,18 +1,21 @@
 /* ============================================================
-   Paleta : DESIGN.md §3 y §6.
+   Paleta, DESIGN.md §3.
 
-   De la marca quedan tres colores y nada más: grafito, hueso y la rampa teal.
-   Los neutrales son grises de temperatura cálida para que no se vean sucios al
-   lado del hueso.
+   De la marca quedan tres cosas y nada más: grafito, hueso y la rampa teal.
+   Lo que cambió es cómo se usan. El lienzo es grafito bajado casi a negro, y
+   las superficies de la app SON el grafito: la tarjeta principal de cada
+   pantalla es literalmente el color de la marca, no un gris prestado.
 
-   El oscuro es el modo por defecto y el que se diseña primero: sale de la
-   escena de uso, no de la categoría. Por eso los roles se definen en :root con
-   los valores oscuros, y el claro es el que se declara aparte.
+   Tres reglas que el resto del CSS da por sentadas:
 
-   Dos reglas que el resto del CSS da por sentadas:
-     - el teal es el único acento, y marca lo accionable o lo seleccionado;
-     - los semánticos son borde y texto, no relleno. El tinte suave existe sólo
-       para el bloque de alerta.
+     - las superficies no se separan por escalón de gris sino por un borde de
+       un píxel a muy baja opacidad, que es lo que deja al negro ser negro;
+     - el teal es el único acento, y marca lo accionable o lo que está en curso;
+     - los estados son un relleno oscuro teñido con el texto saturado encima,
+       del mismo tono. Nunca un borde de color.
+
+   Todo lo que lleva texto se midió: el peor par de la interfaz da 4.9 en
+   oscuro y 4.6 en claro, los dos por encima del mínimo AA.
    ============================================================ */
 
 :root {
@@ -46,82 +49,82 @@
   --neutral-900: #141414;
 
   /* ============================================================
-     Roles : modo oscuro, el de por defecto.
-
-     Las cuatro superficies están muy cerca entre sí, dos o tres puntos de
-     luminosidad: lo justo para que se lean como capas y no como bloques
-     distintos pegados uno al lado del otro.
+     Roles: modo oscuro, el de por defecto.
      ============================================================ */
 
-  /* El lienzo es lo que queda detras de la app. La app no lo toca: flota
-     encima, con radio y margen. Es lo que hace que se lea como un programa y
-     no como una pagina. */
-  --lienzo:     #050707;   /* casi negro: la app flota encima sin caer en el #000 */
-  --fondo:      #121617;   /* la superficie de la app */
-  --panel:      #1A1F1F;
-  --panel-alto: #222827;
-  --flotante:   #2A3130;
+  /* El lienzo es el grafito bajado, no un negro neutro: el mundo de la app es
+     cálido y el fondo también. */
+  --lienzo:     #0A0A09;
+  --fondo:      #0A0A09;   /* la app no se despega del lienzo: es el lienzo */
+  --panel:      var(--grafito);
+  --panel-alto: #1E1D1C;
+  --flotante:   #1E1D1C;
 
-  --texto:        #F2EFEA;
-  --texto-2:      #A9ADAC;
-  --texto-3:      #898F8E;   /* medido: 4.56 sobre panel-alto, que es la fila en hover */
-  --texto-acento: #67ACAB;
+  /* Un píxel a baja opacidad en vez de un escalón de gris. */
+  --borde:       rgba(245, 242, 237, .10);
+  --borde-suave: rgba(245, 242, 237, .05);
 
-  --linea:        #232828;   /* reglas y divisores internos */
-  --linea-fuerte: #4A5352;   /* bordes de control: 3:1 sobre el fondo, lo que pide WCAG 1.4.11 */
-  --foco:         #5DA09E;
+  --texto:        var(--hueso);          /* 16.5 sobre la peor superficie */
+  --texto-2:      var(--neutral-300);    /* 7.9 */
+  --texto-3:      var(--neutral-400);    /* 5.4; el 500 daba 3.6 y quedó afuera */
+  --texto-acento: var(--teal-300);
 
-  --acento:        var(--teal-400);   /* lo accionable: relleno del primario */
-  --acento-fuerte: var(--teal-300);   /* su hover */
-  --acento-tenue:  #14231F;           /* hover de fila, fondo de la opcion elegida */
-  --fila-elegida:  #141A19;           /* mas bajo todavia: casi todas lo estan */
-  --sobre-acento:  #071A19;           /* texto sobre un relleno de acento */
+  --linea:        rgba(245, 242, 237, .05);
+  --linea-fuerte: rgba(245, 242, 237, .14);
+  --foco:         var(--teal-400);
 
-  /* El logo, que son dos grupos de puntos: el catalogo en origen y el ya
-     migrado. Como variables y no como dos archivos, para que cambie con el
-     tema sin duplicar el SVG ni tocarlo desde JavaScript. */
-  /* El reflejo del borde superior. No es sombra ni borde: es lo que tiene
-     cualquier superficie real, y despega el bloque del lienzo sin marco. */
-  --luz-borde: rgba(255, 255, 255, .055);
+  --acento:        var(--teal-400);
+  --acento-fuerte: var(--teal-300);
+  --acento-tenue:  color-mix(in srgb, var(--teal-400) 10%, var(--panel));
+  --fila-elegida:  transparent;    /* la fila elegida se marca con la casilla */
+  --sobre-acento:  var(--grafito);
 
   --logo-origen:  var(--hueso);
   --logo-migrado: var(--teal-400);
 
   /* ---- Semánticos ---- */
-  --negativo: #E56660;   /* 4.57 sobre la fila en hover */
+  --negativo: #E3645E;
   --atencion: #E1A536;
   --positivo: #60AC6D;
 
-  /* Tinte de las alertas, en rgba sobre la superficie de abajo en vez de un hex
-     que la tape. */
-  --tinte: 0.14;
+  /* El relleno de un estado: el propio semántico mezclado en la superficie.
+     Da un tono oscuro del mismo color, que es lo que deja que el texto
+     saturado encima se lea sin gritar. */
+  --ok-fondo:   color-mix(in srgb, var(--positivo) 13%, var(--panel));
+  --warn-fondo: color-mix(in srgb, var(--atencion) 13%, var(--panel));
+  --mal-fondo:  color-mix(in srgb, var(--negativo) 13%, var(--panel));
+  --dato-fondo: color-mix(in srgb, var(--teal-400) 13%, var(--panel));
 
   color-scheme: dark;
 }
 
 [data-theme="claro"] {
-  --lienzo:     #DCD7CD;
-  --fondo:      #F8F6F2;
-  --panel:      #EFECE6;
-  --panel-alto: #E6E2DA;
+  /* El claro no sale de la referencia, que es sólo oscura. Se construye con la
+     misma gramática: el lienzo es el hueso bajado, las tarjetas son el hueso,
+     y los bordes son grafito a baja opacidad. */
+  --lienzo:     #E8E4DC;
+  --fondo:      #E8E4DC;
+  --panel:      var(--hueso);
+  --panel-alto: #EDEAE3;
   --flotante:   #FFFFFF;
 
-  --texto:        #141414;
-  --texto-2:      #56554F;
-  --texto-3:      #65635E;   /* idem en claro */
-  --texto-acento: #155251;
+  --borde:       rgba(20, 20, 20, .12);
+  --borde-suave: rgba(20, 20, 20, .06);
 
-  --linea:        #DFDCD5;
-  --linea-fuerte: #A9A49B;
-  --foco:         #206969;
+  --texto:        var(--grafito);
+  --texto-2:      var(--neutral-700);   /* 7.5 sobre la peor superficie */
+  --texto-3:      var(--neutral-600);   /* 5.4; el 500 daba 3.7 y quedó afuera */
+  --texto-acento: var(--teal-700);
+
+  --linea:        rgba(20, 20, 20, .06);
+  --linea-fuerte: rgba(20, 20, 20, .16);
+  --foco:         var(--teal-600);
 
   --acento:        var(--teal-600);
   --acento-fuerte: var(--teal-700);
-  --acento-tenue:  #E2F1F0;
-  --fila-elegida:  #EDF4F2;
+  --acento-tenue:  color-mix(in srgb, var(--teal-600) 8%, var(--panel));
+  --fila-elegida:  transparent;
   --sobre-acento:  var(--hueso);
-
-  --luz-borde: transparent;   /* sobre hueso un reflejo blanco no se ve */
 
   --logo-origen:  var(--grafito);
   --logo-migrado: var(--teal-500);
@@ -131,7 +134,10 @@
   --atencion: #7E5500;
   --positivo: #2C6539;
 
-  --tinte: 0.09;
+  --ok-fondo:   color-mix(in srgb, var(--positivo) 11%, var(--panel));
+  --warn-fondo: color-mix(in srgb, var(--atencion) 11%, var(--panel));
+  --mal-fondo:  color-mix(in srgb, var(--negativo) 11%, var(--panel));
+  --dato-fondo: color-mix(in srgb, var(--teal-600) 11%, var(--panel));
 
   color-scheme: light;
 }

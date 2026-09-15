@@ -1,52 +1,60 @@
-# Migrador de Catálogos , mundo visual
+# Migrador de Catálogos, mundo visual
 
 Decisiones durables. Lo que el producto es y no cambia está en `PRODUCT.md`.
 
-Este documento reemplaza al sistema anterior. De aquel queda **la paleta y nada
-más**: grafito, hueso y la rampa teal. Todo lo demás ,tipografía, forma,
-componentes, densidad, se decide acá.
+De la marca queda lo que importa: **grafito, hueso y la rampa teal**. Todo lo
+demás (tipografía, forma, densidad, componentes) se decide acá.
+
+La dirección salió de una referencia concreta que trajo el cliente: una pieza de
+su estudio de diseño, oscura, de negro pleno, tarjetas de hairline, etiquetas en
+mono ancladas al borde y estados como relleno teñido. Lo que sigue es esa
+gramática traducida a una herramienta de inventario, que es algo bastante
+distinto de aquella pieza.
 
 ---
 
-## 1. El concepto: instrumento, no documento
+## 1. El concepto: el grafito es la superficie
 
-La versión anterior trataba a la app como un documento: bloques blandos, mucho
-aire, todo adentro de una tarjeta redondeada. Eso es lo que la volvía
-intercambiable con cualquier otra cosa.
+La app no dibuja cajas grises sobre un fondo gris. El lienzo es **grafito
+bajado casi a negro**, y las superficies de trabajo **son el grafito de la
+marca**. La tarjeta principal de cada pantalla es literalmente el color de la
+marca, no un gris prestado de ningún sistema.
 
-Esta versión la trata como **un instrumento de medición**. Quien la usa está
-inventariando: cuenta, compara, marca lo que falta. El diseño lo dice con tres
-gestos, y ninguno es decorativo.
+Eso deja una consecuencia que ordena el resto: **si las superficies están tan
+cerca, no se pueden separar por escalón de gris.** Se separan por un borde de un
+píxel a muy baja opacidad. Es lo que permite que el negro siga siendo negro y
+que la pantalla no se llene de rectángulos grises de distinto tono.
 
-**La regla.** Una línea de 1 px separa las secciones, y el título de la
-sección se apoya sobre la regla en Archivo, en caja normal. Reemplaza a la
-tarjeta: no hay contenedor, hay estructura. Las versalitas en mono quedan
-para lo que es dato: cabeceras de tabla, badges y contadores.
+**Tres gestos lo sostienen, y ninguno es decorativo.**
 
-**La escala.** El borde izquierdo de los bloques de datos lleva marcas de
-registro numeradas en mono, como el eje de un gráfico o el margen de una regla.
-Sirven para dos cosas a la vez: son el número de fila y son el rasgo de la
-marca.
+**El borde.** Cada bloque es una tarjeta de hairline con una banda de título
+arriba. La profundidad la da el borde, no un desenfoque: no hay sombras en
+ninguna parte de la app.
 
-**El dígito.** Todo lo que se cuenta o se compara va en Geist Mono con
-`tabular-nums`. No como disfraz de "técnico", sino porque son datos: ISRC, UPC,
-años, duraciones, cantidades. Son la mitad de la pantalla, y tratarlos como
-texto corrido es el error original.
+**La etiqueta anclada.** Todo lo que rotula en vez de leerse va en mono,
+versalitas y tracking ancho, apoyado en el borde de la pantalla: el pie, el
+resumen de la barra de acción, las cabeceras de tabla, los rótulos de campo.
+Es la voz de la app para lo que no es contenido.
 
-Lo que **no** hacemos, aunque las referencias lo tengan: no hay grilla de fondo
-de dos ejes ni trama diagonal. Eso pide un plano o un mapa abajo, y acá abajo
-hay una tabla. Sería costume.
+**El dígito.** Todo lo que se cuenta o se compara va en mono con `tabular-nums`:
+ISRC, UPC, años, duraciones, cantidades. Son la mitad de la pantalla, y
+tratarlos como texto corrido era el error original.
+
+**La trama.** Dos líneas de 1 px a muy baja opacidad sobre el lienzo. No está
+para simular un plano: está para que el vacío tenga escala cuando una vista
+tiene poco contenido.
 
 ## 2. Luz
 
 **Oscuro por defecto.** Sale de la escena de uso, no de la categoría: esta app
 se abre de noche para hacer trabajo de inventario. El claro existe completo y se
-elige desde la cabecera, pero el oscuro es el que se diseña primero y el que se
-ve en las capturas.
+elige desde la cabecera.
+
+El claro **no** sale de la referencia, que es sólo oscura. Se construye con la
+misma gramática, invertida: el lienzo es el hueso bajado, las tarjetas son el
+hueso, y los bordes son grafito a baja opacidad.
 
 ## 3. Color
-
-La paleta heredada, sin agregados.
 
 | Rol | Valor |
 |---|---|
@@ -54,108 +62,87 @@ La paleta heredada, sin agregados.
 | Hueso | `#F5F2ED` |
 | Teal | `#387F7E`, rampa 50 a 900 |
 | Neutrales | grises de temperatura cálida, matiz 82 |
-| Semánticos | negativo `#B63132`, atención `#B77600`, positivo `#357A43` |
+| Semánticos | negativo `#E3645E`, atención `#E1A536`, positivo `#60AC6D` (en claro bajan a `#A82E2F`, `#7E5500`, `#2C6539`) |
 
-Dos reglas de uso.
+Tres reglas de uso.
 
-**El teal es el único acento.** Marca lo accionable y lo seleccionado. Nada se
-pinta de teal por quedar bien.
+**El teal es el único acento.** Marca lo accionable y lo que está en curso. Su
+lugar más visible es el círculo del paso activo en la cabecera, que es lo que se
+ve en toda pantalla.
 
-**Los semánticos son borde y texto, no relleno.** Un badge es un borde de 1 px
-con el texto del mismo tono, sobre el fondo de la superficie. El relleno pastel
-,`negative-soft` y compañía, queda sólo para el bloque de alerta, al 12% de
-opacidad, que es lo suficiente para teñir sin convertirse en una mancha.
+**El primario no es de color.** El botón principal es hueso pleno sobre
+grafito. Es lo más claro de la pantalla y por eso es lo primero que se ve, sin
+necesidad de pintarlo.
+
+**Los estados son relleno teñido, no borde.** Un badge es el propio semántico
+mezclado al 13% en la superficie, con el texto saturado del mismo tono encima.
+Ni borde de color, ni relleno pastel: la mancha plana es el atajo que hace que
+todo se vea igual.
+
+**Todo se midió.** El peor par de texto sobre superficie da 4.7 en oscuro y 4.9
+en claro, los dos por encima del mínimo AA. Los neutrales 500 quedaron afuera de
+los roles de texto porque daban 3.6 y 3.7.
 
 ## 4. Tipografía
 
 Dos familias, no tres.
 
-**Archivo** para titulares. Pesos 600 y 700, tracking `-0.03em` de 30 px para
-arriba.
+**Public Sans** para interfaz, cuerpo y titulares. **DM Mono** para datos,
+códigos y las etiquetas ancladas al borde.
 
-**Geist Mono** para datos, etiquetas de sección, códigos y cifras.
-
-**Geist** sigue siendo la sans de interfaz y cuerpo. La familia display anterior
-no cambia; lo que cambia es cuánto se apoya la interfaz en el mono, que pasa de
-ser un detalle a ser estructural.
-
-La escala se aprieta respecto de la anterior: el cuerpo de interfaz baja a 13 px
-y las tablas a 13, porque la densidad es el punto. El titular de vista sube, para
-que el contraste entre lo que se lee una vez y lo que se escanea mil sea
-evidente.
+El titular es **grande y liviano**: 44 px en peso 300. Ese contraste contra una
+interfaz de 14 en peso 400 es lo que arma la jerarquía. No hace falta gritar con
+negritas si la escala ya lo dice.
 
 | Rol | Tamaño | Familia |
 |---|---|---|
-| Título de vista | 42 px | Archivo 700 |
-| Sección | 22 px | Archivo 600 |
-| Contador junto al título de sección | 11 px | Geist Mono 500, versalitas |
-| Cuerpo | 14 px | Geist |
-| Interfaz y tabla | 13 px | Geist |
-| Dato y código | 13 px | Geist Mono, tabular |
-| Micro | 11 px | Geist Mono |
+| Título de vista | 44 px | Public Sans 300 |
+| Título de sección | 15 px | Public Sans 500 |
+| Cuerpo e interfaz | 14 px | Public Sans 400 |
+| Dato y código | 13 px | DM Mono |
+| Badge | 11 px | Public Sans 500 |
+| Etiqueta anclada | 10 px | DM Mono, versalitas, tracking 0.14em |
 
-Medida de lectura de 65 a 75 caracteres en texto corrido. Fuera de eso, el ancho
-lo manda la tabla.
+El tracking negativo es sólo del titular. Las etiquetas en mono necesitan lo
+contrario, y bastante: es lo que las convierte en una marca de borde y no en
+texto chico.
 
-## 4b. La composición: shell, no página
-
-Lo que faltaba en la primera vuelta. Cambiar tokens no alcanza si la estructura
-sigue siendo una pila de bloques a todo el ancho con cabecera fija arriba: eso es
-un panel de administración genérico, y ningún color lo arregla.
-
-**La app vive adentro de una superficie redondeada que flota sobre un lienzo
-negro.** El chrome ,cabecera y pie, es parte de esa superficie y no se mueve; el
-scroll pasa adentro del área de contenido, no en el documento. Es la diferencia
-entre un programa y una página larga, y además es lo que esta app de verdad es.
-
-**Los cuatro pasos viven en la cabecera**, como un grupo compacto de la barra de
-herramientas, no como una fila de pestañas arriba del contenido. Gana una línea
-entera de altura y el título de la vista pasa a ser lo primero que se lee.
-
-**Nada se separa con un recuadro de línea.** La separación la hacen el escalón de
-superficie y el radio. Los contornos alrededor de cada bloque son lo que hace que
-una pantalla parezca un formulario.
-
-Radios generosos en lo grande y chicos en lo chico: 18 en la superficie de la
-app, 14 en paneles, 8 en controles, 4 en marcas. El salto entre una escala y la
-otra es parte de lo que ordena la pantalla.
+Las dos familias son SIL Open Font License 1.1 y viajan adentro del ejecutable,
+56 KB en total. El subconjunto latin cubre el español completo; el símbolo ℗,
+que aparece en un mensaje de validación, lo resuelve la fuente del sistema.
 
 ## 5. Forma
 
-Radios como en 4b: **4 px** en badges y marcas, **8 px** en controles, **14 px**
-en paneles, **18 px** en la superficie de la app. Nada de píldoras.
+Una sola familia de radios, chicos: **6 px** en badges y marcas, **8 px** en
+controles, **12 px** en tarjetas. La app no flota sobre nada, así que no hay
+radio de contenedor exterior.
 
-**Una sola declaración de elevación por elemento.** O borde, o cambio de
-superficie. Nunca las dos, y sombra sólo en lo que flota de verdad: menús,
-modales y avisos.
+**Cero sombras.** La separación la hace el borde de un píxel. La sombra queda
+reservada para lo que flote de verdad, que hoy no es nada.
 
-**Cero borde lateral de color.** El acento de una alerta es su icono y su texto,
-más un teñido del 12%. Una barra de color de 3 px al costado es el atajo que
-usan todos.
+**Cero borde lateral de color.** El acento de una alerta es su relleno teñido y
+su texto.
 
 ## 6. Superficies
 
-Cuatro niveles en oscuro, muy cerca entre sí. La diferencia entre uno y otro es
-de dos o tres puntos de luminosidad, lo justo para que se lean como capas y no
-como bloques distintos.
-
 | Nivel | Oscuro | Claro |
 |---|---|---|
-| Lienzo (detrás de la app) | `#050707` | `#DCD7CD` |
-| Fondo | `#121617` | `#F8F6F2` |
-| Panel | `#1A1F1F` | `#EFECE6` |
-| Cabecera de tabla, hover | `#222827` | `#E6E2DA` |
-| Flotante | `#2A3130` | `#FFFFFF` |
+| Lienzo | `#0A0A09` | `#E8E4DC` |
+| Tarjeta | `#141414` (grafito) | `#F5F2ED` (hueso) |
+| Banda de título, hover | `#1E1D1C` | `#EDEAE3` |
+| Borde | hueso al 10% | grafito al 12% |
+| Borde suave | hueso al 5% | grafito al 6% |
 
 ## 7. Movimiento
 
-**Un solo momento con autoría**: la barra de progreso de un trabajo largo, que
-es lo único que de verdad merece atención mientras pasa. Ahí el movimiento
-informa.
+**Un solo momento con autoría**: el trabajo largo. Tres puntos del logo latiendo
+en secuencia mientras corre, las líneas nuevas del log entrando con un fade, y
+al terminar el latido se apaga, aparece un tilde y medio segundo después cambia
+la vista. Es lo que separa "terminó" de "la pantalla cambió de golpe".
 
-Todo lo demás es respuesta inmediata al puntero o al teclado, de 100 ms, sin
-entrada escalonada y sin animación de aparición por sección. `prefers-reduced-
-motion` apaga todo menos los cambios de opacidad.
+Lo demás es respuesta inmediata al puntero o al teclado, de 100 ms: el tilde de
+la casilla que se dibuja, el detalle que se despliega, la entrada de vista al
+cambiar de paso. `prefers-reduced-motion` apaga todo.
 
 ## 8. Las superficies que no dibujé
 
@@ -168,9 +155,25 @@ selección de texto, cursor de escritura, barras de scroll, anillo de foco,
 No por dogma, sino porque ya lo probamos y es lo que hacía que la app se viera
 igual a cualquier otra.
 
-- Tarjetas del mismo tamaño como estructura de página, y tarjetas anidadas.
+- Sombras para separar bloques. Lo hace el borde.
+- Escalones de gris como estructura. Las superficies están casi juntas a propósito.
+- Relleno pastel claro en badges, y badges de borde de color.
 - La plantilla de métrica: número enorme, etiqueta chica, fila de stats.
-- Etiqueta o versalita arriba de un título.
+- Versalitas como estructura de página. Van sólo en lo que rotula.
 - Emojis como iconos.
-- Degradados, vidrio esmerilado y brillos de color sin desplazamiento.
-- Relleno pastel como fondo de badge.
+- Degradados, vidrio esmerilado y brillos de color.
+- Negro puro `#000000`: el lienzo es grafito bajado, y es cálido.
+
+## 10. Lo que no se pudo traer de la referencia
+
+Vale dejarlo escrito, porque va a volver a preguntarse.
+
+La referencia es una **landing de marketing**: renders 3D isométricos, scroll que
+fija secciones, titulares de 120 px, planes de precios. Nada de eso tiene dónde
+entrar en una herramienta que muestra 46 tracks en una tabla y vive en una
+ventana de escritorio con chrome fijo.
+
+Lo que sí entró: el negro pleno con la trama, las tarjetas de hairline, el
+índice numerado en círculos (que calzó exacto con los cuatro pasos), las
+etiquetas mono ancladas al borde, la escala grande con peso liviano, y los chips
+de relleno oscuro con texto saturado.
