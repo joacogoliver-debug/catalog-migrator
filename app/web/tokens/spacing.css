@@ -25,10 +25,14 @@
   --ancho-forma:   480px;
   --pad-lateral:   32px;
 
-  /* ---- Forma ---- */
-  --r-marca:   2px;   /* badges, marcas de registro */
-  --r-control: 4px;   /* botones, campos */
-  --r-panel:   6px;   /* paneles y bloques */
+  /* ---- Forma ----
+     Radios generosos en las superficies grandes y chicos en los controles. El
+     salto entre una cosa y la otra es parte de lo que ordena la pantalla. */
+  --r-marca:   4px;    /* badges, marcas */
+  --r-control: 8px;    /* botones, campos */
+  --r-panel:   14px;   /* paneles y bloques */
+  --r-shell:   18px;   /* la superficie de la app */
+  --margen-shell: 10px;
 
   /* Sólo para lo que flota de verdad. Con desplazamiento y desenfoque: un halo
      de color sin offset es decoración, no profundidad. */

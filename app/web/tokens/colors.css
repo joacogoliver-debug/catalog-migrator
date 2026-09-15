@@ -53,10 +53,14 @@
      distintos pegados uno al lado del otro.
      ============================================================ */
 
-  --fondo:      #101212;
-  --panel:      #161919;
-  --panel-alto: #1B1F1F;
-  --flotante:   #232828;
+  /* El lienzo es lo que queda detras de la app. La app no lo toca: flota
+     encima, con radio y margen. Es lo que hace que se lea como un programa y
+     no como una pagina. */
+  --lienzo:     #000000;   /* negro puro: la app flota encima */
+  --fondo:      #121617;   /* la superficie de la app */
+  --panel:      #1A1F1F;
+  --panel-alto: #222827;
+  --flotante:   #2A3130;
 
   --texto:        #F2EFEA;
   --texto-2:      #A9ADAC;
@@ -76,6 +80,10 @@
   /* El logo, que son dos grupos de puntos: el catalogo en origen y el ya
      migrado. Como variables y no como dos archivos, para que cambie con el
      tema sin duplicar el SVG ni tocarlo desde JavaScript. */
+  /* El reflejo del borde superior. No es sombra ni borde: es lo que tiene
+     cualquier superficie real, y despega el bloque del lienzo sin marco. */
+  --luz-borde: rgba(255, 255, 255, .055);
+
   --logo-origen:  var(--hueso);
   --logo-migrado: var(--teal-400);
 
@@ -92,10 +100,11 @@
 }
 
 [data-theme="claro"] {
-  --fondo:      #F5F2ED;
-  --panel:      #EDEBE6;
-  --panel-alto: #E5E2DB;
-  --flotante:   #FDFCFA;
+  --lienzo:     #DCD7CD;
+  --fondo:      #F8F6F2;
+  --panel:      #EFECE6;
+  --panel-alto: #E6E2DA;
+  --flotante:   #FFFFFF;
 
   --texto:        #141414;
   --texto-2:      #56554F;
@@ -111,6 +120,8 @@
   --acento-tenue:  #E2F1F0;
   --fila-elegida:  #EDF4F2;
   --sobre-acento:  var(--hueso);
+
+  --luz-borde: rgba(255, 255, 255, .85);
 
   --logo-origen:  var(--grafito);
   --logo-migrado: var(--teal-500);

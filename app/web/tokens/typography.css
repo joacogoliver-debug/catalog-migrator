@@ -19,7 +19,7 @@
   --mono:    'Geist Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
 
   /* ---- Escala ---- */
-  --t-vista:   40px;   /* título de vista, Archivo 700 */
+  --t-vista:   42px;   /* título de vista */
   --t-seccion: 22px;   /* sección, Archivo 600 */
   --t-bloque:  16px;   /* título de bloque, Geist 600 */
   --t-cuerpo:  14px;   /* texto corrido */
@@ -29,7 +29,7 @@
   --t-metrica: 28px;   /* cifra de resumen, mono */
 
   /* ---- Interlineados ---- */
-  --i-vista:   1.02;
+  --i-vista:   1.0;
   --i-seccion: 1.12;
   --i-cuerpo:  1.6;
   --i-ui:      1.45;
@@ -41,7 +41,7 @@
   --p-bold:    700;
 
   /* Sólo en display, de 30 px para arriba. El piso es -0.04em; -0.03 lee mejor. */
-  --tracking-display: -0.03em;
+  --tracking-display: -0.04em;
   /* Las etiquetas en mono necesitan lo contrario: un poco de aire. */
   --tracking-mono: 0.06em;
 

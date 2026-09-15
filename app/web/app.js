@@ -669,7 +669,6 @@ function vistaPaso2() {
 
   return `
   <div class="fade">
-    ${avisoCanal()}
     <div class="card">
       <div class="card-head row row-wrap">
         <div class="grow">
@@ -687,6 +686,8 @@ function vistaPaso2() {
         ${kpi('Reproducciones', num(r.views))}
       </div>
     </div>
+
+    ${avisoCanal()}
 
     <div class="seccion">
       <div class="seccion-etiqueta">

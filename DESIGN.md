@@ -97,6 +97,29 @@ evidente.
 Medida de lectura de 65 a 75 caracteres en texto corrido. Fuera de eso, el ancho
 lo manda la tabla.
 
+## 4b. La composición: shell, no página
+
+Lo que faltaba en la primera vuelta. Cambiar tokens no alcanza si la estructura
+sigue siendo una pila de bloques a todo el ancho con cabecera fija arriba: eso es
+un panel de administración genérico, y ningún color lo arregla.
+
+**La app vive adentro de una superficie redondeada que flota sobre un lienzo
+negro.** El chrome —cabecera y pie— es parte de esa superficie y no se mueve; el
+scroll pasa adentro del área de contenido, no en el documento. Es la diferencia
+entre un programa y una página larga, y además es lo que esta app de verdad es.
+
+**Los cuatro pasos viven en la cabecera**, como un grupo compacto de la barra de
+herramientas, no como una fila de pestañas arriba del contenido. Gana una línea
+entera de altura y el título de la vista pasa a ser lo primero que se lee.
+
+**Nada se separa con un recuadro de línea.** La separación la hacen el escalón de
+superficie y el radio. Los contornos alrededor de cada bloque son lo que hace que
+una pantalla parezca un formulario.
+
+Radios generosos en lo grande y chicos en lo chico: 18 en la superficie de la
+app, 14 en paneles, 8 en controles, 4 en marcas. El salto entre una escala y la
+otra es parte de lo que ordena la pantalla.
+
 ## 5. Forma
 
 Radios bajos, porque el mundo es técnico: **2 px** en badges y marcas, **4 px**

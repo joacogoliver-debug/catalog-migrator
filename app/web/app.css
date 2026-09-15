@@ -27,7 +27,7 @@
 html, body { margin: 0; padding: 0; height: 100%; }
 
 body {
-  background: var(--fondo);
+  background: var(--lienzo);
   color: var(--texto);
   font-family: var(--sans);
   font-size: var(--t-ui);
@@ -55,6 +55,7 @@ body {
   border-radius: 99px;
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--texto-3); }
+::-webkit-scrollbar-corner { background: transparent; }
 
 :focus-visible {
   outline: 2px solid var(--foco);
@@ -117,7 +118,21 @@ code, .mono {
 
 /* ---------------------------------------------------------- layout */
 
-.app { min-height: 100%; display: flex; flex-direction: column; }
+/* La app ocupa la ventana y no la desborda: el scroll pasa adentro, no en el
+   documento. Es lo que separa a un programa de una pagina larga, y ademas deja
+   la cabecera y la barra de accion siempre a la vista sin recurrir a sticky. */
+html, body { height: 100%; overflow: hidden; }
+
+.app { height: 100%; padding: var(--margen-shell); }
+
+.shell {
+  height: 100%;
+  display: flex; flex-direction: column;
+  background: var(--fondo);
+  border-radius: var(--r-shell);
+  overflow: hidden;
+  box-shadow: inset 0 1px 0 var(--luz-borde);
+}
 
 .container {
   width: 100%; max-width: var(--ancho-app);
@@ -125,18 +140,23 @@ code, .mono {
   padding-inline: var(--pad-lateral);
 }
 
-main { flex: 1; padding-block: var(--e-6) var(--e-10); }
+main {
+  flex: 1; min-height: 0;
+  overflow-y: auto; overflow-x: hidden;
+  padding-block: var(--e-6) 0;
+}
+/* La ultima cosa de la vista respira, tenga barra de accion o no. */
+main > .container > #pantalla > * { padding-bottom: var(--e-6); }
 
 /* ---------------------------------------------------------- cabecera */
 
 .header {
+  flex: 0 0 auto;
   background: var(--fondo);
   border-bottom: 1px solid var(--linea);
-  position: sticky; top: 0; z-index: 50;
 }
-.header-inner { display: flex; align-items: center; gap: var(--e-3); height: 52px; }
-.header-marca { display: flex; align-items: center; gap: var(--e-3); }
-.header-marca { gap: var(--e-3); }
+.header-inner { display: flex; align-items: center; gap: var(--e-4); height: 58px; }
+.header-marca { display: flex; align-items: center; gap: var(--e-3); flex: 0 0 auto; }
 .header-title {
   font-family: var(--mono);
   font-size: var(--t-micro);
@@ -171,13 +191,16 @@ main { flex: 1; padding-block: var(--e-6) var(--e-10); }
 .logo-migrado { fill: var(--logo-migrado); }
 
 /* ---------------------------------------------------------- stepper */
-/* Números en mono sobre una regla. El paso activo se marca con el color del
-   acento y un subrayado de 2 px, no con una píldora. */
+/* Vive en la cabecera, no arriba del contenido: un grupo compacto de cuatro
+   items, como la barra de herramientas de un programa. Ocupa una linea en vez
+   de un bloque entero, y el contenido empieza donde antes empezaban las
+   pestanas. */
 
 .stepper {
-  display: flex; gap: 0;
-  border-bottom: 1px solid var(--linea);
-  margin-bottom: var(--e-6);
+  display: flex; align-items: center; gap: 2px;
+  padding: 3px;
+  background: var(--panel);
+  border-radius: var(--r-control);
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -186,31 +209,29 @@ main { flex: 1; padding-block: var(--e-6) var(--e-10); }
 
 .step {
   display: flex; align-items: center; gap: var(--e-2);
-  font-family: var(--sans); font-size: var(--t-ui);
+  font-family: var(--sans); font-size: var(--t-micro);
   color: var(--texto-3);
   background: none; border: none;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-  padding: var(--e-3) var(--e-4) var(--e-3) 0;
-  margin-right: var(--e-5);
+  border-radius: 5px;
+  padding: 0 var(--e-3);
+  height: 26px;
   white-space: nowrap;
-  transition: color var(--m-rapido), border-color var(--m-rapido);
+  transition: color var(--m-rapido), background var(--m-rapido);
 }
 .step-num {
   display: inline-flex; align-items: center; justify-content: center;
-  min-width: 15px;
-  font-family: var(--mono); font-size: var(--t-micro);
+  font-family: var(--mono); font-size: 10px;
   font-variant-numeric: tabular-nums;
-  color: inherit;
+  color: inherit; opacity: .7;
 }
-.step.activo { color: var(--texto); border-bottom-color: var(--acento-fuerte); }
-.step.activo .step-num { color: var(--acento-fuerte); }
+.step.activo { color: var(--sobre-acento); background: var(--acento); }
+.step.activo .step-num { opacity: 1; }
 .step.hecho { color: var(--texto-2); }
-.step.hecho .step-num { color: var(--acento-fuerte); }
+.step.hecho .step-num { color: var(--acento-fuerte); opacity: 1; }
 
 button.step { cursor: pointer; }
-button.step:hover { color: var(--texto); border-bottom-color: var(--linea-fuerte); }
-button.step.activo:hover { border-bottom-color: var(--acento-fuerte); }
+button.step:hover { color: var(--texto); background: var(--panel-alto); }
+button.step.activo:hover { background: var(--acento); color: var(--sobre-acento); }
 
 /* ---------------------------------------------------------- secciones */
 /* El reemplazo de la tarjeta. Una regla arriba con la etiqueta apoyada encima,
@@ -223,8 +244,8 @@ button.step.activo:hover { border-bottom-color: var(--acento-fuerte); }
 }
 .card + .card { margin-top: var(--e-8); }
 
-.card-head { margin-bottom: var(--e-5); }
-.card-head h1 { margin-bottom: var(--e-3); }
+.card-head { margin-bottom: var(--e-4); }
+.card-head h1 { margin-bottom: var(--e-2); }
 .card-head h2 { margin-bottom: var(--e-2); }
 .card-head p { color: var(--texto-2); font-size: var(--t-cuerpo); max-width: var(--medida); }
 
@@ -234,8 +255,10 @@ button.step.activo:hover { border-bottom-color: var(--acento-fuerte); }
 /* La regla con etiqueta. Se aplica al contenedor del bloque. */
 .seccion {
   border-top: 1px solid var(--linea);
-  padding-top: var(--e-2);
-  margin-top: var(--e-8);
+  /* Mas aire arriba que abajo: la regla pertenece a lo que viene, no a lo que
+     termino. */
+  padding-top: var(--e-3);
+  margin-top: var(--e-10);
 }
 .seccion-etiqueta {
   display: flex; align-items: baseline; gap: var(--e-3);
@@ -245,6 +268,9 @@ button.step.activo:hover { border-bottom-color: var(--acento-fuerte); }
   margin-bottom: var(--e-4);
 }
 .seccion-etiqueta .der { margin-left: auto; }
+/* Los avisos del relevamiento son notas, no bloques: van juntos y
+   separados del resto. */
+.kpis + .alerta { margin-top: var(--e-6); }
 
 /* Un panel de verdad, para lo que sí necesita separarse del fondo. Una sola
    declaración de elevación: cambio de superficie, sin borde. */
@@ -253,6 +279,9 @@ button.step.activo:hover { border-bottom-color: var(--acento-fuerte); }
   border-radius: var(--r-panel);
   padding: var(--e-4);
 }
+/* El panel de filtros se apoya en la tabla, asi que comparten superficie y se
+   leen como una sola cosa. */
+.panel + .tabla-wrap { margin-top: var(--e-2); }
 
 /* ---------------------------------------------------------- resumen */
 /* No es la plantilla de métrica. Es una lectura de instrumento: las cifras en
@@ -260,8 +289,8 @@ button.step.activo:hover { border-bottom-color: var(--acento-fuerte); }
    un vistazo sin comerse la pantalla. */
 
 .kpis {
+  margin-top: var(--e-5);
   display: flex; flex-wrap: wrap;
-  border: 1px solid var(--linea);
   border-radius: var(--r-panel);
   background: var(--panel);
   overflow: hidden;
@@ -396,7 +425,7 @@ button.step.activo:hover { border-bottom-color: var(--acento-fuerte); }
    lista, separadas por reglas, que se marcan del lado izquierdo. */
 
 .opciones {
-  border: 1px solid var(--linea);
+  background: var(--panel);
   border-radius: var(--r-panel);
   overflow: hidden;
 }
@@ -409,10 +438,11 @@ button.step.activo:hover { border-bottom-color: var(--acento-fuerte); }
   transition: background var(--m-rapido);
 }
 .opcion:first-child { border-top: none; }
-.opcion:hover { background: var(--panel); }
+.opcion:hover { background: var(--panel-alto); }
 .opcion.elegida { background: var(--acento-tenue); }
 .opcion.deshabilitada { cursor: not-allowed; opacity: .65; }
 .opcion.deshabilitada:hover { background: transparent; }
+.opcion { border-top-color: var(--fondo); }
 .opcion-icono { color: var(--texto-3); padding-top: 1px; }
 .opcion.elegida .opcion-icono { color: var(--acento-fuerte); }
 
@@ -462,10 +492,10 @@ button.step.activo:hover { border-bottom-color: var(--acento-fuerte); }
    redondeados que la conviertan en una tarjeta más. */
 
 .tabla-wrap {
-  border-top: 1px solid var(--linea-fuerte);
-  border-bottom: 1px solid var(--linea-fuerte);
+  background: var(--panel);
+  border-radius: var(--r-panel);
   overflow: auto;
-  max-height: 60vh;
+  max-height: 58vh;
 }
 table.tabla {
   width: 100%; border-collapse: separate; border-spacing: 0;
@@ -477,7 +507,9 @@ table.tabla thead th {
   background: var(--panel-alto);
   font-family: var(--mono); font-size: var(--t-micro);
   font-weight: var(--p-medio); letter-spacing: var(--tracking-mono);
-  text-transform: uppercase; color: var(--texto-3);
+  /* Secundario y no terciario: sobre la superficie mas clara de la tabla el
+     terciario daba 4.16, y ademas el encabezado es lo que se lee al escanear. */
+  text-transform: uppercase; color: var(--texto-2);
   text-align: left; padding: var(--e-2) var(--e-3);
   border-bottom: 1px solid var(--linea-fuerte);
   white-space: nowrap;
@@ -550,7 +582,7 @@ table.sub td {
 .alerta {
   display: flex; gap: var(--e-3);
   padding: var(--e-3) var(--e-4);
-  border: 1px solid color-mix(in srgb, var(--acento-fuerte) 35%, transparent);
+  border: none;
   background: color-mix(in srgb, var(--acento-fuerte) var(--tinte), transparent);
   border-radius: var(--r-panel);
   color: var(--texto-2);
@@ -558,6 +590,7 @@ table.sub td {
   line-height: var(--i-ui);
 }
 .alerta + .alerta { margin-top: var(--e-3); }
+.alerta + .card { margin-top: var(--e-6); }
 .alerta > div { min-width: 0; }
 .alerta-icono { color: var(--acento-fuerte); padding-top: 1px; }
 .alerta strong { color: var(--texto); font-weight: var(--p-medio); }
@@ -565,17 +598,14 @@ table.sub td {
 .alerta li + li { margin-top: var(--e-1); }
 
 .alerta-ok {
-  border-color: color-mix(in srgb, var(--positivo) 35%, transparent);
   background: color-mix(in srgb, var(--positivo) var(--tinte), transparent);
 }
 .alerta-ok .alerta-icono { color: var(--positivo); }
 .alerta-warn {
-  border-color: color-mix(in srgb, var(--atencion) 35%, transparent);
   background: color-mix(in srgb, var(--atencion) var(--tinte), transparent);
 }
 .alerta-warn .alerta-icono { color: var(--atencion); }
 .alerta-danger {
-  border-color: color-mix(in srgb, var(--negativo) 40%, transparent);
   background: color-mix(in srgb, var(--negativo) var(--tinte), transparent);
 }
 .alerta-danger .alerta-icono { color: var(--negativo); }
@@ -625,7 +655,7 @@ table.sub td {
   position: sticky; bottom: 0; z-index: 40;
   margin-top: var(--e-5);
   background: var(--fondo);
-  border-top: 1px solid var(--linea-fuerte);
+  border-top: 1px solid var(--linea);
   padding-block: var(--e-3);
   display: flex; align-items: center; gap: var(--e-4);
   flex-wrap: wrap;
@@ -663,6 +693,8 @@ details.acordeon > summary:hover { color: var(--texto); }
 /* ---------------------------------------------------------- pie */
 
 .footer {
+  flex: 0 0 auto;
+  background: var(--fondo);
   border-top: 1px solid var(--linea);
   padding-block: var(--e-4);
   font-family: var(--mono); font-size: var(--t-micro);
@@ -706,7 +738,14 @@ details.acordeon > summary:hover { color: var(--texto); }
 /* ---------------------------------------------------------- responsive */
 
 @media (max-width: 900px) {
-  :root { --pad-lateral: 16px; --t-vista: 30px; --t-metrica: 22px; }
+  :root {
+    --pad-lateral: 16px; --t-vista: 30px; --t-metrica: 22px;
+    /* En una ventana chica el margen alrededor del shell es espacio que falta. */
+    --margen-shell: 0px; --r-shell: 0px;
+  }
+  .header-inner { height: auto; flex-wrap: wrap; padding-block: var(--e-3); gap: var(--e-3); }
+  .stepper { order: 3; width: 100%; }
+  .header-right { order: 2; margin-left: auto; }
   .barra-accion { flex-direction: column; align-items: stretch; }
   .barra-accion .acciones { margin-left: 0; }
   .barra-accion .acciones .btn { flex: 1; }

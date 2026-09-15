@@ -267,8 +267,8 @@ def escribir_pagina():
     # Y sin animaciones: la de entrada dura 240 ms, y como el reloj virtual de
     # Chrome corre solo, la foto caia a veces en la mitad del fade y salia toda
     # lavada. Una captura no tiene que depender de cuando se disparo.
-    html = html.replace("</head>", "<style>"
-                        ".app{min-height:0}"
+    html = html.replace("</head>",
+                        "<style id=\"sin-animacion\">"
                         "*,*::before,*::after{animation:none!important;transition:none!important}"
                         "</style></head>")
 
@@ -306,6 +306,18 @@ def escribir_pagina():
 
   if (tema === 'claro') document.documentElement.setAttribute('data-theme', 'claro');
   else document.documentElement.removeAttribute('data-theme');
+
+  /* Por defecto se suelta el shell para poder renderizar la vista entera de una
+     sola vez. Con ?shell=1 se deja como es de verdad, que es lo que sirve para
+     mirar la composicion. */
+  if (q.get('shell') !== '1') {
+    const st = document.createElement('style');
+    st.textContent = 'html,body{height:auto;overflow:visible}'
+      + '.app{height:auto;padding:0;min-height:0}'
+      + '.shell{height:auto;border-radius:0;box-shadow:none}'
+      + 'main{overflow:visible;padding-bottom:0}';
+    document.head.appendChild(st);
+  }
 
   /* app.js arranca de forma asincrónica; esperamos a que tenga su config y
      recién ahí ponemos el estado de la vista que queremos fotografiar.
