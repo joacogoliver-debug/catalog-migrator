@@ -826,11 +826,11 @@ function tablaProductos(ps) {
           <thead><tr><th scope="col">N</th><th scope="col">Track</th><th scope="col">ISRC</th><th scope="col">Duración</th><th scope="col" class="td-num">Reproducciones</th></tr></thead>
           <tbody>${p.detalle.map((t) => `
             <tr>
-              <td class="mono" data-col="N">${esc(t.n)}</td>
-              <td data-col="Track">${esc(t.titulo)}</td>
-              <td class="mono" data-col="ISRC">${t.isrc ? esc(t.isrc) : '<span class="muted">sin ISRC</span>'}</td>
-              <td class="mono" data-col="Duración">${esc(t.duracion)}</td>
-              <td class="td-num" data-col="Reproducciones">${num(t.views)}</td>
+              <td class="mono">${esc(t.n)}</td>
+              <td>${esc(t.titulo)}</td>
+              <td class="mono">${t.isrc ? esc(t.isrc) : '<span class="muted">sin ISRC</span>'}</td>
+              <td class="mono">${esc(t.duracion)}</td>
+              <td class="td-num">${num(t.views)}</td>
             </tr>`).join('')}
           </tbody>
         </table>
@@ -847,14 +847,14 @@ function tablaProductos(ps) {
           ${ico('flecha', 'ico-sm')}<span class="sr">Ver los tracks de ${esc(p.titulo)}</span>
         </button>
       </td>
-      <td data-col="Producto">
+      <td>
         <div class="celda-titulo">${esc(p.titulo)}</div>
-        <div class="celda-sub"><span class="tipo">${esc(p.tipo)}</span>${p.tracks} track${p.tracks === 1 ? '' : 's'}${p.sello ? ', ' + esc(p.sello) : ''}</div>
+        <div class="celda-sub">${p.tracks} track${p.tracks === 1 ? '' : 's'}${p.sello ? ', ' + esc(p.sello) : ''}</div>
       </td>
-      <td data-col="Tipo"><span class="tipo">${esc(p.tipo)}</span></td>
-      <td data-col="Año" class="nowrap mono">${esc(p.anio) || '<span class="muted">sin fecha</span>'}</td>
-      <td data-col="UPC" class="mono">${p.upc ? esc(p.upc) : '<span class="muted">sin UPC</span>'}</td>
-      <td data-col="Faltantes"><span class="badges">${avisos.join('') || '<span class="badge badge-ok">completo</span>'}</span></td>
+      <td><span class="tipo">${esc(p.tipo)}</span></td>
+      <td class="nowrap mono">${esc(p.anio) || '<span class="muted">sin fecha</span>'}</td>
+      <td class="mono">${p.upc ? esc(p.upc) : '<span class="muted">sin UPC</span>'}</td>
+      <td><span class="badges">${avisos.join('') || '<span class="badge badge-ok">completo</span>'}</span></td>
     </tr>${detalle}`;
   }).join('');
 

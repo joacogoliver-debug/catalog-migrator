@@ -64,7 +64,7 @@
 
   --texto:        #F2EFEA;
   --texto-2:      #A9ADAC;
-  --texto-3:      #828887;   /* medido: 4.6 sobre panel-alto, la peor superficie */
+  --texto-3:      #898F8E;   /* medido: 4.56 sobre panel-alto, que es la fila en hover */
   --texto-acento: #67ACAB;
 
   --linea:        #232828;   /* reglas y divisores internos */
@@ -88,7 +88,7 @@
   --logo-migrado: var(--teal-400);
 
   /* ---- Semánticos ---- */
-  --negativo: #E3645E;
+  --negativo: #E56660;   /* 4.57 sobre la fila en hover */
   --atencion: #E1A536;
   --positivo: #60AC6D;
 

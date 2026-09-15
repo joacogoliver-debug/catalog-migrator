@@ -577,7 +577,6 @@ tbody .td-check::before {
 .celda-sub { font-size: var(--t-micro); color: var(--texto-3); margin-top: 1px; }
 /* El tipo de producto es un dato, no un estado: mono chico sin borde. */
 .tipo { font-family: var(--mono); font-size: var(--t-micro); letter-spacing: var(--tracking-mono); text-transform: uppercase; color: var(--texto-3); }
-.celda-sub .tipo { display: none; }
 .leyenda { margin-top: var(--e-3); font-size: var(--t-micro); color: var(--texto-3); }
 
 .btn-expandir {
@@ -810,75 +809,24 @@ details.acordeon > summary:hover { color: var(--texto); }
 
 /* ---------------------------------------------------------- responsive */
 
+/* ---------------------------------------------------------- ventana angosta */
+/* Esto es una app de escritorio: no hay version para telefono, y la unica razon
+   por la que el ancho baja es que alguien achico la ventana. Lo que hace falta
+   ahi es que el chrome no se rompa; la tabla sigue siendo una tabla y scrollea
+   en horizontal, que es lo que hace cualquier programa con una grilla. */
+
 @media (max-width: 900px) {
   :root {
-    --pad-lateral: 16px; --t-vista: 30px; --t-metrica: 22px;
+    --pad-lateral: 16px; --t-vista: 30px;
     /* En una ventana chica el margen alrededor del shell es espacio que falta. */
     --margen-shell: 0px; --r-shell: 0px;
   }
   .header-inner { height: auto; flex-wrap: wrap; padding-block: var(--e-3); gap: var(--e-3); }
   .stepper { order: 3; width: 100%; }
-  /* Solo el paso activo lleva rotulo: los otros tres, el numero. Asi entran los
-     cuatro sin recorte ni scroll escondido. */
-  .step:not(.activo) > span:not(.step-num) { display: none; }
-  .step.hecho .step-num .ico { display: block; }
   .header-right { order: 2; margin-left: auto; }
   .barra-accion { gap: var(--e-2) var(--e-4); padding-block: var(--e-2); }
   .barra-accion .resumen { flex: 1 1 100%; }
-  .barra-accion .acciones { margin-left: 0; width: 100%; }
-  .barra-accion .acciones .btn { flex: 1; height: var(--h-control); padding-inline: var(--e-3); }
-  /* La columna Tipo se pliega dentro de la celda Producto. */
-  table.tabla th:nth-child(4), table.tabla td[data-col="Tipo"] { display: none; }
-  .celda-sub .tipo { display: inline; margin-right: var(--e-2); }
+  .barra-accion .acciones { margin-left: 0; }
   .card-head.row { display: block; }
   .card-head.row > .btn { margin-top: var(--e-3); }
-}
-
-/* Las tablas se vuelven fichas apiladas. Con el encabezado fuera del flujo,
-   porque siendo table-header-group `overflow:hidden` no le aplica y sus celdas
-   estiraban la tabla más allá del ancho de la pantalla. */
-@media (max-width: 760px) {
-  .tabla-wrap { border: none; max-height: none; overflow: visible; }
-  table.tabla thead, table.sub thead { display: none; }
-  table.tabla, table.tabla tbody, table.tabla tr,
-  table.sub, table.sub tbody, table.sub tr { display: block; width: 100%; }
-  table.tabla td, table.sub td { display: block; width: auto; }
-
-  /* La ficha: casilla, titulo y chevron en la primera linea; ano y UPC en la
-     segunda, en mono; los faltantes en la tercera. Sin etiquetas por celda. */
-  table.tabla > tbody > tr {
-    display: flex; flex-wrap: wrap; align-items: center; column-gap: var(--e-3);
-    border-bottom: 1px solid var(--linea);
-    padding: var(--e-3) var(--e-2);
-    position: relative;
-  }
-  table.tabla > tbody > tr.elegida { background: var(--fila-elegida); }
-  table.tabla tbody tr:hover td { background: transparent; }
-  table.tabla tbody td { border-bottom: none; padding: 0; height: auto; display: block; }
-  table.tabla tbody td.td-check { order: 1; }
-  tbody .td-check::before { display: none; }
-  table.tabla tbody td[data-col="Producto"] { order: 2; flex: 1 1 0; min-width: 0; }
-  table.tabla tbody td.td-exp { order: 3; }
-  table.tabla tbody td[data-col="Tipo"] { display: none; }
-  table.tabla tbody td[data-col="Año"], table.tabla tbody td[data-col="UPC"] {
-    order: 4; flex: 0 0 auto; margin-top: var(--e-1);
-    font-family: var(--mono); font-size: var(--t-micro); color: var(--texto-3);
-  }
-  table.tabla tbody td[data-col="Año"] { margin-left: 39px; }
-  table.tabla tbody td[data-col="Faltantes"] { order: 5; flex: 1 1 100%; margin: var(--e-2) 0 0 39px; }
-  table.tabla tbody td[data-col="Faltantes"]:has(.badge-ok) { display: none; }
-  .buscador { flex: 1 1 100%; max-width: none; }
-  table.tabla tbody td.td-num { text-align: left; }
-  tr.fila-detalle { display: block; padding: 0; }
-  tr.fila-detalle > td { display: block; }
-
-  .detalle-inner { padding: var(--e-2) var(--e-2) var(--e-3); }
-  /* Cada track: numero, titulo y duracion en una linea; el ISRC debajo. */
-  table.sub tr { display: flex; flex-wrap: wrap; column-gap: var(--e-3); border-top: 1px solid var(--linea); padding: var(--e-2) 0; }
-  table.sub td { border-top: none; padding: 0; display: block; }
-  table.sub tbody td[data-col="N"] { order: 1; color: var(--texto-3); }
-  table.sub tbody td[data-col="Track"] { order: 2; flex: 1 1 0; min-width: 0; color: var(--texto); }
-  table.sub tbody td[data-col="Duración"] { order: 3; color: var(--texto-3); }
-  table.sub tbody td[data-col="ISRC"] { order: 4; flex: 1 1 100%; margin-left: 22px; color: var(--texto-3); }
-  table.sub tbody td[data-col="Reproducciones"] { display: none; }
 }
