@@ -97,7 +97,7 @@ code, .mono {
 .muted  { color: var(--texto-2); }
 .small  { font-size: var(--t-micro); line-height: var(--i-micro); }
 .nowrap { white-space: nowrap; }
-.hidden { display: none !important; }
+.hidden, [hidden] { display: none !important; }   /* el atributo pierde contra .btn si no */
 
 /* Ritmo vertical entre bloques, con la escala de espaciado. Reemplaza a los
    estilos inline que repartian margenes en px por todo app.js. */
@@ -117,10 +117,12 @@ code, .mono {
 .check-suelto { margin-right: var(--e-5); margin-bottom: var(--e-3); }
 .nota-al-pie { align-self: flex-end; padding-bottom: 10px; }
 
-.esq-titulo { height: 38px; width: 60%; }
-.esq-linea  { height: 16px; width: 85%; margin-top: var(--e-5); }
-.esq-linea-corta { height: 16px; width: 70%; }
-.esq-campo  { height: 40px; width: 100%; margin-top: var(--e-5); }
+.esq-titulo { height: 42px; width: 55%; }
+.esq-linea  { height: 14px; width: 70%; margin-top: var(--e-4); }
+.esq-linea-corta { height: 14px; width: 40%; }
+.esq-etiqueta { height: 13px; width: 110px; margin-top: var(--e-6); }
+.esq-campo  { height: 42px; width: 100%; margin-top: var(--e-2); border-radius: var(--r-control); }
+.esq-boton  { height: 42px; width: 170px; margin-top: var(--e-6); border-radius: var(--r-control); }
 
 .sr {
   position: absolute; width: 1px; height: 1px;
@@ -424,7 +426,10 @@ button.step.activo:hover { background: var(--acento); color: var(--sobre-acento)
   width: 4px; height: 8px;
   border: solid var(--sobre-acento); border-width: 0 1.5px 1.5px 0;
   transform: rotate(45deg);
+  animation: tilde var(--m-base) both;
 }
+@keyframes tilde { from { transform: rotate(45deg) scale(0); opacity: 0; } }
+.check input[type="checkbox"]:active { transform: scale(.92); }
 .check input[type="checkbox"]:indeterminate::after {
   content: ""; position: absolute; left: 3px; top: 6px;
   width: 7px; height: 1.5px; background: var(--sobre-acento);
@@ -548,6 +553,7 @@ table.tabla tbody td {
   color: var(--texto-2);
 }
 table.tabla tbody tr:last-child td { border-bottom: none; }
+table.tabla > tbody > tr[data-fila] { cursor: pointer; }
 table.tabla tbody tr:hover td { background: var(--panel-alto); }
 table.tabla tbody tr.elegida td { background: var(--fila-elegida); }
 table.tabla tbody tr.elegida .celda-titulo { color: var(--texto); }
@@ -571,6 +577,7 @@ tbody .td-check::before {
 .celda-sub { font-size: var(--t-micro); color: var(--texto-3); margin-top: 1px; }
 /* El tipo de producto es un dato, no un estado: mono chico sin borde. */
 .tipo { font-family: var(--mono); font-size: var(--t-micro); letter-spacing: var(--tracking-mono); text-transform: uppercase; color: var(--texto-3); }
+.celda-sub .tipo { display: none; }
 .leyenda { margin-top: var(--e-3); font-size: var(--t-micro); color: var(--texto-3); }
 
 .btn-expandir {
@@ -585,8 +592,18 @@ tbody .td-check::before {
 .btn-expandir[aria-expanded="true"] .ico { transform: rotate(90deg); }
 
 tr.fila-detalle > td { background: var(--panel); padding: 0 !important; height: auto; }
-/* Alineado con la columna Producto: indice mas chevron. */
-.detalle-inner { padding: var(--e-3) var(--e-3) var(--e-3) calc(var(--w-indice) + var(--w-expandir)); }
+/* Alineado con la columna Producto: indice mas chevron. Se despliega desde
+   cero alto al insertarse: la fila es nueva en cada render, asi que la
+   transicion arranca por @starting-style. */
+.detalle-inner {
+  padding: var(--e-3) var(--e-3) var(--e-3) calc(var(--w-indice) + var(--w-expandir));
+  display: grid; grid-template-rows: 1fr; opacity: 1;
+  transition: grid-template-rows var(--m-base), opacity var(--m-base);
+}
+.detalle-inner > table { min-height: 0; overflow: hidden; }
+@starting-style {
+  .detalle-inner { grid-template-rows: 0fr; opacity: 0; }
+}
 table.sub { width: 100%; border-collapse: collapse; font-size: var(--t-micro); }
 table.sub th {
   text-align: left; padding: 2px var(--e-3);
@@ -661,14 +678,24 @@ table.sub td {
   white-space: pre-wrap; word-break: break-word;
 }
 
-.spinner {
-  width: 12px; height: 12px; flex: 0 0 12px;
-  border: 1.5px solid var(--linea-fuerte);
-  border-top-color: var(--acento-fuerte);
-  border-radius: 50%;
-  animation: gira .7s linear infinite;
+/* Tres puntos del logo latiendo en secuencia: el unico movimiento continuo de
+   la app, y es el de la marca. */
+.latido { display: inline-flex; gap: 3px; align-items: center; width: 21px; flex: 0 0 21px; }
+.latido i {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--acento-fuerte);
+  animation: latido 1.1s ease-in-out infinite;
 }
-@keyframes gira { to { transform: rotate(360deg); } }
+.latido i:nth-child(2) { animation-delay: .18s; }
+.latido i:nth-child(3) { animation-delay: .36s; }
+@keyframes latido { 0%, 100% { opacity: .25; transform: scale(.8); } 40% { opacity: 1; transform: scale(1); } }
+
+/* Al terminar, el latido se apaga y aparece el tilde; recien despues cambia la
+   vista. Es lo que separa "termino" de "la pantalla cambio de golpe". */
+.ico-listo { display: none; color: var(--positivo); }
+.bloque-progreso.listo .latido { display: none; }
+.bloque-progreso.listo .ico-listo { display: block; animation: aparecer var(--m-base) both; }
+@keyframes aparecer { from { transform: scale(.6); opacity: 0; } }
 
 .esqueleto { background: var(--panel); border-radius: var(--r-marca); animation: latir 1.4s ease-in-out infinite; }
 .esqueleto + .esqueleto { margin-top: var(--e-3); }
@@ -763,6 +790,16 @@ details.acordeon > summary:hover { color: var(--texto); }
 
 /* ---------------------------------------------------------- movimiento */
 
+/* Entrada de vista, solo al cambiar de paso: el render pone la clase en
+   #pantalla cuando el paso cambio y la saca en el siguiente, asi que marcar una
+   casilla no vuelve a animar nada. */
+#pantalla.entrando > * { animation: entrar var(--m-base) both; }
+@keyframes entrar { from { opacity: 0; translate: 0 4px; } }
+
+/* Lineas nuevas del log */
+.log .nueva { animation: aparecer-linea var(--m-base) both; }
+@keyframes aparecer-linea { from { opacity: 0; } }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: .01ms !important;
@@ -781,10 +818,18 @@ details.acordeon > summary:hover { color: var(--texto); }
   }
   .header-inner { height: auto; flex-wrap: wrap; padding-block: var(--e-3); gap: var(--e-3); }
   .stepper { order: 3; width: 100%; }
+  /* Solo el paso activo lleva rotulo: los otros tres, el numero. Asi entran los
+     cuatro sin recorte ni scroll escondido. */
+  .step:not(.activo) > span:not(.step-num) { display: none; }
+  .step.hecho .step-num .ico { display: block; }
   .header-right { order: 2; margin-left: auto; }
-  .barra-accion { flex-direction: column; align-items: stretch; }
-  .barra-accion .acciones { margin-left: 0; }
-  .barra-accion .acciones .btn { flex: 1; }
+  .barra-accion { gap: var(--e-2) var(--e-4); padding-block: var(--e-2); }
+  .barra-accion .resumen { flex: 1 1 100%; }
+  .barra-accion .acciones { margin-left: 0; width: 100%; }
+  .barra-accion .acciones .btn { flex: 1; height: var(--h-control); padding-inline: var(--e-3); }
+  /* La columna Tipo se pliega dentro de la celda Producto. */
+  table.tabla th:nth-child(4), table.tabla td[data-col="Tipo"] { display: none; }
+  .celda-sub .tipo { display: inline; margin-right: var(--e-2); }
   .card-head.row { display: block; }
   .card-head.row > .btn { margin-top: var(--e-3); }
 }
@@ -795,38 +840,45 @@ details.acordeon > summary:hover { color: var(--texto); }
 @media (max-width: 760px) {
   .tabla-wrap { border: none; max-height: none; overflow: visible; }
   table.tabla thead, table.sub thead { display: none; }
-  table.tabla, table.tabla tbody, table.tabla tr, table.tabla td,
-  table.sub, table.sub tbody, table.sub tr, table.sub td { display: block; width: 100%; }
+  table.tabla, table.tabla tbody, table.tabla tr,
+  table.sub, table.sub tbody, table.sub tr { display: block; width: 100%; }
+  table.tabla td, table.sub td { display: block; width: auto; }
 
-  table.tabla tbody tr {
+  /* La ficha: casilla, titulo y chevron en la primera linea; ano y UPC en la
+     segunda, en mono; los faltantes en la tercera. Sin etiquetas por celda. */
+  table.tabla > tbody > tr {
+    display: flex; flex-wrap: wrap; align-items: center; column-gap: var(--e-3);
     border-bottom: 1px solid var(--linea);
-    padding: var(--e-3) 0;
+    padding: var(--e-3) var(--e-2);
     position: relative;
   }
-  table.tabla tbody tr.elegida { background: var(--acento-tenue); }
+  table.tabla > tbody > tr.elegida { background: var(--fila-elegida); }
   table.tabla tbody tr:hover td { background: transparent; }
-  table.tabla tbody td {
-    border-bottom: none; padding: 2px 0; height: auto;
-    display: flex; gap: var(--e-3); align-items: baseline; flex-wrap: wrap;
+  table.tabla tbody td { border-bottom: none; padding: 0; height: auto; display: block; }
+  table.tabla tbody td.td-check { order: 1; }
+  tbody .td-check::before { display: none; }
+  table.tabla tbody td[data-col="Producto"] { order: 2; flex: 1 1 0; min-width: 0; }
+  table.tabla tbody td.td-exp { order: 3; }
+  table.tabla tbody td[data-col="Tipo"] { display: none; }
+  table.tabla tbody td[data-col="Año"], table.tabla tbody td[data-col="UPC"] {
+    order: 4; flex: 0 0 auto; margin-top: var(--e-1);
+    font-family: var(--mono); font-size: var(--t-micro); color: var(--texto-3);
   }
-  table.tabla tbody td[data-col]::before {
-    content: attr(data-col);
-    flex: 0 0 84px;
-    font-family: var(--mono); font-size: var(--t-micro);
-    letter-spacing: var(--tracking-mono); text-transform: uppercase;
-    color: var(--texto-3);
-  }
+  table.tabla tbody td[data-col="Año"] { margin-left: 39px; }
+  table.tabla tbody td[data-col="Faltantes"] { order: 5; flex: 1 1 100%; margin: var(--e-2) 0 0 39px; }
+  table.tabla tbody td[data-col="Faltantes"]:has(.badge-ok) { display: none; }
+  .buscador { flex: 1 1 100%; max-width: none; }
   table.tabla tbody td.td-num { text-align: left; }
-  .td-check, .td-exp { width: auto; }
+  tr.fila-detalle { display: block; padding: 0; }
+  tr.fila-detalle > td { display: block; }
 
-  .detalle-inner { padding: var(--e-3) 0 0; }
-  table.sub tr { border-top: 1px solid var(--linea); padding: var(--e-2) 0; }
-  table.sub td { border-top: none; padding: 1px 0; display: flex; gap: var(--e-3); }
-  table.sub td[data-col]::before {
-    content: attr(data-col);
-    flex: 0 0 84px;
-    font-family: var(--mono); font-size: var(--t-micro);
-    letter-spacing: var(--tracking-mono); text-transform: uppercase;
-    color: var(--texto-3);
-  }
+  .detalle-inner { padding: var(--e-2) var(--e-2) var(--e-3); }
+  /* Cada track: numero, titulo y duracion en una linea; el ISRC debajo. */
+  table.sub tr { display: flex; flex-wrap: wrap; column-gap: var(--e-3); border-top: 1px solid var(--linea); padding: var(--e-2) 0; }
+  table.sub td { border-top: none; padding: 0; display: block; }
+  table.sub tbody td[data-col="N"] { order: 1; color: var(--texto-3); }
+  table.sub tbody td[data-col="Track"] { order: 2; flex: 1 1 0; min-width: 0; color: var(--texto); }
+  table.sub tbody td[data-col="Duración"] { order: 3; color: var(--texto-3); }
+  table.sub tbody td[data-col="ISRC"] { order: 4; flex: 1 1 100%; margin-left: 22px; color: var(--texto-3); }
+  table.sub tbody td[data-col="Reproducciones"] { display: none; }
 }

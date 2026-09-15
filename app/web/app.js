@@ -28,7 +28,8 @@ const S = {
   resultado: null,
   error: '',
   errorCodigo: '',
-  errorCampo: '',           // error de validacion del link, va bajo el campo          // 'cuota' | 'clave' | '' : decide qué salida ofrecer
+  errorCampo: '',           // error de validacion del link, va bajo el campo
+  entrando: false,          // el proximo render es un cambio de vista: anima la entrada          // 'cuota' | 'clave' | '' : decide qué salida ofrecer
   tidal: null,
   ocupado: false,
   // Pantallas que se superponen al flujo normal.
@@ -127,6 +128,18 @@ async function api(ruta, cuerpo, ms = 30000) {
     throw e;
   }
   return datos;
+}
+
+/** El momento entre "termino" y la vista siguiente: el latido se apaga, aparece
+ *  el tilde, y medio segundo despues cambia la pantalla. Con reduced-motion no
+ *  se espera. */
+async function cierreDelTrabajo() {
+  const b = $('#bloque-progreso');
+  if (!b || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  b.classList.add('listo');
+  const pct = $('#progreso-pct'); if (pct) pct.textContent = '100%';
+  const barra = $('.barra-fill'); if (barra) barra.style.transform = 'scaleX(1)';
+  await new Promise((r) => setTimeout(r, 500));
 }
 
 /** Espera a que termine un trabajo del backend, mostrando el avance. */
@@ -329,6 +342,10 @@ function tituloDocumento() {
 function dibujar() {
   renderStepper();
   document.title = tituloDocumento();
+  // La clase queda puesta hasta el proximo render, que la saca: solo animan los
+  // nodos que se insertan en este.
+  pantalla().classList.toggle('entrando', !!S.entrando);
+  S.entrando = false;
   const v = $('#version');
   if (v) v.textContent = S.config ? 'v' + S.config.version : '';
 
@@ -376,11 +393,13 @@ function vistaFatal() {
 /* Esqueleto con la forma del contenido que viene, en vez de un spinner
    centrado (§7). */
 function vistaEsqueleto() {
-  return `<div class="card">
+  return `<div class="card card-hero" aria-busy="true">
     <div class="esqueleto esq-titulo"></div>
     <div class="esqueleto esq-linea"></div>
     <div class="esqueleto esq-linea-corta"></div>
+    <div class="esqueleto esq-etiqueta"></div>
     <div class="esqueleto esq-campo"></div>
+    <div class="esqueleto esq-boton"></div>
   </div>`;
 }
 
@@ -617,9 +636,9 @@ function bloqueProgreso(conCancelar = true) {
   const conBarra = (j.progreso || 0) > 0;
   const log = (j.log || []).slice(-60).join('\n');
   return `
-  <div class="mt-5">
+  <div class="mt-5 bloque-progreso" id="bloque-progreso">
     <div class="row mb-3">
-      <span class="spinner"></span>
+      <span class="latido" aria-hidden="true"><i></i><i></i><i></i></span>${ico('ok', 'ico-listo')}
       <strong id="progreso-mensaje" aria-live="polite">${esc(j.mensaje || 'Trabajando')}</strong>
       <span class="muted small mono" id="progreso-pct">${j.progreso ? Math.round(j.progreso * 100) + '%' : ''}</span>
       ${conCancelar ? '<button class="btn btn-ghost btn-sm a-la-derecha" data-accion="cancelar">Cancelar</button>' : ''}
@@ -629,7 +648,7 @@ function bloqueProgreso(conCancelar = true) {
            aria-valuenow="${Math.round(j.progreso * 100)}">
         <div class="barra-fill" style="transform:scaleX(${j.progreso.toFixed(3)})"></div>
       </div>` : ''}
-    ${log ? `<div class="log" id="log">${esc(log)}</div>` : ''}
+    ${log ? `<div class="log" id="log">${(j.log || []).slice(-60).map((l) => `<div>${esc(l)}</div>`).join('')}</div>` : ''}
   </div>`;
 }
 
@@ -738,8 +757,8 @@ function vistaPaso2() {
         ${sel.reduce((a, p) => a + p.tracks, 0)} tracks
       </div>
       <div class="acciones">
-        <button class="btn btn-secondary" data-accion="sel-todo">Marcar todos</button>
-        <button class="btn btn-secondary" data-accion="sel-nada">Desmarcar todos</button>
+        <button class="btn btn-secondary" data-accion="sel-todo" ${sel.length < ps.length ? '' : 'hidden'}>Marcar todos</button>
+        <button class="btn btn-secondary" data-accion="sel-nada" ${sel.length ? '' : 'hidden'}>Desmarcar todos</button>
         <button class="btn btn-primary" data-accion="ir-3" ${sel.length ? '' : 'disabled'}>Continuar</button>
       </div>
     </div>
@@ -830,7 +849,7 @@ function tablaProductos(ps) {
       </td>
       <td data-col="Producto">
         <div class="celda-titulo">${esc(p.titulo)}</div>
-        <div class="celda-sub">${p.tracks} track${p.tracks === 1 ? '' : 's'}${p.sello ? ', ' + esc(p.sello) : ''}</div>
+        <div class="celda-sub"><span class="tipo">${esc(p.tipo)}</span>${p.tracks} track${p.tracks === 1 ? '' : 's'}${p.sello ? ', ' + esc(p.sello) : ''}</div>
       </td>
       <td data-col="Tipo"><span class="tipo">${esc(p.tipo)}</span></td>
       <td data-col="Año" class="nowrap mono">${esc(p.anio) || '<span class="muted">sin fecha</span>'}</td>
@@ -1177,9 +1196,9 @@ const ACCIONES = {
 
   recargar() { window.location.reload(); },
 
-  'ver-terminos'() { S.vista = 'terminos'; render(); arriba(); },
+  'ver-terminos'() { S.vista = 'terminos'; S.entrando = true; render(); arriba(); },
   'ver-clave'() { S.vista = 'clave'; render(); window.scrollTo(0, 0); },
-  'cerrar-vista'() { S.vista = null; render(); arriba(); },
+  'cerrar-vista'() { S.vista = null; S.entrando = true; render(); arriba(); },
 
   async 'aceptar-terminos'() {
     await api('/api/terminos', { aceptar: true });
@@ -1226,8 +1245,9 @@ const ACCIONES = {
       const conCodigos = $('#con-codigos') ? $('#con-codigos').checked : true;
       const { job } = await api('/api/relevar', { url, con_codigos: conCodigos });
       const cat = await esperarJob(job, () => actualizarProgreso());
+      await cierreDelTrabajo();
       adoptarCatalogo(cat);          // arranca con todo elegido
-      S.ocupado = false;
+      S.ocupado = false; S.entrando = true;
       render(); arriba();
     } catch (e) {
       S.ocupado = false;
@@ -1265,10 +1285,10 @@ const ACCIONES = {
     }
   },
 
-  'volver-1'() { S.paso = 1; S.error = ''; S.errorCodigo = ''; S.resultado = null; render(); arriba(); },
-  'volver-2'() { S.paso = 2; S.error = ''; S.errorCodigo = ''; render(); arriba(); },
-  'volver-3'() { S.paso = 3; S.error = ''; S.errorCodigo = ''; render(); arriba(); },
-  'ir-3'() { S.paso = 3; S.error = ''; S.errorCodigo = ''; render(); arriba(); },
+  'volver-1'() { S.paso = 1; S.error = ''; S.errorCodigo = ''; S.resultado = null; S.entrando = true; render(); arriba(); },
+  'volver-2'() { S.paso = 2; S.error = ''; S.errorCodigo = ''; S.entrando = true; render(); arriba(); },
+  'volver-3'() { S.paso = 3; S.error = ''; S.errorCodigo = ''; S.entrando = true; render(); arriba(); },
+  'ir-3'() { S.paso = 3; S.error = ''; S.errorCodigo = ''; S.entrando = true; render(); arriba(); },
 
   'sel-todo'() { productosFiltrados().forEach((p) => S.seleccion.add(p.id)); render(); },
   'sel-nada'() { productosFiltrados().forEach((p) => S.seleccion.delete(p.id)); render(); },
@@ -1317,7 +1337,8 @@ const ACCIONES = {
         audio: S.opciones.audio,
       });
       S.resultado = await esperarJob(job, () => actualizarProgreso());
-      S.ocupado = false; render();
+      await cierreDelTrabajo();
+      S.ocupado = false; S.entrando = true; render(); arriba();
     } catch (e) {
       S.ocupado = false;
       S.error = e.message === 'CANCELADO' ? 'Cancelado.' : e.message;
@@ -1350,7 +1371,17 @@ function actualizarProgreso() {
   const log = $('#log');
   if (log) {
     const pegadoAbajo = log.scrollHeight - log.scrollTop - log.clientHeight < 30;
-    log.textContent = (j.log || []).slice(-60).join('\n');
+    const lineas = (j.log || []).slice(-60);
+    const previas = log.childElementCount;
+    // Solo se agregan las lineas nuevas, y entran con un fade; las de antes no
+    // se tocan, asi la lista no parpadea en cada consulta.
+    if (previas > lineas.length || (previas && log.children[0].textContent !== lineas[0])) log.textContent = '';
+    for (let i = log.childElementCount; i < lineas.length; i++) {
+      const el = document.createElement('div');
+      el.className = previas ? 'nueva' : '';
+      el.textContent = lineas[i];
+      log.appendChild(el);
+    }
     if (pegadoAbajo) log.scrollTop = log.scrollHeight;
   }
   const pie = $('#pie-estado');
@@ -1388,12 +1419,21 @@ document.addEventListener('click', (ev) => {
   const irPaso = ev.target.closest('[data-ir-paso]');
   if (irPaso) {
     const n = parseInt(irPaso.dataset.irPaso, 10);
-    if (pasoAlcanzable(n)) { S.paso = n; S.error = ''; seguro(render); }
+    if (pasoAlcanzable(n)) { S.paso = n; S.error = ''; S.entrando = true; seguro(render); arriba(); }
     return;
   }
 
   const modo = ev.target.closest('[data-modo]');
   if (modo) { S.filtro.modo = modo.dataset.modo; seguro(render); return; }
+
+  // La fila entera elige el producto; la casilla, el chevron y los links siguen
+  // haciendo lo suyo. Apuntar a 15 px no es una interaccion.
+  const fila = ev.target.closest('tr[data-fila]');
+  if (fila && !ev.target.closest('button, a, input, label')) {
+    const cb = fila.querySelector('input[data-prod]');
+    if (cb) { cb.checked = !cb.checked; cb.dispatchEvent(new Event('change', { bubbles: true })); }
+    return;
+  }
 
   const expandir = ev.target.closest('[data-expandir]');
   if (expandir) {
@@ -1506,6 +1546,11 @@ function actualizarResumenSeleccion() {
   }
   const btn = document.querySelector('[data-accion="ir-3"]');
   if (btn) btn.disabled = sel.length === 0;
+  // Solo se ofrece la accion que tiene sentido: marcar si falta alguno, desmarcar si hay alguno.
+  const bTodo = document.querySelector('[data-accion="sel-todo"]');
+  if (bTodo) bTodo.hidden = sel.length >= ps.length;
+  const bNada = document.querySelector('[data-accion="sel-nada"]');
+  if (bNada) bNada.hidden = sel.length === 0;
   const todos = $('#check-todos');
   if (todos) {
     todos.checked = ps.length > 0 && ps.every((p) => S.seleccion.has(p.id));
