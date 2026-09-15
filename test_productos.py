@@ -33,7 +33,7 @@ def _t(track, album="", year="", dist="DistroKid", label="Sello", upc="", date="
     return {
         "video_id": vid or f"v{abs(hash((track, album, year))) % 100000}",
         "track": track, "album": album or "(single / sin álbum)",
-        "distributor": dist, "category": "diy", "label": label,
+        "distributor": dist, "label": label,
         "release_year": year, "isrc": "", "upc": upc, "match": "",
         "duration_s": 180, "views": 100, "likes": 1, "comments": 0,
         "upload_date": date, "desc3": "", "url": "",

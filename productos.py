@@ -111,7 +111,6 @@ def group_products(tracks, artist=""):
             "release_date": min(fechas) if fechas else "",
             "label": _mode(t.get("label") for t in ts),
             "distributor": _mode(t.get("distributor") for t in ts),
-            "category": _mode(t.get("category") for t in ts),
             "upc": _mode(t.get("upc") for t in ts),
             "tracks": ts,
             "track_count": len(ts),

@@ -86,7 +86,7 @@ def main():
             {
                 "product_id": "p001", "title": "Album Bueno", "kind": "album",
                 "release_year": 2020, "upc": "111", "label": "Sello",
-                "distributor": "ONErpm", "category": "diy", "track_count": 1,
+                "distributor": "ONErpm", "track_count": 1,
                 "total_views": 10, "order_unconfirmed": False,
                 "folder": "2020 - Album Bueno [111]",
                 "cover_bytes": b"\xff\xd8jpeg-falso", "cover_status": "ok 3000x3000",
@@ -100,7 +100,7 @@ def main():
             {
                 "product_id": "p002", "title": "Single Flojo", "kind": "single",
                 "release_year": 2021, "upc": "", "label": "", "distributor": "DistroKid",
-                "category": "diy", "track_count": 2, "total_views": 5,
+                "track_count": 2, "total_views": 5,
                 "order_unconfirmed": True, "folder": "2021 - Single Flojo",
                 "cover_bytes": None, "cover_status": "sin match en iTunes",
                 "tracks": [

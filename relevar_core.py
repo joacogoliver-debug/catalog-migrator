@@ -30,12 +30,6 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from distributors import (  # noqa: E402
-    DIY_DISTRIBUTORS,
-    DIFICIL_DISTRIBUTORS,
-    DIFICIL_DISTRIBUTORS_EXACT,
-    DISTRIBUTOR_BLACKLIST,
-)
 
 API = "https://www.googleapis.com/youtube/v3"
 
@@ -383,19 +377,6 @@ def parse_description(desc):
     return res
 
 
-def classify(distributor):
-    if distributor is None:
-        return "not_target"
-    d = _normalize(distributor)
-    if any(n in d for n in DISTRIBUTOR_BLACKLIST):
-        return "blacklist"
-    if any(n in d for n in DIY_DISTRIBUTORS):
-        return "diy"
-    if any(n in d for n in DIFICIL_DISTRIBUTORS) or d.strip() in DIFICIL_DISTRIBUTORS_EXACT:
-        return "dificil"
-    return "not_target"
-
-
 def build_tracks(videos):
     tracks = []
     for v in videos:
@@ -411,7 +392,6 @@ def build_tracks(videos):
             "track": sn.get("title") or "",
             "album": meta["album"] or "(single / sin álbum)",
             "distributor": meta["distributor"] or "(sin datos)",
-            "category": classify(meta["distributor"]),
             "label": meta["label"] or "",
             "release_year": meta["release_year"] or "",
             "isrc": "",   # se completa por enriquecimiento (Deezer), si está disponible

@@ -53,7 +53,7 @@ def main():
 
     def track(titulo, album, anio, isrc="", upc="", vid="v1"):
         return {"video_id": vid, "track": titulo, "album": album,
-                "distributor": "ONErpm", "category": "diy", "label": "Sello",
+                "distributor": "ONErpm", "label": "Sello",
                 "release_year": anio, "isrc": isrc, "upc": upc, "match": "",
                 "duration_s": 200, "views": 100, "likes": 1, "comments": 0,
                 "upload_date": f"{anio}-01-01", "desc3": "",

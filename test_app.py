@@ -130,7 +130,7 @@ def main():
     # ========================================================
     def t(track, album, year, isrc, upc, vid, dist="ONErpm", dur=200):
         return {"video_id": vid, "track": track, "album": album, "distributor": dist,
-                "category": "diy", "label": "Sello", "release_year": year, "isrc": isrc,
+                "label": "Sello", "release_year": year, "isrc": isrc,
                 "upc": upc, "match": "", "duration_s": dur, "views": 10, "likes": 0,
                 "comments": 0, "upload_date": f"{year or 2020}-01-01", "desc3": "",
                 "url": f"https://youtu.be/{vid}"}
