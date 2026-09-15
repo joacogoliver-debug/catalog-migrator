@@ -85,13 +85,23 @@ if CON_AUDIO and not os.path.exists(_MARCA_AUDIO):
     with open(_MARCA_AUDIO, "w", encoding="utf-8") as _f:
         _f.write("Este build incluye el modulo de audio (Tidal + referencia).")
 
-# Licencias de terceros que viajan adentro del binario. Las fuentes van siempre
-# porque siempre se empaquetan; la de ffmpeg, sólo en la variante que lo trae.
+# Licencias de terceros que viajan adentro del binario. Las de las fuentes van
+# siempre porque las fuentes siempre se empaquetan; la de ffmpeg, sólo en la
+# variante que lo trae.
+#
+# Se toman las que estén en build/terceros en vez de nombrarlas una por una: la
+# lista escrita a mano quedó pidiendo ARCHIVO y GEIST después de que el rediseño
+# cambiara las tipografías, y como el filtro por `os.path.exists` las descartaba
+# en silencio, el binario salía sin ninguna licencia de fuente adentro. La SIL
+# OFL pide que viaje con la fuente, y `TERMINOS.md` promete que viaja.
+_TERCEROS = os.path.join(RAIZ, "build", "terceros")
 LICENCIAS = [
-    (os.path.join(RAIZ, "build", "terceros", "ARCHIVO-LICENCIA.txt"), "licencias"),
-    (os.path.join(RAIZ, "build", "terceros", "GEIST-LICENCIA.txt"), "licencias"),
+    (os.path.join(_TERCEROS, n), "licencias")
+    for n in sorted(os.listdir(_TERCEROS))
+    if n.endswith("-LICENCIA.txt") and n != "FFMPEG-LICENCIA.txt"
 ]
-LICENCIAS = [(o, d) for o, d in LICENCIAS if os.path.exists(o)]
+if not LICENCIAS:
+    raise SystemExit("No hay ninguna licencia de fuente en build/terceros.")
 
 # Estas se excluyen sólo en la variante esencial.
 DEPS_AUDIO = [

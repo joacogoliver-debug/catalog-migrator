@@ -113,8 +113,8 @@ YouTube, Google, Deezer, Apple, Tidal, MusicBrainz ni por ninguna distribuidora.
 
 La variante completa incluye **FFmpeg**, software de terceros bajo licencia
 GPLv3, que se distribuye sin modificaciones y se invoca como programa separado.
-Las tipografías Archivo, Geist y Geist Mono se distribuyen bajo SIL Open Font
-License 1.1. Los textos de esas licencias viajan junto al programa, en la carpeta
+Las tipografías Public Sans y DM Mono se distribuyen bajo SIL Open Font License
+1.1. Los textos de esas licencias viajan junto al programa, en la carpeta
 `licencias`.
 
 ## 7. Cambios

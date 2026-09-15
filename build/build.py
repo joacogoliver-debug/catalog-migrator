@@ -19,6 +19,7 @@ misma postura que usa yt-dlp.
 
 import hashlib
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -63,14 +64,24 @@ def revisar_entorno():
         sys.exit(f"No encuentro estos archivos (¿estás corriendo desde la raíz del repo?): {faltan}")
     print("    archivos del proyecto: ok")
 
-    # Las fuentes van adentro del binario. Si faltan, la app se ve con la
+    # Las fuentes van adentro del binario. Si falta una, la app se ve con la
     # tipografía del sistema y nadie se entera hasta abrirla.
+    #
+    # Se pide exactamente lo que declara `tokens/fonts.css`, no una cantidad:
+    # contar archivos parecía más simple y rompió el build cuando el rediseño
+    # pasó de cuatro woff2 a tres. Lo que importa no es cuántos hay, es que esté
+    # cada uno de los que el CSS pide.
+    css = os.path.join(RAIZ, "app", "web", "tokens", "fonts.css")
+    with open(css, encoding="utf-8") as f:
+        pedidas = re.findall(r"url\(['\"]\.\./fonts/([^'\"]+)['\"]\)", f.read())
+    if not pedidas:
+        sys.exit(f"No pude leer ninguna fuente de {css}.")
     fuentes = os.path.join(RAIZ, "app", "web", "fonts")
-    n = len([f for f in os.listdir(fuentes) if f.endswith(".woff2")]) \
-        if os.path.isdir(fuentes) else 0
-    if n < 4:
-        sys.exit(f"Faltan fuentes en app/web/fonts (encontré {n} de 4).")
-    print(f"    fuentes: {n} archivos")
+    faltan_fuentes = [f for f in pedidas
+                      if not os.path.exists(os.path.join(fuentes, f))]
+    if faltan_fuentes:
+        sys.exit(f"fonts.css pide fuentes que no están en app/web/fonts: {faltan_fuentes}")
+    print(f"    fuentes: {len(pedidas)} archivos, los que pide fonts.css")
 
     if not os.path.exists(os.path.join(RAIZ, "app", "web", "assets", "icono.ico")):
         sys.exit("Falta el icono. Generalo con:  python build/icono.py")
