@@ -73,6 +73,12 @@
   --fila-elegida:  #141A19;           /* mas bajo todavia: casi todas lo estan */
   --sobre-acento:  #071A19;           /* texto sobre un relleno de acento */
 
+  /* El logo, que son dos grupos de puntos: el catalogo en origen y el ya
+     migrado. Como variables y no como dos archivos, para que cambie con el
+     tema sin duplicar el SVG ni tocarlo desde JavaScript. */
+  --logo-origen:  var(--hueso);
+  --logo-migrado: var(--teal-400);
+
   /* ---- Semánticos ---- */
   --negativo: #E3645E;
   --atencion: #E1A536;
@@ -105,6 +111,9 @@
   --acento-tenue:  #E2F1F0;
   --fila-elegida:  #EDF4F2;
   --sobre-acento:  var(--hueso);
+
+  --logo-origen:  var(--grafito);
+  --logo-migrado: var(--teal-500);
 
   /* En claro los semánticos bajan para tener contraste sobre hueso. */
   --negativo: #A82E2F;

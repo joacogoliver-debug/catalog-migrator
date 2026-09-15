@@ -136,7 +136,7 @@ main { flex: 1; padding-block: var(--e-6) var(--e-10); }
 }
 .header-inner { display: flex; align-items: center; gap: var(--e-3); height: 52px; }
 .header-marca { display: flex; align-items: center; gap: var(--e-3); }
-.header-marca .accent-bar { width: 22px; height: 6px; margin: 0; }
+.header-marca { gap: var(--e-3); }
 .header-title {
   font-family: var(--mono);
   font-size: var(--t-micro);
@@ -160,11 +160,15 @@ main { flex: 1; padding-block: var(--e-6) var(--e-10); }
 }
 .btn-icono:hover { color: var(--texto); border-color: var(--linea-fuerte); }
 
-/* ---------------------------------------------------------- la barra de acento */
-/* Queda como marca en la cabecera y como indicador del paso activo. No aparece
-   suelta arriba de los títulos: eso era una versalita disfrazada. */
+/* ---------------------------------------------------------- el logo */
+/* Va inline en index.html y toma el color del tema por variable. A 24 px el
+   semitono todavia separa el origen de lo migrado; a 20 ya se empasta, y por
+   debajo de eso el favicon y el icono de la aplicacion usan la variante
+   compacta (ver build/icono.py). */
 
-.accent-bar { width: 22px; height: 6px; background: var(--acento); border-radius: 0; }
+.logo { height: 24px; width: auto; display: block; }
+.logo-origen  { fill: var(--logo-origen); }
+.logo-migrado { fill: var(--logo-migrado); }
 
 /* ---------------------------------------------------------- stepper */
 /* Números en mono sobre una regla. El paso activo se marca con el color del

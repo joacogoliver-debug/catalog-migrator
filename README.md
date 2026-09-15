@@ -252,7 +252,10 @@ Para incluir una clave de YouTube en el binario, `--con-clave`. La clave sale de
 la variable `MIGRADOR_CLAVE_YT` o de tu config local, **nunca de un archivo del
 repositorio**. En el CI viene de un secreto de GitHub.
 
-El icono se genera desde código con `python build/icono.py`.
+El icono se genera desde código con `python build/icono.py`, a partir del logo
+de `docs/marca`. Usa la **variante compacta** del símbolo y no el semitono
+completo: con 74 puntos el logo es muy bueno de 32 px para arriba y una mancha
+gris por debajo, y un icono de aplicación se ve casi siempre a 16, 24 y 32.
 
 ### Módulo de audio (opcional, apagado por defecto)
 
@@ -317,6 +320,7 @@ Sin frameworks ni build step, para que empaquetar sea copiar archivos:
 | `app/web/` | La interfaz (html, css, js) |
 | `app/web/tokens/` | Paleta, tipografía, espaciado y forma |
 | `app/web/fonts/` | Archivo, Geist y Geist Mono, hospedadas localmente |
+| `docs/marca/` | El logotipo, tal como vino del estudio |
 | `migrar_core.py` | Orquesta los 4 pasos |
 | `relevar_core.py` | Relevamiento de YouTube + ISRC/UPC por Deezer |
 | `productos.py` | Agrupa tracks en productos y filtra la selección |
