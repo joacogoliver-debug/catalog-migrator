@@ -1,5 +1,5 @@
 /* ============================================================
-   Tipografía — DESIGN.md §4.
+   Tipografía : DESIGN.md §4.
 
    Archivo para titulares. Geist para interfaz y cuerpo. Geist Mono para todo lo
    que se cuenta o se compara: ISRC, UPC, años, duraciones, cantidades, y las
@@ -34,6 +34,7 @@
   --i-cuerpo:  1.6;
   --i-ui:      1.45;
   --i-apretado:1.2;
+  --i-micro:   1.5;    /* etiquetas y textos de 11 px */
 
   --p-regular: 400;
   --p-medio:   500;
@@ -42,9 +43,12 @@
 
   /* Sólo en display, de 30 px para arriba. El piso es -0.04em; -0.03 lee mejor. */
   --tracking-display: -0.04em;
+  /* Para la seccion (22 px), que queda por debajo del piso de 30. */
+  --tracking-seccion: -0.02em;
   /* Las etiquetas en mono necesitan lo contrario: un poco de aire. */
   --tracking-mono: 0.06em;
 
-  /* Medida de lectura, 65 a 75 caracteres. */
-  --medida: 68ch;
+  /* Medida de lectura, 65 a 75 caracteres. `ch` mide el cero, que es mas
+     ancho que la media: 68ch daban 85 caracteres. */
+  --medida: 58ch;   /* 58 ceros de Geist son unos 72 caracteres reales */
 }

@@ -1,5 +1,5 @@
 /* ============================================================
-   Paleta — DESIGN.md §3 y §6.
+   Paleta : DESIGN.md §3 y §6.
 
    De la marca quedan tres colores y nada más: grafito, hueso y la rampa teal.
    Los neutrales son grises de temperatura cálida para que no se vean sucios al
@@ -46,7 +46,7 @@
   --neutral-900: #141414;
 
   /* ============================================================
-     Roles — modo oscuro, el de por defecto.
+     Roles : modo oscuro, el de por defecto.
 
      Las cuatro superficies están muy cerca entre sí, dos o tres puntos de
      luminosidad: lo justo para que se lean como capas y no como bloques
@@ -56,7 +56,7 @@
   /* El lienzo es lo que queda detras de la app. La app no lo toca: flota
      encima, con radio y margen. Es lo que hace que se lea como un programa y
      no como una pagina. */
-  --lienzo:     #000000;   /* negro puro: la app flota encima */
+  --lienzo:     #050707;   /* casi negro: la app flota encima sin caer en el #000 */
   --fondo:      #121617;   /* la superficie de la app */
   --panel:      #1A1F1F;
   --panel-alto: #222827;
@@ -68,7 +68,7 @@
   --texto-acento: #67ACAB;
 
   --linea:        #232828;   /* reglas y divisores internos */
-  --linea-fuerte: #343B3A;   /* bordes de control */
+  --linea-fuerte: #4A5352;   /* bordes de control: 3:1 sobre el fondo, lo que pide WCAG 1.4.11 */
   --foco:         #5DA09E;
 
   --acento:        var(--teal-400);   /* lo accionable: relleno del primario */
@@ -112,7 +112,7 @@
   --texto-acento: #155251;
 
   --linea:        #DFDCD5;
-  --linea-fuerte: #C6C2BA;
+  --linea-fuerte: #A9A49B;
   --foco:         #206969;
 
   --acento:        var(--teal-600);
@@ -121,7 +121,7 @@
   --fila-elegida:  #EDF4F2;
   --sobre-acento:  var(--hueso);
 
-  --luz-borde: rgba(255, 255, 255, .85);
+  --luz-borde: transparent;   /* sobre hueso un reflejo blanco no se ve */
 
   --logo-origen:  var(--grafito);
   --logo-migrado: var(--teal-500);

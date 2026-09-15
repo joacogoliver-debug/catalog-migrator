@@ -229,8 +229,8 @@ instalan las dependencias la primera vez.
 
 La app abre en **su propia ventana**, no en el navegador: usa `pywebview` sobre
 el motor web del sistema (WebView2 en Windows, WebKit en macOS). Si por algo no
-puede, cae al motor del sistema en modo aplicación —ventana propia, sin barra de
-direcciones ni pestañas— y si tampoco, al navegador. `--diagnostico` escribe un
+puede, cae al motor del sistema en modo aplicación ,ventana propia, sin barra de
+direcciones ni pestañas, y si tampoco, al navegador. `--diagnostico` escribe un
 reporte de qué puede hacer la app en esa máquina, útil porque el ejecutable se
 compila sin consola.
 
@@ -305,8 +305,8 @@ Sin frameworks ni build step, para que empaquetar sea copiar archivos:
   un binario ande en desarrollo y falle empaquetado.
 ![El avance de un trabajo largo, con el paso actual escrito](docs/capturas/16-progreso.png)
 
-- **Frontend**: JavaScript vanilla y CSS sobre los tokens de
-  [DESIGN-SYSTEM.md](DESIGN-SYSTEM.md). Nada de CDN, ni siquiera para las
+- **Frontend**: JavaScript vanilla y CSS sobre los tokens de `app/web/tokens/`,
+  que siguen a [DESIGN.md](DESIGN.md). Nada de CDN, ni siquiera para las
   tipografías: los cuatro `.woff2` viajan adentro, así la app se ve igual sin
   internet.
 - **Trabajos largos** (relevar, empaquetar) corren en hilos con progreso y
@@ -377,7 +377,7 @@ para verificar que el núcleo no dependa de ellos.
 
 ## Licencia
 
-MIT — ver [LICENSE](LICENSE). El uso previsto y sus límites están en
+MIT , ver [LICENSE](LICENSE). El uso previsto y sus límites están en
 [TERMINOS.md](TERMINOS.md).
 
 Esta herramienta es para que dueños de catálogo releven y migren **su propio**

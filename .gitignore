@@ -34,3 +34,7 @@ _smoke*.py
 .agents/
 .claude/
 skills-lock.json
+
+# Capturas de la auditoria UI/UX: 24 MB de PNG que no tienen por que viajar en el repo.
+ux-audit/before/
+ux-audit/after/

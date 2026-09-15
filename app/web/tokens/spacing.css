@@ -1,5 +1,5 @@
 /* ============================================================
-   Espaciado, forma y movimiento — DESIGN.md §5 y §7.
+   Espaciado, forma y movimiento : DESIGN.md §5 y §7.
 
    Base de 4. La escala se aprieta respecto de la versión anterior porque la
    densidad es el punto: donde antes había 24 ahora suele haber 16, y el aire
@@ -44,6 +44,10 @@
   --m-base:   180ms cubic-bezier(.2, 0, 0, 1);
   /* El único momento con autoría: la barra de un trabajo largo. */
   --m-trabajo: 600ms cubic-bezier(.16, 1, .3, 1);
+
+  /* ---- Columnas fijas de la tabla ---- */
+  --w-indice:   58px;   /* numero de fila + casilla */
+  --w-expandir: 30px;   /* el chevron */
 
   /* ---- Alturas de control ---- */
   --h-denso:  28px;

@@ -1,5 +1,5 @@
 /* ============================================================
-   Migrador de Catálogos — frontend.
+   Migrador de Catálogos : frontend.
 
    Vanilla JS a propósito: sin React, sin Babel en el navegador y sin CDN. La
    app se empaqueta como ejecutable, así que no puede depender de una descarga
@@ -27,7 +27,7 @@ const S = {
   job: null,
   resultado: null,
   error: '',
-  errorCodigo: '',          // 'cuota' | 'clave' | '' — decide qué salida ofrecer
+  errorCodigo: '',          // 'cuota' | 'clave' | '' : decide qué salida ofrecer
   tidal: null,
   ocupado: false,
   // Pantallas que se superponen al flujo normal.
@@ -351,7 +351,7 @@ function vistaFatal() {
       de abajo es lo que sirve para reportarlo.</p>
     </div>
     ${alerta('danger', 'error', `<span class="mono">${esc(S.fatal)}</span>`)}
-    <div class="row" style="margin-top:24px">
+    <div class="row mt-5">
       <button class="btn btn-primary" data-accion="recargar">Reiniciar la interfaz</button>
     </div>
   </div>`;
@@ -361,10 +361,10 @@ function vistaFatal() {
    centrado (§7). */
 function vistaEsqueleto() {
   return `<div class="card">
-    <div class="esqueleto" style="height:38px;width:60%"></div>
-    <div class="esqueleto" style="height:16px;width:85%;margin-top:24px"></div>
-    <div class="esqueleto" style="height:16px;width:70%"></div>
-    <div class="esqueleto" style="height:40px;width:100%;margin-top:24px"></div>
+    <div class="esqueleto esq-titulo"></div>
+    <div class="esqueleto esq-linea"></div>
+    <div class="esqueleto esq-linea-corta"></div>
+    <div class="esqueleto esq-campo"></div>
   </div>`;
 }
 
@@ -450,20 +450,20 @@ function vistaTerminos(primeraVez) {
   if (primeraVez) {
     return `<div class="card doc fade">
         <h2>Términos de uso</h2>
-      <p class="muted" style="margin-bottom:24px">Se leen una vez. Después no vuelven
+      <p class="muted mb-5">Se leen una vez. Después no vuelven
       a aparecer, y quedan siempre disponibles desde el pie de la ventana.</p>
       ${textoTerminos()}
-      <div class="row" style="margin-top:32px">
+      <div class="row mt-6">
         <button class="btn btn-primary btn-lg" data-accion="aceptar-terminos">Acepto y quiero usar la herramienta</button>
       </div>
-      <p class="small muted" style="margin-top:12px">Si no estás de acuerdo, cerrá la ventana.</p>
+      <p class="small muted mt-3">Si no estás de acuerdo, cerrá la ventana.</p>
     </div>`;
   }
 
   return `<div class="card doc fade">
     <h2>Términos de uso</h2>
     ${textoTerminos()}
-    <div class="row" style="margin-top:32px">
+    <div class="row mt-6">
       <button class="btn btn-secondary" data-accion="cerrar-vista">Volver</button>
     </div>
   </div>`;
@@ -490,9 +490,9 @@ function vistaClave() {
         <li>Activá <em>YouTube Data API v3</em> en la biblioteca de APIs.</li>
         <li>Creá una <em>clave de API</em> y pegala acá abajo.</li>
       </ol>
-      <p class="small" style="margin-top:8px">Es gratis. El cupo diario alcanza para unos 500 catálogos.</p>`)}
+      <p class="small mt-2">Es gratis. El cupo diario alcanza para unos 500 catálogos.</p>`)}
 
-    <div class="field" style="margin-top:24px;max-width:480px">
+    <div class="field mt-5 field-clave">
       <label for="clave">Clave de la API de YouTube</label>
       <input class="input mono" id="clave" type="password" placeholder="AIza…"
              autocomplete="off" spellcheck="false" />
@@ -501,7 +501,7 @@ function vistaClave() {
 
     <div id="setup-error"></div>
 
-    <div class="row" style="margin-top:24px">
+    <div class="row mt-5">
       <button class="btn btn-primary" data-accion="guardar-clave">Verificar y guardar</button>
       ${puedeVolver ? '<button class="btn btn-secondary" data-accion="cerrar-vista">Cancelar</button>' : ''}
     </div>
@@ -522,7 +522,7 @@ function bloqueError(titulo) {
   return alerta('danger', 'error', `
     <strong>${esc(titulo)}</strong><br>${esc(S.error)}
     ${puedeCargarClave ? `
-      <div class="row" style="margin-top:12px">
+      <div class="row mt-3">
         <button class="btn btn-secondary btn-sm" data-accion="ver-clave">Cargar mi propia clave</button>
       </div>` : ''}`);
 }
@@ -533,7 +533,7 @@ function avisoClaveIncluida() {
     Esta copia trae una clave de YouTube ya configurada, así que no hace falta
     cargar ninguna. El cupo diario es compartido entre todos los que usen esta
     misma versión, y alcanza para unos 500 catálogos por día.
-    <div class="row" style="margin-top:12px">
+    <div class="row mt-3">
       <button class="btn btn-ghost btn-sm" data-accion="ver-clave">Prefiero usar mi propia clave</button>
     </div>`);
 }
@@ -561,13 +561,13 @@ function vistaPaso1() {
       <strong>Conviene pegar el canal Topic.</strong>
       Es el que YouTube genera solo con el catálogo distribuido, y el único que trae
       distribuidora, álbum, año y sello en cada descripción.
-      <p style="margin-top:8px">Si pegás el canal oficial del artista igual funciona,
+      <p class="mt-2">Si pegás el canal oficial del artista igual funciona,
       porque la app busca su Topic y usa ese. Pero esa búsqueda gasta unas 100
       consultas del cupo diario, contra 20 que gasta relevar un catálogo entero, y en
       artistas con nombres parecidos puede elegir el Topic equivocado. Pegando el
       Topic directo eso no pasa.</p>`)}
 
-    <label class="check" style="margin-top:24px">
+    <label class="check mt-5">
       <input type="checkbox" id="con-codigos" checked ${corriendo ? 'disabled' : ''} />
       <span class="check-texto">
         <strong>Buscar códigos ISRC y UPC</strong>
@@ -580,7 +580,7 @@ function vistaPaso1() {
     ${bloqueError('No se pudo relevar.')}
 
     ${corriendo ? bloqueProgreso() : `
-      <div class="row" style="margin-top:24px">
+      <div class="row mt-5">
         <button class="btn btn-primary btn-lg" data-accion="relevar">Relevar catálogo</button>
       </div>`}
   </div>`;
@@ -593,12 +593,12 @@ function bloqueProgreso(conCancelar = true) {
   const conBarra = (j.progreso || 0) > 0;
   const log = (j.log || []).slice(-60).join('\n');
   return `
-  <div style="margin-top:24px">
-    <div class="row" style="margin-bottom:12px">
+  <div class="mt-5">
+    <div class="row mb-3">
       <span class="spinner"></span>
       <strong id="progreso-mensaje">${esc(j.mensaje || 'Trabajando')}</strong>
       <span class="muted small mono">${j.progreso ? Math.round(j.progreso * 100) + '%' : ''}</span>
-      ${conCancelar ? '<button class="btn btn-ghost btn-sm" style="margin-left:auto" data-accion="cancelar">Cancelar</button>' : ''}
+      ${conCancelar ? '<button class="btn btn-ghost btn-sm a-la-derecha" data-accion="cancelar">Cancelar</button>' : ''}
     </div>
     ${conBarra ? `
       <div class="barra" role="progressbar" aria-valuemin="0" aria-valuemax="100"
@@ -639,12 +639,12 @@ function avisoCanal() {
       <strong>Este canal no trae la metadata del catálogo.</strong>
       No hay álbumes, sellos ni años, y los códigos casi no se pueden encontrar.
       ${sug ? `
-        <div class="row" style="margin-top:12px">
+        <div class="row mt-3">
           <button class="btn btn-secondary btn-sm" data-accion="usar-topic">
             Relevar «${esc(sug.titulo)}» en su lugar
           </button>
         </div>` : `
-        <p class="small" style="margin-top:8px">
+        <p class="small mt-2">
           Buscá «${esc(S.catalogo.artista)} - Topic» en YouTube y pegá ese link.
         </p>`}`));
   }
@@ -695,13 +695,13 @@ function vistaPaso2() {
         <span class="der">${ps.length} de ${c.productos.length}</span>
       </div>
 
-      <div class="row row-wrap" style="margin-bottom:16px">
+      <div class="row row-wrap mb-4">
         <div class="segmented" role="group" aria-label="Modo de selección">
           <button class="${S.filtro.modo === 'manual' ? 'activo' : ''}" data-modo="manual">Uno por uno</button>
           <button class="${S.filtro.modo === 'fechas' ? 'activo' : ''}" data-modo="fechas">Por fecha</button>
           <button class="${S.filtro.modo === 'distribuidora' ? 'activo' : ''}" data-modo="distribuidora">Por distribuidora</button>
         </div>
-        <div class="grow" style="min-width:200px;max-width:320px">
+        <div class="grow buscador">
           <input class="input" id="buscar" type="search" placeholder="Título, ISRC o UPC"
                  aria-label="Buscar en el catálogo" value="${esc(S.filtro.texto)}" />
         </div>
@@ -741,17 +741,17 @@ function panelFiltro() {
       return alerta('warn', 'alerta', 'Ningún producto tiene año de lanzamiento declarado. Usá otro filtro.');
     }
     return `
-    <div class="panel" style="margin-bottom:16px">
+    <div class="panel mb-4">
       <div class="row row-wrap">
-        <div class="field" style="max-width:140px">
+        <div class="field field-corto">
           <label for="anio-desde">Desde el año</label>
           <input class="input mono" id="anio-desde" type="number" min="${lo}" max="${hi}" value="${f.anioDesde ?? lo}" />
         </div>
-        <div class="field" style="max-width:140px">
+        <div class="field field-corto">
           <label for="anio-hasta">Hasta el año</label>
           <input class="input mono" id="anio-hasta" type="number" min="${lo}" max="${hi}" value="${f.anioHasta ?? hi}" />
         </div>
-        <p class="small muted" style="align-self:flex-end;padding-bottom:10px">
+        <p class="small muted nota-al-pie">
           El catálogo va de ${lo} a ${hi}. Los productos sin año quedan afuera.
         </p>
       </div>
@@ -760,12 +760,12 @@ function panelFiltro() {
 
   if (f.modo === 'distribuidora') {
     const items = c.filtros.distribuidoras.map((d) => `
-      <label class="check" style="margin-right:24px;margin-bottom:12px">
+      <label class="check check-suelto">
         <input type="checkbox" data-distrib="${esc(d.name)}" ${f.distribs.has(d.name) ? 'checked' : ''} />
         <span class="check-texto"><strong>${esc(d.name)}</strong><span class="sub">${d.count} producto${d.count === 1 ? '' : 's'}</span></span>
       </label>`).join('');
     return `
-    <div class="panel" style="margin-bottom:16px">
+    <div class="panel mb-4">
       <div class="row row-wrap">${items}</div>
     </div>`;
   }
@@ -818,7 +818,7 @@ function tablaProductos(ps) {
       <td data-col="Tipo"><span class="badge badge-accent">${esc(p.tipo)}</span></td>
       <td data-col="Año" class="nowrap mono">${esc(p.anio) || '<span class="muted">sin fecha</span>'}</td>
       <td data-col="UPC" class="mono">${p.upc ? esc(p.upc) : '<span class="muted">sin UPC</span>'}</td>
-      <td data-col="Pendientes">${avisos.join(' ') || '<span class="badge badge-ok">completo</span>'}</td>
+      <td data-col="Pendientes"><span class="badges">${avisos.join('') || '<span class="badge badge-ok">completo</span>'}</span></td>
     </tr>${detalle}`;
   }).join('');
 
@@ -920,33 +920,33 @@ function faltaParaAudio() {
 
 function bloqueTidal(conectada) {
   if (conectada) {
-    return `<div style="margin-top:24px">${alerta('ok', 'ok', `
+    return `<div class="mt-5">${alerta('ok', 'ok', `
       <strong>Cuenta de Tidal conectada.</strong> El audio va a bajar en FLAC lossless, apto para entrega.
-      <div class="row" style="margin-top:12px">
+      <div class="row mt-3">
         <button class="btn btn-ghost btn-sm" data-accion="tidal-salir">Desconectar</button>
       </div>`)}</div>`;
   }
   if (S.tidal) {
-    return `<div style="margin-top:24px">${alerta('', 'enlace', `
+    return `<div class="mt-5">${alerta('', 'enlace', `
       <strong>Conectá tu cuenta en el sitio de Tidal.</strong><br>
       Abrí <a href="${esc(S.tidal.url)}" target="_blank" rel="noopener noreferrer">${esc(S.tidal.url)}</a>
       ${S.tidal.codigo ? `y usá el código <span class="mono"><strong>${esc(S.tidal.codigo)}</strong></span>` : ''}.
-      <div class="row" style="margin-top:12px">
+      <div class="row mt-3">
         <button class="btn btn-secondary btn-sm" data-accion="tidal-confirmar">Ya confirmé</button>
         <button class="btn btn-ghost btn-sm" data-accion="tidal-salir">Cancelar</button>
       </div>
-      ${S.tidal.aviso ? `<p class="small" style="margin-top:8px">${esc(S.tidal.aviso)}</p>` : ''}`)}</div>`;
+      ${S.tidal.aviso ? `<p class="small mt-2">${esc(S.tidal.aviso)}</p>` : ''}`)}</div>`;
   }
-  return `<div style="margin-top:24px">${alerta('warn', 'alerta', `
+  return `<div class="mt-5">${alerta('warn', 'alerta', `
     <strong>Conectá Tidal para poder bajar el audio.</strong>
     Sin cuenta conectada sólo se puede intentar la referencia de YouTube, y hoy falla
     en la mayoría de los casos. YouTube pide un token de origen que sólo se obtiene
     desde un navegador con sesión, y buena parte del audio de música está protegido
     con DRM. Cuando falla, el reporte te dice el motivo track por track.
-    <div class="row" style="margin-top:12px">
+    <div class="row mt-3">
       <button class="btn btn-secondary btn-sm" data-accion="tidal-iniciar">Conectar mi cuenta de Tidal</button>
     </div>
-    <p class="small" style="margin-top:8px">Tu contraseña nunca pasa por esta app, porque te autenticás en el sitio de Tidal.</p>`)}</div>`;
+    <p class="small mt-2">Tu contraseña nunca pasa por esta app, porque te autenticás en el sitio de Tidal.</p>`)}</div>`;
 }
 
 /* ------------------------------------------------------------ paso 4 */
@@ -966,7 +966,7 @@ function vistaPaso4() {
     return `<div class="card fade">
       <div class="card-head"><h1>No se pudo generar</h1></div>
       ${alerta('danger', 'error', esc(S.error))}
-      <div class="row" style="margin-top:24px">
+      <div class="row mt-5">
         <button class="btn btn-secondary" data-accion="volver-3">Volver</button>
         <button class="btn btn-primary" data-accion="generar">Reintentar</button>
       </div>
@@ -985,7 +985,7 @@ function vistaPaso4() {
         <p>${r.productos} producto${r.productos === 1 ? '' : 's'}, ${pesoLegible(r.bytes)}.</p>
       </div>
 
-      <div class="kpis" style="margin-bottom:24px">
+      <div class="kpis mb-5">
         ${kpi('Productos', num(r.productos))}
         ${kpi('Portadas', r.portadas, r.productos)}
         ${kpi('Errores', v.resumen.errores, '', v.resumen.errores > 0)}
@@ -1048,7 +1048,7 @@ function panelValidacion(v) {
       <span class="der">${v.resumen.errores} error${v.resumen.errores === 1 ? '' : 'es'} · ${v.resumen.avisos} aviso${v.resumen.avisos === 1 ? '' : 's'}</span>
     </div>
     ${cabecera}
-    <div style="margin-top:16px">
+    <div class="mt-4">
       ${grupo(errores, 'Errores', true)}
       ${grupo(avisos, 'Avisos', false)}
     </div>
@@ -1160,7 +1160,7 @@ const ACCIONES = {
       caja.innerHTML = alerta('danger', 'error', 'Pegá la clave antes de guardar.');
       return;
     }
-    caja.innerHTML = `<div class="row" style="margin-top:16px"><span class="spinner"></span><span>Verificando</span></div>`;
+    caja.innerHTML = `<div class="row mt-4"><span class="spinner"></span><span>Verificando</span></div>`;
     try {
       await api('/api/clave', { clave }, 45000);
       S.config = await api('/api/config');

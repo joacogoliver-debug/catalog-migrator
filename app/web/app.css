@@ -1,5 +1,5 @@
 /* ============================================================
-   Migrador de Catálogos — interfaz.
+   Migrador de Catálogos : interfaz.
 
    El mundo visual está en DESIGN.md. Tres gestos lo sostienen, y ninguno es
    decorativo:
@@ -72,7 +72,7 @@ h1 {
 }
 h2 {
   font-family: var(--display); font-size: var(--t-seccion);
-  line-height: var(--i-seccion); letter-spacing: var(--tracking-display);
+  line-height: var(--i-seccion); letter-spacing: var(--tracking-seccion);
   text-wrap: balance;
 }
 h3, h4 { font-family: var(--sans); font-size: var(--t-bloque); line-height: var(--i-apretado); }
@@ -96,9 +96,32 @@ code, .mono {
 }
 
 .muted  { color: var(--texto-2); }
-.small  { font-size: var(--t-micro); line-height: 1.5; }
+.small  { font-size: var(--t-micro); line-height: var(--i-micro); }
 .nowrap { white-space: nowrap; }
 .hidden { display: none !important; }
+
+/* Ritmo vertical entre bloques, con la escala de espaciado. Reemplaza a los
+   estilos inline que repartian margenes en px por todo app.js. */
+.mt-2 { margin-top: var(--e-2); }
+.mt-3 { margin-top: var(--e-3); }
+.mt-4 { margin-top: var(--e-4); }
+.mt-5 { margin-top: var(--e-5); }
+.mt-6 { margin-top: var(--e-6); }
+.mb-3 { margin-bottom: var(--e-3); }
+.mb-4 { margin-bottom: var(--e-4); }
+.mb-5 { margin-bottom: var(--e-5); }
+.a-la-derecha { margin-left: auto; }
+
+.field-corto { max-width: 140px; }
+.field-clave { max-width: var(--ancho-forma); }
+.buscador { min-width: 200px; max-width: 320px; }
+.check-suelto { margin-right: var(--e-5); margin-bottom: var(--e-3); }
+.nota-al-pie { align-self: flex-end; padding-bottom: 10px; }
+
+.esq-titulo { height: 38px; width: 60%; }
+.esq-linea  { height: 16px; width: 85%; margin-top: var(--e-5); }
+.esq-linea-corta { height: 16px; width: 70%; }
+.esq-campo  { height: 40px; width: 100%; margin-top: var(--e-5); }
 
 .sr {
   position: absolute; width: 1px; height: 1px;
@@ -220,14 +243,13 @@ main > .container > #pantalla > * { padding-bottom: var(--e-6); }
 }
 .step-num {
   display: inline-flex; align-items: center; justify-content: center;
-  font-family: var(--mono); font-size: 10px;
+  font-family: var(--mono); font-size: var(--t-micro);
   font-variant-numeric: tabular-nums;
-  color: inherit; opacity: .7;
+  color: inherit;
 }
 .step.activo { color: var(--sobre-acento); background: var(--acento); }
-.step.activo .step-num { opacity: 1; }
 .step.hecho { color: var(--texto-2); }
-.step.hecho .step-num { color: var(--acento-fuerte); opacity: 1; }
+.step.hecho .step-num { color: var(--acento-fuerte); }
 
 button.step { cursor: pointer; }
 button.step:hover { color: var(--texto); background: var(--panel-alto); }
@@ -330,10 +352,8 @@ button.step.activo:hover { background: var(--acento); color: var(--sobre-acento)
   cursor: pointer; white-space: nowrap; text-decoration: none;
   transition: background var(--m-rapido), color var(--m-rapido), border-color var(--m-rapido);
 }
-.btn:disabled {
-  background: transparent; color: var(--texto-3);
-  border-color: var(--linea); cursor: not-allowed;
-}
+/* Apagado, no desaparecido: conserva forma y color a media opacidad. */
+.btn:disabled { opacity: .45; cursor: not-allowed; }
 
 .btn-primary { background: var(--acento); color: var(--sobre-acento); border-color: var(--acento); }
 .btn-primary:hover:not(:disabled) { background: var(--acento-fuerte); border-color: var(--acento-fuerte); }
@@ -388,8 +408,8 @@ button.step.activo:hover { background: var(--acento); color: var(--sobre-acento)
 .row-wrap { flex-wrap: wrap; }
 .grow { flex: 1; min-width: 0; }
 
-/* Casilla cuadrada de 15, sin redondeo: es una marca de registro, no un tilde
-   de aplicación de mensajería. */
+/* Casilla de 15 con el radio de marca (4): una marca de registro, no un tilde
+   de aplicacion de mensajeria. */
 .check { display: inline-flex; align-items: flex-start; gap: var(--e-3); cursor: pointer; }
 .check input[type="checkbox"] {
   appearance: none; -webkit-appearance: none;
@@ -440,7 +460,10 @@ button.step.activo:hover { background: var(--acento); color: var(--sobre-acento)
 .opcion:first-child { border-top: none; }
 .opcion:hover { background: var(--panel-alto); }
 .opcion.elegida { background: var(--acento-tenue); }
-.opcion.deshabilitada { cursor: not-allowed; opacity: .65; }
+.opcion.deshabilitada { cursor: not-allowed; }
+.opcion.deshabilitada .check-texto,
+.opcion.deshabilitada .check-texto strong,
+.opcion.deshabilitada .opcion-icono { color: var(--texto-3); }
 .opcion.deshabilitada:hover { background: transparent; }
 .opcion { border-top-color: var(--fondo); }
 .opcion-icono { color: var(--texto-3); padding-top: 1px; }
@@ -475,21 +498,22 @@ button.step.activo:hover { background: var(--acento); color: var(--sobre-acento)
   height: 18px; padding: 0 5px;
   border: 1px solid currentColor;
   border-radius: var(--r-marca);
-  font-family: var(--mono); font-size: 10px;
+  font-family: var(--mono); font-size: var(--t-micro);
   letter-spacing: .04em; text-transform: uppercase;
   color: var(--texto-3);
   white-space: nowrap;
 }
+/* Los badges de una celda, separados por gap y no por espacios en el HTML. */
+.badges { display: inline-flex; flex-wrap: wrap; gap: var(--e-1); }
 .badge-ok     { color: var(--positivo); }
 .badge-danger { color: var(--negativo); }
 .badge-warn   { color: var(--atencion); }
 .badge-accent { color: var(--texto-2); border-color: var(--linea-fuerte); }
-.badge + .badge { margin-left: var(--e-1); }
 
 /* ---------------------------------------------------------- tabla */
 /* Es el componente central de la app, y se trata como tal: la fila es la unidad
-   y todo lo demás se aparta. Reglas finas, sin cebrado, sin bordes exteriores
-   redondeados que la conviertan en una tarjeta más. */
+   y todo lo demas se aparta. Reglas finas, sin cebrado; la tabla vive sobre su
+   propia superficie con el radio de panel, como los demas bloques. */
 
 .tabla-wrap {
   background: var(--panel);
@@ -533,10 +557,10 @@ table.tabla tbody tr.elegida .celda-titulo { color: var(--texto); }
 
 /* La marca de registro: el número de fila en el borde, en mono, contado por
    CSS. Es el eje de la tabla y es el rasgo de la marca. */
-.td-check { width: 58px; white-space: nowrap; }
+.td-check { width: var(--w-indice); white-space: nowrap; }
 tbody .td-check::before {
   content: counter(fila, decimal-leading-zero);
-  font-family: var(--mono); font-size: 10px;
+  font-family: var(--mono); font-size: var(--t-micro);
   color: var(--texto-3);
   margin-right: var(--e-2);
   font-variant-numeric: tabular-nums;
@@ -544,7 +568,7 @@ tbody .td-check::before {
 tr.elegida .td-check::before { color: var(--acento-fuerte); }
 .td-check .check { vertical-align: middle; }
 
-.td-exp { width: 30px; }
+.td-exp { width: var(--w-expandir); }
 .td-num { text-align: right; font-family: var(--mono); }
 .celda-titulo { color: var(--texto); font-weight: var(--p-medio); }
 .celda-sub { font-size: var(--t-micro); color: var(--texto-3); margin-top: 1px; }
@@ -561,11 +585,12 @@ tr.elegida .td-check::before { color: var(--acento-fuerte); }
 .btn-expandir[aria-expanded="true"] .ico { transform: rotate(90deg); }
 
 tr.fila-detalle > td { background: var(--panel); padding: 0 !important; height: auto; }
-.detalle-inner { padding: var(--e-3) var(--e-3) var(--e-3) 88px; }
+/* Alineado con la columna Producto: indice mas chevron. */
+.detalle-inner { padding: var(--e-3) var(--e-3) var(--e-3) calc(var(--w-indice) + var(--w-expandir)); }
 table.sub { width: 100%; border-collapse: collapse; font-size: var(--t-micro); }
 table.sub th {
   text-align: left; padding: 2px var(--e-3);
-  font-family: var(--mono); font-size: 10px;
+  font-family: var(--mono); font-size: var(--t-micro);
   letter-spacing: var(--tracking-mono); text-transform: uppercase;
   color: var(--texto-3); font-weight: var(--p-medio);
 }
@@ -576,7 +601,7 @@ table.sub td {
 }
 
 /* ---------------------------------------------------------- alertas */
-/* Borde completo de 1 px y un teñido bajo del propio semántico. Sin barra
+/* Sin borde: un tenido bajo del propio semantico sobre la superficie. Sin barra
    lateral de color: el acento es el icono y el texto. */
 
 .alerta {
@@ -776,7 +801,7 @@ details.acordeon > summary:hover { color: var(--texto); }
   table.tabla tbody td[data-col]::before {
     content: attr(data-col);
     flex: 0 0 84px;
-    font-family: var(--mono); font-size: 10px;
+    font-family: var(--mono); font-size: var(--t-micro);
     letter-spacing: var(--tracking-mono); text-transform: uppercase;
     color: var(--texto-3);
   }
@@ -789,7 +814,7 @@ details.acordeon > summary:hover { color: var(--texto); }
   table.sub td[data-col]::before {
     content: attr(data-col);
     flex: 0 0 84px;
-    font-family: var(--mono); font-size: 10px;
+    font-family: var(--mono); font-size: var(--t-micro);
     letter-spacing: var(--tracking-mono); text-transform: uppercase;
     color: var(--texto-3);
   }

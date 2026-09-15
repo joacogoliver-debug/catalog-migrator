@@ -1,4 +1,4 @@
-# Migrador de Catálogos — verdad del producto
+# Migrador de Catálogos , verdad del producto
 
 Qué es, para quién, y qué tiene que ser cierto pase lo que pase con el diseño.
 Este archivo no decide nada visual. Eso vive en `DESIGN.md`.

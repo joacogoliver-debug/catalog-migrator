@@ -1,10 +1,10 @@
-# Migrador de Catálogos — mundo visual
+# Migrador de Catálogos , mundo visual
 
 Decisiones durables. Lo que el producto es y no cambia está en `PRODUCT.md`.
 
 Este documento reemplaza al sistema anterior. De aquel queda **la paleta y nada
-más**: grafito, hueso y la rampa teal. Todo lo demás —tipografía, forma,
-componentes, densidad— se decide acá.
+más**: grafito, hueso y la rampa teal. Todo lo demás ,tipografía, forma,
+componentes, densidad, se decide acá.
 
 ---
 
@@ -62,7 +62,7 @@ pinta de teal por quedar bien.
 
 **Los semánticos son borde y texto, no relleno.** Un badge es un borde de 1 px
 con el texto del mismo tono, sobre el fondo de la superficie. El relleno pastel
-—`negative-soft` y compañía— queda sólo para el bloque de alerta, al 12% de
+,`negative-soft` y compañía, queda sólo para el bloque de alerta, al 12% de
 opacidad, que es lo suficiente para teñir sin convertirse en una mancha.
 
 ## 4. Tipografía
@@ -85,7 +85,7 @@ evidente.
 
 | Rol | Tamaño | Familia |
 |---|---|---|
-| Título de vista | 40 px | Archivo 700 |
+| Título de vista | 42 px | Archivo 700 |
 | Sección | 22 px | Archivo 600 |
 | Etiqueta de sección sobre la regla | 11 px | Geist Mono 500, versalitas |
 | Cuerpo | 14 px | Geist |
@@ -104,7 +104,7 @@ sigue siendo una pila de bloques a todo el ancho con cabecera fija arriba: eso e
 un panel de administración genérico, y ningún color lo arregla.
 
 **La app vive adentro de una superficie redondeada que flota sobre un lienzo
-negro.** El chrome —cabecera y pie— es parte de esa superficie y no se mueve; el
+negro.** El chrome ,cabecera y pie, es parte de esa superficie y no se mueve; el
 scroll pasa adentro del área de contenido, no en el documento. Es la diferencia
 entre un programa y una página larga, y además es lo que esta app de verdad es.
 
@@ -122,8 +122,8 @@ otra es parte de lo que ordena la pantalla.
 
 ## 5. Forma
 
-Radios bajos, porque el mundo es técnico: **2 px** en badges y marcas, **4 px**
-en controles, **6 px** en paneles. Nada de píldoras salvo en el punto de estado.
+Radios como en 4b: **4 px** en badges y marcas, **8 px** en controles, **14 px**
+en paneles, **18 px** en la superficie de la app. Nada de píldoras.
 
 **Una sola declaración de elevación por elemento.** O borde, o cambio de
 superficie. Nunca las dos, y sombra sólo en lo que flota de verdad: menús,
@@ -141,10 +141,11 @@ como bloques distintos.
 
 | Nivel | Oscuro | Claro |
 |---|---|---|
-| Fondo | `#101212` | `#F5F2ED` |
-| Panel | `#161919` | `#EDEBE6` |
-| Fila alterna / cabecera de tabla | `#1B1F1F` | `#E7E4DE` |
-| Flotante | `#232828` | `#FDFCFA` |
+| Lienzo (detrás de la app) | `#050707` | `#DCD7CD` |
+| Fondo | `#121617` | `#F8F6F2` |
+| Panel | `#1A1F1F` | `#EFECE6` |
+| Cabecera de tabla, hover | `#222827` | `#E6E2DA` |
+| Flotante | `#2A3130` | `#FFFFFF` |
 
 ## 7. Movimiento
 
