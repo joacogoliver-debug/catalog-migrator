@@ -52,6 +52,10 @@ sys.path.insert(0, os.path.join(RAIZ, "app"))
 # naturales a los costados en vez de texto pegado al borde.
 ANCHO, ALTO = 1600, 900
 
+# Paso de la trama del lienzo, en px de CSS (app.css, `body`). Lo usa el
+# detector de fin de contenido para saber qué es fondo y qué no.
+TRAMA = 88
+
 
 # ============================================================
 # Las vistas
@@ -227,7 +231,9 @@ def resultado_demo():
 
 
 CONFIG = {
-    "version": "1.0.0", "terminos_aceptados": True, "terminos_version": "1.0",
+    # La version sale de `app/server.py`, que es la fuente: escrita a mano acá
+    # se queda vieja y las capturas terminan mostrando una version que no existe.
+    "version": None, "terminos_aceptados": True, "terminos_version": "1.0",
     "tiene_clave": True, "clave_incluida": True, "audio_habilitado": True,
     "entorno": {"ffmpeg": True, "ffmpeg_incluido": True, "ffprobe": True,
                 "js_runtime": True, "tiddl": True, "yt_dlp": True,
@@ -350,7 +356,7 @@ def recortar(render, carpeta, base, cortes, escala, tema):
     # Dónde termina de verdad el contenido. Adivinar el alto de cada vista a
     # mano no escala: el primer intento dejó dos capturas de los términos en
     # blanco. Esto lo mide sobre el render y ajusta los cortes solo.
-    fondo_fin = _fin_del_contenido(img)
+    fondo_fin = _fin_del_contenido(img, periodo=TRAMA * escala)
     tope = max(0, fondo_fin - alto_px)
 
     # Cortes dentro de lo que existe, sin repetidos ni cuadros vacíos.
@@ -372,21 +378,36 @@ def recortar(render, carpeta, base, cortes, escala, tema):
     return hechas
 
 
-def _fin_del_contenido(img, margen=48):
-    """Última fila del render que no es fondo liso, más un margen.
+def _fin_del_contenido(img, margen=48, periodo=TRAMA):
+    """Última fila del render que no es fondo, más un margen.
 
-    Se mira fila por fila desde abajo: una fila de fondo es toda del mismo
-    color. Alcanza y sobra, porque el fondo de la app es plano y no hay ni
-    degradados ni imágenes de relleno."""
+    El fondo dejó de ser plano: el lienzo lleva una trama de líneas de 1 px que
+    se repite cada TRAMA px, así que "toda la fila del mismo color" ya no
+    distingue nada, y devolvía el alto entero del render. Con eso los cortes se
+    calculaban sobre vacío y la segunda captura del catálogo salía con la mitad
+    de abajo en blanco.
+
+    Ahora se toma como referencia la banda de abajo del render, que siempre es
+    fondo porque cada vista se pide más alta que su contenido, y cada fila se
+    compara contra la fila de referencia que le toca según su fase dentro de la
+    trama."""
     pix = img.load()
-    for y in range(img.height - 1, -1, -1):
-        primero = pix[0, y]
-        # Muestreo cada 8 px: con 3200 de ancho, recorrerlo entero por fila es
-        # medio millón de lecturas al pedo.
-        for x in range(0, img.width, 8):
-            if pix[x, y] != primero:
-                return min(img.height, y + margen)
-    return img.height
+    ancho, alto = img.size
+    # Muestreo cada 8 px: con 3200 de ancho, recorrer la fila entera es medio
+    # millón de lecturas al pedo.
+    xs = list(range(0, ancho, 8))
+    if periodo < 1 or alto <= periodo:
+        return alto
+
+    referencia = {y % periodo: [pix[x, y] for x in xs]
+                  for y in range(alto - periodo, alto)}
+
+    for y in range(alto - periodo - 1, -1, -1):
+        fila = referencia[y % periodo]
+        for i, x in enumerate(xs):
+            if pix[x, y] != fila[i]:
+                return min(alto, y + margen)
+    return alto
 
 
 def main():
@@ -401,13 +422,17 @@ def main():
     # Las del README van commiteadas, así que a 1x para no engordar el repo. Las
     # del set completo son para armar slides, y ahí conviene el doble.
     escala = 2 if args.todo else 1
-    temas = ("claro", "oscuro") if args.todo else ("claro",)
+    # Las del README van en oscuro porque es el tema con el que la app se abre
+    # (ver `app/web/tema.js`): mostrarla en claro es mostrar algo que el que la
+    # baja no va a ver hasta que toque el interruptor.
+    temas = ("oscuro", "claro") if args.todo else ("oscuro",)
     # El numero sale de la lista completa, asi los nombres no se corren
     # cuando se marca o desmarca una vista como del README.
     vistas = [(i, v) for i, v in enumerate(VISTAS, 1)
               if args.todo or v.get("readme")]
 
     import server as backend
+    CONFIG["version"] = backend.VERSION
 
     escribir_pagina()
     chrome = navegador()

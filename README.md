@@ -11,7 +11,7 @@ Código abierto y sin costo.
 
 ![tests](https://github.com/joacogoliver-debug/catalog-migrator/actions/workflows/tests.yml/badge.svg)
 
-![El catálogo relevado, con los productos a los que les falta algo ya marcados](docs/capturas/05-catalogo-2.png)
+![El catálogo relevado, con los productos a los que les falta algo ya marcados](docs/capturas/05-catalogo-1.png)
 
 <sub>Las capturas usan un catálogo de ejemplo. El artista, los títulos y los
 códigos son inventados, para no publicar el catálogo de nadie. Se generan con
@@ -112,6 +112,8 @@ Es la misma postura que usa `yt-dlp`.
 por distribuidora, o buscar por título, ISRC o UPC. Cada producto se puede
 desplegar para ver sus tracks.
 
+![La tabla del catálogo, con lo que le falta a cada producto](docs/capturas/05-catalogo-2.png)
+
 **3. Elegís qué descargar**: planilla y validación, portadas, y audios si
 activaste ese módulo.
 
@@ -119,9 +121,7 @@ activaste ese módulo.
 
 **4. Descargás un ZIP** organizado con una carpeta por producto.
 
-![El paquete listo, con el resumen de la validación](docs/capturas/17-listo-1.png)
-
-![El detalle de la validación, error por error](docs/capturas/17-listo-2.png)
+![El paquete listo, con la validación previa agrupada por tipo de problema](docs/capturas/17-listo.png)
 
 ```
 Artista - Migracion 2026-09-14/
@@ -320,7 +320,7 @@ Sin frameworks ni build step, para que empaquetar sea copiar archivos:
 | `app/web/` | La interfaz (html, css, js) |
 | `app/web/tokens/` | Paleta, tipografía, espaciado y forma |
 | `app/web/fonts/` | Public Sans y DM Mono, hospedadas localmente |
-| `docs/marca/` | El logotipo, tal como vino del estudio |
+| `docs/marca/` | El logotipo y sus reglas de uso |
 | `migrar_core.py` | Orquesta los 4 pasos |
 | `relevar_core.py` | Relevamiento de YouTube + ISRC/UPC por Deezer |
 | `productos.py` | Agrupa tracks en productos y filtra la selección |

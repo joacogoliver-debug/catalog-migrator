@@ -68,7 +68,7 @@ import relevar_core as R                      # noqa: E402
 import validar as V                           # noqa: E402
 from jobs import Registry                     # noqa: E402
 
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 APP = "Migrador de Catálogos"
 
 # Versión de los términos de uso. Si cambian de fondo se sube el número y la app
