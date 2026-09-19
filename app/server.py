@@ -71,7 +71,8 @@ from i18n import T                            # noqa: E402
 from jobs import Registry                     # noqa: E402
 
 VERSION = "1.0.1"
-APP = "Migrador de Catálogos"
+# El nombre se pide a i18n en el momento de usarlo y no se guarda en una
+# constante: el idioma se elige en caliente.
 
 # Versión de los términos de uso. Si cambian de fondo se sube el número y la app
 # los vuelve a pedir una vez; los cambios de redacción no lo tocan.
@@ -521,7 +522,7 @@ def api_idioma(body):
 
 def api_terminos(body):
     if not body.get("aceptar"):
-        raise ValueError("Hay que aceptar los términos para usar la herramienta.")
+        raise ValueError(T("srv.aceptar_terminos"))
     guardar_config({"terminos": TERMINOS_VERSION})
     return {"ok": True}
 
@@ -529,15 +530,15 @@ def api_terminos(body):
 def api_guardar_clave(body):
     clave = (body.get("clave") or "").strip()
     if not clave:
-        raise ValueError("Pegá la clave de la API de YouTube.")
+        raise ErrorDeCampo(T("srv.pega_clave"), "clave")
     if len(clave) > 200 or "\n" in clave:
-        raise ValueError("Eso no parece una clave de API.")
+        raise ErrorDeCampo(T("srv.clave_rara"), "clave")
     # Validación real: pegamos una consulta mínima antes de darla por buena, así
     # el usuario se entera acá y no a mitad de un relevamiento.
     try:
         R.api_get("channels", {"part": "id", "id": "UC_x5XG1OV2P6uZZ5FSM9Ttw"}, clave)
     except Exception as e:                       # noqa: BLE001
-        raise ValueError(f"La clave no funcionó. {e}")
+        raise ValueError(T("srv.clave_no_funciono", error=e))
     guardar_clave(clave)
     return {"ok": True}
 
@@ -551,7 +552,7 @@ def _sin_trabajo_en_curso():
     negarlo con un mensaje que dejar que pase.
     """
     if JOBS.activos():
-        raise ValueError("Ya hay un trabajo en curso. Esperá a que termine o cancelalo.")
+        raise ValueError(T("srv.trabajo_en_curso"))
 
 
 def api_relevar(body):
@@ -570,7 +571,7 @@ def api_relevar(body):
     _sin_trabajo_en_curso()
     clave = leer_clave()
     if not clave:
-        raise ValueError("Falta configurar la clave de la API de YouTube.")
+        raise ValueError(T("srv.falta_clave"))
     con_codigos = bool(body.get("con_codigos", True))
 
     def trabajo(job):
@@ -587,7 +588,7 @@ def api_relevar(body):
 def api_validar(body):
     sel = ESTADO.por_ids(body.get("ids"))
     if not sel:
-        raise ValueError("No hay productos seleccionados.")
+        raise ValueError(T("srv.sin_seleccion"))
     res = V.validar(sel, ESTADO.artista)
     return {
         "apto": res["apto"],
@@ -603,10 +604,8 @@ def _revisar_espacio(con_audio):
     except OSError:
         return                                   # si no se puede medir, seguimos
     if libre < minimo:
-        raise ValueError(
-            f"Queda poco espacio en disco ({libre / 1e9:.1f} GB libres) y este "
-            f"paquete necesita al menos {minimo / 1e9:.1f} GB. Liberá espacio y "
-            "probá de nuevo.")
+        raise ValueError(T("srv.poco_espacio",
+                           libre=f"{libre / 1e9:.1f}", minimo=f"{minimo / 1e9:.1f}"))
 
 
 def api_preparar(body):
@@ -619,7 +618,7 @@ def api_preparar(body):
     quiere_portadas = bool(body.get("portadas", True))
     quiere_audio = bool(body.get("audio", False)) and AUDIO_HABILITADO
     if not (quiere_planilla or quiere_portadas or quiere_audio):
-        raise ValueError("Elegí al menos una cosa para descargar.")
+        raise ValueError(T("srv.elegi_algo"))
     _sin_trabajo_en_curso()
     _revisar_espacio(quiere_audio)
 
@@ -636,28 +635,35 @@ def api_preparar(body):
         dir_audio = None
         carpeta = None
 
-        # Las portadas son lo que mas tarda y `preparar` solo escribe un log, asi que
-        # la fraccion se lee de sus propias lineas ("Portada 3 de 10, ..."): entre
-        # 0.05 y 0.85, y el ZIP toma el resto. Sin esto la barra se quedaba en 5 %
-        # durante casi todo el trabajo y saltaba a 90.
-        re_portada = re.compile(r"^Portada (\d+) de (\d+)")
+        # Las portadas son lo que mas tarda, asi que la barra sale de ahi: entre
+        # 0.05 y 0.85, y el ZIP toma el resto. Sin esto se quedaba en 5 % durante
+        # casi todo el trabajo y saltaba a 90.
+        #
+        # La fraccion la informa `fetch_portadas` con numeros. Antes se sacaba
+        # parseando su linea de log con un `^Portada (\d+) de (\d+)`, y eso se
+        # rompia apenas la app pasaba a ingles.
+        ultima = {"frac": None}
+
+        def avance_portadas(i, total):
+            if total > 0:
+                ultima["frac"] = 0.05 + 0.8 * i / total
 
         def avance_preparar(m):
-            mm = re_portada.match(m)
-            if mm and int(mm.group(2)) > 0:
-                job.avance(m, 0.05 + 0.8 * int(mm.group(1)) / int(mm.group(2)))
-            else:
+            if ultima["frac"] is None:
                 job.avance(m)
+            else:
+                job.avance(m, ultima["frac"])
 
         try:
             _, dir_audio, ent = M.preparar(
                 copias, artista, quiere_planilla=quiere_planilla,
                 quiere_audio=quiere_audio, quiere_portadas=quiere_portadas,
-                tidal_session=ses, log=avance_preparar)
+                tidal_session=ses, log=avance_preparar,
+                avance_portadas=avance_portadas)
             if dir_audio:
                 ESTADO.registrar_temporal(dir_audio)
 
-            job.avance("Armando el ZIP", 0.9)
+            job.avance(T("srv.armando_zip"), 0.9)
             carpeta = tempfile.mkdtemp(prefix="migrador_zip_")
             destino = os.path.join(carpeta, f"{R.slugify(artista)}-migracion.zip")
             ruta, tam = M.empaquetar(
@@ -694,7 +700,7 @@ def api_preparar(body):
 
 def api_tidal_iniciar():
     if not AUDIO_HABILITADO:
-        raise ValueError("El módulo de audio está desactivado.")
+        raise ValueError(T("srv.audio_desactivado"))
     ses = audio_mod.TidalSession()
     info = ses.iniciar_login()
     # La sesión anterior, si quedó alguna a medio conectar, se cierra: dejarla
@@ -712,7 +718,7 @@ def api_tidal_iniciar():
 
 def api_tidal_confirmar(body):
     if not ESTADO.tidal:
-        raise ValueError("No hay una conexión de Tidal en curso.")
+        raise ValueError(T("srv.sin_tidal_en_curso"))
     estado = ESTADO.tidal.poll_login((body.get("device_code") or "").strip())
     return {"estado": estado, "conectada": bool(ESTADO.tidal.conectada)}
 
@@ -792,20 +798,20 @@ class Handler(BaseHTTPRequestHandler):
         try:
             largo = int(self.headers.get("Content-Length") or 0)
         except ValueError:
-            raise ValueError("El pedido trae un Content-Length inválido.")
+            raise ValueError(T("srv.content_length"))
         if largo <= 0:
             return {}
         if largo > MAX_BODY:
             raise ValueError("El pedido es demasiado grande.")
         crudo = self.rfile.read(largo)
         if len(crudo) < largo:
-            raise ValueError("El pedido llegó cortado.")
+            raise ValueError(T("srv.pedido_cortado"))
         try:
             datos = json.loads(crudo.decode("utf-8"))
         except (ValueError, UnicodeDecodeError):
-            raise ValueError("El pedido no es JSON válido.")
+            raise ValueError(T("srv.json_invalido"))
         if not isinstance(datos, dict):
-            raise ValueError("El pedido tiene que ser un objeto JSON.")
+            raise ValueError(T("srv.json_no_objeto"))
         return datos
 
     def _host_valido(self):
@@ -838,19 +844,19 @@ class Handler(BaseHTTPRequestHandler):
             # Sin esto, una excepción acá la imprime http.server como traceback y
             # el cliente ve la conexión cortada sin ningún mensaje.
             try:
-                self._error(f"Error inesperado. {e}", HTTPStatus.INTERNAL_SERVER_ERROR)
+                self._error(T("srv.inesperado", error=e), HTTPStatus.INTERNAL_SERVER_ERROR)
             except Exception:                        # noqa: BLE001
                 self.close_connection = True
 
     def _get(self):
         if not self._host_valido():
-            return self._error("Pedido rechazado.", HTTPStatus.FORBIDDEN)
+            return self._error(T("srv.rechazado"), HTTPStatus.FORBIDDEN)
 
         ruta = urllib.parse.urlparse(self.path).path
 
         if ruta.startswith("/api/"):
             if not self._token_valido():
-                return self._error("Pedido rechazado. Recargá la app.", HTTPStatus.FORBIDDEN)
+                return self._error(T("srv.rechazado_token"), HTTPStatus.FORBIDDEN)
 
             if ruta == "/api/config":
                 return self._json(api_config())
@@ -860,7 +866,7 @@ class Handler(BaseHTTPRequestHandler):
                 # relevamiento cuesta cuota de YouTube y no queremos repetirlo por
                 # un F5 accidental.
                 if not ESTADO.productos:
-                    return self._error("No hay un catálogo cargado.", HTTPStatus.NOT_FOUND)
+                    return self._error(T("srv.sin_catalogo"), HTTPStatus.NOT_FOUND)
                 return self._json(catalogo_json(ESTADO.productos, ESTADO.artista,
                                                 ESTADO.diagnostico))
 
@@ -868,21 +874,21 @@ class Handler(BaseHTTPRequestHandler):
             if m:
                 job = JOBS.get(m.group(1))
                 if not job:
-                    return self._error("Ese trabajo ya no existe.", HTTPStatus.NOT_FOUND)
+                    return self._error(T("srv.trabajo_no_existe"), HTTPStatus.NOT_FOUND)
                 return self._json(job.a_dict(con_log=True))
 
             m = re.fullmatch(r"/api/descargar/([0-9a-f]{6,32})", ruta)
             if m:
                 return self._descargar(m.group(1))
 
-            return self._error("No encontrado.", HTTPStatus.NOT_FOUND)
+            return self._error(T("srv.no_encontrado"), HTTPStatus.NOT_FOUND)
 
         return self._estatico(ruta)
 
     def _descargar(self, job_id):
         ruta = ESTADO.zip_de(job_id)
         if not ruta or not os.path.exists(ruta):
-            return self._error("El paquete ya no está disponible. Generalo de nuevo.",
+            return self._error(T("srv.zip_vencido"),
                                HTTPStatus.NOT_FOUND)
         tam = os.path.getsize(ruta)
         # El nombre sale de slugify(), pero igual lo limpiamos antes de meterlo en
@@ -910,14 +916,14 @@ class Handler(BaseHTTPRequestHandler):
         # Normalizamos para que no se pueda salir de WEB_DIR con "..".
         limpio = posixpath.normpath(urllib.parse.unquote(ruta)).lstrip("/")
         if limpio.startswith("..") or os.path.isabs(limpio):
-            return self._error("No encontrado.", HTTPStatus.NOT_FOUND)
+            return self._error(T("srv.no_encontrado"), HTTPStatus.NOT_FOUND)
 
         destino = os.path.normpath(os.path.join(WEB_DIR, limpio))
         base = os.path.normpath(WEB_DIR)
         if os.path.commonpath([base, destino]) != base:
-            return self._error("No encontrado.", HTTPStatus.NOT_FOUND)
+            return self._error(T("srv.no_encontrado"), HTTPStatus.NOT_FOUND)
         if not os.path.isfile(destino):
-            return self._error("No encontrado.", HTTPStatus.NOT_FOUND)
+            return self._error(T("srv.no_encontrado"), HTTPStatus.NOT_FOUND)
 
         tipo = mimetypes.guess_type(destino)[0] or "application/octet-stream"
         if destino.endswith(".woff2"):
@@ -937,7 +943,7 @@ class Handler(BaseHTTPRequestHandler):
         """index.html con el token de la sesión adentro."""
         ruta = os.path.join(WEB_DIR, "index.html")
         if not os.path.isfile(ruta):
-            return self._error("Falta index.html.", HTTPStatus.INTERNAL_SERVER_ERROR)
+            return self._error(T("srv.falta_index"), HTTPStatus.INTERNAL_SERVER_ERROR)
         with open(ruta, encoding="utf-8") as f:
             html = f.read()
         cuerpo = html.replace("{{TOKEN}}", TOKEN).encode("utf-8")
@@ -965,7 +971,7 @@ class Handler(BaseHTTPRequestHandler):
             self.close_connection = True
         except Exception as e:                       # noqa: BLE001
             try:
-                self._error(f"Error inesperado. {e}", HTTPStatus.INTERNAL_SERVER_ERROR)
+                self._error(T("srv.inesperado", error=e), HTTPStatus.INTERNAL_SERVER_ERROR)
             except Exception:                        # noqa: BLE001
                 self.close_connection = True
 
@@ -985,9 +991,9 @@ class Handler(BaseHTTPRequestHandler):
             return self._error(e, HTTPStatus.BAD_REQUEST)
 
         if not self._host_valido():
-            return self._error("Pedido rechazado.", HTTPStatus.FORBIDDEN)
+            return self._error(T("srv.rechazado"), HTTPStatus.FORBIDDEN)
         if not self._token_valido():
-            return self._error("Pedido rechazado. Recargá la app.", HTTPStatus.FORBIDDEN)
+            return self._error(T("srv.rechazado_token"), HTTPStatus.FORBIDDEN)
 
         try:
             if ruta in RUTAS_POST_SIN_BODY:
@@ -997,13 +1003,13 @@ class Handler(BaseHTTPRequestHandler):
             if m:
                 job = JOBS.get(m.group(1))
                 if not job:
-                    return self._error("Ese trabajo ya no existe.", HTTPStatus.NOT_FOUND)
+                    return self._error(T("srv.trabajo_no_existe"), HTTPStatus.NOT_FOUND)
                 job.cancelar()
                 return self._json({"ok": True})
 
             fn = RUTAS_POST.get(ruta)
             if not fn:
-                return self._error("No encontrado.", HTTPStatus.NOT_FOUND)
+                return self._error(T("srv.no_encontrado"), HTTPStatus.NOT_FOUND)
             return self._json(fn(cuerpo))
 
         except ValueError as e:
@@ -1012,7 +1018,7 @@ class Handler(BaseHTTPRequestHandler):
         except R.RelevarError as e:
             return self._error(e, HTTPStatus.UNPROCESSABLE_ENTITY)
         except Exception as e:                        # noqa: BLE001
-            return self._error(f"Error inesperado. {e}", HTTPStatus.INTERNAL_SERVER_ERROR)
+            return self._error(T("srv.inesperado", error=e), HTTPStatus.INTERNAL_SERVER_ERROR)
 
 
 def crear_servidor(puerto=0):
@@ -1025,7 +1031,7 @@ def crear_servidor(puerto=0):
 def main(puerto=0, abrir=True):
     srv = crear_servidor(puerto)
     url = f"http://127.0.0.1:{srv.server_address[1]}"
-    print(f"{APP} v{VERSION}")
+    print(f'{T("app.nombre")} v{VERSION}')
     print(f"Servidor local: {url}")
     if abrir:
         import webbrowser

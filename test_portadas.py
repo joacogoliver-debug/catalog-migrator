@@ -11,6 +11,10 @@ Reportar el tamaño pedido haría que la planilla diga que la portada cumple el
 mínimo de ingesta cuando en realidad la van a rechazar.
 """
 import os
+
+# Este test compara los mensajes en español, así que el idioma se fija:
+# si no, en una máquina con el sistema en inglés compararía contra otra cosa.
+os.environ["MIGRADOR_IDIOMA"] = "es"
 import sys
 import struct
 import importlib.util

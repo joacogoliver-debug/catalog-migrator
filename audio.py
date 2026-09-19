@@ -35,9 +35,14 @@ import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor
 
+from i18n import T
+
 # Formatos que consideramos aptos para entrega (lossless real).
 FORMATOS_LOSSLESS = {".flac"}
 
+# Estas tres NO se traducen: se guardan en `audio_label` de cada track y hoy
+# no se muestran en ningún lado. Si alguna vez se muestran, pasan al catálogo
+# de i18n como todo lo demás.
 ETIQUETA_LOSSLESS = "Tidal FLAC (lossless), apto para entrega"
 ETIQUETA_LOSSY_TIDAL = "Tidal AAC (lossy, sin máster lossless en Tidal), NO apto para entrega"
 ETIQUETA_YOUTUBE = "YouTube (lossy), REFERENCIA, NO apto para entrega"
@@ -268,7 +273,7 @@ class TidalSession:
             if estado != "pendiente":
                 log(f"[tidal] {estado}")
                 return False
-        log("[tidal] el código expiró sin confirmación")
+        log(T("aud.codigo_expiro"))
         return False
 
     @property
@@ -290,7 +295,7 @@ class TidalSession:
     def api(self):
         """TidalApi de esta sesión, con cache propio."""
         if not self._token:
-            raise RuntimeError("La cuenta de Tidal no está conectada.")
+            raise RuntimeError(T("aud.sin_cuenta"))
         self._refrescar_si_hace_falta()
         if self._api is None:
             TidalAPI, TidalClient = clases_tidal()
@@ -344,7 +349,7 @@ def buscar_artista_tidal(session, nombre):
         texto = str(e).lower()
         if "401" in texto or "token" in texto or "unauthorized" in texto:
             raise TidalAuthError(
-                "La sesión de Tidal no es válida o venció. Volvé a conectar la cuenta."
+                T("aud.sesion_vencida")
             ) from e
         return None, None
     artistas = getattr(res, "artists", None)
@@ -373,8 +378,7 @@ def construir_indice_isrc(session, artista, log=print):
         log(f"[tidal] {e}")
         return {}, None
     if not artist_id:
-        log(f"[tidal] no encontré a '{artista}' en el catálogo de Tidal. "
-            "Si el nombre difiere del de Tidal, el match por ISRC no se puede armar.")
+        log(T("aud.artista_no_encontrado", artista=artista))
         return {}, None
 
     log(f"[tidal] artista: {nombre_tidal} (id {artist_id})")
@@ -393,7 +397,7 @@ def construir_indice_isrc(session, artista, log=print):
                 pagina = session.api.get_artist_albums(
                     artist_id, limit=PAGINA_TIDAL, offset=offset, filter=filtro)
             except Exception as e:
-                log(f"[tidal] no pude listar {filtro}: {e}")
+                log(T("aud.no_pude_listar", filtro=filtro, error=e))
                 break
             lote = getattr(pagina, "items", None) or []
             items.extend(lote)
@@ -401,7 +405,7 @@ def construir_indice_isrc(session, artista, log=print):
             offset += len(lote)
             if not lote or offset >= total:
                 break
-    log(f"[tidal] releases en la discografía: {len(items)}")
+    log(T("aud.releases", n=len(items)))
 
     for al in items:
         album_id = getattr(al, "id", None)
@@ -441,7 +445,7 @@ def construir_indice_isrc(session, artista, log=print):
                 "tags": list(getattr(getattr(t, "mediaMetadata", None), "tags", []) or []),
             }
 
-    log(f"[tidal] índice armado: {len(indice)} ISRC en {len(items)} releases")
+    log(T("aud.indice", isrc=len(indice), releases=len(items)))
     return indice, artist_id
 
 
@@ -481,8 +485,7 @@ def matchear_por_isrc(productos, indice, log=print):
             p["order_unconfirmed"] = False
         p["tidal_cobertura"] = f"{encontrados}/{p['track_count']}"
 
-    log(f"[tidal] match por ISRC: {hit} encontrados, {miss} sin match, "
-        f"{sin_isrc} sin ISRC en el relevamiento")
+    log(T("aud.match", hit=hit, miss=miss, sin_isrc=sin_isrc))
     return productos
 
 
@@ -559,21 +562,21 @@ def bajar_referencia_youtube(video_id, dest_dir, log=print, errores=None):
     try:
         subprocess.run(cmd, capture_output=True, text=True, timeout=600, check=True)
     except FileNotFoundError:
-        return _falla("yt-dlp no está instalado", video_id, log, errores)
+        return _falla(T("aud.sin_ytdlp"), video_id, log, errores)
     except subprocess.CalledProcessError as e:
         # yt-dlp explica el motivo real en stderr ("Video unavailable", "Private
         # video", "Sign in to confirm your age"...). Es justo lo que el usuario
         # necesita saber para decidir qué hacer con ese track.
         crudo = (e.stderr or "").strip().splitlines()
         motivo = next((l.replace("ERROR:", "").strip() for l in reversed(crudo)
-                       if "ERROR" in l.upper()), crudo[-1] if crudo else "falló la descarga")
+                       if "ERROR" in l.upper()), crudo[-1] if crudo else T("aud.fallo_descarga"))
         return _falla(motivo[:160], video_id, log, errores)
     except subprocess.TimeoutExpired:
-        return _falla("tardó demasiado y se canceló", video_id, log, errores)
+        return _falla(T("aud.timeout"), video_id, log, errores)
 
     for f in Path(dest_dir).glob(f"yt_{video_id}.*"):
         return f, ETIQUETA_YOUTUBE, f.suffix.lower()
-    return _falla("yt-dlp terminó pero no dejó ningún archivo", video_id, log, errores)
+    return _falla(T("aud.sin_archivo"), video_id, log, errores)
 
 
 # ============================================================
@@ -643,6 +646,5 @@ def fetch_audio(productos, session=None, usar_referencia=True, dest_dir=None,
 
     aptos = sum(1 for t in tracks if (t.get("audio_format") or "") in FORMATOS_LOSSLESS)
     ref = sum(1 for t in tracks if t.get("audio_path") and (t.get("audio_format") or "") not in FORMATOS_LOSSLESS)
-    log(f"[audio] listos: {aptos} aptos para entrega, {ref} de referencia, "
-        f"{len(tracks) - aptos - ref} sin audio")
+    log(T("aud.listos", aptos=aptos, ref=ref, sin=len(tracks) - aptos - ref))
     return productos, dest_dir

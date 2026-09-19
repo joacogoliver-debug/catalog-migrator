@@ -25,8 +25,15 @@ for _p in (_RAIZ, _AQUI):
         sys.path.insert(0, _p)
 
 import server as backend            # noqa: E402
+from i18n import T                  # noqa: E402
 
-TITULO = "Migrador de Catálogos"
+# El idioma se resuelve antes que nada: la primera linea que imprime el launcher
+# ya tiene que salir en el idioma que corresponde.
+backend.idioma_guardado()
+
+
+def titulo():
+    return T("app.nombre")
 
 
 
@@ -51,7 +58,7 @@ def _abrir_ventana_pywebview(url):
     except Exception:
         return False
     try:
-        webview.create_window(TITULO, url, width=1180, height=860, min_size=(900, 640))
+        webview.create_window(titulo(), url, width=1180, height=860, min_size=(900, 640))
         webview.start()
         return True
     except Exception:
@@ -115,7 +122,7 @@ def _diagnostico(url):
     """
     import platform
     lineas = [
-        f"{TITULO}  v{backend.VERSION}",
+        f"{titulo()}  v{backend.VERSION}",
         f"fecha: {__import__('datetime').datetime.now().isoformat(timespec='seconds')}",
         f"python: {sys.version.split()[0]}   plataforma: {platform.platform()}",
         f"empaquetado: {bool(getattr(sys, 'frozen', False))}",
@@ -185,23 +192,19 @@ def _registrar_falla(e):
         with open(ruta, "a", encoding="utf-8") as f:
             f.write(f"\n===== {datetime.datetime.now().isoformat()} =====\n")
             f.write(traceback.format_exc())
-        print(f"El detalle quedó en: {ruta}")
+        print(T("lau.detalle_en", ruta=ruta))
     except Exception:
         pass
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description=TITULO)
-    ap.add_argument("--puerto", type=int, default=0,
-                    help="Puerto local. 0 = elegir uno libre (recomendado).")
-    ap.add_argument("--no-abrir", action="store_true",
-                    help="No abrir la interfaz; sólo dejar el servidor escuchando.")
-    ap.add_argument("--navegador", action="store_true",
-                    help="Abrir en el navegador normal, con pestañas y barra de direcciones.")
+    ap = argparse.ArgumentParser(description=titulo())
+    ap.add_argument("--puerto", type=int, default=0, help=T("lau.h_puerto"))
+    ap.add_argument("--no-abrir", action="store_true", help=T("lau.h_no_abrir"))
+    ap.add_argument("--navegador", action="store_true", help=T("lau.h_navegador"))
     ap.add_argument("--sin-ventana-nativa", action="store_true", dest="sin_nativa",
-                    help="No usar la ventana propia; abrir con el motor web del sistema.")
-    ap.add_argument("--diagnostico", action="store_true",
-                    help="Escribir un reporte de qué puede hacer la app y salir.")
+                    help=T("lau.h_sin_ventana"))
+    ap.add_argument("--diagnostico", action="store_true", help=T("lau.h_diagnostico"))
     args = ap.parse_args(argv)
 
     srv = backend.crear_servidor(args.puerto)
@@ -211,10 +214,10 @@ def main(argv=None):
     hilo = threading.Thread(target=srv.serve_forever, name="http", daemon=True)
     hilo.start()
 
-    print(f"{TITULO}  v{backend.VERSION}")
-    print(f"Escuchando en {url}")
+    print(f"{titulo()}  v{backend.VERSION}")
+    print(T("lau.escuchando", url=url))
     if not backend.leer_clave():
-        print("Primera vez: la app te va a pedir la clave de la API de YouTube.")
+        print(T("lau.primera_vez"))
 
     if args.diagnostico:
         _diagnostico(url)
@@ -238,12 +241,12 @@ def main(argv=None):
             # Ventana propia, sin barra de direcciones ni pestañas: se ve y se usa
             # como un programa de escritorio. Usa el motor web que ya está en la
             # máquina, así que no hay nada que empaquetar ni que pueda colgarse.
-            print("Abrí la app en su propia ventana. Cerrala para terminar.")
+            print(T("lau.ventana_propia"))
             hilo.join()
         else:
             import webbrowser
             webbrowser.open(url)
-            print("Abrí la app en tu navegador. Ctrl+C acá para cerrarla.")
+            print(T("lau.en_navegador"))
             hilo.join()
     except KeyboardInterrupt:
         print("\nCerrando…")
@@ -260,6 +263,6 @@ if __name__ == "__main__":
     except SystemExit:
         raise
     except Exception as e:                       # noqa: BLE001
-        print(f"No se pudo iniciar la app: {e}")
+        print(T("lau.no_arranco", error=e))
         _registrar_falla(e)
         sys.exit(1)
