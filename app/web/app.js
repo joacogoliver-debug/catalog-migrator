@@ -115,15 +115,15 @@ async function api(ruta, cuerpo, ms = 30000) {
   try {
     r = await fetch(ruta, opciones);
   } catch (e) {
-    if (e && e.name === 'AbortError') throw new Error('La app tardó demasiado en responder.');
-    throw new Error('Se perdió la conexión con la app.');
+    if (e && e.name === 'AbortError') throw new Error(T('red.timeout'));
+    throw new Error(T('red.sin_conexion'));
   } finally {
     clearTimeout(reloj);
   }
   let datos = {};
   try { datos = await r.json(); } catch (_) { /* respuesta sin cuerpo */ }
   if (!r.ok) {
-    const e = new Error(datos.error || `Error ${r.status}`);
+    const e = new Error(datos.error || T('red.error_http', { codigo: r.status }));
     e.codigo = datos.codigo_error || '';
     throw e;
   }
@@ -157,13 +157,13 @@ async function esperarJob(job, alAvanzar) {
       // normal que una consulta suelta falle, así que sólo avisamos después de
       // varias seguidas y un blip no interrumpe un trabajo que va bien.
       if (++fallos < 5) continue;
-      throw new Error('Se perdió la conexión con la app. Puede que se haya cerrado la ventana del servidor.');
+      throw new Error(T('red.sin_conexion_larga'));
     }
     S.job = j;
     if (alAvanzar) alAvanzar(j);
     if (j.estado === 'listo') return j.resultado;
     if (j.estado === 'error') {
-      const e = new Error(j.error || 'El proceso falló.');
+      const e = new Error(j.error || T('red.proceso_fallo'));
       e.codigo = j.codigo_error || '';
       throw e;
     }
@@ -192,15 +192,24 @@ function aplicarTema(t) {
   const btn = $('#btn-tema');
   if (!btn) return;
   const enOscuro = !raiz.hasAttribute('data-theme');
-  const destino = enOscuro ? 'claro' : 'oscuro';
-  btn.innerHTML = ico(enOscuro ? 'sol' : 'luna')
-    + '<span class="sr">Cambiar a modo ' + destino + '</span>';
-  btn.title = 'Cambiar a modo ' + destino;
+  const rotulo = T(enOscuro ? 'cabecera.ir_a_claro' : 'cabecera.ir_a_oscuro');
+  btn.innerHTML = ico(enOscuro ? 'sol' : 'luna') + `<span class="sr">${esc(rotulo)}</span>`;
+  btn.title = rotulo;
+}
+
+/* ------------------------------------------------------------ idioma */
+
+/** Marca el idioma en uso en el selector de la cabecera. */
+function marcarIdioma() {
+  document.querySelectorAll('#selector-idioma button').forEach((b) => {
+    b.classList.toggle('activo', b.getAttribute('data-idioma') === idioma());
+    b.setAttribute('aria-pressed', String(b.getAttribute('data-idioma') === idioma()));
+  });
 }
 
 /* ------------------------------------------------------------ stepper */
 
-const PASOS = ['Pegá el link', 'Elegí productos', 'Elegí qué descargar', 'Descargá'];
+const PASOS = ['paso1', 'paso2', 'paso3', 'paso4'];
 
 /** ¿Se puede ir a ese paso? Nada de saltar a un paso sin los datos que
  *  necesita. Volver atrás siempre se puede, y el estado de los pasos anteriores
@@ -224,13 +233,13 @@ function renderStepper() {
     return;
   }
 
-  cont.innerHTML = PASOS.map((nombre, i) => {
+  cont.innerHTML = PASOS.map((clavePaso, i) => {
     const n = i + 1;
     const actual = S.paso === n;
     const clase = actual ? 'activo' : (S.paso > n ? 'hecho' : 'inerte');
     const puede = !actual && pasoAlcanzable(n);
     const marca = S.paso > n ? ico('ok', 'ico-sm') : String(n);
-    const cuerpo = `<span class="step-num">${marca}</span><span>${esc(nombre)}</span>`;
+    const cuerpo = `<span class="step-num">${marca}</span><span>${esc(T('stepper.' + clavePaso))}</span>`;
     // Los alcanzables son botones de verdad, así se vuelve con el mouse y con el
     // teclado. Sin esto, corregir una selección obligaba a relevar de nuevo.
     return puede
@@ -329,13 +338,13 @@ function render() {
 function arriba() { const m = document.querySelector('main'); if (m) m.scrollTop = 0; }
 
 function tituloDocumento() {
-  const base = 'Migrador de Catálogos';
-  if (S.vista === 'terminos') return 'Términos de uso, ' + base;
-  if (S.vista === 'clave') return 'Clave de YouTube, ' + base;
+  const base = T('app.nombre');
+  if (S.vista === 'terminos') return T('titulo.terminos', { app: base });
+  if (S.vista === 'clave') return T('titulo.clave', { app: base });
   const a = S.catalogo && S.catalogo.artista;
-  if (S.paso === 2 && a) return a + ', elegir productos';
-  if (S.paso === 3 && a) return a + ', qué descargar';
-  if (S.paso === 4 && a) return a + (S.ocupado ? ', armando el paquete' : ', paquete listo');
+  if (S.paso === 2 && a) return T('titulo.paso2', { artista: a });
+  if (S.paso === 3 && a) return T('titulo.paso3', { artista: a });
+  if (S.paso === 4 && a) return T(S.ocupado ? 'titulo.paso4_armando' : 'titulo.paso4_listo', { artista: a });
   return base;
 }
 
@@ -379,13 +388,12 @@ function mostrarFatal(e) {
 function vistaFatal() {
   return `<div class="card">
     <div class="card-head">
-      <h2>La app se encontró con un problema</h2>
-      <p>El motor sigue andando. Reiniciá la interfaz y, si se repite, el detalle
-      de abajo es lo que sirve para reportarlo.</p>
+      <h2>${esc(T('fatal.titulo'))}</h2>
+      <p>${esc(T('fatal.detalle'))}</p>
     </div>
     ${alerta('danger', 'error', `<span class="mono">${esc(S.fatal)}</span>`)}
     <div class="row mt-5">
-      <button class="btn btn-primary" data-accion="recargar">Reiniciar la interfaz</button>
+      <button class="btn btn-primary" data-accion="recargar">${esc(T('fatal.reiniciar'))}</button>
     </div>
   </div>`;
 }
@@ -410,99 +418,35 @@ function alerta(tipo, icono, html) {
 
 /* ------------------------------------------------------------ términos */
 
-/** Los términos completos. Están acá y no en un archivo aparte para que la app
- *  los pueda mostrar sin internet y sin abrir el navegador. El texto es el mismo
- *  de TERMINOS.md, que es la copia canónica del repositorio. */
+/** Los términos completos. El texto vive en el catálogo de i18n, en los dos
+ *  idiomas, y no en un archivo aparte, para que la app los pueda mostrar sin
+ *  internet y sin abrir el navegador. La copia canónica del repositorio son
+ *  TERMINOS.md y TERMS.md; si cambian, cambia también el catálogo. */
 function textoTerminos() {
-  return `
-    <h4>Qué es esta herramienta</h4>
-    <p>El Migrador de Catálogos es un programa gratuito y de código abierto para
-    <strong>administrar catálogos musicales</strong>. Sirve para relevar el catálogo
-    distribuido de un artista, recuperar sus códigos ISRC y UPC, reunir las portadas y
-    armar la planilla de ingesta que pide una distribuidora nueva. Su finalidad es esa
-    y no otra.</p>
-
-    <h4>Quién puede usarla y para qué</h4>
-    <p>Está pensada para titulares de derechos, sellos, distribuidoras, managers y
-    artistas que trabajan sobre <strong>material propio, o sobre material que
-    administran con autorización del titular</strong>.</p>
-    <p>Al usarla declarás que tenés los derechos o la autorización necesaria sobre el
-    contenido que procesás, y que vas a cumplir los términos de servicio de las
-    plataformas que la herramienta consulta, entre ellas YouTube, Deezer, Apple y
-    Tidal.</p>
-
-    <h4>Qué no está permitido</h4>
-    <p>Esta herramienta no avala ni habilita la piratería. Lo que sigue queda
-    expresamente fuera de su finalidad y de esta licencia de uso.</p>
-    <ul>
-      <li>Descargar, copiar o redistribuir material sobre el que no tenés derechos.</li>
-      <li>Usar el módulo de audio para obtener grabaciones ajenas, o para eludir
-      medidas técnicas de protección.</li>
-      <li>Revender, redistribuir o publicar el contenido obtenido sin autorización del
-      titular.</li>
-      <li>Compartir credenciales de cuentas de terceros, o usar una cuenta de
-      streaming fuera de los términos del servicio que la provee.</li>
-      <li>Eludir restricciones de las APIs que la herramienta consulta, o automatizar
-      consultas por encima de los límites que esas APIs fijan.</li>
-    </ul>
-    <p>El módulo de audio es opcional, viene desactivado y requiere que conectes tu
-    propia cuenta paga. Existe para que un titular de catálogo recupere sus propios
-    másters cuando el archivo original no aparece. No reemplaza al máster entregado
-    por el artista o el sello, y así está dicho en la documentación y en los reportes
-    que genera.</p>
-
-    <h4>Tus datos</h4>
-    <p>La app corre entera en tu computadora. No hay cuentas, ni registro, ni un
-    servidor del autor. La clave de la API queda guardada en tu carpeta personal, el
-    catálogo relevado vive en memoria mientras la app está abierta, y no se envía nada
-    a ningún destino que no sean las APIs públicas que la herramienta consulta para
-    hacer su trabajo.</p>
-
-    <h4>Sin garantía</h4>
-    <p>El software se entrega tal cual, sin garantía de ningún tipo, expresa o
-    implícita. Los datos provienen de fuentes públicas de terceros y pueden estar
-    incompletos o desactualizados. <strong>La validación previa a la entrega es una
-    ayuda, no un certificado</strong>, y no reemplaza la revisión de la distribuidora
-    ni el criterio de quien entrega el material.</p>
-    <p>El autor no responde por daños directos ni indirectos derivados del uso de la
-    herramienta, ni por decisiones tomadas a partir de los datos que produce, ni por
-    el uso que cada persona haga del material que procesa. La responsabilidad sobre el
-    contenido es enteramente de quien lo usa.</p>
-
-    <h4>Licencia y marcas</h4>
-    <p>El código se distribuye bajo licencia MIT, cuyo texto completo está en el
-    archivo LICENSE del repositorio. Las marcas y nombres de terceros mencionados
-    pertenecen a sus titulares, y la herramienta no está afiliada ni patrocinada por
-    ninguno de ellos.</p>
-
-    <h4>Cambios</h4>
-    <p>Estos términos pueden actualizarse en versiones siguientes. La versión vigente
-    es la que acompaña a la copia que estás usando, y está en el repositorio público
-    junto al código.</p>`;
+  return T('terminos.cuerpo');
 }
 
 function vistaTerminos(primeraVez) {
   if (primeraVez) {
     return `<div class="card doc fade">
-      <div class="doc-head"><h2>Términos de uso</h2></div>
-      <p class="muted mb-5">Se leen una vez. Después no vuelven
-      a aparecer, y quedan siempre disponibles desde el pie de la ventana.</p>
+      <div class="doc-head"><h2>${esc(T('terminos.titulo'))}</h2></div>
+      <p class="muted mb-5">${esc(T('terminos.bajada'))}</p>
       ${textoTerminos()}
       <div class="row mt-6">
-        <button class="btn btn-primary btn-lg" data-accion="aceptar-terminos">Acepto y quiero usar la herramienta</button>
+        <button class="btn btn-primary btn-lg" data-accion="aceptar-terminos">${esc(T('terminos.aceptar'))}</button>
       </div>
-      <p class="small muted mt-3">Si no estás de acuerdo, cerrá la ventana.</p>
+      <p class="small muted mt-3">${esc(T('terminos.si_no'))}</p>
     </div>`;
   }
 
   return `<div class="card doc fade">
     <div class="doc-head">
-      <h2>Términos de uso</h2>
-      <button class="btn btn-secondary btn-sm a-la-derecha" data-accion="cerrar-vista">Volver</button>
+      <h2>${esc(T('terminos.titulo'))}</h2>
+      <button class="btn btn-secondary btn-sm a-la-derecha" data-accion="cerrar-vista">${esc(T('comun.volver'))}</button>
     </div>
     ${textoTerminos()}
     <div class="row mt-6">
-      <button class="btn btn-secondary" data-accion="cerrar-vista">Volver</button>
+      <button class="btn btn-secondary" data-accion="cerrar-vista">${esc(T('comun.volver'))}</button>
     </div>
   </div>`;
 }
@@ -515,33 +459,31 @@ function vistaClave() {
   return `
   <div class="card card-hero fade">
     <div class="card-head">
-      <h1>${puedeVolver ? 'Usar tu propia clave de YouTube' : 'Conectá tu clave de YouTube'}</h1>
-      <p>${puedeVolver
-        ? 'La clave que cargues acá reemplaza a la que trae esta copia, y queda guardada sólo en tu computadora.'
-        : 'Se pide una sola vez. Queda guardada en tu computadora y no se comparte con nadie.'}</p>
+      <h1>${esc(T(puedeVolver ? 'clave.titulo_propia' : 'clave.titulo'))}</h1>
+      <p>${esc(T(puedeVolver ? 'clave.bajada_propia' : 'clave.bajada'))}</p>
     </div>
 
     ${alerta('', 'llave', `
-      <strong>Cómo conseguirla, en tres pasos.</strong>
+      <strong>${esc(T('clave.como_titulo'))}</strong>
       <ol>
-        <li>Entrá a <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer">Google Cloud Console, en Credenciales</a>, y creá un proyecto.</li>
-        <li>Activá <em>YouTube Data API v3</em> en la biblioteca de APIs.</li>
-        <li>Creá una <em>clave de API</em> y pegala acá abajo.</li>
+        <li>${T('clave.paso1')}</li>
+        <li>${T('clave.paso2')}</li>
+        <li>${T('clave.paso3')}</li>
       </ol>
-      <p class="small mt-2">Es gratis. El cupo diario alcanza para unos 500 catálogos.</p>`)}
+      <p class="small mt-2">${esc(T('clave.gratis'))}</p>`)}
 
     <div class="field mt-5 field-clave">
-      <label for="clave">Clave de la API de YouTube</label>
+      <label for="clave">${esc(T('clave.rotulo'))}</label>
       <input class="input mono" id="clave" type="password" placeholder="AIza…"
              autocomplete="off" spellcheck="false" />
-      <span class="hint">La verificamos con una consulta de prueba antes de guardarla.</span>
+      <span class="hint">${esc(T('clave.ayuda'))}</span>
     </div>
 
     <div id="setup-error"></div>
 
     <div class="row mt-5">
-      <button class="btn btn-primary" data-accion="guardar-clave">Verificar y guardar</button>
-      ${puedeVolver ? '<button class="btn btn-secondary" data-accion="cerrar-vista">Cancelar</button>' : ''}
+      <button class="btn btn-primary" data-accion="guardar-clave">${esc(T('clave.guardar'))}</button>
+      ${puedeVolver ? `<button class="btn btn-secondary" data-accion="cerrar-vista">${esc(T('comun.cancelar'))}</button>` : ''}
     </div>
   </div>`;
 }
@@ -561,7 +503,7 @@ function bloqueError(titulo) {
     <strong>${esc(titulo)}</strong><br>${esc(S.error)}
     ${puedeCargarClave ? `
       <div class="row mt-3">
-        <button class="btn btn-secondary btn-sm" data-accion="ver-clave">Cargar mi propia clave</button>
+        <button class="btn btn-secondary btn-sm" data-accion="ver-clave">${esc(T('paso1.cargar_clave'))}</button>
       </div>` : ''}`);
 }
 
@@ -570,8 +512,8 @@ function avisoClaveIncluida() {
   // Con el error de cupo a la vista ya hay un boton para cargar la clave propia.
   if (S.error && (S.errorCodigo === 'cuota' || S.errorCodigo === 'clave')) return '';
   // Una linea y un link: quien no tiene problema no necesita un bloque entero.
-  return `<p class="small muted mt-5">Esta copia trae una clave de YouTube compartida, con cupo para unos 500 catálogos por día entre todos.
-    <button type="button" class="link-inline" data-accion="ver-clave">Prefiero usar la mía</button></p>`;
+  return `<p class="small muted mt-5">${esc(T('paso1.clave_incluida'))}
+    <button type="button" class="link-inline" data-accion="ver-clave">${esc(T('paso1.prefiero_mia'))}</button></p>`;
 }
 
 function vistaPaso1() {
@@ -579,58 +521,51 @@ function vistaPaso1() {
   return `
   <div class="card card-hero fade">
     <div class="card-head">
-      <h1>¿Qué catálogo querés migrar?</h1>
-      <p>Pegá el link del canal de YouTube del artista. Lo ideal es el
-      <strong>canal Topic</strong>, el que se llama
-      <span class="mono">«&lt;artista&gt; - Topic»</span>.</p>
+      <h1>${esc(T('paso1.titulo'))}</h1>
+      <p>${T('paso1.bajada')}</p>
     </div>
 
     <div class="field">
-      <label for="url">Link del canal</label>
+      <label for="url">${esc(T('paso1.rotulo_link'))}</label>
       <input class="input input-lg${S.errorCampo ? ' error' : ''}" id="url" type="url" spellcheck="false"
              placeholder="https://www.youtube.com/channel/UC…"
              ${S.errorCampo ? 'aria-invalid="true" aria-describedby="url-error"' : ''}
              ${corriendo ? 'disabled' : ''} />
       ${S.errorCampo
         ? `<span class="hint hint-error" id="url-error">${esc(S.errorCampo)}</span>`
-        : '<span class="hint">Acepta la URL del canal o un <span class="mono">@handle</span>.</span>'}
+        : `<span class="hint">${T('paso1.ayuda_link')}</span>`}
     </div>
 
     ${S.catalogo && !corriendo ? alerta('', 'info', `
-      Tenés relevado el catálogo de <strong>${esc(S.catalogo.artista)}</strong>. Relevar otro lo reemplaza.
-      <div class="row mt-3"><button class="btn btn-ghost btn-sm" data-accion="volver-2">Volver a ese catálogo</button></div>`) : ''}
+      ${T('paso1.ya_relevado', { artista: `<strong>${esc(S.catalogo.artista)}</strong>` })}
+      <div class="row mt-3"><button class="btn btn-ghost btn-sm" data-accion="volver-2">${esc(T('paso1.volver_catalogo'))}</button></div>`) : ''}
 
     ${alerta('', 'info', `
-      <strong>Conviene pegar el canal Topic.</strong>
-      Es el que YouTube genera solo con el catálogo distribuido, y el único que trae
-      distribuidora, álbum, año y sello en cada descripción.
-      <p class="mt-2">Si pegás el canal oficial del artista igual funciona,
-      porque la app busca su Topic y usa ese. Pero esa búsqueda gasta unas 100
-      consultas del cupo diario, contra 20 que gasta relevar un catálogo entero, y en
-      artistas con nombres parecidos puede elegir el Topic equivocado. Pegando el
-      Topic directo eso no pasa.</p>`)}
+      <strong>${esc(T('paso1.topic_titulo'))}</strong>
+      ${esc(T('paso1.topic_cuerpo'))}
+      <p class="mt-2">${esc(T('paso1.topic_detalle'))}</p>`)}
 
     <label class="check mt-5">
       <input type="checkbox" id="con-codigos" aria-labelledby="con-codigos-l" checked ${corriendo ? 'disabled' : ''} />
       <span class="check-texto">
-        <strong id="con-codigos-l">Buscar códigos ISRC y UPC</strong>
-        <span class="sub">Los busca en Deezer, sin clave ni costo. Tarda un poco más, pero son los códigos que la distribuidora nueva necesita.</span>
+        <strong id="con-codigos-l">${esc(T('paso1.codigos_titulo'))}</strong>
+        <span class="sub">${esc(T('paso1.codigos_detalle'))}</span>
       </span>
     </label>
 
     ${avisoClaveIncluida()}
 
-    ${bloqueError('No se pudo relevar.')}
+    ${bloqueError(T('paso1.error_titulo'))}
 
     ${corriendo ? bloqueProgreso() : `
       <div class="row mt-5">
-        <button class="btn btn-primary btn-lg" data-accion="relevar">Relevar catálogo</button>
+        <button class="btn btn-primary btn-lg" data-accion="relevar">${esc(T('paso1.relevar'))}</button>
       </div>`}
   </div>`;
 }
 
 function bloqueProgreso(conCancelar = true) {
-  const j = S.job || { progreso: 0, mensaje: 'Preparando', log: [] };
+  const j = S.job || { progreso: 0, mensaje: T('progreso.preparando'), log: [] };
   // La barra aparece cuando hay algo que medir. Antes de eso el spinner y el
   // log ya dicen que esta trabajando, y una barra que no mide nada es adorno.
   const conBarra = (j.progreso || 0) > 0;
@@ -639,12 +574,12 @@ function bloqueProgreso(conCancelar = true) {
   <div class="mt-5 bloque-progreso" id="bloque-progreso">
     <div class="row mb-3">
       <span class="latido" aria-hidden="true"><i></i><i></i><i></i></span>${ico('ok', 'ico-listo')}
-      <strong id="progreso-mensaje" aria-live="polite">${esc(j.mensaje || 'Trabajando')}</strong>
+      <strong id="progreso-mensaje" aria-live="polite">${esc(j.mensaje || T('progreso.trabajando'))}</strong>
       <span class="muted small mono" id="progreso-pct">${j.progreso ? Math.round(j.progreso * 100) + '%' : ''}</span>
-      ${conCancelar ? '<button class="btn btn-ghost btn-sm a-la-derecha" data-accion="cancelar">Cancelar</button>' : ''}
+      ${conCancelar ? `<button class="btn btn-ghost btn-sm a-la-derecha" data-accion="cancelar">${esc(T('comun.cancelar'))}</button>` : ''}
     </div>
     ${conBarra ? `
-      <div class="barra" role="progressbar" aria-label="Avance del trabajo" aria-valuemin="0" aria-valuemax="100"
+      <div class="barra" role="progressbar" aria-label="${esc(T('progreso.aria_barra'))}" aria-valuemin="0" aria-valuemax="100"
            aria-valuenow="${Math.round(j.progreso * 100)}">
         <div class="barra-fill" style="transform:scaleX(${j.progreso.toFixed(3)})"></div>
       </div>` : ''}
@@ -661,34 +596,33 @@ function avisoCanal() {
   // Caso habitual y bueno: pegaron un canal común y la app encontró el Topic sola.
   if (d.via_topic && d.canal) {
     partes.push(alerta('ok', 'ok', `
-      Pegaste <strong>${esc(d.canal_pedido || 'un canal común')}</strong>, que no es un
-      canal Topic, así que busqué y relevé <strong>${esc(d.canal)}</strong>.
-      <span class="small">El Topic es el que YouTube genera solo con el catálogo
-      distribuido, y es el único que trae distribuidora, álbum, año y sello.</span>`));
+      ${T('paso2.via_topic', {
+        pedido: `<strong>${esc(d.canal_pedido || T('paso2.canal_comun'))}</strong>`,
+        topic: `<strong>${esc(d.canal)}</strong>`,
+      })}
+      <span class="small">${esc(T('paso2.que_es_topic'))}</span>`));
   }
 
   if (d.descartados) {
-    partes.push(alerta('', 'info', `
-      Dejé afuera <strong>${num(d.descartados)} videos</strong> que no son
-      lanzamientos, como videoclips, vivos y entrevistas. Sin la descripción
-      auto-generada de YouTube no tienen álbum ni códigos, así que no sirven para una
-      migración.`));
+    partes.push(alerta('', 'info', T('paso2.descartados', {
+      n: `<strong>${num(d.descartados)}</strong>`,
+    })));
   }
 
   // Sólo si algo salió raro: el canal es Topic pero igual falta metadata.
   if (d.cobertura_metadata !== undefined && d.cobertura_metadata < 0.3) {
     const sug = d.topic_sugerido;
     partes.push(alerta('warn', 'alerta', `
-      <strong>Este canal no trae la metadata del catálogo.</strong>
-      No hay álbumes, sellos ni años, y los códigos casi no se pueden encontrar.
+      <strong>${esc(T('paso2.sin_metadata_titulo'))}</strong>
+      ${esc(T('paso2.sin_metadata_cuerpo'))}
       ${sug ? `
         <div class="row mt-3">
           <button class="btn btn-secondary btn-sm" data-accion="usar-topic">
-            Relevar «${esc(sug.titulo)}» en su lugar
+            ${esc(T('paso2.usar_topic', { titulo: sug.titulo }))}
           </button>
         </div>` : `
         <p class="small mt-2">
-          Buscá «${esc(S.catalogo.artista)} - Topic» en YouTube y pegá ese link.
+          ${esc(T('paso2.buscar_topic', { artista: S.catalogo.artista }))}
         </p>`}`));
   }
 
@@ -707,16 +641,18 @@ function vistaPaso2() {
       <div class="card-head row row-wrap">
         <div class="grow">
           <h1>${esc(c.artista)}</h1>
-          <p>Catálogo relevado. Los datos salen de YouTube, Deezer y Apple.</p>
+          <p>${esc(T('paso2.bajada'))}</p>
           <p class="lectura">
-            <span class="n">${num(r.products)}</span> producto${r.products === 1 ? '' : 's'} y
-            <span class="n">${num(r.tracks)}</span> tracks, con
-            <span class="n">${num(r.views)}</span> reproducciones.
-            UPC en <span class="n${r.with_upc < r.products ? ' atencion' : ''}">${r.with_upc} de ${r.products}</span> productos,
-            ISRC en <span class="n${r.with_isrc < r.tracks ? ' atencion' : ''}">${r.with_isrc} de ${r.tracks}</span> tracks.
+            ${T('paso2.resumen', {
+              productos: `<span class="n">${num(r.products)}</span>`,
+              tracks: `<span class="n">${num(r.tracks)}</span>`,
+              views: `<span class="n">${num(r.views)}</span>`,
+              upc: `<span class="n${r.with_upc < r.products ? ' atencion' : ''}">${r.with_upc} / ${r.products}</span>`,
+              isrc: `<span class="n${r.with_isrc < r.tracks ? ' atencion' : ''}">${r.with_isrc} / ${r.tracks}</span>`,
+            })}
           </p>
         </div>
-        <button class="btn btn-ghost" data-accion="volver-1">Relevar otro artista</button>
+        <button class="btn btn-ghost" data-accion="volver-1">${esc(T('paso2.otro_artista'))}</button>
       </div>
     </div>
 
@@ -724,19 +660,19 @@ function vistaPaso2() {
 
     <div class="seccion">
       <div class="seccion-etiqueta">
-        <h2>Productos</h2>
-        <span class="der">Mostrando ${ps.length} de ${c.productos.length}</span>
+        <h2>${esc(T('paso2.productos'))}</h2>
+        <span class="der">${esc(T('paso2.mostrando', { n: ps.length, total: c.productos.length }))}</span>
       </div>
 
       <div class="row row-wrap mb-4">
-        <div class="segmented" role="group" aria-label="Filtro">
-          <button class="${S.filtro.modo === 'manual' ? 'activo' : ''}" aria-pressed="${S.filtro.modo === 'manual'}" data-modo="manual">Todos</button>
-          <button class="${S.filtro.modo === 'fechas' ? 'activo' : ''}" aria-pressed="${S.filtro.modo === 'fechas'}" data-modo="fechas">Por año</button>
-          <button class="${S.filtro.modo === 'distribuidora' ? 'activo' : ''}" aria-pressed="${S.filtro.modo === 'distribuidora'}" data-modo="distribuidora">Por distribuidora</button>
+        <div class="segmented" role="group" aria-label="${esc(T('paso2.aria_filtro'))}">
+          <button class="${S.filtro.modo === 'manual' ? 'activo' : ''}" aria-pressed="${S.filtro.modo === 'manual'}" data-modo="manual">${esc(T('paso2.filtro_todos'))}</button>
+          <button class="${S.filtro.modo === 'fechas' ? 'activo' : ''}" aria-pressed="${S.filtro.modo === 'fechas'}" data-modo="fechas">${esc(T('paso2.filtro_anio'))}</button>
+          <button class="${S.filtro.modo === 'distribuidora' ? 'activo' : ''}" aria-pressed="${S.filtro.modo === 'distribuidora'}" data-modo="distribuidora">${esc(T('paso2.filtro_distrib'))}</button>
         </div>
         <div class="grow buscador">
-          <input class="input" id="buscar" type="search" placeholder="Título, ISRC o UPC"
-                 aria-label="Buscar en el catálogo" value="${esc(S.filtro.texto)}" />
+          <input class="input" id="buscar" type="search" placeholder="${esc(T('paso2.buscar_placeholder'))}"
+                 aria-label="${esc(T('paso2.aria_buscar'))}" value="${esc(S.filtro.texto)}" />
         </div>
       </div>
 
@@ -744,22 +680,25 @@ function vistaPaso2() {
 
       ${ps.length === 0 ? `
         <div class="vacio">
-          <h4>Ningún producto coincide con el filtro</h4>
-          <p>Probá ampliar el rango de años o limpiar la búsqueda.</p>
-          <button class="btn btn-primary" data-accion="limpiar-filtro">Limpiar el filtro</button>
+          <h4>${esc(T('paso2.vacio_titulo'))}</h4>
+          <p>${esc(T('paso2.vacio_detalle'))}</p>
+          <button class="btn btn-primary" data-accion="limpiar-filtro">${esc(T('paso2.limpiar_filtro'))}</button>
         </div>` : tablaProductos(ps) + `
-        <p class="leyenda">Lo que falta se completa en la distribuidora nueva: la app no inventa códigos ni orden.</p>`}
+        <p class="leyenda">${esc(T('paso2.leyenda'))}</p>`}
     </div>
 
     <div class="barra-accion">
       <div class="resumen">
-        <strong>${sel.length}</strong> de <strong>${ps.length}</strong> productos elegidos,
-        ${sel.reduce((a, p) => a + p.tracks, 0)} tracks
+        ${T('paso2.elegidos', {
+          n: `<strong>${sel.length}</strong>`,
+          total: `<strong>${ps.length}</strong>`,
+          tracks: sel.reduce((a, p) => a + p.tracks, 0),
+        })}
       </div>
       <div class="acciones">
-        <button class="btn btn-secondary" data-accion="sel-todo" ${sel.length < ps.length ? '' : 'hidden'}>Marcar todos</button>
-        <button class="btn btn-secondary" data-accion="sel-nada" ${sel.length ? '' : 'hidden'}>Desmarcar todos</button>
-        <button class="btn btn-primary" data-accion="ir-3" ${sel.length ? '' : 'disabled'}>Continuar</button>
+        <button class="btn btn-secondary" data-accion="sel-todo" ${sel.length < ps.length ? '' : 'hidden'}>${esc(T('paso2.marcar_todos'))}</button>
+        <button class="btn btn-secondary" data-accion="sel-nada" ${sel.length ? '' : 'hidden'}>${esc(T('paso2.desmarcar_todos'))}</button>
+        <button class="btn btn-primary" data-accion="ir-3" ${sel.length ? '' : 'disabled'}>${esc(T('comun.continuar'))}</button>
       </div>
     </div>
   </div>`;
@@ -772,21 +711,21 @@ function panelFiltro() {
   if (f.modo === 'fechas') {
     const lo = c.filtros.anio_min, hi = c.filtros.anio_max;
     if (lo === null) {
-      return alerta('warn', 'alerta', 'Ningún producto tiene año de lanzamiento declarado. Usá otro filtro.');
+      return alerta('warn', 'alerta', esc(T('paso2.sin_anios')));
     }
     return `
     <div class="panel mb-4">
       <div class="row row-wrap">
         <div class="field field-corto">
-          <label for="anio-desde">Desde el año</label>
+          <label for="anio-desde">${esc(T('paso2.desde_anio'))}</label>
           <input class="input mono" id="anio-desde" type="number" min="${lo}" max="${hi}" value="${f.anioDesde ?? lo}" />
         </div>
         <div class="field field-corto">
-          <label for="anio-hasta">Hasta el año</label>
+          <label for="anio-hasta">${esc(T('paso2.hasta_anio'))}</label>
           <input class="input mono" id="anio-hasta" type="number" min="${lo}" max="${hi}" value="${f.anioHasta ?? hi}" />
         </div>
         <p class="small muted nota-al-pie">
-          El catálogo va de ${lo} a ${hi}. Los productos sin año quedan afuera.
+          ${esc(T('paso2.rango_anios', { desde: lo, hasta: hi }))}
         </p>
       </div>
     </div>`;
@@ -796,7 +735,7 @@ function panelFiltro() {
     const items = c.filtros.distribuidoras.map((d) => `
       <label class="check check-suelto">
         <input type="checkbox" data-distrib="${esc(d.name)}" ${f.distribs.has(d.name) ? 'checked' : ''} />
-        <span class="check-texto"><strong>${esc(d.name)}</strong><span class="sub">${d.count} producto${d.count === 1 ? '' : 's'}</span></span>
+        <span class="check-texto"><strong>${esc(d.name)}</strong><span class="sub">${esc(T(d.count === 1 ? 'comun.n_productos_uno' : 'comun.n_productos', { n: d.count }))}</span></span>
       </label>`).join('');
     return `
     <div class="panel mb-4">
@@ -816,19 +755,19 @@ function tablaProductos(ps) {
     const avisos = [];
     // Un codigo que falta es un aviso: la distribuidora asigna uno nuevo y no
     // rechaza. El rojo queda para lo que la validacion marca como error.
-    if (!p.upc) avisos.push('<span class="badge badge-warn">sin UPC</span>');
-    if (p.con_isrc < p.tracks) avisos.push(`<span class="badge badge-warn">ISRC ${p.con_isrc} de ${p.tracks}</span>`);
-    if (p.orden_estimado) avisos.push('<span class="badge badge-warn">orden estimado</span>');
+    if (!p.upc) avisos.push(`<span class="badge badge-warn">${esc(T('tabla.sin_upc'))}</span>`);
+    if (p.con_isrc < p.tracks) avisos.push(`<span class="badge badge-warn">${esc(T('tabla.isrc_de', { n: p.con_isrc, total: p.tracks }))}</span>`);
+    if (p.orden_estimado) avisos.push(`<span class="badge badge-warn">${esc(T('tabla.orden_estimado'))}</span>`);
 
     const detalle = abierto ? `
       <tr class="fila-detalle"><td colspan="7"><div class="detalle-inner">
         <table class="sub">
-          <thead><tr><th scope="col">N</th><th scope="col">Track</th><th scope="col">ISRC</th><th scope="col">Duración</th><th scope="col" class="td-num">Reproducciones</th></tr></thead>
+          <thead><tr><th scope="col">${esc(T('tabla.col_n'))}</th><th scope="col">${esc(T('tabla.col_track'))}</th><th scope="col">ISRC</th><th scope="col">${esc(T('tabla.col_duracion'))}</th><th scope="col" class="td-num">${esc(T('tabla.col_reproducciones'))}</th></tr></thead>
           <tbody>${p.detalle.map((t) => `
             <tr>
               <td class="mono">${esc(t.n)}</td>
               <td>${esc(t.titulo)}</td>
-              <td class="mono">${t.isrc ? esc(t.isrc) : '<span class="muted">sin ISRC</span>'}</td>
+              <td class="mono">${t.isrc ? esc(t.isrc) : `<span class="muted">${esc(T('tabla.sin_isrc'))}</span>`}</td>
               <td class="mono">${esc(t.duracion)}</td>
               <td class="td-num">${num(t.views)}</td>
             </tr>`).join('')}
@@ -840,21 +779,21 @@ function tablaProductos(ps) {
     <tr class="${elegido ? 'elegida' : ''}" data-fila="${esc(p.id)}">
       <td class="td-check">
         <label class="check"><input type="checkbox" data-prod="${esc(p.id)}" ${elegido ? 'checked' : ''} />
-        <span class="sr">Elegir ${esc(p.titulo)}</span></label>
+        <span class="sr">${esc(T('tabla.aria_elegir', { titulo: p.titulo }))}</span></label>
       </td>
       <td class="td-exp">
         <button class="btn-expandir" data-expandir="${esc(p.id)}" aria-expanded="${abierto}">
-          ${ico('flecha', 'ico-sm')}<span class="sr">Ver los tracks de ${esc(p.titulo)}</span>
+          ${ico('flecha', 'ico-sm')}<span class="sr">${esc(T('tabla.aria_ver_tracks', { titulo: p.titulo }))}</span>
         </button>
       </td>
       <td>
         <div class="celda-titulo">${esc(p.titulo)}</div>
-        <div class="celda-sub">${p.tracks} track${p.tracks === 1 ? '' : 's'}${p.sello ? ', ' + esc(p.sello) : ''}</div>
+        <div class="celda-sub">${esc(T(p.tracks === 1 ? 'comun.n_tracks_uno' : 'comun.n_tracks', { n: p.tracks }))}${p.sello ? ', ' + esc(p.sello) : ''}</div>
       </td>
       <td><span class="tipo">${esc(p.tipo)}</span></td>
-      <td class="nowrap mono">${esc(p.anio) || '<span class="muted">sin fecha</span>'}</td>
-      <td class="mono">${p.upc ? esc(p.upc) : '<span class="muted">sin UPC</span>'}</td>
-      <td><span class="badges">${avisos.join('') || '<span class="badge badge-ok">completo</span>'}</span></td>
+      <td class="nowrap mono">${esc(p.anio) || `<span class="muted">${esc(T('tabla.sin_fecha'))}</span>`}</td>
+      <td class="mono">${p.upc ? esc(p.upc) : `<span class="muted">${esc(T('tabla.sin_upc'))}</span>`}</td>
+      <td><span class="badges">${avisos.join('') || `<span class="badge badge-ok">${esc(T('tabla.completo'))}</span>`}</span></td>
     </tr>${detalle}`;
   }).join('');
 
@@ -864,9 +803,9 @@ function tablaProductos(ps) {
       <thead><tr>
         <th scope="col" class="td-check"><label class="check"><input type="checkbox" id="check-todos"
           ${todos ? 'checked' : ''} ${!todos && algunos ? 'data-indeterminado="1"' : ''} />
-          <span class="sr">Marcar todos los productos del filtro</span></label></th>
+          <span class="sr">${esc(T('tabla.aria_marcar_todos'))}</span></label></th>
         <th scope="col" class="td-exp"></th>
-        <th scope="col">Producto</th><th scope="col">Tipo</th><th scope="col">Año</th><th scope="col">UPC</th><th scope="col">Faltantes</th>
+        <th scope="col">${esc(T('tabla.col_producto'))}</th><th scope="col">${esc(T('tabla.col_tipo'))}</th><th scope="col">${esc(T('tabla.col_anio'))}</th><th scope="col">UPC</th><th scope="col">${esc(T('tabla.col_faltantes'))}</th>
       </tr></thead>
       <tbody>${filas}</tbody>
     </table>
@@ -887,22 +826,22 @@ function vistaPaso3() {
   <div class="fade">
     <div class="card">
       <div class="card-head">
-        <h1>¿Qué querés descargar?</h1>
-        <p>${sel.length} producto${sel.length === 1 ? '' : 's'} elegido${sel.length === 1 ? '' : 's'},
-           ${sel.reduce((a, p) => a + p.tracks, 0)} tracks.</p>
+        <h1>${esc(T('paso3.titulo'))}</h1>
+        <p>${esc(T('paso3.elegidos', {
+          productos: sel.length,
+          tracks: sel.reduce((a, p) => a + p.tracks, 0),
+        }))}</p>
       </div>
 
-      <div class="seccion-etiqueta"><h2>Contenido del paquete</h2></div>
+      <div class="seccion-etiqueta"><h2>${esc(T('paso3.contenido'))}</h2></div>
 
       <div class="opciones">
-        ${opcion('planilla', 'planilla', o.planilla, false, 'Planilla y validación',
-          'Excel con los datos y códigos, hoja de ingesta en CSV para la distribuidora, y el informe de validación previa.')}
+        ${opcion('planilla', 'planilla', o.planilla, false, T('paso3.planilla'), esc(T('paso3.planilla_detalle')))}
 
-        ${opcion('portadas', 'imagen', o.portadas, false, 'Portadas',
-          'La resolución más alta que tenga Apple Music. Te avisamos si queda por debajo del mínimo de ingesta.')}
+        ${opcion('portadas', 'imagen', o.portadas, false, T('paso3.portadas'), esc(T('paso3.portadas_detalle')))}
 
-        ${audioOn ? opcion('audio', 'musica', o.audio, !puedeAudio, 'Audios', puedeAudio
-          ? 'FLAC lossless con tu propia cuenta de Tidal. La referencia de YouTube casi siempre falla, porque YouTube la bloquea.'
+        ${audioOn ? opcion('audio', 'musica', o.audio, !puedeAudio, T('paso3.audios'), puedeAudio
+          ? esc(T('paso3.audios_detalle'))
           : faltaParaAudio()) : ''}
       </div>
 
@@ -912,11 +851,11 @@ function vistaPaso3() {
     </div>
 
     <div class="barra-accion">
-      <div class="resumen">Se va a generar un ZIP con una carpeta por producto.</div>
+      <div class="resumen">${esc(T('paso3.resumen_zip'))}</div>
       <div class="acciones">
-        <button class="btn btn-secondary" data-accion="volver-2">Volver</button>
+        <button class="btn btn-secondary" data-accion="volver-2">${esc(T('comun.volver'))}</button>
         <button class="btn btn-primary" data-accion="generar"
-          ${(o.planilla || o.portadas || o.audio) ? '' : 'disabled'}>Generar paquete</button>
+          ${(o.planilla || o.portadas || o.audio) ? '' : 'disabled'}>${esc(T('paso3.generar'))}</button>
       </div>
     </div>
   </div>`;
@@ -943,46 +882,37 @@ function opcion(clave, icono, elegida, deshabilitada, titulo, detalle) {
  *  el caso típico de alguien que abrió la app en una máquina nueva. */
 function faltaParaAudio() {
   const e = (S.config && S.config.entorno) || {};
-  if (!e.ffmpeg && (e.tiddl || e.yt_dlp)) {
-    return 'Falta <strong>ffmpeg</strong> en esta computadora. Se instala una sola vez, '
-         + 'abriendo PowerShell y pegando <code>winget install --id Gyan.FFmpeg -e</code>. '
-         + 'Después cerrá y volvé a abrir la app.';
-  }
-  if (!e.tiddl && !e.yt_dlp) {
-    return 'Esta versión de la app no incluye el módulo de audio. Necesitás la versión completa.';
-  }
-  return 'No disponible en esta computadora. Abrí la app con <code>--diagnostico</code> para ver qué falta.';
+  if (!e.ffmpeg && (e.tiddl || e.yt_dlp)) return T('paso3.falta_ffmpeg');
+  if (!e.tiddl && !e.yt_dlp) return T('paso3.falta_modulo');
+  return T('paso3.falta_generico');
 }
 
 function bloqueTidal(conectada) {
   if (conectada) {
     return `<div class="mt-5">${alerta('ok', 'ok', `
-      <strong>Cuenta de Tidal conectada.</strong> El audio va a bajar en FLAC lossless, apto para entrega.
+      <strong>${esc(T('tidal.conectada_titulo'))}</strong> ${esc(T('tidal.conectada_detalle'))}
       <div class="row mt-3">
-        <button class="btn btn-ghost btn-sm" data-accion="tidal-salir">Desconectar</button>
+        <button class="btn btn-ghost btn-sm" data-accion="tidal-salir">${esc(T('tidal.desconectar'))}</button>
       </div>`)}</div>`;
   }
   if (S.tidal) {
     return `<div class="mt-5">${alerta('', 'enlace', `
-      <strong>Conectá tu cuenta en el sitio de Tidal.</strong><br>
-      Abrí <a href="${esc(S.tidal.url)}" target="_blank" rel="noopener noreferrer">${esc(S.tidal.url)}</a>
-      ${S.tidal.codigo ? `y usá el código <span class="mono"><strong>${esc(S.tidal.codigo)}</strong></span>` : ''}.
+      <strong>${esc(T('tidal.conecta_titulo'))}</strong><br>
+      ${T('tidal.abri', { url: `<a href="${esc(S.tidal.url)}" target="_blank" rel="noopener noreferrer">${esc(S.tidal.url)}</a>` })}
+      ${S.tidal.codigo ? T('tidal.con_codigo', { codigo: `<span class="mono"><strong>${esc(S.tidal.codigo)}</strong></span>` }) : ''}.
       <div class="row mt-3">
-        <button class="btn btn-secondary btn-sm" data-accion="tidal-confirmar">Ya confirmé</button>
-        <button class="btn btn-ghost btn-sm" data-accion="tidal-salir">Cancelar</button>
+        <button class="btn btn-secondary btn-sm" data-accion="tidal-confirmar">${esc(T('tidal.ya_confirme'))}</button>
+        <button class="btn btn-ghost btn-sm" data-accion="tidal-salir">${esc(T('comun.cancelar'))}</button>
       </div>
       ${S.tidal.aviso ? `<p class="small mt-2">${esc(S.tidal.aviso)}</p>` : ''}`)}</div>`;
   }
   return `<div class="mt-5">${alerta('warn', 'alerta', `
-    <strong>Conectá Tidal para poder bajar el audio.</strong>
-    Sin cuenta conectada sólo se puede intentar la referencia de YouTube, y hoy falla
-    en la mayoría de los casos. YouTube pide un token de origen que sólo se obtiene
-    desde un navegador con sesión, y buena parte del audio de música está protegido
-    con DRM. Cuando falla, el reporte te dice el motivo track por track.
+    <strong>${esc(T('tidal.conecta_para_audio'))}</strong>
+    ${esc(T('tidal.sin_cuenta_detalle'))}
     <div class="row mt-3">
-      <button class="btn btn-secondary btn-sm" data-accion="tidal-iniciar">Conectar mi cuenta de Tidal</button>
+      <button class="btn btn-secondary btn-sm" data-accion="tidal-iniciar">${esc(T('tidal.conectar'))}</button>
     </div>
-    <p class="small mt-2">Tu contraseña nunca pasa por esta app, porque te autenticás en el sitio de Tidal.</p>`)}</div>`;
+    <p class="small mt-2">${esc(T('tidal.password'))}</p>`)}</div>`;
 }
 
 /* ------------------------------------------------------------ paso 4 */
@@ -991,8 +921,8 @@ function vistaPaso4() {
   if (S.ocupado) {
     return `<div class="card fade">
       <div class="card-head">
-        <h1>Armando el paquete</h1>
-        <p>Podés dejar la ventana abierta. Te avisamos cuando esté.</p>
+        <h1>${esc(T('paso4.armando'))}</h1>
+        <p>${esc(T('paso4.armando_detalle'))}</p>
       </div>
       ${bloqueProgreso()}
     </div>`;
@@ -1000,11 +930,11 @@ function vistaPaso4() {
 
   if (S.error) {
     return `<div class="card fade">
-      <div class="card-head"><h1>No se pudo generar</h1></div>
+      <div class="card-head"><h1>${esc(T('paso4.error_titulo'))}</h1></div>
       ${alerta('danger', 'error', esc(S.error))}
       <div class="row mt-5">
-        <button class="btn btn-secondary" data-accion="volver-3">Volver</button>
-        <button class="btn btn-primary" data-accion="generar">Reintentar</button>
+        <button class="btn btn-secondary" data-accion="volver-3">${esc(T('comun.volver'))}</button>
+        <button class="btn btn-primary" data-accion="generar">${esc(T('comun.reintentar'))}</button>
       </div>
     </div>`;
   }
@@ -1017,13 +947,15 @@ function vistaPaso4() {
   <div class="fade">
     <div class="card">
       <div class="card-head">
-        <h1>Tu paquete está listo</h1>
+        <h1>${esc(T('paso4.listo'))}</h1>
         <p><span class="mono">${esc(r.archivo)}</span>, ${pesoLegible(r.bytes)}.</p>
         <p class="lectura">
-          <span class="n">${num(r.productos)}</span> producto${r.productos === 1 ? '' : 's'},
-          portadas para <span class="n${r.portadas < r.productos ? ' atencion' : ''}">${r.portadas} de ${r.productos}</span>.
-          La validación encontró <span class="n${v.resumen.errores ? ' negativo' : ''}">${v.resumen.errores} error${v.resumen.errores === 1 ? '' : 'es'}</span>
-          y <span class="n${v.resumen.avisos ? ' atencion' : ''}">${v.resumen.avisos} aviso${v.resumen.avisos === 1 ? '' : 's'}</span>.
+          ${T('paso4.resumen', {
+            productos: `<span class="n">${num(r.productos)}</span>`,
+            portadas: `<span class="n${r.portadas < r.productos ? ' atencion' : ''}">${r.portadas} / ${r.productos}</span>`,
+            errores: `<span class="n${v.resumen.errores ? ' negativo' : ''}">${esc(T(v.resumen.errores === 1 ? 'comun.n_errores_uno' : 'comun.n_errores', { n: v.resumen.errores }))}</span>`,
+            avisos: `<span class="n${v.resumen.avisos ? ' atencion' : ''}">${esc(T(v.resumen.avisos === 1 ? 'comun.n_avisos_uno' : 'comun.n_avisos', { n: v.resumen.avisos }))}</span>`,
+          })}
         </p>
       </div>
     </div>
@@ -1031,46 +963,45 @@ function vistaPaso4() {
     ${panelValidacion(v)}
 
     <div class="barra-accion">
-      <div class="resumen">El ZIP queda disponible mientras la app esté abierta.</div>
+      <div class="resumen">${esc(T('paso4.zip_disponible'))}</div>
       <div class="acciones">
-        <button class="btn btn-ghost" data-accion="volver-1">Relevar otro artista</button>
-        <button class="btn btn-secondary" data-accion="volver-2">Elegir otros productos</button>
+        <button class="btn btn-ghost" data-accion="volver-1">${esc(T('paso2.otro_artista'))}</button>
+        <button class="btn btn-secondary" data-accion="volver-2">${esc(T('paso4.otros_productos'))}</button>
         <a class="btn btn-primary" href="${esc(r.descarga)}" download>
-          ${ico('descargar')} Descargar el paquete (${pesoLegible(r.bytes)})
+          ${ico('descargar')} ${esc(T('paso4.descargar', { peso: pesoLegible(r.bytes) }))}
         </a>
       </div>
     </div>
   </div>`;
 }
 
-/* Titulo corto por codigo de hallazgo, para la cabecera de cada grupo. Si un
-   codigo no esta, se usa el mensaje del primero. */
-const TITULOS_HALLAZGO = {
-  upc_falta: 'Sin UPC', isrc_falta: 'Sin ISRC', sello_falta: 'Sin sello',
-  anio_falta: 'Sin año de lanzamiento', orden_sin_confirmar: 'Orden de tracks estimado',
-  portada_falta: 'Sin portada', portada_bajo_recomendado: 'Portada por debajo del recomendado',
-  portada_chica: 'Portada por debajo del mínimo', portada_no_cuadrada: 'Portada no cuadrada',
-  portada_cmyk: 'Portada en CMYK', portada_ilegible: 'Portada ilegible',
-  titulo_con_ruido: 'Título con texto de YouTube', duracion_larga: 'Duración sospechosa',
-  duracion_falta: 'Sin duración', isrc_invalido: 'ISRC inválido', upc_invalido: 'UPC inválido',
-  isrc_duplicado: 'ISRC repetido', upc_duplicado: 'UPC repetido', anio_futuro: 'Año en el futuro',
-  anio_absurdo: 'Año imposible', anio_invalido: 'Año no numérico', producto_sin_titulo: 'Producto sin título',
-  track_sin_titulo: 'Track sin título',
-};
+/* Titulo corto por codigo de hallazgo, para la cabecera de cada grupo. El texto
+   sale del catalogo con la clave `hallazgo.<codigo>`; si el codigo no esta
+   traducido, se cae al mensaje del primer hallazgo del grupo. */
+const CODIGOS_HALLAZGO = [
+  'upc_falta', 'isrc_falta', 'sello_falta', 'anio_falta', 'orden_sin_confirmar',
+  'portada_falta', 'portada_bajo_recomendado', 'portada_chica', 'portada_no_cuadrada',
+  'portada_cmyk', 'portada_ilegible', 'titulo_con_ruido', 'duracion_larga',
+  'duracion_falta', 'isrc_invalido', 'upc_invalido', 'isrc_duplicado', 'upc_duplicado',
+  'anio_futuro', 'anio_absurdo', 'anio_invalido', 'producto_sin_titulo', 'track_sin_titulo',
+];
+
+function tituloHallazgo(codigo, porDefecto) {
+  return CODIGOS_HALLAZGO.includes(codigo) ? T('hallazgo.' + codigo) : porDefecto;
+}
 
 function panelValidacion(v) {
   if (v.apto && !v.resumen.avisos) {
-    return alerta('ok', 'ok', '<strong>Validación sin observaciones.</strong> Nada de lo que las distribuidoras suelen rechazar.');
+    return alerta('ok', 'ok', `<strong>${esc(T('validacion.sin_nada_titulo'))}</strong> ${esc(T('validacion.sin_nada_detalle'))}`);
   }
 
   const errores = v.hallazgos.filter((h) => h.nivel === 'error');
   const avisos = v.hallazgos.filter((h) => h.nivel === 'aviso');
 
   const cabecera = errores.length
-    ? alerta('danger', 'error', `<strong>${errores.length} error${errores.length === 1 ? '' : 'es'} que suelen causar rechazo.</strong>
-        Conviene corregirlos antes de entregar. El detalle también está en
-        <span class="mono">_Validacion pre-entrega.txt</span>, dentro del ZIP.`)
-    : alerta('ok', 'ok', `<strong>Sin errores de rechazo.</strong> Hay ${avisos.length} aviso${avisos.length === 1 ? '' : 's'} para revisar.`);
+    ? alerta('danger', 'error', `<strong>${esc(T(errores.length === 1 ? 'validacion.errores_titulo_uno' : 'validacion.errores_titulo', { n: errores.length }))}</strong>
+        ${T('validacion.errores_detalle', { archivo: `<span class="mono">${esc(T('archivos.validacion'))}</span>` })}`)
+    : alerta('ok', 'ok', `<strong>${esc(T('validacion.sin_errores'))}</strong> ${esc(T(avisos.length === 1 ? 'validacion.hay_avisos_uno' : 'validacion.hay_avisos', { n: avisos.length }))}`);
 
   // Agrupados por tipo de hallazgo: 41 filas de "sin ISRC" no se leen; "Sin
   // ISRC, 30 tracks en 8 productos" si, y adentro esta cada uno.
@@ -1085,14 +1016,20 @@ function panelValidacion(v) {
   const cuenta = (g) => {
     const prods = new Set(g.items.map((h) => h.producto)).size;
     const tracks = g.items.filter((h) => h.track).length;
-    if (tracks && tracks === g.items.length) return `${tracks} track${tracks === 1 ? '' : 's'} en ${prods} producto${prods === 1 ? '' : 's'}`;
-    return `${prods} producto${prods === 1 ? '' : 's'}`;
+    const enProductos = T(prods === 1 ? 'comun.n_productos_uno' : 'comun.n_productos', { n: prods });
+    if (tracks && tracks === g.items.length) {
+      return T('validacion.cuenta_tracks', {
+        tracks: T(tracks === 1 ? 'comun.n_tracks_uno' : 'comun.n_tracks', { n: tracks }),
+        productos: enProductos,
+      });
+    }
+    return enProductos;
   };
   const grupo = (lista, nivel, abierto) => porTipo(lista).map((g) => {
     const mensajes = new Set(g.items.map((h) => h.mensaje));
     return `
     <details class="acordeon" ${abierto ? 'open' : ''}>
-      <summary>${ico('flecha', 'ico-sm')}${esc(TITULOS_HALLAZGO[g.codigo] || g.items[0].mensaje)}
+      <summary>${ico('flecha', 'ico-sm')}${esc(tituloHallazgo(g.codigo, g.items[0].mensaje))}
         <span class="cuenta${nivel === 'error' ? ' negativo' : ''}">${cuenta(g)}</span></summary>
       <div class="acordeon-body">
         ${mensajes.size === 1 ? `<p class="hallazgo-mensaje">${esc(g.items[0].mensaje)}</p>` : ''}
@@ -1105,8 +1042,8 @@ function panelValidacion(v) {
 
   return `<div class="seccion">
     <div class="seccion-etiqueta">
-      <h2>Validación previa</h2>
-      <span class="der">${v.resumen.errores} error${v.resumen.errores === 1 ? '' : 'es'}, ${v.resumen.avisos} aviso${v.resumen.avisos === 1 ? '' : 's'}</span>
+      <h2>${esc(T('validacion.titulo'))}</h2>
+      <span class="der">${esc(T(v.resumen.errores === 1 ? 'comun.n_errores_uno' : 'comun.n_errores', { n: v.resumen.errores }))}, ${esc(T(v.resumen.avisos === 1 ? 'comun.n_avisos_uno' : 'comun.n_avisos', { n: v.resumen.avisos }))}</span>
     </div>
     ${cabecera}
     <div class="mt-4">
@@ -1121,22 +1058,16 @@ function panelValidacion(v) {
 /** Traduce los códigos crudos a algo que se entienda. */
 function mensajeTidal(crudo) {
   const c = String(crudo || '').toLowerCase();
-  if (c.includes('501') || c.includes('unsupported method')) {
-    return 'Se cortó la comunicación con la app. Probá de nuevo.';
-  }
-  if (c.includes('expired')) {
-    return 'El código venció. Cerrá esto y volvé a conectar la cuenta.';
-  }
+  if (c.includes('501') || c.includes('unsupported method')) return T('tidal.err_corte');
+  if (c.includes('expired')) return T('tidal.err_vencido');
   if (c.includes('authorization_pending') || c.includes('pendiente') || c.includes('slow_down')) {
-    return 'Todavía no me llegó la confirmación de Tidal.';
+    return T('tidal.err_pendiente');
   }
-  if (c.includes('invalid') || c.includes('token')) {
-    return 'Tidal rechazó la conexión. Volvé a intentar desde el principio.';
-  }
+  if (c.includes('invalid') || c.includes('token')) return T('tidal.err_rechazo');
   if (c.includes('failed to fetch') || c.includes('networkerror') || c.includes('conexión')) {
-    return 'No pude hablar con Tidal. Revisá que haya conexión a internet.';
+    return T('tidal.err_red');
   }
-  return crudo || 'No se pudo conectar.';
+  return crudo || T('tidal.err_generico');
 }
 
 /** Una consulta de estado. `manual` distingue el clic del poll automático. */
@@ -1153,10 +1084,7 @@ async function _confirmarTidal({ manual }) {
     if (d.estado === 'pendiente') {
       // El poll automático NO toca el aviso. Si lo borrara, pisaría el mensaje
       // que dejó el clic en "Ya confirmé" y el botón parecería no hacer nada.
-      if (manual) {
-        S.tidal.aviso = 'Todavía no confirmaste en Tidal. Completá el acceso en la otra pestaña, '
-                      + 'y en cuanto lo hagas se conecta solo, sin volver a apretar.';
-      }
+      if (manual) S.tidal.aviso = T('tidal.aun_no_confirmaste');
     } else {
       S.tidal.aviso = mensajeTidal(d.estado);
     }
@@ -1194,6 +1122,23 @@ const ACCIONES = {
     aplicarTema(siguiente);
   },
 
+  /** El idioma se guarda del lado del servidor y no en localStorage, porque
+   *  Python también lo necesita: el log, los errores del relevamiento y los
+   *  archivos del ZIP se arman allá. */
+  async 'cambiar-idioma'(el) {
+    const nuevo = el && el.getAttribute('data-idioma');
+    if (!nuevo || nuevo === idioma()) return;
+    aplicarIdioma(nuevo);            // la interfaz cambia ya, sin esperar la red
+    render();
+    try {
+      await api('/api/idioma', { idioma: nuevo });
+      if (S.config) S.config.idioma = nuevo;
+    } catch (_) {
+      // Si no se pudo guardar, la interfaz igual quedó en el idioma nuevo y la
+      // próxima apertura vuelve al anterior. No vale un cartel de error.
+    }
+  },
+
   recargar() { window.location.reload(); },
 
   'ver-terminos'() { S.vista = 'terminos'; S.entrando = true; render(); arriba(); },
@@ -1218,17 +1163,17 @@ const ACCIONES = {
     const caja = $('#setup-error');
     const clave = campo ? campo.value.trim() : '';
     if (!clave) {
-      caja.innerHTML = alerta('danger', 'error', 'Pegá la clave antes de guardar.');
+      caja.innerHTML = alerta('danger', 'error', esc(T('clave.pega_antes')));
       return;
     }
-    caja.innerHTML = `<div class="row mt-4"><span class="spinner"></span><span>Verificando</span></div>`;
+    caja.innerHTML = `<div class="row mt-4"><span class="spinner"></span><span>${esc(T('clave.verificando'))}</span></div>`;
     try {
       await api('/api/clave', { clave }, 45000);
       S.config = await api('/api/config');
       S.vista = null;
       render();
     } catch (e) {
-      caja.innerHTML = alerta('danger', 'error', `<strong>No se pudo guardar.</strong><br>${esc(e.message)}`);
+      caja.innerHTML = alerta('danger', 'error', `<strong>${esc(T('clave.no_se_guardo'))}</strong><br>${esc(e.message)}`);
     }
   },
 
@@ -1236,7 +1181,7 @@ const ACCIONES = {
     const campo = $('#url');
     const url = campo ? campo.value.trim() : '';
     if (!url) {
-      S.errorCampo = 'Pegá el link del canal.'; render();
+      S.errorCampo = T('paso1.falta_link'); render();
       const c = $('#url'); if (c) c.focus();
       return;
     }
@@ -1251,8 +1196,10 @@ const ACCIONES = {
       render(); arriba();
     } catch (e) {
       S.ocupado = false;
-      // Un link que el servidor no reconoce es un problema del campo, no del mundo.
-      if (/^Pegá el link/.test(e.message || '')) {
+      // Un link que el servidor no reconoce es un problema del campo, no del
+      // mundo. Se mira el código y no el texto: con la app en inglés, comparar
+      // contra una frase en español dejaba de funcionar justo acá.
+      if (e.codigo === 'url') {
         S.errorCampo = e.message; S.error = '';
       } else {
         S.error = e.message === 'CANCELADO' ? '' : e.message;
@@ -1311,7 +1258,7 @@ const ACCIONES = {
   async 'tidal-confirmar'() {
     if (!S.tidal) return;
     S.error = '';                    // el aviso anterior no debe quedar pegado
-    S.tidal.aviso = 'Consultando';
+    S.tidal.aviso = T('tidal.consultando');
     render();
     await _confirmarTidal({ manual: true });
   },
@@ -1327,7 +1274,7 @@ const ACCIONES = {
 
   async generar() {
     const ids = seleccionados().map((p) => p.id);
-    if (!ids.length) { S.error = 'No hay productos elegidos.'; render(); return; }
+    if (!ids.length) { S.error = T('paso3.sin_seleccion'); render(); return; }
     S.error = ''; S.errorCodigo = ''; S.resultado = null; S.ocupado = true; S.paso = 4; S.job = null; render();
     try {
       const { job } = await api('/api/preparar', {
@@ -1341,7 +1288,7 @@ const ACCIONES = {
       S.ocupado = false; S.entrando = true; render(); arriba();
     } catch (e) {
       S.ocupado = false;
-      S.error = e.message === 'CANCELADO' ? 'Cancelado.' : e.message;
+      S.error = e.message === 'CANCELADO' ? T('comun.cancelado') : e.message;
       S.errorCodigo = e.codigo || '';
       render();
     }
@@ -1365,7 +1312,7 @@ function actualizarProgreso() {
     return;
   }
   const msj = $('#progreso-mensaje');
-  if (msj) msj.textContent = j.mensaje || 'Trabajando';
+  if (msj) msj.textContent = j.mensaje || T('progreso.trabajando');
   const pct = $('#progreso-pct');
   if (pct) pct.textContent = j.progreso ? Math.round(j.progreso * 100) + '%' : '';
   const log = $('#log');
@@ -1412,7 +1359,9 @@ document.addEventListener('click', (ev) => {
   const btnAccion = ev.target.closest('[data-accion]');
   if (btnAccion) {
     const fn = ACCIONES[btnAccion.dataset.accion];
-    if (fn) { ev.preventDefault(); seguro(fn); }
+    // Se le pasa el elemento: hay acciones, como el cambio de idioma, que
+    // necesitan saber cuál de varios botones con la misma acción se apretó.
+    if (fn) { ev.preventDefault(); seguro(() => fn(btnAccion)); }
     return;
   }
 
@@ -1541,8 +1490,11 @@ function actualizarResumenSeleccion() {
   const sel = seleccionados();
   const caja = document.querySelector('.barra-accion .resumen');
   if (caja) {
-    caja.innerHTML = `<strong>${sel.length}</strong> de <strong>${ps.length}</strong> productos elegidos, `
-                   + `${sel.reduce((a, p) => a + p.tracks, 0)} tracks`;
+    caja.innerHTML = T('paso2.elegidos', {
+      n: `<strong>${sel.length}</strong>`,
+      total: `<strong>${ps.length}</strong>`,
+      tracks: sel.reduce((a, p) => a + p.tracks, 0),
+    });
   }
   const btn = document.querySelector('[data-accion="ir-3"]');
   if (btn) btn.disabled = sel.length === 0;
@@ -1576,16 +1528,29 @@ function adoptarCatalogo(cat) {
   S.paso = 2;
 }
 
+/** Aplica el idioma a todo lo que no pasa por render(): el html lang, los
+ *  textos fijos de index.html y el botón marcado del selector. */
+function aplicarIdioma(codigo) {
+  ponerIdioma(codigo);
+  traducirEstaticos();
+  marcarIdioma();
+  aplicarTema(temaGuardado());     // el rótulo del botón de tema también cambia
+}
+
 (async function iniciar() {
   aplicarTema(temaGuardado());
+  // Antes de tener config no se sabe el idioma elegido, así que se arranca con
+  // el del navegador. Es sólo para el esqueleto: /api/config lo corrige enseguida.
+  aplicarIdioma((navigator.language || '').slice(0, 2));
   render();
   try {
     S.config = await api('/api/config', undefined, 15000);
   } catch (e) {
     pantalla().innerHTML = alerta('danger', 'error',
-      '<strong>No pude conectar con el motor de la app.</strong><br>Cerrala y volvé a abrirla.');
+      `<strong>${esc(T('arranque.sin_motor_titulo'))}</strong><br>${esc(T('arranque.sin_motor_detalle'))}`);
     return;
   }
+  aplicarIdioma(S.config.idioma);
 
   if (S.config.catalogo_cargado) {
     try { adoptarCatalogo(await api('/api/catalogo')); } catch (_) { /* seguimos en el paso 1 */ }
