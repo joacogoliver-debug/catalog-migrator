@@ -413,10 +413,15 @@ TEXTOS = {
         "es": "No hay una conexión de Tidal en curso.",
         "en": "There is no Tidal connection in progress.",
     },
+    "srv.sin_seleccion": {
+        "es": "No hay productos seleccionados.",
+        "en": "No products are selected.",
+    },
     "srv.content_length": {
         "es": "El pedido trae un Content-Length inválido.",
         "en": "The request has an invalid Content-Length.",
     },
+    "srv.pedido_grande": {"es": "El pedido es demasiado grande.", "en": "The request is too large."},
     "srv.pedido_cortado": {"es": "El pedido llegó cortado.", "en": "The request arrived truncated."},
     "srv.json_invalido": {"es": "El pedido no es JSON válido.", "en": "The request is not valid JSON."},
     "srv.json_no_objeto": {
@@ -657,6 +662,11 @@ TEXTOS = {
 
     # ---- paquete: nombres de archivo y de carpeta ---------------------------
     "paq.carpeta_raiz": {"es": "Migracion", "en": "Migration"},
+    "paq.log_carpeta": {"es": "Carpeta {carpeta}", "en": "Folder {carpeta}"},
+    "paq.log_zip_listo": {"es": "ZIP listo, {mb} MB", "en": "ZIP ready, {mb} MB"},
+    # Va pegado al nombre del archivo de audio: es la última barrera para que un
+    # lossy no se entregue por error, así que también tiene que leerse.
+    "paq.tag_lossy": {"es": "[REFERENCIA-LOSSY]", "en": "[REFERENCE-LOSSY]"},
     "paq.f_leeme": {"es": "_LEEME.txt", "en": "_READ ME.txt"},
     "paq.f_reporte": {"es": "_Reporte de migracion.txt", "en": "_Migration report.txt"},
     "paq.f_validacion": {"es": "_Validacion pre-entrega.txt", "en": "_Pre-delivery validation.txt"},

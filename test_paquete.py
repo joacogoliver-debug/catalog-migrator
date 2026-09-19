@@ -7,7 +7,7 @@ Sale 0 si todo pasa, 1 si algo falla. No necesita claves ni internet.
 Cubre lo que sostiene la confianza en el entregable:
   - la estructura del ZIP es una carpeta por producto
   - las planillas y el reporte están en la raíz
-  - los audios lossy quedan marcados [REFERENCIA-LOSSY] en el nombre
+  - los audios lossy quedan marcados en el nombre (la marca sigue al idioma)
   - los audios lossless NO llevan esa marca
   - el reporte lista los pendientes reales (sin UPC, sin portada, sin audio)
   - el reporte avisa fuerte cuando no hubo cuenta de Tidal
@@ -134,6 +134,7 @@ def main():
 
         with zipfile.ZipFile(ruta) as z:
             nombres = z.namelist()
+            marca = i18n.T("paq.tag_lossy")
             raiz = nombres[0].split("/")[0]
 
             # Archivos de raíz.
@@ -155,7 +156,7 @@ def main():
                   f"{raiz}/2020 - Album Bueno [111]/01 - Tema Lossless.flac" in nombres,
                   f"nombres={[n for n in nombres if 'Lossless' in n]}")
             check("audio.lossy_marcado",
-                  f"{raiz}/2021 - Single Flojo/01 - Tema Lossy [REFERENCIA-LOSSY].m4a" in nombres,
+                  f"{raiz}/2021 - Single Flojo/01 - Tema Lossy {marca}.m4a" in nombres,
                   f"nombres={[n for n in nombres if 'Lossy' in n]}")
             # El track sin audio no genera archivo.
             check("audio.sin_audio_no_aparece",

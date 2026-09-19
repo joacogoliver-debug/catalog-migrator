@@ -9,9 +9,15 @@
    Patrón: un objeto de estado (S), una función render() que dibuja según el
    paso, y eventos por delegación. Simple y suficiente para cinco pantallas.
 
-   Lo visual sigue DESIGN-SYSTEM.md. Dos consecuencias que se ven en todo el
-   archivo: los iconos son SVG de trazo de una sola familia (§7, nunca emojis) y
-   los botones no llevan flechas pegadas al texto (§12).
+   Lo visual sigue DESIGN.md, que es la fuente vigente (DESIGN-SYSTEM.md es el
+   documento de marca anterior y ya no manda sobre los tokens). Dos
+   consecuencias que se ven en todo el archivo: los iconos son SVG de trazo de
+   una sola familia y nunca emojis (§9), y los botones no llevan flechas
+   pegadas al texto.
+
+   Los textos no se escriben acá: salen de i18n.js con T(), y los que
+   están en el HTML se marcan con data-t. Si aparece un literal en castellano
+   en este archivo, es un bug: en inglés se ve igual.
    ============================================================ */
 
 'use strict';

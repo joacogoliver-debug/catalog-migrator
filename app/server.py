@@ -612,7 +612,7 @@ def api_preparar(body):
     ids = body.get("ids") or []
     sel = ESTADO.por_ids(ids)
     if not sel:
-        raise ValueError("No hay productos seleccionados.")
+        raise ValueError(T("srv.sin_seleccion"))
 
     quiere_planilla = bool(body.get("planilla", True))
     quiere_portadas = bool(body.get("portadas", True))
@@ -802,7 +802,7 @@ class Handler(BaseHTTPRequestHandler):
         if largo <= 0:
             return {}
         if largo > MAX_BODY:
-            raise ValueError("El pedido es demasiado grande.")
+            raise ValueError(T("srv.pedido_grande"))
         crudo = self.rfile.read(largo)
         if len(crudo) < largo:
             raise ValueError(T("srv.pedido_cortado"))

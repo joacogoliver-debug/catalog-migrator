@@ -2,7 +2,7 @@
 Descarga de portadas vía iTunes Search API (pública, sin clave).
 
 Lógica portada de `fchavonet/full_stack-itunes_artwork_finder`: la API devuelve
-`artworkUrl100` (100x100) y el tamaño se cambia reescribiendo la URL ,
+`artworkUrl100` (100x100) y el tamaño se cambia reescribiendo la URL:
 `100x100bb.jpg` → `3000x3000bb.jpg`. No es un truco frágil: es el esquema de
 nombres del CDN de Apple y es la forma estándar de pedir alta resolución.
 

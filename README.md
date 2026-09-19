@@ -1,5 +1,7 @@
 # Migrador de Catálogos
 
+**Español** · [English](README.en.md)
+
 App gratuita para relevar el catálogo de un artista y preparar su migración a
 otra distribuidora. Pegás el link del canal de YouTube y te devuelve los
 **ISRC**, los **UPC**, las **portadas** en alta resolución, una **hoja de
@@ -98,6 +100,28 @@ gh attestation verify Migrador-de-Catalogos-windows-completa.exe --repo joacogol
 ```
 
 Es la misma postura que usa `yt-dlp`.
+
+---
+
+## Idioma
+
+La app está en **castellano y en inglés**, entera: la interfaz, el log del
+relevamiento, los mensajes de error, y también lo que se descarga (los nombres
+de los archivos del ZIP, los encabezados de la planilla y el informe de
+validación).
+
+El instalador de Windows pregunta el idioma en la primera pantalla y la app
+arranca en el que hayas elegido. Después se puede cambiar cuando quieras desde
+el selector del encabezado, sin reiniciar nada.
+
+Corriendo desde el código, el idioma sale de la primera de estas cosas que
+exista: la variable `MIGRADOR_IDIOMA` (`es` o `en`), lo último que hayas elegido
+en la app, lo que dejó el instalador, y si no, el idioma del sistema
+operativo.
+
+```bash
+MIGRADOR_IDIOMA=en python app/launcher.py
+```
 
 ---
 
@@ -229,8 +253,8 @@ instalan las dependencias la primera vez.
 
 La app abre en **su propia ventana**, no en el navegador: usa `pywebview` sobre
 el motor web del sistema (WebView2 en Windows, WebKit en macOS). Si por algo no
-puede, cae al motor del sistema en modo aplicación ,ventana propia, sin barra de
-direcciones ni pestañas, y si tampoco, al navegador. `--diagnostico` escribe un
+puede, cae al motor del sistema en modo aplicación —ventana propia, sin barra de
+direcciones ni pestañas—, y si tampoco, al navegador. `--diagnostico` escribe un
 reporte de qué puede hacer la app en esa máquina, útil porque el ejecutable se
 compila sin consola.
 
@@ -350,6 +374,7 @@ consistente con una app que funciona sin internet.
 Corren sin red, sin claves y sin las dependencias de audio:
 
 ```bash
+python test_i18n.py                # los dos catálogos de traducción, completos y de acuerdo
 python test_parse_description.py   # parseo de descripciones de YouTube
 python test_productos.py           # agrupación en productos + filtros
 python test_validar.py             # validación de códigos, portadas y duplicados
@@ -357,6 +382,7 @@ python test_portadas.py            # resolución real de las portadas
 python test_paquete.py             # estructura del ZIP + etiquetado de calidad
 python test_app.py                 # backend: trabajos, HTTP, token y Host
 python test_migrar_core.py         # contrato del orquestador
+python test_errores_youtube.py     # traducción de los errores de la YouTube Data API
 python test_audio_tidal.py         # contrato con tiddl (se saltea si no está)
 ```
 
@@ -381,7 +407,7 @@ para verificar que el núcleo no dependa de ellos.
 
 ## Licencia
 
-MIT , ver [LICENSE](LICENSE). El uso previsto y sus límites están en
+MIT — ver [LICENSE](LICENSE). El uso previsto y sus límites están en
 [TERMINOS.md](TERMINOS.md).
 
 Esta herramienta es para que dueños de catálogo releven y migren **su propio**
