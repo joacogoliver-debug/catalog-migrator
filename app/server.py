@@ -665,7 +665,8 @@ def api_preparar(body):
 
             job.avance(T("srv.armando_zip"), 0.9)
             carpeta = tempfile.mkdtemp(prefix="migrador_zip_")
-            destino = os.path.join(carpeta, f"{R.slugify(artista)}-migracion.zip")
+            destino = os.path.join(
+                carpeta, f'{R.slugify(artista)}-{T("paq.f_zip_sufijo")}.zip')
             ruta, tam = M.empaquetar(
                 copias, artista, out_path=destino, entorno=ent,
                 con_tidal=bool(ses and ses.conectada),
@@ -684,7 +685,7 @@ def api_preparar(body):
         ESTADO.registrar_zip(job.id, ruta)
 
         val = V.validar(copias, artista)
-        job.avance("Paquete listo.", 1.0)
+        job.avance(T("srv.paquete_listo"), 1.0)
         return {
             "archivo": os.path.basename(ruta),
             "bytes": tam,

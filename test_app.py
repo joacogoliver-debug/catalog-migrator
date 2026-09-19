@@ -185,6 +185,28 @@ def main():
         poner_instalador("klingon")
         check("idioma.instalador_basura", backend.idioma_guardado() in i18n.IDIOMAS)
 
+        # Y la rama que de verdad corre cuando esto es un .exe. No es la misma:
+        # empaquetado, la carpeta sale de sys.executable y no de _RAIZ, que
+        # apunta adentro del bundle temporal de PyInstaller. Si esta rama
+        # estuviera mal, el instalador escribiria el idioma.txt donde nadie lo
+        # lee y la eleccion del instalador no llegaria nunca a la app, que es
+        # justo lo unico que no se puede ver corriendo desde el codigo.
+        poner_instalador("en")
+        falso_exe = os.path.join(dir_idioma, "Migrador de Catalogos.exe")
+        backend._RAIZ = os.path.join(dir_idioma, "no-es-aca")
+        sys.frozen = True
+        exe_real = sys.executable
+        sys.executable = falso_exe
+        try:
+            expect("idioma.instalador_congelado", backend.idioma_del_instalador(), "en")
+        finally:
+            sys.executable = exe_real
+            del sys.frozen
+            backend._RAIZ = dir_idioma
+        # Sin congelar, ese mismo idioma.txt no se busca al lado del exe.
+        check("idioma.sin_congelar_usa_raiz",
+              backend.idioma_del_instalador() == "en")
+
         # 2) lo que el usuario eligio en la app le gana al instalador.
         poner_instalador("en"); poner_config("es")
         expect("idioma.config_gana", backend.idioma_guardado(), "es")
@@ -416,7 +438,15 @@ def main():
             cod, cuerpo, hdr = get(resultado["descarga"])
             expect("api.descarga", cod, 200)
             expect("api.descarga_tipo", hdr.get("Content-Type"), "application/zip")
-            check("api.descarga_nombre", "attachment" in (hdr.get("Content-Disposition") or ""))
+            disp = hdr.get("Content-Disposition") or ""
+            check("api.descarga_nombre", "attachment" in disp)
+            # El nombre del archivo que se baja tambien sigue al idioma. Nada lo
+            # cubria, y el sufijo estaba escrito a mano en castellano: la app en
+            # ingles bajaba un "...-migracion.zip".
+            check("api.descarga_nombre_idioma",
+                  "-%s.zip" % i18n.T("paq.f_zip_sufijo") in disp, disp)
+            check("api.descarga_nombre_sin_rarezas",
+                  i18n.T("paq.f_zip_sufijo").isalnum(), i18n.T("paq.f_zip_sufijo"))
             expect("api.descarga_largo", int(hdr.get("Content-Length")), len(cuerpo))
 
             import io

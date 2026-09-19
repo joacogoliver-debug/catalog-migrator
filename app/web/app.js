@@ -83,15 +83,26 @@ function esc(v) {
   ));
 }
 
+/* El separador de miles y el decimal cambian con el idioma, y no son un
+   detalle: "7.000" es siete mil en castellano y siete con tres decimales en
+   ingles. Estaba fijo en es-AR, asi que la app en ingles mostraba las
+   reproducciones con el punto castellano. */
+function locale() {
+  return idioma() === 'en' ? 'en-US' : 'es-AR';
+}
+
 function num(n) {
-  return (Number(n) || 0).toLocaleString('es-AR');
+  return (Number(n) || 0).toLocaleString(locale());
 }
 
 function pesoLegible(bytes) {
   const b = Number(bytes) || 0;
-  if (b >= 1e9) return (b / 1e9).toFixed(2) + ' GB';
-  if (b >= 1e6) return (b / 1e6).toFixed(1) + ' MB';
-  if (b >= 1e3) return Math.round(b / 1e3) + ' KB';
+  const dec = (v, d) => v.toLocaleString(locale(), {
+    minimumFractionDigits: d, maximumFractionDigits: d,
+  });
+  if (b >= 1e9) return dec(b / 1e9, 2) + ' GB';
+  if (b >= 1e6) return dec(b / 1e6, 1) + ' MB';
+  if (b >= 1e3) return num(Math.round(b / 1e3)) + ' KB';
   return b + ' B';
 }
 

@@ -133,7 +133,7 @@ def empaquetar(seleccion, artista, out_path=None, entorno=None, con_tidal=False,
     if out_path is None:
         out_path = os.path.join(
             tempfile.mkdtemp(prefix="migrador_zip_"),
-            f"{relevar_core.slugify(artista)}-migracion.zip",
+            f'{relevar_core.slugify(artista)}-{T("paq.f_zip_sufijo")}.zip',
         )
     return paquete.build_zip(
         seleccion, artista, out_path, entorno=entorno, con_tidal=con_tidal,
