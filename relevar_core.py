@@ -28,6 +28,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # Va después del sys.path.insert de arriba: i18n vive al lado de este archivo y
 # no siempre se importa con la raíz del repo ya en el path.
 from i18n import T                                                  # noqa: E402
+from productos import SIN_ALBUM, SIN_DATOS                          # noqa: E402
 
 API = "https://www.googleapis.com/youtube/v3"
 
@@ -315,7 +316,7 @@ def parse_description(desc):
     # Álbum: tercer bloque del formato auto-generado
     #   [0] Provided to YouTube by X / [1] Track · Artista / [2] Álbum
     # En singles/EP no hay bloque de álbum y el [2] es la línea ℗ (o "Released
-    # on:"): no es un álbum, así que lo descartamos y queda "(single / sin álbum)".
+    # on:"): no es un álbum, así que lo descartamos y queda en SIN_ALBUM.
     blocks = [b.strip() for b in re.split(r"\n\s*\n", desc) if b.strip()]
     if len(blocks) >= 3 and blocks[0].lower().startswith(prefix):
         cand = blocks[2].splitlines()[0].strip()
@@ -366,14 +367,14 @@ def build_tracks(videos):
         tracks.append({
             "video_id": v.get("id") or "",
             "track": sn.get("title") or "",
-            # OJO: estas dos cadenas son CENTINELAS, no texto para mostrar, y
-            # por eso no se traducen. `relevar()` filtra por "(sin datos)" y
-            # `productos.SIN_ALBUM` agrupa por la otra; traducirlas rompería el
-            # filtrado y la agrupación en silencio. Ninguna llega a la pantalla:
-            # los tracks sin distribuidora se descartan, y a los que no tienen
-            # álbum el producto los titula con el nombre del track.
-            "album": meta["album"] or "(single / sin álbum)",
-            "distributor": meta["distributor"] or "(sin datos)",
+            # OJO: estos dos son CENTINELAS, no texto para mostrar, y por eso
+            # no se traducen: `relevar()` filtra por SIN_DATOS y `productos`
+            # agrupa por SIN_ALBUM, así que traducirlos rompería el filtrado y
+            # la agrupación en silencio. Ninguno llega a la pantalla: los tracks
+            # sin distribuidora se descartan, y a los que no tienen álbum el
+            # producto los titula con el nombre del track.
+            "album": meta["album"] or SIN_ALBUM,
+            "distributor": meta["distributor"] or SIN_DATOS,
             "label": meta["label"] or "",
             "release_year": meta["release_year"] or "",
             "isrc": "",   # se completa por enriquecimiento (Deezer), si está disponible
@@ -644,7 +645,7 @@ def relevar(url, yt_key, with_codes=True, progress=None, use_musicbrainz=False):
     # resultado: sin este filtro, un canal común devolvía cientos de "productos"
     # sin álbum ni códigos.
     todos = build_tracks(videos)
-    tracks = [t for t in todos if t["distributor"] != "(sin datos)"]
+    tracks = [t for t in todos if t["distributor"] != SIN_DATOS]
     descartados = len(todos) - len(tracks)
 
     if not tracks:

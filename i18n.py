@@ -70,6 +70,25 @@ def idioma_forzado():
     return v if v in IDIOMAS else ""
 
 
+def _aplicar_forzado():
+    """Deja puesto `MIGRADOR_IDIOMA` apenas se importa el módulo.
+
+    Sin esto, la variable sólo tenía efecto cuando el servidor resolvía el
+    idioma al atender /api/config, y todo lo que corriera antes salía en
+    español: el `--diagnostico` del launcher, un script que importe `paquete`
+    para armar un ZIP, cualquier uso del motor sin servidor. El README dice que
+    `MIGRADOR_IDIOMA=en` alcanza para tener la app en inglés, y ahora es cierto
+    también fuera del servidor.
+
+    No se mira el locale del sistema acá a propósito: eso es el último escalón
+    de la prioridad y lo resuelve `server.idioma_guardado()`, que primero tiene
+    que poder ver la config del usuario y el idioma.txt del instalador.
+    """
+    forzado = idioma_forzado()
+    if forzado:
+        poner_idioma(forzado)
+
+
 def idioma_del_sistema():
     """El idioma que parece querer el sistema operativo.
 
@@ -903,3 +922,6 @@ approximations and are worth checking:
 """,
     },
 }
+
+
+_aplicar_forzado()
