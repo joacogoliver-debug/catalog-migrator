@@ -480,6 +480,15 @@ button.step.activo:hover .step-num { background: var(--acento-fuerte); border-co
 .segmented button:hover { color: var(--texto); }
 .segmented button.activo { color: var(--texto); background: var(--panel-alto); }
 
+/* Variante de cabecera: el segmentado normal mide 38 px de alto y al lado del
+   botón de tema, que mide 32, quedaba desparejo. Los códigos de idioma van en
+   mono porque son etiquetas, no texto que se lee. */
+.segmented-mini button {
+  height: 28px; padding: 0 var(--e-2);
+  font-family: var(--mono); font-size: var(--t-nano);
+  letter-spacing: var(--tracking-mono);
+}
+
 /* ---------------------------------------------------------- badges */
 /* Relleno oscuro teñido del propio semántico, con el texto saturado encima.
    Sin borde y sin relleno pastel: la mancha de color plana es el atajo que

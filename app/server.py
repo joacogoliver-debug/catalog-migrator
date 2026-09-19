@@ -62,10 +62,12 @@ for _p in (_RAIZ, _AQUI):
         sys.path.insert(0, _p)
 
 import audio as audio_mod                     # noqa: E402
+import i18n                                   # noqa: E402
 import migrar_core as M                       # noqa: E402
 import productos as P                         # noqa: E402
 import relevar_core as R                      # noqa: E402
 import validar as V                           # noqa: E402
+from i18n import T                            # noqa: E402
 from jobs import Registry                     # noqa: E402
 
 VERSION = "1.0.1"
@@ -229,6 +231,34 @@ def guardar_clave(clave):
 
 def terminos_aceptados():
     return leer_config().get("terminos") == TERMINOS_VERSION
+
+
+class ErrorDeCampo(ValueError):
+    """Un valor que mandó el usuario no sirve, y la interfaz lo muestra debajo
+    del campo en vez de como error general de la pantalla.
+
+    Hereda de ValueError a propósito: así sigue cayendo en el 400 de siempre y no
+    cambia el contrato de la API. Lo único que agrega es el `codigo`, que es lo
+    que mira el frontend para saber dónde poner el mensaje. Antes lo deducía
+    comparando el texto en español, y con la app en inglés dejaba de funcionar.
+    """
+
+    def __init__(self, mensaje, codigo="url"):
+        super().__init__(mensaje)
+        self.codigo = codigo
+
+
+def idioma_guardado():
+    """El idioma que corresponde usar, y lo deja puesto en `i18n`.
+
+    Si el usuario nunca eligió uno, se mira el sistema. No se guarda esa
+    deducción: adivinar bien hoy no es lo mismo que decidir, y si mañana abre la
+    app en otra máquina conviene volver a mirar el sistema en vez de arrastrar
+    una elección que nunca hizo.
+    """
+    guardado = (leer_config().get("idioma") or "").strip().lower()
+    return i18n.poner_idioma(guardado if guardado in i18n.IDIOMAS
+                             else i18n.idioma_del_sistema())
 
 
 # ============================================================
@@ -429,6 +459,11 @@ def api_config():
     JOBS.limpiar()
     return {
         "version": VERSION,
+        # El idioma se resuelve en cada /api/config y no una sola vez al
+        # arrancar: es lo que hace que un cambio quede aplicado también del lado
+        # de Python, que es quien escribe el log y los archivos del ZIP.
+        "idioma": idioma_guardado(),
+        "idiomas": list(i18n.IDIOMAS),
         "terminos_aceptados": terminos_aceptados(),
         "terminos_version": TERMINOS_VERSION,
         "tiene_clave": bool(leer_clave()),
@@ -443,6 +478,19 @@ def api_config():
         "catalogo_cargado": bool(ESTADO.productos),
         "trabajo_en_curso": bool(JOBS.activos()),
     }
+
+
+def api_idioma(body):
+    """Cambia el idioma y lo deja guardado.
+
+    Lo aplica además en `i18n` acá mismo, porque el próximo mensaje del log o el
+    próximo ZIP se arman de este lado y tienen que salir ya en el idioma nuevo.
+    """
+    pedido = (body.get("idioma") or "").strip().lower()
+    if pedido not in i18n.IDIOMAS:
+        raise ValueError(T("server.idioma_invalido", idiomas=", ".join(i18n.IDIOMAS)))
+    guardar_config({"idioma": pedido})
+    return {"ok": True, "idioma": i18n.poner_idioma(pedido)}
 
 
 def api_terminos(body):
@@ -482,10 +530,14 @@ def _sin_trabajo_en_curso():
 
 def api_relevar(body):
     url = (body.get("url") or "").strip()
+    # Van con código "url" y no como ValueError pelado: la interfaz los muestra
+    # debajo del campo en vez de como error general, y para decidirlo mira el
+    # código. Antes comparaba el texto del mensaje, que con la app en inglés
+    # dejaba de coincidir.
     if not url:
-        raise ValueError("Pegá el link del canal de YouTube.")
+        raise ErrorDeCampo(T("server.falta_url"))
     if len(url) > 2048:
-        raise ValueError("Ese link es demasiado largo para ser un canal de YouTube.")
+        raise ErrorDeCampo(T("server.url_larga"))
     # El estado del servidor se mira antes que la configuración: si ya hay algo
     # corriendo, eso es lo que hay que decir, y además así el rechazo no depende
     # de si la clave está cargada o no.
@@ -650,6 +702,7 @@ def api_tidal_desconectar():
 
 
 RUTAS_POST = {
+    "/api/idioma": api_idioma,
     "/api/terminos": api_terminos,
     "/api/clave": api_guardar_clave,
     "/api/relevar": api_relevar,
