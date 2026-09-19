@@ -22,6 +22,8 @@ import sys
 # sin esto, saldría de la config del usuario que corra el test o del locale de
 # la máquina. En CI eso significaba un ZIP en inglés y un test en rojo.
 os.environ["MIGRADOR_IDIOMA"] = "es"
+import shutil
+import tempfile
 import threading
 import time
 import urllib.error
@@ -31,6 +33,8 @@ import zipfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "app"))
 sys.path.insert(0, HERE)
+
+import i18n                                                        # noqa: E402
 
 
 
@@ -130,6 +134,89 @@ def main():
 
     # --- inexistente ---
     check("job.get_inexistente", reg.get("nohay") is None)
+
+    # ========================================================
+    # Idioma: la cadena instalador -> config -> app
+    # ========================================================
+    # Es la promesa central de la app bilingue: quien elige "English" en el
+    # instalador tiene que encontrarse la app entera en ingles, incluido lo que
+    # descarga. Esa cadena pasa por cuatro fuentes con prioridades distintas y
+    # no hay forma de verla de punta a punta sin instalar de verdad, asi que se
+    # prueba la funcion que las resuelve.
+    #
+    # Se le cambia `dir_datos` y `_RAIZ` a carpetas temporales: sin eso el test
+    # leeria y escribiria la config real de quien lo corre.
+    dir_idioma = tempfile.mkdtemp(prefix="migrador-idioma-")
+    datos_idioma = os.path.join(dir_idioma, "datos")
+    os.makedirs(datos_idioma, exist_ok=True)
+    dir_datos_real, raiz_real = backend.dir_datos, backend._RAIZ
+    forzado_real = os.environ.pop("MIGRADOR_IDIOMA", None)
+    backend.dir_datos = lambda: datos_idioma
+    backend._RAIZ = dir_idioma
+    try:
+        def poner_config(valor):
+            ruta = os.path.join(datos_idioma, "config.json")
+            if valor is None:
+                if os.path.exists(ruta):
+                    os.remove(ruta)
+                return
+            with open(ruta, "w", encoding="utf-8") as f:
+                json.dump({"idioma": valor}, f)
+
+        def poner_instalador(valor):
+            ruta = os.path.join(dir_idioma, "idioma.txt")
+            if valor is None:
+                if os.path.exists(ruta):
+                    os.remove(ruta)
+                return
+            with open(ruta, "w", encoding="utf-8") as f:
+                f.write(valor)
+
+        # 4) sin nada, manda el sistema operativo; lo unico exigible es que
+        #    devuelva un idioma que la app tenga.
+        poner_config(None); poner_instalador(None)
+        check("idioma.sin_nada", backend.idioma_guardado() in i18n.IDIOMAS)
+
+        # 3) el instalador dejo su eleccion al lado del ejecutable.
+        poner_instalador("en")
+        expect("idioma.instalador", backend.idioma_guardado(), "en")
+
+        # Un idioma.txt con basura no rompe nada: se ignora y sigue el sistema.
+        poner_instalador("klingon")
+        check("idioma.instalador_basura", backend.idioma_guardado() in i18n.IDIOMAS)
+
+        # 2) lo que el usuario eligio en la app le gana al instalador.
+        poner_instalador("en"); poner_config("es")
+        expect("idioma.config_gana", backend.idioma_guardado(), "es")
+
+        # 1) la variable de entorno le gana a todo: es la que usan los tests y
+        #    quien quiere abrir la app en un idioma sin cambiar su config.
+        os.environ["MIGRADOR_IDIOMA"] = "en"
+        expect("idioma.entorno_gana", backend.idioma_guardado(), "en")
+        os.environ.pop("MIGRADOR_IDIOMA")
+
+        # El endpoint valida y guarda; la basura no se guarda.
+        poner_config(None); poner_instalador(None)
+        expect("idioma.api_cambia", backend.api_idioma({"idioma": "en"})["idioma"], "en")
+        expect("idioma.api_persiste", backend.leer_config().get("idioma"), "en")
+        try:
+            backend.api_idioma({"idioma": "klingon"})
+            fails.append("  [idioma.api_rechaza] deberia fallar")
+        except ValueError:
+            pass
+        expect("idioma.api_no_guardo_basura", backend.leer_config().get("idioma"), "en")
+
+        # Y el cambio alcanza a lo que se descarga, que se arma de este lado.
+        import paquete
+        check("idioma.alcanza_al_zip",
+              paquete.nombres_archivos()["validacion"].startswith("_Pre-delivery"),
+              paquete.nombres_archivos()["validacion"])
+    finally:
+        backend.dir_datos, backend._RAIZ = dir_datos_real, raiz_real
+        if forzado_real is not None:
+            os.environ["MIGRADOR_IDIOMA"] = forzado_real
+        backend.idioma_guardado()
+        shutil.rmtree(dir_idioma, ignore_errors=True)
 
     # ========================================================
     # Servidor HTTP
