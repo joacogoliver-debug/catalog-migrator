@@ -423,6 +423,7 @@ TEXTOS = {
         "es": "No hay productos seleccionados.",
         "en": "No releases are selected.",
     },
+    "srv.paquete_listo": {"es": "Paquete listo.", "en": "Package ready."},
     "srv.armando_zip": {"es": "Armando el ZIP", "en": "Building the ZIP"},
     "srv.audio_desactivado": {
         "es": "El módulo de audio está desactivado.",
@@ -686,6 +687,8 @@ TEXTOS = {
     # Va pegado al nombre del archivo de audio: es la última barrera para que un
     # lossy no se entregue por error, así que también tiene que leerse.
     "paq.tag_lossy": {"es": "[REFERENCIA-LOSSY]", "en": "[REFERENCE-LOSSY]"},
+    # Va en el NOMBRE del archivo que se baja, asi que sin acentos ni espacios.
+    "paq.f_zip_sufijo": {"es": "migracion", "en": "migration"},
     "paq.f_leeme": {"es": "_LEEME.txt", "en": "_READ ME.txt"},
     "paq.f_reporte": {"es": "_Reporte de migracion.txt", "en": "_Migration report.txt"},
     "paq.f_validacion": {"es": "_Validacion pre-entrega.txt", "en": "_Pre-delivery validation.txt"},
@@ -809,11 +812,11 @@ Abrí primero "{validacion}". Separa dos cosas:
 
 SOBRE LA HOJA DE INGESTA
 ------------------------
-"{ingesta}" trae las columnas estándar que aceptan o mapean casi todas las
-distribuidoras, y sus nombres van en inglés a propósito: son los nombres de
-campo que espera la distribuidora, no texto para leer. Lo que se pudo relevar
-viene completo. Lo que no puede salir de fuentes públicas está marcado con
-<<COMPLETAR>>:
+"{ingesta}" trae las columnas estándar que aceptan o
+mapean casi todas las distribuidoras, y sus nombres van en inglés a
+propósito: son los nombres de campo que espera la distribuidora, no texto
+para leer. Lo que se pudo relevar viene completo. Lo que no puede salir de
+fuentes públicas está marcado con <<COMPLETAR>>:
 
   Genre, Language, Explicit, Composer, Publisher, C Line
 
@@ -848,7 +851,7 @@ son aproximaciones y conviene verificarlos:
                           de track es el real. Si no, es un estimado por fecha
                           de subida y el reporte lo marca como "sin confirmar".
 """,
-        "en": """HOW THIS PACKAGE IS ORGANISED
+        "en": """HOW THIS PACKAGE IS ORGANIZED
 =============================
 
 One folder per release (album / EP / single). Each one holds:
@@ -882,10 +885,11 @@ Open "{validacion}" first. It separates two things:
 
 ABOUT THE INGESTION SHEET
 -------------------------
-"{ingesta}" carries the standard columns that nearly every distributor accepts
-or maps, and their names are in English on purpose: they are the field names
-the distributor expects, not text to read. What could be surveyed comes filled
-in. What cannot come from public sources is marked <<COMPLETAR>>:
+"{ingesta}" carries the standard columns that nearly
+every distributor accepts or maps, and their names are in English on
+purpose: they are the field names the distributor expects, not text to
+read. What could be surveyed comes filled in. What cannot come from public
+sources is marked <<COMPLETAR>>:
 
   Genre, Language, Explicit, Composer, Publisher, C Line
 
