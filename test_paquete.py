@@ -12,6 +12,7 @@ Cubre lo que sostiene la confianza en el entregable:
   - el reporte lista los pendientes reales (sin UPC, sin portada, sin audio)
   - el reporte avisa fuerte cuando no hubo cuenta de Tidal
   - se respetan los checkboxes (no incluir audio / portadas / planilla)
+  - el paquete entero sale en el idioma elegido, nombres de archivo incluidos
 """
 import os
 import sys
@@ -20,7 +21,17 @@ import tempfile
 import zipfile
 import importlib.util
 
+# El idioma se fija antes de importar nada: si no, el paquete sale en el que
+# tenga la máquina que corre el test y las comparaciones dependen del locale.
+os.environ["MIGRADOR_IDIOMA"] = "es"
+
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+
+# i18n va con un import normal y NO con _load: _load registra un módulo nuevo en
+# sys.modules, y entonces el `from i18n import T` de paquete quedaba atado a otra
+# instancia. Cambiarle el idioma a una no se veía en la otra.
+import i18n                                                        # noqa: E402
 
 
 def _load(nombre):
@@ -158,9 +169,17 @@ def main():
             check("reporte.acentos_ok", "MIGRACIÓN" in reporte, reporte[:60])
 
         # --- Contenido del reporte ---------------------------------------
-        check("reporte.aptos", "Aptos para entrega (FLAC lossless) : 1" in reporte, reporte[:400])
-        check("reporte.referencia", "Sólo referencia (lossy)            : 1" in reporte)
-        check("reporte.sin_audio", "Sin audio                          : 1" in reporte)
+        # Se compara rótulo y valor sin fijar los espacios del medio: el reporte
+        # alinea con ljust y el ancho depende del largo de la palabra, que
+        # cambia con el idioma. Fijar la separación exacta hacía que el test
+        # dependiera de una decisión de maquetado.
+        def linea(rotulo, valor, texto=reporte):
+            return any(l.strip().startswith(rotulo) and l.rstrip().endswith(f": {valor}")
+                       for l in texto.splitlines())
+
+        check("reporte.aptos", linea("Aptos para entrega (FLAC lossless)", 1), reporte[:400])
+        check("reporte.referencia", linea("Sólo referencia (lossy)", 1))
+        check("reporte.sin_audio", linea("Sin audio", 1))
         check("reporte.pendiente_upc", "sin UPC" in reporte)
         check("reporte.pendiente_portada", "sin portada" in reporte)
         check("reporte.pendiente_orden", "orden de tracks sin confirmar" in reporte)
@@ -206,6 +225,46 @@ def main():
                pq._fuente_corta({"audio_path": "x", "audio_format": ".m4a"}),
                "LOSSY (m4a)")
         expect("fuente.sin", pq._fuente_corta({}), "sin audio")
+
+        # --- El paquete entero sigue al idioma ----------------------------
+        # Es lo que se promete: quien elige inglés abre el ZIP en inglés,
+        # nombres de archivo incluidos. Al terminar se vuelve a español para
+        # no contaminar lo que venga despues.
+        try:
+            i18n.poner_idioma("en")
+            z4 = os.path.join(tmp, "en.zip")
+            pq.build_zip(productos, "Artista Test", z4, con_tidal=True, log=lambda *_: None)
+            with zipfile.ZipFile(z4) as z:
+                n4 = z.namelist()
+                raiz_en = n4[0].split("/")[0]
+                rep_en = z.read(f"{raiz_en}/_Migration report.txt").decode("utf-8-sig")
+            check("idioma.carpeta_raiz", raiz_en.endswith(f"Migration {pq.date.today().isoformat()}"),
+                  raiz_en)
+            for esperado in ("_READ ME.txt", "_Migration report.txt",
+                             "_Pre-delivery validation.txt", "_Full catalog.xlsx",
+                             "_Ingestion sheet.csv"):
+                check(f"idioma.archivo {esperado}",
+                      any(x.endswith(esperado) for x in n4),
+                      f"nombres={[x for x in n4 if '/' in x and x.count('/') == 1]}")
+            check("idioma.datos_xlsx", any(x.endswith("/data.xlsx") for x in n4))
+            check("idioma.portada", any(x.endswith("/cover.jpg") for x in n4))
+            check("idioma.reporte_en", "MIGRATION REPORT" in rep_en, rep_en[:80])
+            check("idioma.reporte_sin_espanol", "PENDIENTES" not in rep_en)
+            # El LEEME se arma con los nombres de archivo adentro: tienen que
+            # ser los mismos que los del ZIP, o manda a buscar lo que no existe.
+            with zipfile.ZipFile(z4) as z:
+                leeme_en = z.read(f"{raiz_en}/_READ ME.txt").decode("utf-8-sig")
+            check("idioma.leeme_nombra_bien", "_Pre-delivery validation.txt" in leeme_en,
+                  leeme_en[:300])
+            # Las columnas de la hoja de ingesta NO se traducen: son los nombres
+            # de campo que espera la distribuidora.
+            with zipfile.ZipFile(z4) as z:
+                ing_en = z.read(f"{raiz_en}/_Ingestion sheet.csv").decode("utf-8-sig")
+            check("idioma.ingesta_en_ingles_siempre",
+                  ing_en.splitlines()[0].startswith("UPC,Release Title,Release Artist"),
+                  ing_en.splitlines()[0][:80])
+        finally:
+            i18n.poner_idioma("es")
 
         # --- Logs imprimibles en consola de Windows ------------------------
         # Los mensajes de log van a stdout, y la consola de Windows usa cp1252:

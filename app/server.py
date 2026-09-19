@@ -248,17 +248,43 @@ class ErrorDeCampo(ValueError):
         self.codigo = codigo
 
 
+def idioma_del_instalador():
+    """El idioma que eligió quien instaló la app, o "".
+
+    El instalador de Windows deja un `idioma.txt` al lado del ejecutable con
+    "es" o "en". Se usa sólo como valor inicial: apenas el usuario toca el
+    selector de la cabecera, su elección queda en la config y manda.
+    """
+    base = (os.path.dirname(sys.executable) if getattr(sys, "frozen", False) else _RAIZ)
+    try:
+        with open(os.path.join(base, "idioma.txt"), encoding="utf-8") as f:
+            v = f.read().strip().lower()[:2]
+        return v if v in i18n.IDIOMAS else ""
+    except OSError:
+        return ""
+
+
 def idioma_guardado():
     """El idioma que corresponde usar, y lo deja puesto en `i18n`.
 
-    Si el usuario nunca eligió uno, se mira el sistema. No se guarda esa
-    deducción: adivinar bien hoy no es lo mismo que decidir, y si mañana abre la
-    app en otra máquina conviene volver a mirar el sistema en vez de arrastrar
-    una elección que nunca hizo.
+    Orden de prioridad, de más específico a más general:
+
+      1. la variable `MIGRADOR_IDIOMA`, que fuerza uno y gana siempre;
+      2. el que el usuario eligió en la app y quedó en su config;
+      3. el que eligió en el instalador, que dejó un idioma.txt al lado del exe;
+      4. el que dice el sistema operativo.
+
+    Los puntos 3 y 4 no se guardan en la config: son valores iniciales, no una
+    decisión del usuario. Guardarlos haría que el selector arrancara mostrando
+    como elegido algo que nadie eligió.
     """
+    forzado = i18n.idioma_forzado()
+    if forzado:
+        return i18n.poner_idioma(forzado)
     guardado = (leer_config().get("idioma") or "").strip().lower()
-    return i18n.poner_idioma(guardado if guardado in i18n.IDIOMAS
-                             else i18n.idioma_del_sistema())
+    if guardado in i18n.IDIOMAS:
+        return i18n.poner_idioma(guardado)
+    return i18n.poner_idioma(idioma_del_instalador() or i18n.idioma_del_sistema())
 
 
 # ============================================================

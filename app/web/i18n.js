@@ -632,12 +632,12 @@ const TEXTOS = {
 
   /* ---------------------------------------------------------- nombres de archivo del ZIP
      Estos NO son rótulos: son el nombre real del archivo que escribe
-     `paquete.py`. Mientras el ZIP se arme en español, acá va el nombre en
-     español aunque la interfaz esté en inglés, porque el usuario lo va a buscar
-     tal cual dentro del ZIP. Se traducen los dos juntos o ninguno. */
+     `paquete.py`, y tienen que decir exactamente lo mismo que `paq.f_validacion`
+     en `i18n.py`. Si uno cambia, cambia el otro: si no, la interfaz manda a
+     buscar adentro del ZIP un archivo que no existe. */
   'archivos.validacion': {
     es: '_Validacion pre-entrega.txt',
-    en: '_Validacion pre-entrega.txt',
+    en: '_Pre-delivery validation.txt',
   },
 
   /* ---------------------------------------------------------- títulos de hallazgo */
