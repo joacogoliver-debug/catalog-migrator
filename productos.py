@@ -18,7 +18,14 @@ import re
 import unicodedata
 from collections import Counter
 
+# Los dos centinelas que pone `relevar_core` cuando la descripcion de YouTube no
+# trae el dato. NO son texto para mostrar y por eso no se traducen: el filtrado y
+# la agrupacion los comparan por igualdad, y traducirlos romperia las dos cosas
+# en silencio. Viven aca, que es donde se consumen, y `relevar_core` los importa
+# en vez de repetir la cadena: escritos dos veces, cambiar uno rompe el otro sin
+# que nada avise.
 SIN_ALBUM = "(single / sin álbum)"
+SIN_DATOS = "(sin datos)"
 
 # Umbrales de formato, siguiendo la convención que usan las distribuidoras:
 # 1-3 tracks = single, 4-6 = EP, 7+ = álbum.
@@ -51,7 +58,7 @@ def _kind(n_tracks):
 def _mode(values):
     """Valor no vacío más frecuente (para consolidar sello/distribuidora/UPC
     cuando los tracks de un mismo álbum traen datos despareros)."""
-    vals = [v for v in values if v not in (None, "", "(sin datos)")]
+    vals = [v for v in values if v not in (None, "", SIN_DATOS)]
     if not vals:
         return ""
     return Counter(vals).most_common(1)[0][0]
