@@ -154,35 +154,42 @@ def _iscc():
 
 
 def terminos_txt():
-    """Pasa TERMINOS.md a texto plano para la pantalla de licencia del instalador.
+    """Pasa los términos a texto plano para la pantalla de licencia del instalador.
 
-    Se genera en vez de mantener dos copias: si el .md y el .txt se escribieran a
-    mano, tarde o temprano dirían cosas distintas y el usuario aceptaría una
-    versión que no es la vigente.
+    Se generan en vez de mantener copias a mano: si el .md y el .txt se
+    escribieran por separado, tarde o temprano dirían cosas distintas y el
+    usuario aceptaría una versión que no es la vigente.
+
+    Son dos, uno por idioma, porque el instalador muestra la licencia en el
+    idioma que se eligió en la primera pantalla. Devuelve la lista de rutas.
     """
     import re
-    origen = os.path.join(RAIZ, "TERMINOS.md")
-    destino = os.path.join(RAIZ, "build", "TERMINOS.txt")
-    with open(origen, encoding="utf-8") as f:
-        md = f.read()
+    pares = [("TERMINOS.md", "TERMINOS.txt"), ("TERMS.md", "TERMS.txt")]
+    salidas = []
+    for nombre_md, nombre_txt in pares:
+        origen = os.path.join(RAIZ, nombre_md)
+        destino = os.path.join(RAIZ, "build", nombre_txt)
+        with open(origen, encoding="utf-8") as f:
+            md = f.read()
 
-    lineas = []
-    for linea in md.splitlines():
-        if linea.strip() == "---":
-            lineas.append("=" * 68)
-            continue
-        linea = re.sub(r"^#{1,6}\s*", "", linea)                       # titulos
-        linea = re.sub(r"\*\*(.+?)\*\*", r"\1", linea)                 # negrita
-        linea = re.sub(r"`([^`]+)`", r"\1", linea)                     # codigo
-        linea = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r"\1 (\2)", linea)  # links
-        linea = re.sub(r"^(\s*)-\s", r"\1* ", linea)                   # vinetas
-        lineas.append(linea)
+        lineas = []
+        for linea in md.splitlines():
+            if linea.strip() == "---":
+                lineas.append("=" * 68)
+                continue
+            linea = re.sub(r"^#{1,6}\s*", "", linea)                       # titulos
+            linea = re.sub(r"\*\*(.+?)\*\*", r"\1", linea)                 # negrita
+            linea = re.sub(r"`([^`]+)`", r"\1", linea)                     # codigo
+            linea = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r"\1 (\2)", linea)  # links
+            linea = re.sub(r"^(\s*)-\s", r"\1* ", linea)                   # vinetas
+            lineas.append(linea)
 
-    # Inno Setup lee el archivo de licencia como texto del sistema, asi que va en
-    # UTF-8 con BOM y saltos de Windows para que los acentos no salgan rotos.
-    with open(destino, "w", encoding="utf-8-sig", newline="\r\n") as f:
-        f.write("\n".join(lineas).strip() + "\n")
-    return destino
+        # Inno Setup lee el archivo de licencia como texto del sistema, asi que
+        # va en UTF-8 con BOM y saltos de Windows para que no salga roto.
+        with open(destino, "w", encoding="utf-8-sig", newline="\r\n") as f:
+            f.write("\n".join(lineas).strip() + "\n")
+        salidas.append(destino)
+    return salidas
 
 
 def instalador(variante):

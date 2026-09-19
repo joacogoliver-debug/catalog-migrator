@@ -3,9 +3,12 @@
 **Migrador de Catálogos**, versión 1.0 de estos términos, vigente desde el 14 de
 septiembre de 2026.
 
-Este documento es la copia canónica. El mismo texto aparece dentro de la
-aplicación, que lo muestra la primera vez que se abre y lo deja siempre
-accesible desde el pie de la ventana.
+Este documento es la copia canónica. Hay una traducción al inglés en
+[TERMS.md](TERMS.md), que se ofrece por comodidad: si difieren, vale esta.
+
+El mismo texto aparece dentro de la aplicación, que lo muestra la primera vez
+que se abre y lo deja siempre accesible desde el pie de la ventana, en el
+idioma que esté elegido.
 
 ---
 

@@ -12,10 +12,16 @@ Cubre lo que sostiene la app:
   - que no se pueda leer nada fuera de app/web (path traversal)
   - el endpoint que recupera el catálogo tras recargar la página
   - la descarga del ZIP con sus cabeceras
+  - el idioma: qué devuelve /api/config y qué pasa al cambiarlo
 """
 import json
 import os
 import sys
+
+# Antes de importar el servidor: el idioma se resuelve al atender /api/config y,
+# sin esto, saldría de la config del usuario que corra el test o del locale de
+# la máquina. En CI eso significaba un ZIP en inglés y un test en rojo.
+os.environ["MIGRADOR_IDIOMA"] = "es"
 import threading
 import time
 import urllib.error

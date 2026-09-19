@@ -36,6 +36,7 @@ from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
 from audio import ETIQUETA_LOSSLESS, FORMATOS_LOSSLESS
+from i18n import T
 
 NAVY = "1F3864"
 GRIS = "F2F2F2"
@@ -52,9 +53,13 @@ def _slug_archivo(s, maxlen=80):
 
 
 def _fuente_corta(t):
-    """Etiqueta corta de fuente/calidad para la planilla."""
+    """Etiqueta corta de fuente/calidad para la planilla.
+
+    LOSSLESS y LOSSY no se traducen: son la marca que mira quien revisa la
+    entrega, y conviene que diga lo mismo en los dos idiomas.
+    """
     if not t.get("audio_path"):
-        return "sin audio"
+        return T("paq.sin_audio")
     fmt = (t.get("audio_format") or "").lstrip(".")
     return f"{'LOSSLESS' if t.get('audio_format') in FORMATOS_LOSSLESS else 'LOSSY'} ({fmt})"
 
@@ -63,13 +68,20 @@ def _fuente_corta(t):
 # Planillas
 # ============================================================
 
-COLUMNAS = [
-    ("Producto", 34), ("Tipo", 8), ("Año", 6), ("UPC", 15),
-    ("#", 4), ("Track", 34), ("ISRC", 14),
-    ("Duración", 9), ("Sello", 22), ("Distribuidora", 22),
-    ("Fuente / Calidad", 26), ("Archivo", 30), ("Reproducciones", 14),
-    ("URL YouTube", 30),
-]
+# Las columnas de las planillas SÍ se traducen: las lee el usuario. Las de la
+# hoja de ingesta no, y por eso están aparte (ver COLUMNAS_INGESTA).
+#
+# Es una función y no una constante porque el idioma se elige en caliente: una
+# lista armada al importar el módulo quedaría en el idioma que hubiera al
+# arrancar y no cambiaría más.
+def columnas():
+    return [
+        (T("paq.col_producto"), 34), (T("paq.col_tipo"), 8), (T("paq.col_anio"), 6), ("UPC", 15),
+        ("#", 4), (T("paq.col_track"), 34), ("ISRC", 14),
+        (T("paq.col_duracion"), 9), (T("paq.col_sello"), 22), (T("paq.col_distribuidora"), 22),
+        (T("paq.col_fuente"), 26), (T("paq.col_archivo"), 30), (T("paq.col_reproducciones"), 14),
+        (T("paq.col_url"), 30),
+    ]
 
 
 def _encabezado(ws, titulo, subtitulo=""):
@@ -79,7 +91,7 @@ def _encabezado(ws, titulo, subtitulo=""):
         ws["A2"] = subtitulo
         ws["A2"].font = Font(size=9, color="666666")
     fila = 4
-    for i, (nombre, ancho) in enumerate(COLUMNAS, 1):
+    for i, (nombre, ancho) in enumerate(columnas(), 1):
         c = ws.cell(row=fila, column=i, value=nombre)
         c.font = Font(size=10, bold=True, color="FFFFFF")
         c.fill = PatternFill("solid", fgColor=NAVY)
@@ -110,9 +122,13 @@ def _filas_producto(ws, fila, p, con_archivo=True):
             c.alignment = Alignment(vertical="center")
             # Resaltamos en ámbar lo que NO es apto para entrega, para que no se
             # cuele un lossy en una entrega por distracción.
-            if i == 11 and fuente != "sin audio" and not fuente.startswith("LOSSLESS"):
+            #
+            # Se mira si hay archivo y no el texto de la etiqueta: comparar
+            # contra "sin audio" dejaba de funcionar con la app en inglés.
+            hay_audio = bool(t.get("audio_path"))
+            if i == 11 and hay_audio and not fuente.startswith("LOSSLESS"):
                 c.fill = PatternFill("solid", fgColor=AMBAR)
-            if i == 11 and fuente == "sin audio":
+            if i == 11 and not hay_audio:
                 c.font = Font(size=10, color="C00000")
         fila += 1
     return fila
@@ -123,16 +139,15 @@ def planilla_maestra_bytes(productos, artista):
     from io import BytesIO
     wb = Workbook()
     ws = wb.active
-    ws.title = "Catálogo"
-    hoy = date.today().isoformat()
+    ws.title = T("paq.hoja_catalogo")
     fila = _encabezado(
-        ws, f"{artista}: Catálogo para migración",
-        f"Generado el {hoy}, {len(productos)} productos, "
-        f"{sum(p['track_count'] for p in productos)} tracks",
+        ws, T("paq.maestra_titulo", artista=artista),
+        T("paq.maestra_sub", fecha=date.today().isoformat(), productos=len(productos),
+          tracks=sum(p["track_count"] for p in productos)),
     )
     for p in productos:
         fila = _filas_producto(ws, fila, p)
-    ws.auto_filter.ref = f"A4:{get_column_letter(len(COLUMNAS))}{fila - 1}"
+    ws.auto_filter.ref = f"A4:{get_column_letter(len(columnas()))}{fila - 1}"
 
     buf = BytesIO()
     wb.save(buf)
@@ -220,11 +235,14 @@ def planilla_producto_bytes(p, artista):
     from io import BytesIO
     wb = Workbook()
     ws = wb.active
-    ws.title = "Producto"
+    ws.title = T("paq.hoja_producto")
     fila = _encabezado(
         ws, f"{artista}: {p['title']}",
-        f"{p['kind'].upper()}, {p.get('release_year', 's/f')}, "
-        f"UPC {p.get('upc') or '(sin UPC)'}, {p['track_count']} tracks",
+        T("paq.producto_sub",
+          tipo=p["kind"].upper(),
+          anio=p.get("release_year") or T("paq.sin_fecha"),
+          upc=p.get("upc") or T("paq.sin_upc_par"),
+          tracks=p["track_count"]),
     )
     _filas_producto(ws, fila, p)
     buf = BytesIO()
@@ -245,143 +263,102 @@ def reporte_texto(productos, artista, entorno=None, con_tidal=False):
     ref = [t for t in tracks if t.get("audio_path") and t not in aptos]
     sin_audio = [t for t in tracks if not t.get("audio_path")]
 
-    L.append(f"REPORTE DE MIGRACIÓN: {artista}")
-    L.append(f"Generado: {date.today().isoformat()}")
+    # Los rótulos se alinean con ljust: escritos con espacios a mano quedaban
+    # torcidos en cuanto el idioma cambiaba el largo de la palabra.
+    a1, a2 = 24, 36
+    L.append(T("paq.rep_titulo", artista=artista))
+    L.append(T("paq.rep_generado", fecha=date.today().isoformat()))
     L.append("=" * 68)
     L.append("")
-    L.append(f"Productos seleccionados : {len(productos)}")
-    L.append(f"Tracks totales          : {len(tracks)}")
-    L.append(f"  Con ISRC              : {sum(1 for t in tracks if t.get('isrc'))}")
-    L.append(f"Productos con UPC       : {sum(1 for p in productos if p.get('upc'))}")
-    L.append(f"Portadas obtenidas      : {sum(1 for p in productos if p.get('cover_bytes'))}/{len(productos)}")
+    L.append(T("paq.rep_productos").ljust(a1) + f": {len(productos)}")
+    L.append(T("paq.rep_tracks").ljust(a1) + f": {len(tracks)}")
+    L.append(("  " + T("paq.rep_con_isrc")).ljust(a1)
+             + f": {sum(1 for t in tracks if t.get('isrc'))}")
+    L.append(T("paq.rep_con_upc").ljust(a1)
+             + f": {sum(1 for p in productos if p.get('upc'))}")
+    L.append(T("paq.rep_portadas").ljust(a1)
+             + f": {sum(1 for p in productos if p.get('cover_bytes'))}/{len(productos)}")
     L.append("")
-    L.append("AUDIO")
-    L.append(f"  Aptos para entrega (FLAC lossless) : {len(aptos)}")
-    L.append(f"  Sólo referencia (lossy)            : {len(ref)}")
-    L.append(f"  Sin audio                          : {len(sin_audio)}")
+    L.append(T("paq.rep_audio"))
+    L.append(("  " + T("paq.rep_aptos")).ljust(a2) + f": {len(aptos)}")
+    L.append(("  " + T("paq.rep_referencia")).ljust(a2) + f": {len(ref)}")
+    L.append(("  " + T("paq.rep_sin_audio")).ljust(a2) + f": {len(sin_audio)}")
     L.append("")
 
     if not con_tidal:
-        L.append("! No se conectó una cuenta de Tidal, así que NO hay audio apto para")
-        L.append("  entrega. Todo el audio de este paquete es referencia lossy de")
-        L.append("  YouTube. Para una entrega real hace falta el máster original.")
+        L.extend(T("paq.rep_sin_tidal").split("\n"))
         L.append("")
     elif ref:
-        L.append("! Algunos tracks bajaron en AAC y no en FLAC: Tidal no tiene máster")
-        L.append("  lossless para esas grabaciones. Están marcados como lossy y NO")
-        L.append("  son aptos para entrega, hay que pedir el máster al sello/artista.")
+        L.extend(T("paq.rep_algunos_aac").split("\n"))
         L.append("")
 
-    L.append("PENDIENTES POR PRODUCTO")
+    L.append(T("paq.rep_pendientes"))
     L.append("-" * 68)
     hay_pendientes = False
     for p in productos:
         faltas = []
         if not p.get("upc"):
-            faltas.append("sin UPC")
+            faltas.append(T("paq.falta_upc"))
         if not p.get("cover_bytes"):
-            faltas.append(f"sin portada ({p.get('cover_status', 'no buscada')})")
+            faltas.append(T("paq.falta_portada",
+                            motivo=p.get("cover_status") or T("paq.no_buscada")))
         sin = [t for t in p["tracks"] if not t.get("audio_path")]
         if sin:
-            faltas.append(f"{len(sin)}/{p['track_count']} tracks sin audio")
+            faltas.append(T("paq.falta_audio", n=len(sin), total=p["track_count"]))
             # El motivo concreto por track: sirve para saber si hay que buscar
             # otra fuente o si el video simplemente ya no está.
             for t in sin:
                 if t.get("audio_error"):
-                    faltas.append(f"   , {t.get('track', '')[:40]}: {t['audio_error']}")
+                    faltas.append(f"     {t.get('track', '')[:40]}: {t['audio_error']}")
         lossy = [t for t in p["tracks"]
                  if t.get("audio_path") and (t.get("audio_format") or "") not in FORMATOS_LOSSLESS]
         if lossy:
-            faltas.append(f"{len(lossy)} tracks sólo en calidad de referencia")
+            faltas.append(T("paq.falta_lossy", n=len(lossy)))
         sin_isrc = [t for t in p["tracks"] if not t.get("isrc")]
         if sin_isrc:
-            faltas.append(f"{len(sin_isrc)} tracks sin ISRC")
+            faltas.append(T("paq.falta_isrc", n=len(sin_isrc)))
         if p.get("order_unconfirmed"):
-            faltas.append("orden de tracks sin confirmar (estimado por fecha de subida)")
+            faltas.append(T("paq.falta_orden"))
         if faltas:
             hay_pendientes = True
             L.append(f"  {p['folder']}")
             for f in faltas:
                 L.append(f"      - {f}")
     if not hay_pendientes:
-        L.append("  (ninguno: todos los productos quedaron completos)")
+        L.append("  " + T("paq.rep_sin_pendientes"))
 
     if entorno:
+        si, no = T("paq.si"), T("paq.no")
         L.append("")
-        L.append("ENTORNO")
-        L.append(f"  ffmpeg: {'sí' if entorno.get('ffmpeg') else 'NO'}, "
-                 f"tiddl: {'sí' if entorno.get('tiddl') else 'NO'}, "
-                 f"yt-dlp: {'sí' if entorno.get('yt_dlp') else 'NO'}")
+        L.append(T("paq.rep_entorno"))
+        L.append(f"  ffmpeg: {si if entorno.get('ffmpeg') else no}, "
+                 f"tiddl: {si if entorno.get('tiddl') else no}, "
+                 f"yt-dlp: {si if entorno.get('yt_dlp') else no}")
     return "\n".join(L) + "\n"
 
 
-LEEME = """CÓMO ESTÁ ORGANIZADO ESTE PAQUETE
-=================================
+def nombres_archivos():
+    """Los nombres de los cinco archivos de la raíz del ZIP, en el idioma elegido.
 
-Una carpeta por producto (álbum / EP / single). Cada una trae:
+    Siguen al idioma, igual que el resto: quien baja el paquete en inglés espera
+    abrirlo en inglés. El guion bajo del principio no es decorativo, los deja
+    arriba de las carpetas al ordenar por nombre, y eso vale en los dos.
 
-  portada.jpg   La portada en la resolución más alta que tenía Apple Music
-                (hasta 3000x3000).
-  datos.xlsx    Los datos de ese producto: tracks, ISRC, UPC, sello, duración.
-  NN - Tema.ext Los audios, numerados en el orden del release.
+    Son una función y no constantes por lo mismo que `columnas()`: el idioma se
+    elige en caliente.
+    """
+    return {
+        "leeme": T("paq.f_leeme"),
+        "reporte": T("paq.f_reporte"),
+        "validacion": T("paq.f_validacion"),
+        "catalogo": T("paq.f_catalogo"),
+        "ingesta": T("paq.f_ingesta"),
+    }
 
-En la raíz:
 
-  _Catalogo completo.xlsx      Todos los productos en una sola planilla.
-  _Hoja de ingesta.csv         El archivo para cargar en la distribuidora nueva.
-  _Validacion pre-entrega.txt  Qué va a ser rechazado y qué conviene revisar.
-  _Reporte de migracion.txt    Qué se pudo obtener y qué quedó pendiente.
-
-EMPEZÁ POR LA VALIDACIÓN
-------------------------
-Abrí primero "_Validacion pre-entrega.txt". Separa dos cosas:
-
-  ERRORES  La distribuidora los rechaza (código con formato inválido, dígito
-           verificador mal, código duplicado, portada chica o no cuadrada).
-           Hay que corregirlos antes de entregar.
-
-  AVISOS   Pasan la ingesta pero conviene revisarlos (falta un ISRC o un UPC y
-           se va a asignar uno nuevo, un título arrastra texto de YouTube).
-
-SOBRE LA HOJA DE INGESTA
-------------------------
-"_Hoja de ingesta.csv" trae las columnas estándar que aceptan o mapean casi
-todas las distribuidoras. Lo que se pudo relevar viene completo. Lo que no puede
-salir de fuentes públicas está marcado con <<COMPLETAR>>:
-
-  Genre, Language, Explicit, Composer, Publisher, C Line
-
-Esos campos los tiene que llenar el dueño del catálogo, están marcados en vez
-de vacíos o inventados justamente para que no pasen desapercibidos.
-
-SOBRE LA CALIDAD DEL AUDIO: LEER ANTES DE ENTREGAR
----------------------------------------------------
-La columna "Fuente / Calidad" de las planillas dice, track por track, de dónde
-salió el audio:
-
-  LOSSLESS (flac)  Máster lossless de Tidal. Apto para entregar.
-
-  LOSSY (m4a/opus/webm)  Audio ya comprimido. Sirve como referencia, inventario
-                o verificación, pero NO es apto para entregar a una
-                distribuidora: se subiría con pérdida de calidad. Estos casos
-                están resaltados en ámbar en la planilla.
-
-Si un track figura como LOSSY, hay que conseguir el máster original con el
-artista o el sello antes de la entrega. El reporte lista exactamente cuáles.
-
-OTROS DATOS QUE SON ESTIMADOS
------------------------------
-YouTube no declara todo lo que necesita una ficha de release, así que dos campos
-son aproximaciones y conviene verificarlos:
-
-  Tipo (single/EP/álbum)  Se deduce de la cantidad de tracks (1-3 single,
-                          4-6 EP, 7+ álbum). Un EP corto puede figurar como
-                          single.
-
-  Orden de los tracks     Cuando se pudo cruzar con Tidal por ISRC, el número
-                          de track es el real. Si no, es un estimado por fecha
-                          de subida y el reporte lo marca como "sin confirmar".
-"""
+def leeme():
+    """El _LEEME.txt del ZIP. El texto vive en `i18n.py`, en los dos idiomas."""
+    return T("paq.leeme", **{k: v for k, v in nombres_archivos().items()})
 
 
 # ============================================================
@@ -395,35 +372,36 @@ def build_zip(productos, artista, out_path, entorno=None, con_tidal=False,
 
     Se escribe directo a disco porque un catálogo en FLAC son varios GB.
     """
-    raiz = f"{_slug_archivo(artista)} - Migracion {date.today().isoformat()}"
+    F = nombres_archivos()
+    raiz = f"{_slug_archivo(artista)} - {T('paq.carpeta_raiz')} {date.today().isoformat()}"
     # ZIP_STORED para el audio: FLAC y Opus ya están comprimidos, deflate
     # gastaría CPU sin ganar espacio. Sí comprimimos planillas y texto.
     with zipfile.ZipFile(out_path, "w", zipfile.ZIP_DEFLATED, allowZip64=True) as z:
         # Los .txt van con BOM (utf-8-sig): los abre gente en Windows y sin BOM
         # algunos editores viejos muestran los acentos rotos.
-        z.writestr(f"{raiz}/_LEEME.txt", LEEME.encode("utf-8-sig"))
-        z.writestr(f"{raiz}/_Reporte de migracion.txt",
+        z.writestr(f"{raiz}/{F['leeme']}", leeme().encode("utf-8-sig"))
+        z.writestr(f"{raiz}/{F['reporte']}",
                    reporte_texto(productos, artista, entorno, con_tidal).encode("utf-8-sig"))
 
         # La validación va siempre: es lo que evita que la entrega se rechace.
         import validar as V
         res_val = V.validar(productos, artista)
-        z.writestr(f"{raiz}/_Validacion pre-entrega.txt",
+        z.writestr(f"{raiz}/{F['validacion']}",
                    V.reporte_validacion(res_val, artista).encode("utf-8-sig"))
 
         if incluir_planilla:
-            z.writestr(f"{raiz}/_Catalogo completo.xlsx",
+            z.writestr(f"{raiz}/{F['catalogo']}",
                        planilla_maestra_bytes(productos, artista))
             # CSV de ingesta: es el archivo que se carga en la distribuidora.
-            z.writestr(f"{raiz}/_Hoja de ingesta.csv",
+            z.writestr(f"{raiz}/{F['ingesta']}",
                        hoja_ingesta_csv(productos, artista).encode("utf-8-sig"))
 
         for p in productos:
             carpeta = f"{raiz}/{p['folder']}"
             if incluir_planilla:
-                z.writestr(f"{carpeta}/datos.xlsx", planilla_producto_bytes(p, artista))
+                z.writestr(f"{carpeta}/{T('paq.f_datos')}", planilla_producto_bytes(p, artista))
             if incluir_portadas and p.get("cover_bytes"):
-                z.writestr(f"{carpeta}/portada.jpg", p["cover_bytes"])
+                z.writestr(f"{carpeta}/{T('paq.f_portada')}", p["cover_bytes"])
 
             if incluir_audio:
                 for t in p["tracks"]:

@@ -6,6 +6,7 @@ __pycache__/
 dist/
 build/migrador/
 build/TERMINOS.txt
+build/TERMS.txt
 *.spec.bak
 
 # Config local de la app (incluye la clave de la API del usuario)
