@@ -260,12 +260,12 @@ const TEXTOS = {
     working on <strong>their own material, or material they administer with the
     owner's permission</strong>.</p>
     <p>By using it you state that you hold the rights or the permission you need over
-    the content you process, and that you will honour the terms of service of the
+    the content you process, and that you will honor the terms of service of the
     platforms the tool queries, among them YouTube, Deezer, Apple and Tidal.</p>
 
     <h4>What is not allowed</h4>
     <p>This tool neither endorses nor enables piracy. What follows is expressly
-    outside its purpose and this licence of use.</p>
+    outside its purpose and this license of use.</p>
     <ul>
       <li>Downloading, copying or redistributing material you hold no rights to.</li>
       <li>Using the audio module to obtain someone else's recordings, or to get around
@@ -299,8 +299,8 @@ const TEXTOS = {
     person makes of the material they process. Responsibility over the content rests
     entirely with whoever uses it.</p>
 
-    <h4>Licence and trademarks</h4>
-    <p>The code is distributed under the MIT licence, whose full text is in the
+    <h4>License and trademarks</h4>
+    <p>The code is distributed under the MIT license, whose full text is in the
     LICENSE file of the repository. Third-party trademarks and names mentioned belong
     to their owners, and the tool is neither affiliated with nor sponsored by any of
     them.</p>

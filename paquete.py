@@ -414,10 +414,11 @@ def build_zip(productos, artista, out_path, entorno=None, con_tidal=False,
                     # Los lossy van marcados en el nombre del archivo: es la
                     # última barrera para que no se entreguen por error.
                     if t.get("audio_format") not in FORMATOS_LOSSLESS:
-                        nombre = f"{n:02d} - {_slug_archivo(t.get('track'))} [REFERENCIA-LOSSY]{ext}"
+                        marca = T("paq.tag_lossy")
+                        nombre = f"{n:02d} - {_slug_archivo(t.get('track'))} {marca}{ext}"
                     z.write(ruta, f"{carpeta}/{nombre}", compress_type=zipfile.ZIP_STORED)
-            log(f"Carpeta {p['folder']}")
+            log(T("paq.log_carpeta", carpeta=p["folder"]))
 
     tam = os.path.getsize(out_path)
-    log(f"ZIP listo, {tam / 1e6:.1f} MB")
+    log(T("paq.log_zip_listo", mb=f"{tam / 1e6:.1f}"))
     return out_path, tam

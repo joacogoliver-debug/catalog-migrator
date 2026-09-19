@@ -30,7 +30,7 @@ permission**.
 By using it you state that:
 
 - you hold the rights or the permission you need over the content you process;
-- you will honour the terms of service of the platforms the tool queries, among
+- you will honor the terms of service of the platforms the tool queries, among
   them YouTube, Deezer, Apple and Tidal;
 - you are responsible for the API keys and the accounts you connect, and for
   their use staying within each provider's limits and conditions.
@@ -38,7 +38,7 @@ By using it you state that:
 ## 3. What is not allowed
 
 This tool **neither endorses nor enables piracy**. What follows is expressly
-outside its purpose and this licence of use.
+outside its purpose and this license of use.
 
 - Downloading, copying or redistributing material you hold no rights to.
 - Using the audio module to obtain someone else's recordings, or to get around
@@ -101,20 +101,20 @@ tool, nor for decisions made from the data it produces, nor for the use each
 person makes of the material they process. **Responsibility over the content
 rests entirely with whoever uses it.**
 
-## 6. Licence of the code, and third-party marks
+## 6. License of the code, and third-party marks
 
-The code is distributed under the **MIT licence**, whose full text is in the
+The code is distributed under the **MIT license**, whose full text is in the
 [LICENSE](LICENSE) file. These terms describe the intended use of the tool and
-do not restrict the rights the MIT licence grants over the code.
+do not restrict the rights the MIT license grants over the code.
 
 Third-party trademarks, names and services mentioned belong to their owners.
 This tool is **not affiliated with, sponsored by or endorsed by** YouTube,
 Google, Deezer, Apple, Tidal, MusicBrainz or any distributor.
 
 The full build includes **FFmpeg**, third-party software under the GPLv3
-licence, distributed unmodified and invoked as a separate program. The Public
+license, distributed unmodified and invoked as a separate program. The Public
 Sans and DM Mono typefaces are distributed under SIL Open Font License 1.1. The
-texts of those licences travel with the program, in the `licencias` folder.
+texts of those licenses travel with the program, in the `licencias` folder.
 
 ## 7. Changes
 

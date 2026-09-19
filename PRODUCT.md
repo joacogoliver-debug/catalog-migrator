@@ -1,4 +1,6 @@
-# Migrador de Catálogos , verdad del producto
+# Migrador de Catálogos — verdad del producto
+
+**Español** · [English](PRODUCT.en.md)
 
 Qué es, para quién, y qué tiene que ser cierto pase lo que pase con el diseño.
 Este archivo no decide nada visual. Eso vive en `DESIGN.md`.
@@ -79,9 +81,21 @@ No son casos borde: son la mitad del producto.
 
 ## Cómo se habla
 
-Español rioplatense, voseo, directo. Los errores dicen qué pasó y qué hacer, no
-piden disculpas. Las cosas se llaman como las llama quien trabaja en esto: es
-"distribuidora" y "sello", no "vendor" y "label".
+La app está en castellano y en inglés, y el idioma se elige en el instalador o
+en el encabezado. No es una traducción parcial: la interfaz, el log, los errores
+y lo que se descarga (nombres de archivo, encabezados de la planilla, informe de
+validación) van todos en el idioma elegido. Los dos catálogos viven en `i18n.py`
+y en `app/web/i18n.js`, uno por proceso, y `test_i18n.py` no deja que uno crezca
+sin el otro.
+
+El castellano es rioplatense, voseo, directo. El inglés busca el mismo registro:
+segunda persona, frases cortas, sin cortesía de relleno. Los errores dicen qué
+pasó y qué hacer, no piden disculpas.
+
+Las cosas se llaman como las llama quien trabaja en esto: "distribuidora" y
+"sello" en castellano, "distributor" y "label" en inglés, y nunca "vendor". Los
+términos del oficio que no se traducen —ISRC, UPC, DDEX, máster, lossless— se
+dejan como están en los dos idiomas.
 
 ## Restricciones técnicas
 

@@ -1,15 +1,17 @@
-# Migrador de Catálogos, mundo visual
+# Migrador de Catálogos — mundo visual
+
+**Español** · [English](DESIGN.en.md)
 
 Decisiones durables. Lo que el producto es y no cambia está en `PRODUCT.md`.
 
 De la marca queda lo que importa: **grafito, hueso y la rampa teal**. Todo lo
 demás (tipografía, forma, densidad, componentes) se decide acá.
 
-La dirección salió de una referencia concreta que trajo el cliente: una pieza de
-su estudio de diseño, oscura, de negro pleno, tarjetas de hairline, etiquetas en
-mono ancladas al borde y estados como relleno teñido. Lo que sigue es esa
-gramática traducida a una herramienta de inventario, que es algo bastante
-distinto de aquella pieza.
+La dirección salió de una referencia concreta: un template web que hizo el
+diseñador de la empresa donde trabajo. Oscuro, de negro pleno, tarjetas de
+hairline, etiquetas en mono ancladas al borde y estados como relleno teñido. Lo
+que sigue es esa gramática traducida a una herramienta de inventario, que es
+algo bastante distinto de aquella pieza.
 
 ---
 
@@ -108,8 +110,15 @@ contrario, y bastante: es lo que las convierte en una marca de borde y no en
 texto chico.
 
 Las dos familias son SIL Open Font License 1.1 y viajan adentro del ejecutable,
-56 KB en total. El subconjunto latin cubre el español completo; el símbolo ℗,
-que aparece en un mensaje de validación, lo resuelve la fuente del sistema.
+56 KB en total. El subconjunto latin cubre el castellano y el inglés completos,
+que son los dos idiomas de la app; el símbolo ℗, que aparece en un mensaje de
+validación, lo resuelve la fuente del sistema.
+
+**El inglés es más corto que el castellano**, casi siempre, y eso importa en los
+dos lugares donde el ancho está fijo: las etiquetas ancladas en mono con
+tracking 0.14em y los botones de la barra de acción. Ninguna medida del sistema
+se calculó contra el largo del texto en castellano: los botones crecen con su
+contenido y las etiquetas no se truncan.
 
 ## 5. Forma
 
