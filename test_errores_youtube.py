@@ -12,6 +12,11 @@ traducción exista y que el código que la acompaña sea el correcto, porque de 
 código depende que la interfaz ofrezca el botón para cargar una clave propia.
 """
 import json
+import os
+
+# Este test compara los mensajes en español, así que el idioma se fija:
+# si no, en una máquina con el sistema en inglés compararía contra otra cosa.
+os.environ["MIGRADOR_IDIOMA"] = "es"
 import sys
 
 import relevar_core as R

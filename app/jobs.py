@@ -16,6 +16,8 @@ import time
 import traceback
 import uuid
 
+from i18n import T
+
 # Cuánto se conserva un trabajo terminado antes de descartarlo. Tiene que
 # alcanzar para que el usuario descargue el ZIP con calma.
 TTL_TERMINADO = 60 * 60          # 1 hora
@@ -133,7 +135,7 @@ class Registry:
             except Exception as e:                      # noqa: BLE001
                 job.error = str(e) or e.__class__.__name__
                 job.codigo_error = getattr(e, "codigo", "") or ""
-                job.mensaje = "Hubo un error."
+                job.mensaje = T("job.error")
                 # El traceback va al log del trabajo, no a la cara del usuario.
                 job.log.append("TRACEBACK\n" + traceback.format_exc())
                 job.terminado_en = time.time()

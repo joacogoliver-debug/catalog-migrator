@@ -3,14 +3,14 @@ relevar_core.py: Motor de relevamiento de catálogos (sin CLI), para la app web.
 
 Toma la URL de un canal de YouTube (Topic / Official Artist Channel / @handle),
 enumera sus productos vía la YouTube Data API, opcionalmente enriquece con Deezer
-(ISRC + UPC; MusicBrainz como respaldo opcional) y arma un Excel en memoria. Las
-claves se pasan como parámetros (la app las toma de sus secrets), no se leen de
-archivos.
+(ISRC + UPC; MusicBrainz como respaldo opcional) y devuelve los productos como
+datos. El Excel lo arma `paquete.py` con esos datos: acá no se escribe ninguna
+planilla. Las claves se pasan como parámetros (la app las toma de sus secrets),
+no se leen de archivos.
 
 Función principal: relevar(url, yt_key, with_codes, progress) -> dict.
 """
 
-import io
 import json
 import os
 import re
@@ -18,18 +18,16 @@ import sys
 import unicodedata
 import urllib.parse
 import urllib.request
-import base64
 import time
-from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 from difflib import SequenceMatcher
 
-import openpyxl
-from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-from openpyxl.utils import get_column_letter
-
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+# Va después del sys.path.insert de arriba: i18n vive al lado de este archivo y
+# no siempre se importa con la raíz del repo ya en el path.
+from i18n import T                                                  # noqa: E402
 
 API = "https://www.googleapis.com/youtube/v3"
 
@@ -87,47 +85,25 @@ def api_get(endpoint, params, key, intentos=3):
             if intento < intentos - 1:
                 time.sleep(1.5 * (intento + 1))
                 continue
-            raise RelevarError(
-                "No pude hablar con la API de YouTube. Revisá que haya conexión "
-                f"a internet. ({type(e).__name__}: {e})")
-    raise RelevarError(f"No pude hablar con la API de YouTube. ({ultimo})")
+            raise RelevarError(T("yt.sin_conexion", detalle=f"{type(e).__name__}: {e}"))
+    raise RelevarError(T("yt.sin_respuesta", detalle=ultimo))
 
 
 # Lo que devuelve Google no está pensado para mostrarse: viene en inglés, con
 # jerga y a veces con HTML adentro. Estos son los casos que de verdad le pasan a
 # un usuario, traducidos y con la salida concreta al lado.
+#
+# Se guarda la clave del texto y no el texto: el idioma se elige en caliente y
+# un diccionario armado al importar el módulo quedaría congelado en el que
+# hubiera al arrancar.
 _MOTIVOS_YOUTUBE = {
-    "quotaExceeded": (
-        "cuota",
-        "Se agotó el cupo diario de la API de YouTube. Si esta copia trae una "
-        "clave compartida, el cupo se reparte entre todos los que la usan. "
-        "Cargando tu propia clave tenés el cupo entero para vos, es gratis y se "
-        "saca en tres pasos."),
-    "dailyLimitExceeded": (
-        "cuota",
-        "Se agotó el cupo diario de la API de YouTube. Cargando tu propia clave "
-        "tenés el cupo entero para vos, es gratis y se saca en tres pasos."),
-    "rateLimitExceeded": (
-        "",
-        "YouTube está recibiendo demasiadas consultas seguidas desde esta clave. "
-        "Esperá un minuto y probá de nuevo."),
-    "keyInvalid": (
-        "clave",
-        "YouTube rechazó la clave. Revisá que la hayas copiado entera y que sea "
-        "una clave de API, no un ID de cliente."),
-    "accessNotConfigured": (
-        "clave",
-        "El proyecto de esta clave no tiene habilitada la YouTube Data API v3. "
-        "Entrá a Google Cloud Console, buscá esa API en la biblioteca y "
-        "habilitala."),
-    "ipRefererBlocked": (
-        "clave",
-        "Las restricciones de esta clave no permiten usarla desde esta "
-        "computadora. En Google Cloud Console, dejá la restricción de "
-        "aplicación en «Ninguna» y restringila sólo por API."),
-    "forbidden": (
-        "",
-        "YouTube no permitió la consulta con esta clave."),
+    "quotaExceeded": ("cuota", "yt.cuota_compartida"),
+    "dailyLimitExceeded": ("cuota", "yt.cuota"),
+    "rateLimitExceeded": ("", "yt.rate_limit"),
+    "keyInvalid": ("clave", "yt.clave_invalida"),
+    "accessNotConfigured": ("clave", "yt.api_sin_habilitar"),
+    "ipRefererBlocked": ("clave", "yt.clave_restringida"),
+    "forbidden": ("", "yt.prohibido"),
 }
 
 
@@ -144,16 +120,16 @@ def _error_de_youtube(codigo_http, body):
         pass
 
     if motivo in _MOTIVOS_YOUTUBE:
-        codigo, texto = _MOTIVOS_YOUTUBE[motivo]
-        return RelevarError(texto, codigo)
+        codigo, clave = _MOTIVOS_YOUTUBE[motivo]
+        return RelevarError(T(clave), codigo)
 
     if codigo_http == 400 and "API key not valid" in mensaje:
-        return RelevarError(_MOTIVOS_YOUTUBE["keyInvalid"][1], "clave")
+        return RelevarError(T(_MOTIVOS_YOUTUBE["keyInvalid"][1]), "clave")
 
     # Sin traducción conocida mostramos lo de Google, pero limpio: el texto suele
     # traer un <a href> adentro que en la interfaz se vería como HTML crudo.
     mensaje = re.sub(r"<[^>]+>", "", mensaje).strip() or body[:200]
-    return RelevarError(f"YouTube respondió un error ({codigo_http}). {mensaje}")
+    return RelevarError(T("yt.error_generico", codigo=codigo_http, mensaje=mensaje))
 
 
 def resolve_channel(url, key):
@@ -166,14 +142,14 @@ def resolve_channel(url, key):
     else:
         hm = re.search(r"@([\w.\-]+)", url)
         if not hm:
-            raise RelevarError("No pude extraer el canal de la URL. Usá una URL /channel/UC... o @handle.")
+            raise RelevarError(T("yt.url_no_reconocida"), "url")
         handle = hm.group(1)
         params = {"part": "snippet,contentDetails", "forHandle": "@" + handle}
 
     data = api_get("channels", params, key)
     items = data.get("items") or []
     if not items:
-        raise RelevarError(f"No se encontró el canal ({handle or url}). Revisá la URL.")
+        raise RelevarError(T("yt.canal_no_encontrado", canal=handle or url), "url")
     ch = items[0]
     return (
         ch["id"],
@@ -390,6 +366,12 @@ def build_tracks(videos):
         tracks.append({
             "video_id": v.get("id") or "",
             "track": sn.get("title") or "",
+            # OJO: estas dos cadenas son CENTINELAS, no texto para mostrar, y
+            # por eso no se traducen. `relevar()` filtra por "(sin datos)" y
+            # `productos.SIN_ALBUM` agrupa por la otra; traducirlas rompería el
+            # filtrado y la agrupación en silencio. Ninguna llega a la pantalla:
+            # los tracks sin distribuidora se descartan, y a los que no tienen
+            # álbum el producto los titula con el nombre del track.
             "album": meta["album"] or "(single / sin álbum)",
             "distributor": meta["distributor"] or "(sin datos)",
             "label": meta["label"] or "",
@@ -570,7 +552,7 @@ def enrich_with_codes(tracks, artist, log=print, use_musicbrainz=False):
                     matched += 1
 
     # 2) UPC por álbum (Deezer, en paralelo).
-    log(f"Deezer: códigos para {matched} de {n} tracks, UPC de {len(album_ids)} álbumes")
+    log(T("rel.deezer_resultado", matched=matched, n=n, albumes=len(album_ids)))
     upcs = deezer_album_upcs(list(album_ids.keys()))
     for aid, ts in album_ids.items():
         for t in ts:
@@ -580,7 +562,7 @@ def enrich_with_codes(tracks, artist, log=print, use_musicbrainz=False):
     if use_musicbrainz:
         pendientes = [t for t in tracks if not t["isrc"]]
         if pendientes:
-            log(f"MusicBrainz (respaldo): {len(pendientes)} sin ISRC")
+            log(T("rel.musicbrainz", n=len(pendientes)))
             for t in pendientes:
                 isrc = musicbrainz_isrc(t, artist)
                 if isrc:
@@ -593,52 +575,6 @@ def enrich_with_codes(tracks, artist, log=print, use_musicbrainz=False):
     return {"matched": matched, "isrc": isrc_n, "upc": upc_n, "source": "Deezer"}
 
 
-# ============================================================
-# Excel  (Resumen tipo dashboard + hoja de detalle)
-# ============================================================
-
-NAVY = "1A1A2E"
-GRAY = "6B7280"
-PANEL = "F7F7F5"
-WHITE = "FFFFFF"
-RED = "CC0000"
-RED_BRIGHT = "FF0000"
-RED_BG1 = "FFF8F8"
-RED_BG2 = "FFF0F0"
-
-THIN = Side(style="thin", color="E5E7EB")
-BORDER = Border(left=THIN, right=THIN, top=THIN, bottom=THIN)
-NUMFMT = "#,##0"
-
-
-def _f(size=10, bold=False, color=NAVY):
-    return Font(name="Calibri", size=size, bold=bold, color=color)
-
-
-def _fill(hexcolor):
-    return PatternFill("solid", fgColor=hexcolor)
-
-
-def _set(ws, coord, value, font=None, fill=None, align="left", numfmt=None, wrap=False):
-    c = ws[coord]
-    c.value = value
-    if font:
-        c.font = font
-    if fill:
-        c.fill = fill
-    c.alignment = Alignment(horizontal=align, vertical="center", wrap_text=wrap)
-    if numfmt:
-        c.number_format = numfmt
-    return c
-
-
-def _fill_range(ws, rng, fill):
-    """Pinta el fondo de todas las celdas de un rango combinado."""
-    for row in ws[rng]:
-        for c in row:
-            c.fill = fill
-
-
 def _aggregate_distributors(tracks):
     agg = {}
     for t in tracks:
@@ -649,155 +585,6 @@ def _aggregate_distributors(tracks):
             d["top"] = t["views"]
             d["top_title"] = t["track"]
     return agg
-
-
-def build_resumen(wb, tracks, artist):
-    ws = wb.active
-    ws.title = "Resumen"
-    ws.sheet_view.showGridLines = False
-    widths = {"A": 2, "B": 18, "C": 22, "D": 18, "E": 22, "F": 18, "G": 22, "H": 2}
-    for col, w in widths.items():
-        ws.column_dimensions[col].width = w
-
-    total_videos = len(tracks)
-    total_views = sum(t["views"] for t in tracks)
-    years = sorted({t["release_year"] for t in tracks if t["release_year"]})
-    period = f"{years[0]} - {years[-1]}" if years else "s/d"
-    gen = date.today().strftime("%d/%m/%Y")
-
-    agg = _aggregate_distributors(tracks)
-    # Distribuidora protagonista = la de más vistas totales
-    spot = max(agg.items(), key=lambda kv: kv[1]["views"]) if agg else (None, None)
-    spot_name, spot_data = spot
-
-    # --- Título ---
-    ws.merge_cells("B2:G2")
-    _set(ws, "B2", f"{artist.upper()}: ANÁLISIS DE CATÁLOGO (TOPIC)", _f(18, True, NAVY), _fill(PANEL))
-    ws.merge_cells("B3:G3")
-    subtitle = f"Dataset: {total_videos} videos | Período: {period} | Generado: {gen}"
-    isrc_n = sum(1 for t in tracks if t.get("isrc"))
-    if isrc_n:
-        upc_n = sum(1 for t in tracks if t.get("upc"))
-        subtitle += (f" | ISRC: {isrc_n}/{total_videos}"
-                     f" | UPC: {upc_n}/{total_videos} (vía Deezer)")
-    _set(ws, "B3", subtitle, _f(9, False, GRAY), _fill(PANEL))
-    _fill_range(ws, "B2:G2", _fill(PANEL))
-    _fill_range(ws, "B3:G3", _fill(PANEL))
-    ws.row_dimensions[2].height = 26
-
-    # --- KPI cards (filas 6-10) ---
-    for rng in ("B6:D10", "E6:G10"):
-        _fill_range(ws, rng, _fill(WHITE))
-    for a, b in (("B6", "D6"), ("B7", "D7"), ("B8", "D8"), ("B9", "D9"), ("B10", "D10"),
-                 ("E6", "G6"), ("E7", "G7"), ("E8", "G8"), ("E9", "G9"), ("E10", "G10")):
-        ws.merge_cells(f"{a}:{b}")
-    _set(ws, "B7", "TOTAL VIDEOS", _f(8, False, GRAY), _fill(WHITE))
-    _set(ws, "B8", total_videos, _f(20, True, NAVY), _fill(WHITE), numfmt=NUMFMT)
-    _set(ws, "B9", "Productos en el catálogo", _f(9, False, GRAY), _fill(WHITE))
-    _set(ws, "E7", "TOTAL REPRODUCCIONES", _f(8, False, GRAY), _fill(WHITE))
-    _set(ws, "E8", total_views, _f(20, True, NAVY), _fill(WHITE), numfmt=NUMFMT)
-    _set(ws, "E9", "Vistas acumuladas", _f(9, False, GRAY), _fill(WHITE))
-
-    # --- Spotlight distribuidora (filas 12-16) ---
-    if spot_name:
-        for rng in ("B12:C16", "D12:E16", "F12:G16"):
-            _fill_range(ws, rng, _fill(RED_BG1))
-        for a, b in (("B12", "C12"), ("B13", "C13"), ("B14", "C14"), ("B15", "C15"), ("B16", "C16"),
-                     ("D12", "E12"), ("D13", "E13"), ("D14", "E14"), ("D15", "E15"), ("D16", "E16"),
-                     ("F12", "G12"), ("F13", "G13"), ("F14", "G14"), ("F15", "G15"), ("F16", "G16")):
-            ws.merge_cells(f"{a}:{b}")
-        sv = spot_data["videos"]
-        svw = spot_data["views"]
-        _set(ws, "B13", f"VIDEOS: {spot_name.upper()[:22]}", _f(8, False, RED), _fill(RED_BG1))
-        _set(ws, "B14", sv, _f(18, True, RED_BRIGHT), _fill(RED_BG1), numfmt=NUMFMT)
-        _set(ws, "B15", f"{sv/total_videos*100:.1f}% del total", _f(9, False, RED), _fill(RED_BG1))
-        _set(ws, "D13", f"VISTAS: {spot_name.upper()[:22]}", _f(8, False, RED), _fill(RED_BG1))
-        _set(ws, "D14", svw, _f(18, True, RED_BRIGHT), _fill(RED_BG1), numfmt=NUMFMT)
-        _set(ws, "D15", f"{(svw/total_views*100 if total_views else 0):.1f}% del total", _f(9, False, RED), _fill(RED_BG1))
-        _set(ws, "F13", f"TOP VIDEO: {spot_name.upper()[:18]}", _f(8, False, RED), _fill(RED_BG1))
-        _set(ws, "F14", spot_data["top"], _f(18, True, RED_BRIGHT), _fill(RED_BG1), numfmt=NUMFMT)
-        _set(ws, "F15", spot_data["top_title"][:40], _f(9, False, RED), _fill(RED_BG1), wrap=True)
-
-    # --- TOP 10 videos ---
-    ws.merge_cells("B18:G18")
-    _set(ws, "B18", "TOP 10 VIDEOS POR REPRODUCCIONES", _f(10, True, NAVY), _fill(PANEL))
-    _fill_range(ws, "B18:G18", _fill(PANEL))
-    ws.merge_cells("C19:D19")
-    _set(ws, "B19", "#", _f(9, True, WHITE), _fill(NAVY), align="center")
-    _set(ws, "C19", "Título", _f(9, True, WHITE), _fill(NAVY))
-    _set(ws, "E19", "Distribuidora", _f(9, True, WHITE), _fill(NAVY))
-    _set(ws, "F19", "Vistas", _f(9, True, WHITE), _fill(NAVY), align="right")
-    _set(ws, "G19", "Año", _f(9, True, WHITE), _fill(NAVY), align="center")
-    _fill_range(ws, "C19:D19", _fill(NAVY))
-    top10 = sorted(tracks, key=lambda x: x["views"], reverse=True)[:10]
-    for i, t in enumerate(top10):
-        r = 20 + i
-        is_top = (i == 0)
-        bg = _fill(RED_BG2) if is_top else _fill(WHITE)
-        fc = RED_BRIGHT if is_top else NAVY
-        ws.merge_cells(f"C{r}:D{r}")
-        _fill_range(ws, f"C{r}:D{r}", bg)
-        _set(ws, f"B{r}", i + 1, _f(9, is_top, fc), bg, align="center")
-        _set(ws, f"C{r}", t["track"][:48], _f(9, False, fc), bg)
-        _set(ws, f"E{r}", t["distributor"], _f(9, False, fc), bg)
-        _set(ws, f"F{r}", t["views"], _f(9, True, fc), bg, align="right", numfmt=NUMFMT)
-        _set(ws, f"G{r}", str(t["release_year"]) if t["release_year"] else "", _f(9, False, fc), bg, align="center")
-
-    # --- Distribución por distribuidora ---
-    ws.merge_cells("B32:G32")
-    _set(ws, "B32", "DISTRIBUCIÓN POR DISTRIBUIDORA", _f(10, True, NAVY), _fill(PANEL))
-    _fill_range(ws, "B32:G32", _fill(PANEL))
-    ws.merge_cells("E33:G33")
-    _set(ws, "B33", "Distribuidora", _f(9, True, WHITE), _fill(NAVY))
-    _set(ws, "C33", "Videos", _f(9, True, WHITE), _fill(NAVY), align="right")
-    _set(ws, "D33", "% Total", _f(9, True, WHITE), _fill(NAVY), align="right")
-    _set(ws, "E33", "Vistas totales", _f(9, True, WHITE), _fill(NAVY), align="right")
-    _fill_range(ws, "E33:G33", _fill(NAVY))
-    ordered = sorted(agg.items(), key=lambda kv: kv[1]["videos"], reverse=True)
-    for i, (name, d) in enumerate(ordered):
-        r = 34 + i
-        ws.merge_cells(f"E{r}:G{r}")
-        _fill_range(ws, f"E{r}:G{r}", _fill(WHITE))
-        _set(ws, f"B{r}", name, _f(9, False, NAVY), _fill(WHITE))
-        _set(ws, f"C{r}", d["videos"], _f(9, False, NAVY), _fill(WHITE), align="right", numfmt=NUMFMT)
-        _set(ws, f"D{r}", d["videos"] / total_videos, _f(9, False, NAVY), _fill(WHITE), align="right", numfmt="0.0%")
-        _set(ws, f"E{r}", d["views"], _f(9, False, NAVY), _fill(WHITE), align="right", numfmt=NUMFMT)
-
-
-def build_detail(wb, tracks, artist):
-    title = (artist + " Topic")[:31]
-    ws = wb.create_sheet(title)
-    cols = ["VIDEO_ID", "TITLE", "PUBLISHED_AT", "REPRODUCCIONES", "DISTRIBUIDORA",
-            "SELLO", "ISRC", "UPC", "MATCH", "DESCRIPTION (3 LÍNEAS)", "URL"]
-    for ci, name in enumerate(cols, 1):
-        c = ws.cell(row=1, column=ci, value=name)
-        c.font = _f(10, True, WHITE)
-        c.fill = _fill(NAVY)
-        c.alignment = Alignment(horizontal="left", vertical="center")
-    for t in sorted(tracks, key=lambda x: x["views"], reverse=True):
-        ws.append([t["video_id"], t["track"], t["upload_date"], t["views"],
-                   t["distributor"], t["label"], t["isrc"], t["upc"], t.get("match", ""),
-                   t["desc3"], t["url"]])
-    for col, w in zip("ABCDEFGHIJK", (14, 40, 13, 15, 24, 22, 15, 15, 9, 46, 28)):
-        ws.column_dimensions[col].width = w
-    for row in ws.iter_rows(min_row=2, max_row=ws.max_row):
-        row[3].number_format = NUMFMT          # REPRODUCCIONES
-        row[9].alignment = Alignment(wrap_text=True, vertical="top")  # DESCRIPTION
-    ws.freeze_panes = "A2"
-
-
-def build_workbook(tracks, artist):
-    wb = openpyxl.Workbook()
-    build_resumen(wb, tracks, artist)
-    build_detail(wb, tracks, artist)
-    return wb
-
-
-def workbook_bytes(tracks, artist):
-    """Arma el Excel y lo devuelve como bytes (para descargar desde la web)."""
-    buf = io.BytesIO()
-    build_workbook(tracks, artist).save(buf)
-    return buf.getvalue()
 
 
 def slugify(name):
@@ -822,9 +609,9 @@ def relevar(url, yt_key, with_codes=True, progress=None, use_musicbrainz=False):
             progress(msg, frac)
 
     if not yt_key:
-        raise RelevarError("Falta la API key de YouTube en el servidor.")
+        raise RelevarError(T("yt.falta_clave"), "clave")
 
-    step("Resolviendo canal…", 0.05)
+    step(T("rel.resolviendo"), 0.05)
     _ch_id, uploads, title = resolve_channel(url, yt_key)
     canal_pedido = title
 
@@ -835,20 +622,20 @@ def relevar(url, yt_key, with_codes=True, progress=None, use_musicbrainz=False):
     # ser molesto, así que lo hace la app.
     via_topic = False
     if not es_canal_topic(title):
-        step("El canal no es un Topic: buscando el Topic del artista…", 0.10)
+        step(T("rel.buscando_topic"), 0.10)
         hallado = buscar_canal_topic(title, yt_key)
         if hallado:
             t_uploads, t_title = canal_uploads_por_id(hallado[0], yt_key)
             if t_uploads:
                 uploads, title, via_topic = t_uploads, t_title, True
-                step(f"Uso el canal Topic: {t_title}", 0.12)
+                step(T("rel.uso_topic", canal=t_title), 0.12)
 
-    step("Listando productos…", 0.15)
+    step(T("rel.listando"), 0.15)
     vids = list_video_ids(uploads, yt_key)
     if not vids:
-        raise RelevarError("El canal no tiene productos para relevar.")
+        raise RelevarError(T("yt.canal_vacio"))
 
-    step(f"Bajando metadata de {len(vids)} productos…", 0.30)
+    step(T("rel.bajando_metadata", n=len(vids)), 0.30)
     videos = fetch_videos(vids, yt_key)
 
     # Nos quedamos SÓLO con los lanzamientos: los que tienen distribuidora
@@ -861,16 +648,10 @@ def relevar(url, yt_key, with_codes=True, progress=None, use_musicbrainz=False):
     descartados = len(todos) - len(tracks)
 
     if not tracks:
-        raise RelevarError(
-            "No encontré lanzamientos en este canal: ninguno de sus "
-            f"{len(todos)} videos tiene la descripción auto-generada de YouTube "
-            "(la que dice «Provided to YouTube by»). "
-            "Eso pasa cuando el canal es un OAC con videos subidos a mano. "
-            "Probá pegando el link del canal «<artista> - Topic», que es el que "
-            "YouTube genera solo con el catálogo distribuido.")
+        raise RelevarError(T("yt.sin_lanzamientos", n=len(todos)))
 
     if descartados:
-        step(f"Descarté {descartados} videos que no son lanzamientos.", 0.45)
+        step(T("rel.descartados", n=descartados), 0.45)
 
     artist = _nombre_artista(title)
 
@@ -882,11 +663,11 @@ def relevar(url, yt_key, with_codes=True, progress=None, use_musicbrainz=False):
 
     codes_stats = None
     if with_codes:
-        step("Buscando códigos ISRC y UPC (Deezer)…", 0.55)
+        step(T("rel.buscando_codigos"), 0.55)
         codes_stats = enrich_with_codes(
             tracks, artist, log=lambda m: step(m, 0.75), use_musicbrainz=use_musicbrainz)
 
-    step("Armando el Excel…", 0.95)
+    step(T("rel.armando_excel"), 0.95)
     units = 1 + 2 * ((len(vids) + 49) // 50)
     return {
         "artist": artist,

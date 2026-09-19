@@ -159,6 +159,354 @@ TEXTOS = {
         "en": "That link is too long to be a YouTube channel.",
     },
 
+    # ---- errores de la YouTube Data API -------------------------------------
+    # Lo que devuelve Google no está pensado para mostrarse: viene en inglés, con
+    # jerga y a veces con HTML adentro. Acá está traducido y con la salida
+    # concreta al lado.
+    "yt.cuota_compartida": {
+        "es": ("Se agotó el cupo diario de la API de YouTube. Si esta copia trae una "
+               "clave compartida, el cupo se reparte entre todos los que la usan. "
+               "Cargando tu propia clave tenés el cupo entero para vos, es gratis y se "
+               "saca en tres pasos."),
+        "en": ("The YouTube API daily quota ran out. If this copy ships with a shared "
+               "key, the quota is split across everyone using it. With your own key you "
+               "get the whole quota to yourself; it is free and takes three steps."),
+    },
+    "yt.cuota": {
+        "es": ("Se agotó el cupo diario de la API de YouTube. Cargando tu propia clave "
+               "tenés el cupo entero para vos, es gratis y se saca en tres pasos."),
+        "en": ("The YouTube API daily quota ran out. With your own key you get the whole "
+               "quota to yourself; it is free and takes three steps."),
+    },
+    "yt.rate_limit": {
+        "es": ("YouTube está recibiendo demasiadas consultas seguidas desde esta clave. "
+               "Esperá un minuto y probá de nuevo."),
+        "en": ("YouTube is getting too many requests in a row from this key. Wait a "
+               "minute and try again."),
+    },
+    "yt.clave_invalida": {
+        "es": ("YouTube rechazó la clave. Revisá que la hayas copiado entera y que sea "
+               "una clave de API, no un ID de cliente."),
+        "en": ("YouTube turned the key down. Check that you copied it whole and that it "
+               "is an API key, not a client ID."),
+    },
+    "yt.api_sin_habilitar": {
+        "es": ("El proyecto de esta clave no tiene habilitada la YouTube Data API v3. "
+               "Entrá a Google Cloud Console, buscá esa API en la biblioteca y "
+               "habilitala."),
+        "en": ("The project behind this key does not have YouTube Data API v3 enabled. "
+               "Go to Google Cloud Console, find that API in the library and enable it."),
+    },
+    "yt.clave_restringida": {
+        "es": ("Las restricciones de esta clave no permiten usarla desde esta "
+               "computadora. En Google Cloud Console, dejá la restricción de "
+               "aplicación en «Ninguna» y restringila sólo por API."),
+        "en": ("This key's restrictions do not allow using it from this computer. In "
+               "Google Cloud Console, set the application restriction to \"None\" and "
+               "restrict it by API only."),
+    },
+    "yt.prohibido": {
+        "es": "YouTube no permitió la consulta con esta clave.",
+        "en": "YouTube did not allow the request with this key.",
+    },
+    "yt.error_generico": {
+        "es": "YouTube respondió un error ({codigo}). {mensaje}",
+        "en": "YouTube answered with an error ({codigo}). {mensaje}",
+    },
+    "yt.sin_conexion": {
+        "es": "No pude hablar con la API de YouTube. Revisá que haya conexión a internet. ({detalle})",
+        "en": "Could not reach the YouTube API. Check that there is an internet connection. ({detalle})",
+    },
+    "yt.sin_respuesta": {
+        "es": "No pude hablar con la API de YouTube. ({detalle})",
+        "en": "Could not reach the YouTube API. ({detalle})",
+    },
+    "yt.url_no_reconocida": {
+        "es": "No pude extraer el canal de la URL. Usá una URL /channel/UC... o @handle.",
+        "en": "Could not work out the channel from that URL. Use a /channel/UC... URL or an @handle.",
+    },
+    "yt.canal_no_encontrado": {
+        "es": "No se encontró el canal ({canal}). Revisá la URL.",
+        "en": "Channel not found ({canal}). Check the URL.",
+    },
+    "yt.falta_clave": {
+        "es": "Falta la API key de YouTube en el servidor.",
+        "en": "The YouTube API key is missing on the server.",
+    },
+    "yt.canal_vacio": {
+        "es": "El canal no tiene productos para relevar.",
+        "en": "The channel has no releases to survey.",
+    },
+    "yt.sin_lanzamientos": {
+        "es": ("No encontré lanzamientos en este canal: ninguno de sus {n} videos tiene "
+               "la descripción auto-generada de YouTube (la que dice «Provided to "
+               "YouTube by»). Eso pasa cuando el canal es un OAC con videos subidos a "
+               "mano. Probá pegando el link del canal «<artista> - Topic», que es el "
+               "que YouTube genera solo con el catálogo distribuido."),
+        "en": ("No releases found on this channel: none of its {n} videos carries "
+               "YouTube's auto-generated description (the one that says \"Provided to "
+               "YouTube by\"). That happens when the channel is an official artist "
+               "channel with hand-uploaded videos. Try pasting the link to the "
+               "\"<artist> - Topic\" channel, the one YouTube builds on its own from "
+               "the distributed catalog."),
+    },
+
+    # ---- relevamiento: el log del trabajo -----------------------------------
+    "rel.resolviendo": {"es": "Resolviendo canal…", "en": "Working out the channel…"},
+    "rel.buscando_topic": {
+        "es": "El canal no es un Topic: buscando el Topic del artista…",
+        "en": "This is not a Topic channel: looking up the artist's Topic…",
+    },
+    "rel.uso_topic": {"es": "Uso el canal Topic: {canal}", "en": "Using the Topic channel: {canal}"},
+    "rel.listando": {"es": "Listando productos…", "en": "Listing releases…"},
+    "rel.bajando_metadata": {
+        "es": "Bajando metadata de {n} productos…",
+        "en": "Fetching metadata for {n} releases…",
+    },
+    "rel.descartados": {
+        "es": "Descarté {n} videos que no son lanzamientos.",
+        "en": "Left out {n} videos that are not releases.",
+    },
+    "rel.buscando_codigos": {
+        "es": "Buscando códigos ISRC y UPC (Deezer)…",
+        "en": "Looking up ISRC and UPC codes (Deezer)…",
+    },
+    "rel.armando_excel": {"es": "Armando el Excel…", "en": "Building the spreadsheet…"},
+    "rel.deezer_resultado": {
+        "es": "Deezer: códigos para {matched} de {n} tracks, UPC de {albumes} álbumes",
+        "en": "Deezer: codes for {matched} of {n} tracks, UPC for {albumes} albums",
+    },
+    "rel.musicbrainz": {
+        "es": "MusicBrainz (respaldo): {n} sin ISRC",
+        "en": "MusicBrainz (fallback): {n} without ISRC",
+    },
+
+    # ---- orquestador --------------------------------------------------------
+    "mig.agrupados": {
+        "es": "{productos} productos a partir de {tracks} tracks",
+        "en": "{productos} releases out of {tracks} tracks",
+    },
+    "mig.via_topic": {
+        "es": "Pegaste «{pedido}»; se relevó su Topic, «{topic}»",
+        "en": "You pasted \"{pedido}\"; its Topic was surveyed instead, \"{topic}\"",
+    },
+    "mig.descartados": {
+        "es": "Quedaron afuera {n} videos que no son lanzamientos",
+        "en": "{n} videos were left out because they are not releases",
+    },
+    "mig.seleccionados": {
+        "es": "Seleccionados {n} de {total} productos",
+        "en": "{n} of {total} releases selected",
+    },
+    "mig.seleccion_vacia": {
+        "es": "La selección quedó vacía: revisá los filtros.",
+        "en": "The selection came out empty: check the filters.",
+    },
+    "mig.falta_ffmpeg": {
+        "es": "Audio: falta ffmpeg: no puedo extraer FLAC. Revisá la instalación.",
+        "en": "Audio: ffmpeg is missing, so FLAC cannot be extracted. Check the install.",
+    },
+    "mig.sin_tidal": {
+        "es": "Audio: sin cuenta de Tidal conectada: el audio será de referencia (lossy)",
+        "en": "Audio: no Tidal account connected, so the audio will be a lossy reference",
+    },
+    "mig.sin_referencia": {
+        "es": "Audio: falta yt-dlp o ffmpeg: no puedo bajar ni la referencia",
+        "en": "Audio: yt-dlp or ffmpeg is missing, so not even the reference can be downloaded",
+    },
+
+    # ---- audio --------------------------------------------------------------
+    "aud.codigo_expiro": {
+        "es": "[tidal] el código expiró sin confirmación",
+        "en": "[tidal] the code expired without confirmation",
+    },
+    "aud.sin_cuenta": {
+        "es": "La cuenta de Tidal no está conectada.",
+        "en": "The Tidal account is not connected.",
+    },
+    "aud.sesion_vencida": {
+        "es": "La sesión de Tidal no es válida o venció. Volvé a conectar la cuenta.",
+        "en": "The Tidal session is not valid or has expired. Connect the account again.",
+    },
+    "aud.artista_no_encontrado": {
+        "es": ("[tidal] no encontré a '{artista}' en el catálogo de Tidal. Si el nombre "
+               "difiere del de Tidal, el match por ISRC no se puede armar."),
+        "en": ("[tidal] could not find '{artista}' in Tidal's catalog. If the name differs "
+               "from Tidal's, the ISRC match cannot be built."),
+    },
+    "aud.no_pude_listar": {
+        "es": "[tidal] no pude listar {filtro}: {error}",
+        "en": "[tidal] could not list {filtro}: {error}",
+    },
+    "aud.releases": {
+        "es": "[tidal] releases en la discografía: {n}",
+        "en": "[tidal] releases in the discography: {n}",
+    },
+    "aud.indice": {
+        "es": "[tidal] índice armado: {isrc} ISRC en {releases} releases",
+        "en": "[tidal] index built: {isrc} ISRCs across {releases} releases",
+    },
+    "aud.match": {
+        "es": "[tidal] match por ISRC: {hit} encontrados, {miss} sin match, {sin_isrc} sin ISRC en el relevamiento",
+        "en": "[tidal] ISRC match: {hit} found, {miss} unmatched, {sin_isrc} with no ISRC in the survey",
+    },
+    "aud.fallo_descarga": {
+        "es": "falló la descarga",
+        "en": "the download failed",
+    },
+    "aud.sin_ytdlp": {"es": "yt-dlp no está instalado", "en": "yt-dlp is not installed"},
+    "aud.timeout": {"es": "tardó demasiado y se canceló", "en": "it took too long and was cancelled"},
+    "aud.sin_archivo": {
+        "es": "yt-dlp terminó pero no dejó ningún archivo",
+        "en": "yt-dlp finished but left no file",
+    },
+    "aud.listos": {
+        "es": "[audio] listos: {aptos} aptos para entrega, {ref} de referencia, {sin} sin audio",
+        "en": "[audio] done: {aptos} fit for delivery, {ref} reference, {sin} with no audio",
+    },
+
+    # ---- servidor -----------------------------------------------------------
+    "srv.aceptar_terminos": {
+        "es": "Hay que aceptar los términos para usar la herramienta.",
+        "en": "You have to accept the terms to use the tool.",
+    },
+    "srv.pega_clave": {
+        "es": "Pegá la clave de la API de YouTube.",
+        "en": "Paste the YouTube API key.",
+    },
+    "srv.clave_rara": {
+        "es": "Eso no parece una clave de API.",
+        "en": "That does not look like an API key.",
+    },
+    "srv.clave_no_funciono": {
+        "es": "La clave no funcionó. {error}",
+        "en": "The key did not work. {error}",
+    },
+    "srv.trabajo_en_curso": {
+        "es": "Ya hay un trabajo en curso. Esperá a que termine o cancelalo.",
+        "en": "There is already a job running. Wait for it to finish or cancel it.",
+    },
+    "srv.falta_clave": {
+        "es": "Falta configurar la clave de la API de YouTube.",
+        "en": "The YouTube API key has not been set up.",
+    },
+    "srv.poco_espacio": {
+        "es": ("Queda poco espacio en disco ({libre} GB libres) y este paquete necesita al "
+               "menos {minimo} GB. Liberá espacio y probá de nuevo."),
+        "en": ("Disk space is running low ({libre} GB free) and this package needs at least "
+               "{minimo} GB. Free up space and try again."),
+    },
+    "srv.elegi_algo": {
+        "es": "Elegí al menos una cosa para descargar.",
+        "en": "Pick at least one thing to download.",
+    },
+    "srv.sin_seleccion": {
+        "es": "No hay productos seleccionados.",
+        "en": "No releases are selected.",
+    },
+    "srv.armando_zip": {"es": "Armando el ZIP", "en": "Building the ZIP"},
+    "srv.audio_desactivado": {
+        "es": "El módulo de audio está desactivado.",
+        "en": "The audio module is turned off.",
+    },
+    "srv.sin_tidal_en_curso": {
+        "es": "No hay una conexión de Tidal en curso.",
+        "en": "There is no Tidal connection in progress.",
+    },
+    "srv.content_length": {
+        "es": "El pedido trae un Content-Length inválido.",
+        "en": "The request has an invalid Content-Length.",
+    },
+    "srv.pedido_cortado": {"es": "El pedido llegó cortado.", "en": "The request arrived truncated."},
+    "srv.json_invalido": {"es": "El pedido no es JSON válido.", "en": "The request is not valid JSON."},
+    "srv.json_no_objeto": {
+        "es": "El pedido tiene que ser un objeto JSON.",
+        "en": "The request has to be a JSON object.",
+    },
+    "srv.sin_catalogo": {"es": "No hay un catálogo cargado.", "en": "No catalog is loaded."},
+    "srv.zip_vencido": {
+        "es": "El paquete ya no está disponible. Generalo de nuevo.",
+        "en": "The package is no longer available. Build it again.",
+    },
+    "srv.trabajo_no_existe": {"es": "Ese trabajo ya no existe.", "en": "That job no longer exists."},
+    "srv.rechazado": {"es": "Pedido rechazado.", "en": "Request rejected."},
+    "srv.rechazado_token": {
+        "es": "Pedido rechazado. Recargá la app.",
+        "en": "Request rejected. Reload the app.",
+    },
+    "srv.no_encontrado": {"es": "No encontrado.", "en": "Not found."},
+    "srv.inesperado": {"es": "Error inesperado. {error}", "en": "Unexpected error. {error}"},
+    "srv.falta_index": {"es": "Falta index.html.", "en": "index.html is missing."},
+
+    # ---- trabajos -----------------------------------------------------------
+    "job.error": {"es": "Hubo un error.", "en": "Something went wrong."},
+
+    # ---- launcher -----------------------------------------------------------
+    # El cuerpo del reporte de `--diagnostico` queda en español a propósito: no
+    # es algo que se lea en el uso normal, es un volcado técnico para pegar en un
+    # issue, y quien lo lee del otro lado es el autor.
+    "app.nombre": {"es": "Migrador de Catálogos", "en": "Catalog Migrator"},
+    "lau.h_puerto": {
+        "es": "Puerto local. 0 = elegir uno libre (recomendado).",
+        "en": "Local port. 0 = pick a free one (recommended).",
+    },
+    "lau.h_no_abrir": {
+        "es": "No abrir la interfaz; sólo dejar el servidor escuchando.",
+        "en": "Do not open the interface; just leave the server listening.",
+    },
+    "lau.h_navegador": {
+        "es": "Abrir en el navegador normal, con pestañas y barra de direcciones.",
+        "en": "Open in the regular browser, with tabs and an address bar.",
+    },
+    "lau.h_sin_ventana": {
+        "es": "No usar la ventana propia; abrir con el motor web del sistema.",
+        "en": "Do not use the app's own window; open with the system web engine.",
+    },
+    "lau.h_diagnostico": {
+        "es": "Escribir un reporte de qué puede hacer la app y salir.",
+        "en": "Write a report of what the app can do here, and exit.",
+    },
+    "lau.escuchando": {"es": "Escuchando en {url}", "en": "Listening on {url}"},
+    "lau.primera_vez": {
+        "es": "Primera vez: la app te va a pedir la clave de la API de YouTube.",
+        "en": "First run: the app will ask you for the YouTube API key.",
+    },
+    "lau.ventana_propia": {
+        "es": "Abrí la app en su propia ventana. Cerrala para terminar.",
+        "en": "Opened the app in its own window. Close it to finish.",
+    },
+    "lau.en_navegador": {
+        "es": "Abrí la app en tu navegador. Ctrl+C acá para cerrarla.",
+        "en": "Opened the app in your browser. Ctrl+C here to close it.",
+    },
+    "lau.no_arranco": {
+        "es": "No se pudo iniciar la app: {error}",
+        "en": "Could not start the app: {error}",
+    },
+    "lau.detalle_en": {"es": "El detalle quedó en: {ruta}", "en": "The detail is in: {ruta}"},
+
+    # ---- portadas -----------------------------------------------------------
+    # `cover_status` se muestra en el log y dentro del aviso "Sin portada: …",
+    # así que se traduce. No se compara contra su texto en ningún lado.
+    "por.sin_match": {"es": "no está en Apple Music", "en": "not on Apple Music"},
+    "por.fallo_descarga": {
+        "es": "está en Apple Music pero falló la descarga",
+        "en": "it is on Apple Music but the download failed",
+    },
+    "por.bajo_minimo": {
+        "es": "{px}x{px}, DEBAJO DEL MINIMO de ingesta ({min}x{min})",
+        "en": "{px}x{px}, BELOW THE INGESTION MINIMUM ({min}x{min})",
+    },
+    "por.maximo_apple": {
+        "es": "{px}x{px}, el máximo que tiene Apple",
+        "en": "{px}x{px}, the largest Apple has",
+    },
+    "por.una": {
+        "es": "Portada {i} de {total}, {titulo}: {estado}",
+        "en": "Cover {i} of {total}, {titulo}: {estado}",
+    },
+    "por.total": {"es": "Portadas: {ok} de {total}", "en": "Covers: {ok} of {total}"},
+
     # ---- validar ------------------------------------------------------------
     # Estos mensajes viajan en cada hallazgo y terminan en tres lugares: la
     # pantalla 4, el informe de texto del ZIP y la hoja de validación. El

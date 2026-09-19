@@ -25,6 +25,9 @@ jobs:
           # ellos, lo que además demuestra que la degradación es correcta.
           pip install openpyxl
 
+      - name: Los dos catálogos de traducción, completos y de acuerdo
+        run: python test_i18n.py
+
       - name: Parseo de descripciones de YouTube
         run: python test_parse_description.py
 

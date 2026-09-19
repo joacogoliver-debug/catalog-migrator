@@ -24,6 +24,7 @@ import paquete
 import portadas as portadas_mod
 import productos as productos_mod
 import relevar_core
+from i18n import T
 
 
 # ============================================================
@@ -45,7 +46,7 @@ def relevar_catalogo(url, yt_key, with_codes=True, progress=None, use_musicbrain
     tracks = res["tracks"]
     artista = res["artist"]
     prods = productos_mod.group_products(tracks, artist=artista)
-    log(f"{len(prods)} productos a partir de {len(tracks)} tracks")
+    log(T("mig.agrupados", productos=len(prods), tracks=len(tracks)))
 
     # Diagnóstico del canal: si no trae descripciones auto-generadas, el
     # catálogo sale sin álbumes ni códigos y hay que avisarlo.
@@ -61,9 +62,9 @@ def relevar_catalogo(url, yt_key, with_codes=True, progress=None, use_musicbrain
         "descartados": int(res.get("descartados") or 0),
     }
     if diag["via_topic"]:
-        log(f"Pegaste «{diag['canal_pedido']}»; se relevó su Topic, «{diag['canal']}»")
+        log(T("mig.via_topic", pedido=diag["canal_pedido"], topic=diag["canal"]))
     if diag["descartados"]:
-        log(f"Quedaron afuera {diag['descartados']} videos que no son lanzamientos")
+        log(T("mig.descartados", n=diag["descartados"]))
     return prods, artista, tracks, diag
 
 
@@ -84,31 +85,34 @@ def opciones_de_filtro(prods):
 
 def preparar(seleccion, artista, quiere_planilla=True, quiere_audio=False,
              quiere_portadas=True, tidal_session=None, usar_referencia=True,
-             calidad="LOSSLESS", log=print):
+             calidad="LOSSLESS", log=print, avance_portadas=None):
     """Baja lo que se pidió para los productos seleccionados.
 
     Muta los productos agregándoles `cover_bytes` y, a cada track, `audio_path`
     + `audio_label`. Devuelve (seleccion, dir_temporal_audio, entorno).
+
+    `avance_portadas(i, total)` se pasa tal cual a `fetch_portadas`: es de donde
+    sale la barra de progreso de la parte que más tarda.
     """
     entorno = audio_mod.verificar_entorno()
     dir_audio = None
 
     if quiere_portadas:
-        portadas_mod.fetch_portadas(seleccion, artista, log=log)
+        portadas_mod.fetch_portadas(seleccion, artista, log=log, avance=avance_portadas)
 
     if quiere_audio:
         con_tidal = bool(tidal_session and tidal_session.conectada)
         if con_tidal:
             if not entorno["puede_flac"]:
-                log("Audio: falta ffmpeg: no puedo extraer FLAC. Revisá la instalación.")
+                log(T("mig.falta_ffmpeg"))
             else:
                 indice, _ = audio_mod.construir_indice_isrc(tidal_session, artista, log=log)
                 audio_mod.matchear_por_isrc(seleccion, indice, log=log)
         else:
-            log("Audio: sin cuenta de Tidal conectada: el audio será de referencia (lossy)")
+            log(T("mig.sin_tidal"))
 
         if not entorno["puede_referencia"] and not con_tidal:
-            log("Audio: falta yt-dlp o ffmpeg: no puedo bajar ni la referencia")
+            log(T("mig.sin_referencia"))
         else:
             _, dir_audio = audio_mod.fetch_audio(
                 seleccion, session=tidal_session if con_tidal else None,
@@ -157,8 +161,8 @@ def migrar(url, yt_key, ids=None, year_from=None, year_to=None, distributors=Non
         prods, ids=ids, year_from=year_from, year_to=year_to, distributors=distributors,
     )
     if not seleccion:
-        raise relevar_core.RelevarError("La selección quedó vacía: revisá los filtros.")
-    log(f"Seleccionados {len(seleccion)} de {len(prods)} productos")
+        raise relevar_core.RelevarError(T("mig.seleccion_vacia"))
+    log(T("mig.seleccionados", n=len(seleccion), total=len(prods)))
 
     seleccion, dir_audio, entorno = preparar(
         seleccion, artista, quiere_planilla=quiere_planilla, quiere_audio=quiere_audio,

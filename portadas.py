@@ -20,6 +20,8 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from difflib import SequenceMatcher
 
+from i18n import T
+
 ITUNES_SEARCH = "https://itunes.apple.com/search"
 ITUNES_LOOKUP = "https://itunes.apple.com/lookup"
 USER_AGENT = "RelevarCatalogo/2.0 (migrador de catalogo)"
@@ -161,30 +163,34 @@ def descargar_portada(url100):
     return None, 0
 
 
-def fetch_portadas(productos, artista, log=print):
+def fetch_portadas(productos, artista, log=print, avance=None):
     """Busca y baja la portada de cada producto, en paralelo.
 
     No escribe archivos: deja los bytes en `p["cover_bytes"]` para que los
     empaquete el ZIP. Registra el resultado en `p["cover_status"]`.
+
+    `avance(i, total)` se llama al terminar cada portada. Existe para que quien
+    dibuja la barra de progreso no tenga que deducirla del texto del log: antes
+    el servidor la sacaba con un `^Portada (\\d+) de (\\d+)`, y con la app en
+    inglés esa expresión dejaba de coincidir y la barra se congelaba en 5 %.
     """
     def una(p):
         info = buscar_portada(artista, p.get("title", ""), p.get("upc", ""))
         if not info:
             p["cover_bytes"], p["cover_px"] = None, 0
-            p["cover_status"] = "no está en Apple Music"
+            p["cover_status"] = T("por.sin_match")
             return p
         data, px = descargar_portada(info["url100"])
         p["cover_bytes"], p["cover_px"] = data, px
         p["cover_match"] = info["match"]
         if not data:
-            p["cover_status"] = "está en Apple Music pero falló la descarga"
+            p["cover_status"] = T("por.fallo_descarga")
         elif px < COVER_MIN_INGESTA:
             # Se avisa acá además de en el validador: es la diferencia entre una
             # portada usable y una que la distribuidora rechaza.
-            p["cover_status"] = (f"{px}x{px}, DEBAJO DEL MINIMO de ingesta "
-                                 f"({COVER_MIN_INGESTA}x{COVER_MIN_INGESTA})")
+            p["cover_status"] = T("por.bajo_minimo", px=px, min=COVER_MIN_INGESTA)
         elif px < RESOLUCIONES[0]:
-            p["cover_status"] = f"{px}x{px}, el máximo que tiene Apple"
+            p["cover_status"] = T("por.maximo_apple", px=px)
         else:
             p["cover_status"] = f"{px}x{px}"
         return p
@@ -193,8 +199,14 @@ def fetch_portadas(productos, artista, log=print):
         for i, p in enumerate(ex.map(una, productos), 1):
             # Sin caracteres fuera de cp1252 en los logs: la consola de Windows
             # los rechaza y tiraría UnicodeEncodeError en medio de la migración.
-            log(f"Portada {i} de {len(productos)}, {p['title'][:40]}: {p['cover_status']}")
+            # El avance va antes del log: quien los recibe suele usar la última
+            # fracción conocida al registrar la línea, y al revés cada línea
+            # quedaba con el avance de la portada anterior.
+            if avance:
+                avance(i, len(productos))
+            log(T("por.una", i=i, total=len(productos), titulo=p["title"][:40],
+                  estado=p["cover_status"]))
 
     ok = sum(1 for p in productos if p.get("cover_bytes"))
-    log(f"Portadas: {ok} de {len(productos)}")
+    log(T("por.total", ok=ok, total=len(productos)))
     return productos
