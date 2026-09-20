@@ -849,7 +849,9 @@ function vistaPaso3() {
           tracks: sel.reduce((a, p) => a + p.tracks, 0),
         }))}</p>
       </div>
+    </div>
 
+    <div class="seccion">
       <div class="seccion-etiqueta"><h2>${esc(T('paso3.contenido'))}</h2></div>
 
       <div class="opciones">
