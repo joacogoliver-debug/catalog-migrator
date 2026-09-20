@@ -22,8 +22,10 @@ import os
 import re
 import sys
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, HERE)
+# Los tests viven en tests/ y los modulos en la raiz: sin esto, correr
+# `python tests/test_x.py` no encuentra nada que importar.
+RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, RAIZ)
 
 import i18n                                                        # noqa: E402
 
@@ -42,7 +44,7 @@ def _catalogo_js():
     un objeto literal plano y meter una dependencia para leerlo sería peor que
     el problema que resuelve.
     """
-    s = io.open(os.path.join(HERE, "app", "web", "i18n.js"), encoding="utf-8").read()
+    s = io.open(os.path.join(RAIZ, "app", "web", "i18n.js"), encoding="utf-8").read()
     cuerpo = s[s.index("const TEXTOS = {"):]
     entradas = {}
 
@@ -67,8 +69,8 @@ def _catalogo_js():
 
 
 def _claves_usadas_en_la_interfaz():
-    app = io.open(os.path.join(HERE, "app", "web", "app.js"), encoding="utf-8").read()
-    html = io.open(os.path.join(HERE, "app", "web", "index.html"), encoding="utf-8").read()
+    app = io.open(os.path.join(RAIZ, "app", "web", "app.js"), encoding="utf-8").read()
+    html = io.open(os.path.join(RAIZ, "app", "web", "index.html"), encoding="utf-8").read()
     usadas = set(re.findall(r"T\(\s*'([a-z0-9_.]+)'", app))
     usadas |= set(re.findall(r'data-t(?:-title|-aria)?="([a-z0-9_.]+)"', html))
     # Las que se arman concatenando un prefijo con un código.
@@ -110,7 +112,7 @@ def main():
     # --- El nombre del archivo tiene que decir lo mismo de los dos lados -
     # La pantalla 4 manda a abrir el informe de validación por su nombre. Si
     # `paquete.py` lo escribe distinto, manda a buscar un archivo que no existe.
-    s = io.open(os.path.join(HERE, "app", "web", "i18n.js"), encoding="utf-8").read()
+    s = io.open(os.path.join(RAIZ, "app", "web", "i18n.js"), encoding="utf-8").read()
     bloque = re.search(r"'archivos\.validacion':\s*\{(.*?)\},", s, re.S).group(1)
     for idioma in ("es", "en"):
         en_js = re.search(rf"{idioma}:\s*'([^']+)'", bloque).group(1)
@@ -126,13 +128,13 @@ def main():
     # parecidas, el texto sigue saliendo en el idioma correcto y la unica senal
     # es que cambio una palabra. Por eso se lee el archivo, no el diccionario ya
     # construido: en el diccionario la duplicada ya no existe.
-    fuente = io.open(os.path.join(HERE, "i18n.py"), encoding="utf-8").read()
+    fuente = io.open(os.path.join(RAIZ, "i18n.py"), encoding="utf-8").read()
     cuerpo = fuente[fuente.index("TEXTOS = {"):]
     literales = re.findall(r'^    "([a-z0-9_.]+)":', cuerpo, re.M)
     repetidas = sorted({k for k in literales if literales.count(k) > 1})
     check("py.sin_claves_repetidas", not repetidas, f"definidas dos veces: {repetidas}")
 
-    fuente_js = io.open(os.path.join(HERE, "app", "web", "i18n.js"), encoding="utf-8").read()
+    fuente_js = io.open(os.path.join(RAIZ, "app", "web", "i18n.js"), encoding="utf-8").read()
     cuerpo_js = fuente_js[fuente_js.index("const TEXTOS = {"):]
     js_literales = re.findall(r"^  '([a-z0-9_.]+)':", cuerpo_js, re.M)
     js_repetidas = sorted({k for k in js_literales if js_literales.count(k) > 1})

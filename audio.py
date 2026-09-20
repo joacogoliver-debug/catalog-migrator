@@ -568,8 +568,9 @@ def bajar_referencia_youtube(video_id, dest_dir, log=print, errores=None):
         # video", "Sign in to confirm your age"...). Es justo lo que el usuario
         # necesita saber para decidir qué hacer con ese track.
         crudo = (e.stderr or "").strip().splitlines()
-        motivo = next((l.replace("ERROR:", "").strip() for l in reversed(crudo)
-                       if "ERROR" in l.upper()), crudo[-1] if crudo else T("aud.fallo_descarga"))
+        motivo = next((x.replace("ERROR:", "").strip() for x in reversed(crudo)
+                       if "ERROR" in x.upper()),
+                      crudo[-1] if crudo else T("aud.fallo_descarga"))
         return _falla(motivo[:160], video_id, log, errores)
     except subprocess.TimeoutExpired:
         return _falla(T("aud.timeout"), video_id, log, errores)
@@ -595,7 +596,8 @@ def fetch_audio(productos, session=None, usar_referencia=True, dest_dir=None,
     os.makedirs(dest_dir, exist_ok=True)
     tracks = [t for p in productos for t in p["tracks"]]
 
-    con_tidal = [t for t in tracks if session and session.conectada and (t.get("tidal") or {}).get("track_id")]
+    con_tidal = [t for t in tracks
+                 if session and session.conectada and (t.get("tidal") or {}).get("track_id")]
     sin_tidal = [t for t in tracks if t not in con_tidal]
 
     def _init(t):
@@ -645,6 +647,7 @@ def fetch_audio(productos, session=None, usar_referencia=True, dest_dir=None,
                 log(f"[audio] yt {i}/{len(pendientes)} {t['track'][:40]} -> {estado}")
 
     aptos = sum(1 for t in tracks if (t.get("audio_format") or "") in FORMATOS_LOSSLESS)
-    ref = sum(1 for t in tracks if t.get("audio_path") and (t.get("audio_format") or "") not in FORMATOS_LOSSLESS)
+    ref = sum(1 for t in tracks if t.get("audio_path")
+              and (t.get("audio_format") or "") not in FORMATOS_LOSSLESS)
     log(T("aud.listos", aptos=aptos, ref=ref, sin=len(tracks) - aptos - ref))
     return productos, dest_dir

@@ -7,7 +7,7 @@ REM   ffmpeg en el PATH  ->  winget install --id Gyan.FFmpeg -e
 REM
 REM Si falta algo, la app lo detecta y no ofrece la opcion de audio.
 REM
-REM Los mensajes van en los dos idiomas, por lo mismo que en ABRIR_APP.bat:
+REM Los mensajes van en los dos idiomas, por lo mismo que en abrir_app.bat:
 REM esto corre antes que la app y no sabe que idioma eligio quien la usa.
 
 cd /d "%~dp0"

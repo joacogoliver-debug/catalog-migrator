@@ -17,11 +17,16 @@ import sys
 import struct
 import importlib.util
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+# Los tests viven en tests/ y los modulos en la raiz: sin esto, correr
+# `python tests/test_x.py` no encuentra nada que importar.
+RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Ademas del path para _load(): los modulos que se cargan por ruta importan a su
+# vez `i18n`, y eso se resuelve por sys.path como cualquier import normal.
+sys.path.insert(0, RAIZ)
 
 
 def _load(nombre):
-    path = os.path.join(HERE, f"{nombre}.py")
+    path = os.path.join(RAIZ, f"{nombre}.py")
     spec = importlib.util.spec_from_file_location(nombre, path)
     mod = importlib.util.module_from_spec(spec)
     sys.modules[nombre] = mod

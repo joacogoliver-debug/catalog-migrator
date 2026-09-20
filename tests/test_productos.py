@@ -17,11 +17,13 @@ import os
 import sys
 import importlib.util
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+# Los tests viven en tests/ y los modulos en la raiz: sin esto, correr
+# `python tests/test_x.py` no encuentra nada que importar.
+RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def _load(nombre):
-    path = os.path.join(HERE, f"{nombre}.py")
+    path = os.path.join(RAIZ, f"{nombre}.py")
     spec = importlib.util.spec_from_file_location(f"{nombre}_under_test", path)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)

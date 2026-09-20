@@ -366,7 +366,8 @@ TEXTOS = {
         "en": "[tidal] index built: {isrc} ISRCs across {releases} releases",
     },
     "aud.match": {
-        "es": "[tidal] match por ISRC: {hit} encontrados, {miss} sin match, {sin_isrc} sin ISRC en el relevamiento",
+        "es": "[tidal] match por ISRC: {hit} encontrados, {miss} sin match, "
+              "{sin_isrc} sin ISRC en el relevamiento",
         "en": "[tidal] ISRC match: {hit} found, {miss} unmatched, {sin_isrc} with no ISRC in the survey",
     },
     "aud.fallo_descarga": {

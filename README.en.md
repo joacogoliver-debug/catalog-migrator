@@ -248,7 +248,7 @@ pip install -r requirements-app.txt
 python app/launcher.py
 ```
 
-On Windows you can use `ABRIR_APP.bat`; on macOS/Linux, `./abrir_app.sh`. Both
+On Windows you can use `abrir_app.bat`; on macOS/Linux, `./abrir_app.sh`. Both
 install the dependencies the first time.
 
 The app opens in **its own window**, not in the browser: it uses `pywebview` over
@@ -333,7 +333,7 @@ No frameworks and no build step, so that packaging is copying files:
 ![The progress of a long job, with the current step written out](docs/capturas/16-progreso.png)
 
 - **Frontend**: vanilla JavaScript and CSS over the tokens in `app/web/tokens/`,
-  which follow [DESIGN.en.md](DESIGN.en.md). No CDN, not even for the typefaces:
+  which follow [DESIGN.en.md](docs/DESIGN.en.md). No CDN, not even for the typefaces:
   the three `.woff2` travel inside (56 KB in total), so the app looks the same
   with no internet.
 - **Long jobs** (surveying, packaging) run in threads with progress and
@@ -357,6 +357,8 @@ No frameworks and no build step, so that packaging is copying files:
 | `paquete.py` | Spreadsheets, ingestion sheet, reports and ZIP |
 | `audio.py` | Optional audio module |
 | `build/` | Packaging, installer, icon and screenshots |
+| `tests/` | The ten tests, no network and no keys |
+| `docs/` | The product and design decisions |
 
 ### On the local server's security
 
@@ -378,20 +380,33 @@ outside, which is consistent with an app that works with no internet.
 They run with no network, no keys and without the audio dependencies:
 
 ```bash
-python test_i18n.py                # both translation catalogs, complete and in agreement
-python test_parse_description.py   # parsing of YouTube descriptions
-python test_productos.py           # grouping into products + filters
-python test_validar.py             # validation of codes, artwork and duplicates
-python test_portadas.py            # real artwork resolution
-python test_paquete.py             # ZIP structure + quality labeling
-python test_app.py                 # backend: jobs, HTTP, token and Host
-python test_migrar_core.py         # orchestrator contract
-python test_errores_youtube.py     # translation of YouTube Data API errors
-python test_audio_tidal.py         # tiddl contract (skipped if it is absent)
+python tests/test_i18n.py                # both translation catalogs, complete and in agreement
+python tests/test_parse_description.py   # parsing of YouTube descriptions
+python tests/test_productos.py           # grouping into products + filters
+python tests/test_validar.py             # validation of codes, artwork and duplicates
+python tests/test_portadas.py            # real artwork resolution
+python tests/test_paquete.py             # ZIP structure + quality labeling
+python tests/test_app.py                 # backend: jobs, HTTP, token and Host
+python tests/test_migrar_core.py         # orchestrator contract
+python tests/test_errores_youtube.py     # translation of YouTube Data API errors
+python tests/test_audio_tidal.py         # tiddl contract (skipped if it is absent)
 ```
 
 CI runs them on every push, deliberately **without** installing
 `tiddl`/`yt-dlp`/`ffmpeg`, to verify that the core does not depend on them.
+
+The linter runs before the tests, with the same rules as on the author's
+machine:
+
+```bash
+pip install ruff
+ruff check .
+```
+
+The configuration is in [pyproject.toml](pyproject.toml). Four rule families
+(`E`, `F`, `W`, `B`) and no more: the opinion families find little and generate
+a lot of noise, and a linter that warns about things nobody is going to fix
+ends up ignored.
 
 ## Credits
 

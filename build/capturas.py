@@ -109,7 +109,9 @@ VISTAS = [
     # --- trabajo y resultado ---
     dict(nombre="progreso", readme=True, alto=1000, prep="""
         CAT(); S.paso = 4; S.ocupado = true;
-        S.job = {progreso: 0.65, mensaje: 'Portada 3 de 4, Sesiones del jacaranda: no esta en Apple Music', log: [
+        S.job = {progreso: 0.65,
+                 mensaje: 'Portada 3 de 4, Sesiones del jacaranda: no esta en Apple Music',
+                 log: [
           'Preparando',
           'Portada 1 de 4, Cartografia del ruido: 3000x3000',
           'Portada 2 de 4, Ducha fria: 1400x1400, el maximo que tiene Apple',
@@ -214,7 +216,8 @@ def resultado_demo():
             "resumen": {"errores": 2, "avisos": 4},
             "hallazgos": [
                 {"nivel": "error", "producto": "Sesiones del jacarandá", "track": "",
-                 "mensaje": "Sin UPC. La distribuidora va a asignar uno nuevo y se pierde la continuidad del release."},
+                 "mensaje": "Sin UPC. La distribuidora va a asignar uno nuevo y se "
+                            "pierde la continuidad del release."},
                 {"nivel": "error", "producto": "Ducha fría", "track": "Hormiga",
                  "mensaje": "El ISRC ARCB2240000 no tiene el formato de 12 caracteres (CC-XXX-YY-NNNNN)."},
                 {"nivel": "aviso", "producto": "Sesiones del jacarandá", "track": "",
@@ -224,7 +227,8 @@ def resultado_demo():
                 {"nivel": "aviso", "producto": "Ducha fría", "track": "",
                  "mensaje": "La portada es de 1400x1400. Entra, pero el recomendado es 3000x3000."},
                 {"nivel": "aviso", "producto": "Muéstrame la mini", "track": "",
-                 "mensaje": "El título arrastra texto de YouTube, como (Official Video). Conviene limpiarlo."},
+                 "mensaje": "El título arrastra texto de YouTube, como (Official Video). "
+                            "Conviene limpiarlo."},
             ],
         },
     }

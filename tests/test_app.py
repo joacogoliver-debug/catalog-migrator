@@ -30,9 +30,11 @@ import urllib.error
 import urllib.request
 import zipfile
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(HERE, "app"))
-sys.path.insert(0, HERE)
+# Los tests viven en tests/ y los modulos en la raiz: sin esto, correr
+# `python tests/test_x.py` no encuentra nada que importar.
+RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(RAIZ, "app"))
+sys.path.insert(0, RAIZ)
 
 import i18n                                                        # noqa: E402
 
@@ -174,7 +176,8 @@ def main():
 
         # 4) sin nada, manda el sistema operativo; lo unico exigible es que
         #    devuelva un idioma que la app tenga.
-        poner_config(None); poner_instalador(None)
+        poner_config(None)
+        poner_instalador(None)
         check("idioma.sin_nada", backend.idioma_guardado() in i18n.IDIOMAS)
 
         # 3) el instalador dejo su eleccion al lado del ejecutable.
@@ -208,7 +211,8 @@ def main():
               backend.idioma_del_instalador() == "en")
 
         # 2) lo que el usuario eligio en la app le gana al instalador.
-        poner_instalador("en"); poner_config("es")
+        poner_instalador("en")
+        poner_config("es")
         expect("idioma.config_gana", backend.idioma_guardado(), "es")
 
         # 1) la variable de entorno le gana a todo: es la que usan los tests y
@@ -218,7 +222,8 @@ def main():
         os.environ.pop("MIGRADOR_IDIOMA")
 
         # El endpoint valida y guarda; la basura no se guarda.
-        poner_config(None); poner_instalador(None)
+        poner_config(None)
+        poner_instalador(None)
         expect("idioma.api_cambia", backend.api_idioma({"idioma": "en"})["idioma"], "en")
         expect("idioma.api_persiste", backend.leer_config().get("idioma"), "en")
         try:

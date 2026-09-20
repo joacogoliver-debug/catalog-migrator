@@ -1,0 +1,32 @@
+# Configuración del proyecto y del linter.
+#
+# No declara un paquete instalable a propósito: esto es una app de escritorio
+# que se corre con `python app/launcher.py` y se distribuye como ejecutable, no
+# una librería que alguien vaya a instalar con pip. Las dependencias viven en
+# requirements-app.txt y requirements-audio.txt, que están comentados y son lo
+# que lee quien quiere entender qué necesita la app.
+#
+# Lo que sí define es el estilo, para que sea el mismo en la máquina de quien
+# escribe y en el CI, y para que no dependa de la versión de ruff que cada uno
+# tenga instalada.
+
+[tool.ruff]
+line-length = 110
+target-version = "py313"
+
+[tool.ruff.lint]
+# El núcleo: errores de sintaxis y estilo (E, W), lo que pyflakes encuentra de
+# verdad roto (F) y los errores comunes de bugbear (B). No se suman las familias
+# de opinión (estilo de comillas, orden de argumentos, reescrituras de sintaxis)
+# porque generan ruido sin encontrar defectos, y un linter que avisa de cosas
+# que nadie va a arreglar termina ignorado.
+select = ["E", "F", "W", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+# Los tests y el launcher arman sys.path antes de importar los módulos del
+# proyecto: el import no puede estar arriba de todo porque todavía no habría
+# nada que importar.
+"tests/*.py" = ["E402"]
+"app/launcher.py" = ["E402"]
+"app/server.py" = ["E402"]
+"relevar_core.py" = ["E402"]

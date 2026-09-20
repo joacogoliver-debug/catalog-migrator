@@ -25,37 +25,45 @@ jobs:
           # ellos, lo que además demuestra que la degradación es correcta.
           pip install openpyxl
 
+      - name: Estilo y errores comunes (ruff)
+        # La configuración está en pyproject.toml, así que el CI y la máquina de
+        # quien escribe miran exactamente las mismas reglas. La versión va
+        # clavada para que una release de ruff no rompa el build un martes.
+        run: |
+          pip install ruff==0.16.8
+          ruff check --output-format=github .
+
       - name: Los dos catálogos de traducción, completos y de acuerdo
-        run: python test_i18n.py
+        run: python tests/test_i18n.py
 
       - name: Parseo de descripciones de YouTube
-        run: python test_parse_description.py
+        run: python tests/test_parse_description.py
 
       - name: Agrupación en productos y filtros
-        run: python test_productos.py
+        run: python tests/test_productos.py
 
       - name: Validación pre-entrega
-        run: python test_validar.py
+        run: python tests/test_validar.py
 
       - name: Resolución real de las portadas
-        run: python test_portadas.py
+        run: python tests/test_portadas.py
 
       - name: Estructura del entregable
-        run: python test_paquete.py
+        run: python tests/test_paquete.py
 
       - name: Backend (trabajos, HTTP, token y Host)
-        run: python test_app.py
+        run: python tests/test_app.py
 
       - name: Contrato del orquestador
-        run: python test_migrar_core.py
+        run: python tests/test_migrar_core.py
 
       - name: Traducción de errores de la YouTube Data API
-        run: python test_errores_youtube.py
+        run: python tests/test_errores_youtube.py
 
       - name: Contrato con tiddl
         # Sin tiddl instalado el test se saltea solo: verifica el contrato con la
         # librería cuando está presente, y no obliga a instalarla en CI.
-        run: python test_audio_tidal.py
+        run: python tests/test_audio_tidal.py
 
       - name: Los módulos importan sin los extras de audio
         run: |
