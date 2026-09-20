@@ -55,7 +55,7 @@ def _strip_ruido(titulo):
         r"en vivo|live|explicit)\b[^\)\]]*[\)\]]",
         "", titulo or "", flags=re.I,
     )
-    return re.sub(r"\s+", " ", t).strip(" --,|")
+    return re.sub(r"\s+", " ", t).strip(" -,|")
 
 
 def _http_json(url, retries=3):

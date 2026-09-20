@@ -97,7 +97,7 @@ def main():
     expect("upc.con_letras", V.upc_valido("03600029145X")[0], False)
     expect("upc.vacio", V.upc_valido("")[0], False)
     # El motivo tiene que ser informativo, no genérico.
-    ok, motivo = V.upc_valido("036000291453")
+    _, motivo = V.upc_valido("036000291453")
     expect("upc.motivo_menciona_digito", "dígito verificador" in motivo, True)
 
     # --- Medición de imágenes -------------------------------------------

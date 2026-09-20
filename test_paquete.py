@@ -70,9 +70,8 @@ def _logs_son_cp1252(carpeta):
 
 
 def main():
-    _load("audio")                      # paquete.py importa de audio
+    au = _load("audio")                 # paquete.py importa de audio
     pq = _load("paquete")
-    pr = _load("productos")
     fails = []
 
     def expect(name, got, want):
@@ -105,7 +104,7 @@ def main():
                     "track": "Tema Lossless", "track_number": 1, "isrc": "ARABC2000001",
                     "duration_s": 200, "views": 10, "url": "https://youtu.be/x",
                     "video_id": "x", "audio_path": flac, "audio_format": ".flac",
-                    "audio_label": pq.ETIQUETA_LOSSLESS,
+                    "audio_label": au.ETIQUETA_LOSSLESS,
                 }],
             },
             {
