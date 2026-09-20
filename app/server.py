@@ -538,7 +538,7 @@ def api_guardar_clave(body):
     try:
         R.api_get("channels", {"part": "id", "id": "UC_x5XG1OV2P6uZZ5FSM9Ttw"}, clave)
     except Exception as e:                       # noqa: BLE001
-        raise ValueError(T("srv.clave_no_funciono", error=e))
+        raise ValueError(T("srv.clave_no_funciono", error=e)) from e
     guardar_clave(clave)
     return {"ok": True}
 
@@ -799,7 +799,7 @@ class Handler(BaseHTTPRequestHandler):
         try:
             largo = int(self.headers.get("Content-Length") or 0)
         except ValueError:
-            raise ValueError(T("srv.content_length"))
+            raise ValueError(T("srv.content_length")) from None
         if largo <= 0:
             return {}
         if largo > MAX_BODY:
@@ -810,7 +810,7 @@ class Handler(BaseHTTPRequestHandler):
         try:
             datos = json.loads(crudo.decode("utf-8"))
         except (ValueError, UnicodeDecodeError):
-            raise ValueError(T("srv.json_invalido"))
+            raise ValueError(T("srv.json_invalido")) from None
         if not isinstance(datos, dict):
             raise ValueError(T("srv.json_no_objeto"))
         return datos

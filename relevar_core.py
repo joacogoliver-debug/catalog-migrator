@@ -78,7 +78,7 @@ def api_get(endpoint, params, key, intentos=3):
             if e.code in _HTTP_REINTENTABLE and intento < intentos - 1:
                 time.sleep(1.5 * (intento + 1))
                 continue
-            raise _error_de_youtube(e.code, body)
+            raise _error_de_youtube(e.code, body) from e
         except (urllib.error.URLError, TimeoutError, ValueError) as e:
             # URLError cubre DNS y conexion; ValueError, una respuesta que no es
             # JSON (un portal cautivo devolviendo HTML, por ejemplo).
@@ -86,7 +86,8 @@ def api_get(endpoint, params, key, intentos=3):
             if intento < intentos - 1:
                 time.sleep(1.5 * (intento + 1))
                 continue
-            raise RelevarError(T("yt.sin_conexion", detalle=f"{type(e).__name__}: {e}"))
+            raise RelevarError(
+                T("yt.sin_conexion", detalle=f"{type(e).__name__}: {e}")) from e
     raise RelevarError(T("yt.sin_respuesta", detalle=ultimo))
 
 

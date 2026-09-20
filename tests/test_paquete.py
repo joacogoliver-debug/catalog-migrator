@@ -25,8 +25,10 @@ import importlib.util
 # tenga la máquina que corre el test y las comparaciones dependen del locale.
 os.environ["MIGRADOR_IDIOMA"] = "es"
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, HERE)
+# Los tests viven en tests/ y los modulos en la raiz: sin esto, correr
+# `python tests/test_x.py` no encuentra nada que importar.
+RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, RAIZ)
 
 # i18n va con un import normal y NO con _load: _load registra un módulo nuevo en
 # sys.modules, y entonces el `from i18n import T` de paquete quedaba atado a otra
@@ -35,7 +37,7 @@ import i18n                                                        # noqa: E402
 
 
 def _load(nombre):
-    path = os.path.join(HERE, f"{nombre}.py")
+    path = os.path.join(RAIZ, f"{nombre}.py")
     spec = importlib.util.spec_from_file_location(nombre, path)
     mod = importlib.util.module_from_spec(spec)
     sys.modules[nombre] = mod          # para que `from audio import ...` resuelva
@@ -174,8 +176,8 @@ def main():
         # cambia con el idioma. Fijar la separación exacta hacía que el test
         # dependiera de una decisión de maquetado.
         def linea(rotulo, valor, texto=reporte):
-            return any(l.strip().startswith(rotulo) and l.rstrip().endswith(f": {valor}")
-                       for l in texto.splitlines())
+            return any(x.strip().startswith(rotulo) and x.rstrip().endswith(f": {valor}")
+                       for x in texto.splitlines())
 
         check("reporte.aptos", linea("Aptos para entrega (FLAC lossless)", 1), reporte[:400])
         check("reporte.referencia", linea("Sólo referencia (lossy)", 1))
@@ -270,7 +272,7 @@ def main():
         # Los mensajes de log van a stdout, y la consola de Windows usa cp1252:
         # un caracter fuera de ese set (p. ej. una flecha ->) tira
         # UnicodeEncodeError y corta la migración a mitad de camino.
-        check("logs.cp1252", _logs_son_cp1252(HERE), "hay f-strings de log con caracteres no-cp1252")
+        check("logs.cp1252", _logs_son_cp1252(RAIZ), "hay f-strings de log con caracteres no-cp1252")
 
     finally:
         shutil.rmtree(tmp, ignore_errors=True)

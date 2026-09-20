@@ -29,8 +29,8 @@ SPEC = os.path.join(RAIZ, "build", "migrador.spec")
 ISS = os.path.join(RAIZ, "build", "instalador.iss")
 DIST = os.path.join(RAIZ, "dist")
 
-TESTS = ["test_parse_description.py", "test_productos.py", "test_validar.py",
-         "test_portadas.py", "test_paquete.py", "test_app.py",
+TESTS = ["test_i18n.py", "test_parse_description.py", "test_productos.py",
+         "test_validar.py", "test_portadas.py", "test_paquete.py", "test_app.py",
          "test_migrar_core.py", "test_audio_tidal.py", "test_errores_youtube.py"]
 
 
@@ -94,7 +94,7 @@ def probar_tests():
     paso("Corriendo los tests")
     env = dict(os.environ, PYTHONIOENCODING="utf-8")
     for t in TESTS:
-        r = subprocess.run([sys.executable, t], cwd=RAIZ, env=env,
+        r = subprocess.run([sys.executable, os.path.join("tests", t)], cwd=RAIZ, env=env,
                            capture_output=True, text=True)
         estado = "ok" if r.returncode == 0 else "FALLÓ"
         print(f"    {t:28} {estado}")

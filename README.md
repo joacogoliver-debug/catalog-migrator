@@ -248,7 +248,7 @@ pip install -r requirements-app.txt
 python app/launcher.py
 ```
 
-En Windows podés usar `ABRIR_APP.bat`; en macOS/Linux, `./abrir_app.sh`. Los dos
+En Windows podés usar `abrir_app.bat`; en macOS/Linux, `./abrir_app.sh`. Los dos
 instalan las dependencias la primera vez.
 
 La app abre en **su propia ventana**, no en el navegador: usa `pywebview` sobre
@@ -330,7 +330,7 @@ Sin frameworks ni build step, para que empaquetar sea copiar archivos:
 ![El avance de un trabajo largo, con el paso actual escrito](docs/capturas/16-progreso.png)
 
 - **Frontend**: JavaScript vanilla y CSS sobre los tokens de `app/web/tokens/`,
-  que siguen a [DESIGN.md](DESIGN.md). Nada de CDN, ni siquiera para las
+  que siguen a [DESIGN.md](docs/DESIGN.md). Nada de CDN, ni siquiera para las
   tipografías: los tres `.woff2` viajan adentro (56 KB en total), así la app se
   ve igual sin internet.
 - **Trabajos largos** (relevar, empaquetar) corren en hilos con progreso y
@@ -344,6 +344,7 @@ Sin frameworks ni build step, para que empaquetar sea copiar archivos:
 | `app/web/` | La interfaz (html, css, js) |
 | `app/web/tokens/` | Paleta, tipografía, espaciado y forma |
 | `app/web/fonts/` | Public Sans y DM Mono, hospedadas localmente |
+| `i18n.py`, `app/web/i18n.js` | Los dos catálogos de traducción, uno por proceso |
 | `docs/marca/` | El logotipo y sus reglas de uso |
 | `migrar_core.py` | Orquesta los 4 pasos |
 | `relevar_core.py` | Relevamiento de YouTube + ISRC/UPC por Deezer |
@@ -353,6 +354,8 @@ Sin frameworks ni build step, para que empaquetar sea copiar archivos:
 | `paquete.py` | Planillas, hoja de ingesta, reportes y ZIP |
 | `audio.py` | Módulo de audio opcional |
 | `build/` | Empaquetado, instalador, icono y capturas |
+| `tests/` | Los diez tests, sin red y sin claves |
+| `docs/` | Las decisiones de producto y de diseño |
 
 ### Sobre la seguridad del servidor local
 
@@ -374,20 +377,32 @@ consistente con una app que funciona sin internet.
 Corren sin red, sin claves y sin las dependencias de audio:
 
 ```bash
-python test_i18n.py                # los dos catálogos de traducción, completos y de acuerdo
-python test_parse_description.py   # parseo de descripciones de YouTube
-python test_productos.py           # agrupación en productos + filtros
-python test_validar.py             # validación de códigos, portadas y duplicados
-python test_portadas.py            # resolución real de las portadas
-python test_paquete.py             # estructura del ZIP + etiquetado de calidad
-python test_app.py                 # backend: trabajos, HTTP, token y Host
-python test_migrar_core.py         # contrato del orquestador
-python test_errores_youtube.py     # traducción de los errores de la YouTube Data API
-python test_audio_tidal.py         # contrato con tiddl (se saltea si no está)
+python tests/test_i18n.py                # los dos catálogos de traducción, completos y de acuerdo
+python tests/test_parse_description.py   # parseo de descripciones de YouTube
+python tests/test_productos.py           # agrupación en productos + filtros
+python tests/test_validar.py             # validación de códigos, portadas y duplicados
+python tests/test_portadas.py            # resolución real de las portadas
+python tests/test_paquete.py             # estructura del ZIP + etiquetado de calidad
+python tests/test_app.py                 # backend: trabajos, HTTP, token y Host
+python tests/test_migrar_core.py         # contrato del orquestador
+python tests/test_errores_youtube.py     # traducción de los errores de la YouTube Data API
+python tests/test_audio_tidal.py         # contrato con tiddl (se saltea si no está)
 ```
 
 CI los corre en cada push, a propósito **sin** instalar `tiddl`/`yt-dlp`/`ffmpeg`,
 para verificar que el núcleo no dependa de ellos.
+
+Antes de los tests corre el linter, con las mismas reglas que quien escribe:
+
+```bash
+pip install ruff
+ruff check .
+```
+
+La configuración está en [pyproject.toml](pyproject.toml). Son cuatro familias
+de reglas (`E`, `F`, `W`, `B`) y no más: las familias de opinión encuentran
+poco y generan mucho ruido, y un linter que avisa de cosas que nadie va a
+arreglar termina ignorado.
 
 ## Créditos
 

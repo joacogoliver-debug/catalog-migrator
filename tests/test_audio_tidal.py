@@ -19,8 +19,10 @@ import inspect
 import os
 import sys
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, HERE)
+# Los tests viven en tests/ y los modulos en la raiz: sin esto, correr
+# `python tests/test_x.py` no encuentra nada que importar.
+RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, RAIZ)
 
 
 def main():
@@ -44,13 +46,17 @@ def main():
         check("api.TidalAPI", True)
     except ImportError as e:
         fails.append(f"  [api.import] no pude importar TidalAPI/TidalClient: {e}")
-        print("FALLARON:"); print("\n".join(fails)); return 1
+        print("FALLARON:")
+        print("\n".join(fails))
+        return 1
 
     try:
         from tiddl.core.auth import AuthAPI, AuthClientError
     except ImportError as e:
         fails.append(f"  [auth.import] no pude importar AuthAPI/AuthClientError: {e}")
-        print("FALLARON:"); print("\n".join(fails)); return 1
+        print("FALLARON:")
+        print("\n".join(fails))
+        return 1
 
     # ---- constructores ----
     p_api = list(inspect.signature(TidalAPI.__init__).parameters)

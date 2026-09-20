@@ -19,7 +19,12 @@ import os
 os.environ["MIGRADOR_IDIOMA"] = "es"
 import sys
 
-import relevar_core as R
+# Los tests viven en tests/ y los modulos en la raiz: sin esto, correr
+# `python tests/test_x.py` no encuentra nada que importar.
+RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, RAIZ)
+
+import relevar_core as R  # noqa: E402
 
 
 def cuerpo(reason, message, code=403):
