@@ -107,15 +107,10 @@ VISTAS = [
         S.config.tidal_conectada = true;"""),
 
     # --- trabajo y resultado ---
+    # Las lineas del log salen de LOG_PORTADAS, que esta en los dos idiomas.
     dict(nombre="progreso", readme=True, alto=1000, prep="""
         CAT(); S.paso = 4; S.ocupado = true;
-        S.job = {progreso: 0.65,
-                 mensaje: 'Portada 3 de 4, Sesiones del jacaranda: no esta en Apple Music',
-                 log: [
-          'Preparando',
-          'Portada 1 de 4, Cartografia del ruido: 3000x3000',
-          'Portada 2 de 4, Ducha fria: 1400x1400, el maximo que tiene Apple',
-          'Portada 3 de 4, Sesiones del jacaranda: no esta en Apple Music']};"""),
+        S.job = {progreso: 0.65, mensaje: LOG[LOG.length - 1], log: LOG.slice()};"""),
     dict(nombre="listo", readme=True, alto=1300, cortes=[0, 400],
          prep="CAT(); S.paso=4; S.resultado = RES;"),
     dict(nombre="listo-avisos", alto=1500, cortes=[420], prep="""
@@ -204,9 +199,56 @@ def catalogo_demo():
     }
 
 
+# Los hallazgos de validación y las líneas del log son texto que la app arma en
+# el momento, así que en las capturas van escritos a mano. Van en los dos
+# idiomas porque el README en inglés muestra estas mismas capturas, y una
+# interfaz en inglés con los mensajes en castellano es peor que no traducir.
+#
+# Los títulos de los discos NO se traducen, y está bien: son los de un artista
+# inventado que canta en castellano, y eso es exactamente lo que ve quien migra
+# un catálogo latino desde una distribuidora que le habla en inglés.
+HALLAZGOS = {
+    "es": [
+        "Sin UPC. La distribuidora va a asignar uno nuevo y se pierde la continuidad del release.",
+        "El ISRC ARCB2240000 no tiene el formato de 12 caracteres (CC-XXX-YY-NNNNN).",
+        "El orden de los tracks es estimado por fecha de subida y no está confirmado.",
+        "Sin sello (℗). Varias distribuidoras lo piden.",
+        "La portada es de 1400x1400. Entra, pero el recomendado es 3000x3000.",
+        "El título arrastra texto de YouTube, como (Official Video). Conviene limpiarlo.",
+    ],
+    "en": [
+        "No UPC. The distributor will assign a new one and the release loses its continuity.",
+        "ISRC ARCB2240000 does not follow the 12-character format (CC-XXX-YY-NNNNN).",
+        "Track order is estimated from the upload date and is not confirmed.",
+        "No label (℗). Several distributors ask for it.",
+        "The cover is 1400x1400. It passes, but the recommended size is 3000x3000.",
+        "The title carries YouTube text, such as (Official Video). Worth cleaning up.",
+    ],
+}
+
+LOG_PORTADAS = {
+    "es": ["Preparando",
+           "Portada 1 de 4, Cartografia del ruido: 3000x3000",
+           "Portada 2 de 4, Ducha fria: 1400x1400, el maximo que tiene Apple",
+           "Portada 3 de 4, Sesiones del jacaranda: no esta en Apple Music"],
+    "en": ["Getting ready",
+           "Cover 1 of 4, Cartografia del ruido: 3000x3000",
+           "Cover 2 of 4, Ducha fria: 1400x1400, the largest Apple has",
+           "Cover 3 of 4, Sesiones del jacaranda: not on Apple Music"],
+}
+
+
+def idioma():
+    """El idioma de las capturas, el mismo que va a usar la app."""
+    import i18n
+    return i18n.idioma()
+
+
 def resultado_demo():
+    msg = HALLAZGOS[idioma()]
+    sufijo = "migracion" if idioma() == "es" else "migration"
     return {
-        "archivo": "delta-serrano-migracion.zip",
+        "archivo": f"delta-serrano-{sufijo}.zip",
         "bytes": 1_284_003_112,
         "descarga": "#",
         "productos": 4,
@@ -215,20 +257,22 @@ def resultado_demo():
             "apto": False,
             "resumen": {"errores": 2, "avisos": 4},
             "hallazgos": [
-                {"nivel": "error", "producto": "Sesiones del jacarandá", "track": "",
-                 "mensaje": "Sin UPC. La distribuidora va a asignar uno nuevo y se "
-                            "pierde la continuidad del release."},
-                {"nivel": "error", "producto": "Ducha fría", "track": "Hormiga",
-                 "mensaje": "El ISRC ARCB2240000 no tiene el formato de 12 caracteres (CC-XXX-YY-NNNNN)."},
-                {"nivel": "aviso", "producto": "Sesiones del jacarandá", "track": "",
-                 "mensaje": "El orden de los tracks es estimado por fecha de subida y no está confirmado."},
-                {"nivel": "aviso", "producto": "Sesiones del jacarandá", "track": "",
-                 "mensaje": "Sin sello (℗). Varias distribuidoras lo piden."},
-                {"nivel": "aviso", "producto": "Ducha fría", "track": "",
-                 "mensaje": "La portada es de 1400x1400. Entra, pero el recomendado es 3000x3000."},
-                {"nivel": "aviso", "producto": "Muéstrame la mini", "track": "",
-                 "mensaje": "El título arrastra texto de YouTube, como (Official Video). "
-                            "Conviene limpiarlo."},
+                # El `codigo` es lo que agrupa los hallazgos y lo que les pone
+                # titulo. Sin el, la app los mete a todos en la misma bolsa y la
+                # captura muestra la validacion agrupando mal: son los mismos
+                # codigos que emite validar.py.
+                {"nivel": "error", "codigo": "upc_falta",
+                 "producto": "Sesiones del jacarandá", "track": "", "mensaje": msg[0]},
+                {"nivel": "error", "codigo": "isrc_invalido",
+                 "producto": "Ducha fría", "track": "Hormiga", "mensaje": msg[1]},
+                {"nivel": "aviso", "codigo": "orden_sin_confirmar",
+                 "producto": "Sesiones del jacarandá", "track": "", "mensaje": msg[2]},
+                {"nivel": "aviso", "codigo": "sello_falta",
+                 "producto": "Sesiones del jacarandá", "track": "", "mensaje": msg[3]},
+                {"nivel": "aviso", "codigo": "portada_bajo_recomendado",
+                 "producto": "Ducha fría", "track": "", "mensaje": msg[4]},
+                {"nivel": "aviso", "codigo": "titulo_con_ruido",
+                 "producto": "Muéstrame la mini", "track": "", "mensaje": msg[5]},
             ],
         },
     }
@@ -237,7 +281,12 @@ def resultado_demo():
 CONFIG = {
     # La version sale de `app/server.py`, que es la fuente: escrita a mano acá
     # se queda vieja y las capturas terminan mostrando una version que no existe.
-    "version": None, "terminos_aceptados": True, "terminos_version": "1.0",
+    "version": None,
+    # Sin esto la pagina cae a `navigator.language`, y las capturas salian en el
+    # idioma del Chrome que las saca y no en el que se pidio: el juego en
+    # castellano tenia la interfaz en ingles.
+    "idioma": None, "idiomas": ["es", "en"],
+    "terminos_aceptados": True, "terminos_version": "1.0",
     "tiene_clave": True, "clave_incluida": True, "audio_habilitado": True,
     "entorno": {"ffmpeg": True, "ffmpeg_incluido": True, "ffprobe": True,
                 "js_runtime": True, "tiddl": True, "yt_dlp": True,
@@ -303,6 +352,7 @@ def escribir_pagina():
   const PREPS = %(preps)s;
   const CATALOGO = %(catalogo)s;
   const RES = %(resultado)s;
+  const LOG = %(log)s;
   /* Atajo para las vistas que arrancan con el catálogo ya relevado. */
   const CAT = () => adoptarCatalogo(JSON.parse(JSON.stringify(CATALOGO)));
   let DESPUES = null;
@@ -340,7 +390,8 @@ def escribir_pagina():
 """ % {"config": json.dumps(CONFIG, ensure_ascii=False),
        "catalogo": json.dumps(catalogo_demo(), ensure_ascii=False),
        "resultado": json.dumps(resultado_demo(), ensure_ascii=False),
-       "preps": json.dumps(preps, ensure_ascii=False)}
+       "preps": json.dumps(preps, ensure_ascii=False),
+       "log": json.dumps(LOG_PORTADAS[idioma()], ensure_ascii=False)}
 
     html = html.replace('<script src="app.js"></script>', stub)
     with open(PAGINA, "w", encoding="utf-8") as f:
@@ -437,6 +488,7 @@ def main():
 
     import server as backend
     CONFIG["version"] = backend.VERSION
+    CONFIG["idioma"] = idioma()
 
     escribir_pagina()
     chrome = navegador()
