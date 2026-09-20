@@ -13,12 +13,13 @@ Open source and free of charge.
 
 ![tests](https://github.com/joacogoliver-debug/catalog-migrator/actions/workflows/tests.yml/badge.svg)
 
-![The surveyed catalog, with the products missing something already flagged](docs/capturas/05-catalogo-1.png)
+![The surveyed catalog, with the products missing something already flagged](docs/capturas/en/05-catalogo-1.png)
 
 <sub>The screenshots use a sample catalog. The artist, the titles and the codes
 are made up, so as not to publish anyone's catalog. They are generated with
 `python build/capturas.py` against the real app while it runs, so they cannot go
-stale without it showing.</sub>
+stale without it showing. This English set comes from the same command with
+`MIGRADOR_IDIOMA=en` and `--salida docs/capturas/en`.</sub>
 
 ---
 
@@ -127,19 +128,19 @@ MIGRADOR_IDIOMA=en python app/launcher.py
 
 **1. You paste the link** of the artist's channel, Topic or `@handle`.
 
-![The entry screen](docs/capturas/01-entrada.png)
+![The entry screen](docs/capturas/en/01-entrada.png)
 
 **2. You choose what to migrate.** The catalog shows up grouped into products
 (album / EP / single). You can tick them one by one, filter by year range or by
 distributor, or search by title, ISRC or UPC. Each product can be expanded to see
 its tracks.
 
-![The catalog table, with what each product is missing](docs/capturas/05-catalogo-2.png)
+![The catalog table, with what each product is missing](docs/capturas/en/05-catalogo-2.png)
 
 **3. You choose what to download**: spreadsheet and validation, artwork, and
 audio if you enabled that module.
 
-![The three things you can download](docs/capturas/12-descargar.png)
+![The three things you can download](docs/capturas/en/12-descargar.png)
 
 **4. You download a ZIP** organized with one folder per product.
 
@@ -155,7 +156,7 @@ Artist - Migration 2026-09-14/
     └── data.xlsx
 ```
 
-![The finished package, with the pre-delivery validation grouped by kind of problem](docs/capturas/17-listo.png)
+![The finished package, with the pre-delivery validation grouped by kind of problem](docs/capturas/en/17-listo-1.png)
 
 One folder per product, because in a migration each release is delivered as a
 unit: one UPC, one cover, its data. That way each folder is already good to
@@ -330,7 +331,7 @@ No frameworks and no build step, so that packaging is copying files:
   executable does not depend on uvicorn's dynamic imports, which are the usual
   reason a binary works in development and fails once packaged.
 
-![The progress of a long job, with the current step written out](docs/capturas/16-progreso.png)
+![The progress of a long job, with the current step written out](docs/capturas/en/16-progreso.png)
 
 - **Frontend**: vanilla JavaScript and CSS over the tokens in `app/web/tokens/`,
   which follow [DESIGN.en.md](docs/DESIGN.en.md). No CDN, not even for the typefaces:

@@ -18,7 +18,8 @@ Código abierto y sin costo.
 <sub>Las capturas usan un catálogo de ejemplo. El artista, los títulos y los
 códigos son inventados, para no publicar el catálogo de nadie. Se generan con
 `python build/capturas.py` sobre la app real corriendo, así que no pueden quedar
-desactualizadas sin que se note.</sub>
+desactualizadas sin que se note. Las de la versión en inglés salen del mismo
+comando con `MIGRADOR_IDIOMA=en` y `--salida docs/capturas/en`.</sub>
 
 ---
 
@@ -145,7 +146,7 @@ activaste ese módulo.
 
 **4. Descargás un ZIP** organizado con una carpeta por producto.
 
-![El paquete listo, con la validación previa agrupada por tipo de problema](docs/capturas/17-listo.png)
+![El paquete listo, con la validación previa agrupada por tipo de problema](docs/capturas/17-listo-1.png)
 
 ```
 Artista - Migracion 2026-09-14/
