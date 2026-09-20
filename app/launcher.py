@@ -120,26 +120,28 @@ def _diagnostico(url):
     usuario no ve ningún mensaje. Con `--diagnostico` queda un archivo que se
     puede mandar para saber qué falta.
     """
+    import datetime
     import platform
+    ahora = datetime.datetime.now().isoformat(timespec="seconds")
     lineas = [
-        f"{titulo()}  v{backend.VERSION}",
-        f"fecha: {__import__('datetime').datetime.now().isoformat(timespec='seconds')}",
-        f"python: {sys.version.split()[0]}   plataforma: {platform.platform()}",
-        f"empaquetado: {bool(getattr(sys, 'frozen', False))}",
-        f"url local: {url}",
-        f"clave de YouTube configurada: {bool(backend.leer_clave())}",
-        f"modulo de audio: {backend.AUDIO_HABILITADO}",
+        f"{titulo()} v{backend.VERSION}",
+        f"{T('diag.fecha')}: {ahora}",
+        f"python: {sys.version.split()[0]}   {T('diag.plataforma')}: {platform.platform()}",
+        f"{T('diag.empaquetado')}: {bool(getattr(sys, 'frozen', False))}",
+        f"{T('diag.url')}: {url}",
+        f"{T('diag.clave')}: {bool(backend.leer_clave())}",
+        f"{T('diag.audio')}: {backend.AUDIO_HABILITADO}",
         "",
-        "entorno de audio:",
+        T("diag.entorno"),
     ]
     import audio as audio_mod
     for k, v in audio_mod.verificar_entorno().items():
         lineas.append(f"  {k}: {v}")
 
-    lineas += ["", "ventana:"]
+    lineas += ["", T("diag.ventana")]
     try:
         import webview
-        lineas.append("  pywebview importa: si")
+        lineas.append(T("diag.pywebview_ok"))
         # Y ahora lo que de verdad importa: intentar abrirla. Que el import ande
         # no significa que el backend pueda crear una ventana, y ese es
         # exactamente el caso que no se ve de ninguna otra forma en un binario
@@ -159,25 +161,26 @@ def _diagnostico(url):
 
         try:
             _th.Thread(target=_cerrar, daemon=True).start()
-            webview.create_window("Prueba de ventana", html="<p>prueba</p>",
+            webview.create_window(T("diag.titulo_prueba"), html="<p>ok</p>",
                                   width=420, height=240)
             webview.start()
-            lineas.append(f"  abrir una ventana de prueba: {'si' if estado['abrio'] else 'no abrio'}")
+            resultado = T("diag.abrio_si") if estado["abrio"] else T("diag.abrio_no")
+            lineas.append(T("diag.prueba_ventana", resultado=resultado))
             if estado["error"]:
-                lineas.append(f"  detalle: {estado['error']}")
+                lineas.append(T("diag.detalle", detalle=estado["error"]))
         except Exception as e:
             import traceback
-            lineas.append(f"  abrir una ventana de prueba: FALLO ({type(e).__name__}: {e})")
+            lineas.append(T("diag.prueba_fallo", tipo=type(e).__name__, error=e))
             for _l in traceback.format_exc().splitlines():
                 lineas.append("    " + _l)
     except Exception as e:
-        lineas.append(f"  pywebview importa: no ({e})")
+        lineas.append(T("diag.pywebview_no", error=e))
 
     ruta = os.path.join(backend.dir_datos(), "diagnostico.txt")
     with open(ruta, "w", encoding="utf-8-sig") as f:
         f.write("\n".join(lineas) + "\n")
     print("\n".join(lineas))
-    print(f"\nGuardado en: {ruta}")
+    print("\n" + T("diag.guardado", ruta=ruta))
     return ruta
 
 
@@ -214,20 +217,24 @@ def main(argv=None):
     hilo = threading.Thread(target=srv.serve_forever, name="http", daemon=True)
     hilo.start()
 
-    print(f"{titulo()}  v{backend.VERSION}")
-    print(T("lau.escuchando", url=url))
-    if not backend.leer_clave():
-        print(T("lau.primera_vez"))
-
+    # El diagnóstico trae su propio encabezado con el nombre y la versión, así
+    # que acá no se repite: era lo único que imprimía el título dos veces.
+    # El servidor sí se levanta igual, porque el reporte prueba contra él que la
+    # ventana nativa pueda abrirse.
     if args.diagnostico:
         _diagnostico(url)
         srv.shutdown()
         srv.server_close()
         return 0
 
+    print(f"{titulo()} v{backend.VERSION}")
+    print(T("lau.escuchando", url=url))
+    if not backend.leer_clave():
+        print(T("lau.primera_vez"))
+
     try:
         if args.no_abrir:
-            print("Ctrl+C para cerrar.")
+            print(T("lau.ctrl_c"))
             hilo.join()
         elif args.navegador:
             import webbrowser
@@ -249,7 +256,7 @@ def main(argv=None):
             print(T("lau.en_navegador"))
             hilo.join()
     except KeyboardInterrupt:
-        print("\nCerrando…")
+        print("\n" + T("lau.cerrando"))
     finally:
         backend.ESTADO.limpiar()
         srv.shutdown()
