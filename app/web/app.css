@@ -315,6 +315,10 @@ button.step.activo:hover .step-num { background: var(--acento-fuerte); border-co
 .lectura .n {
   font-family: var(--mono); font-variant-numeric: tabular-nums;
   color: var(--texto);
+  /* Las fracciones ("2 / 3") son un dato, no dos palabras: sin esto el renglón
+     se puede cortar entre el número y la barra y queda el resto colgando solo
+     en la línea siguiente. */
+  white-space: nowrap;
 }
 .lectura .n.negativo { color: var(--negativo); }
 .lectura .n.atencion { color: var(--atencion); }
