@@ -463,7 +463,6 @@ def main():
         # Dos relevamientos simultaneos gastan cuota de YouTube por duplicado y
         # escriben sobre el mismo catalogo en memoria: gana el que termine
         # ultimo. Se rechaza el segundo con un mensaje, en vez de dejarlo pasar.
-        import jobs as _J
         lento = backend.JOBS.lanzar("prueba", lambda job: _esperar(lambda: job.cancelado, 5, 0.05))
         try:
             cod, res = post("/api/relevar", {"url": "https://youtube.com/@x"})
@@ -499,7 +498,7 @@ def main():
             # 1) una ruta que NO usa el cuerpo, pero que lo recibe
             conn.request("POST", "/api/tidal/desconectar", body=cuerpo, headers=cabeceras)
             r1 = conn.getresponse()
-            leido1 = r1.read()
+            r1.read()
             expect("keepalive.primera", r1.status, 200)
 
             # 2) sobre la MISMA conexión, otra ruta
@@ -510,7 +509,7 @@ def main():
                          headers=cab({"Content-Type": "application/json",
                                       "Content-Length": str(len(cuerpo2))}))
             r2 = conn.getresponse()
-            leido2 = r2.read()
+            r2.read()
             # Lo que importa: NO 501. 400 es la respuesta correcta (sin selección).
             check("keepalive.segunda_no_501", r2.status != 501,
                   f"status={r2.status} razon={r2.reason!r}: el cuerpo anterior "

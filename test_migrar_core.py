@@ -16,7 +16,6 @@ relevar_core.relevar por un doble que devuelve exactamente la forma real
 """
 import os
 import sys
-import importlib.util
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)

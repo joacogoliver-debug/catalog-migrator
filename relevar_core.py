@@ -429,7 +429,7 @@ _RE_TITLE_NOISE = re.compile(
 
 def _clean_title(title):
     t = _RE_TITLE_NOISE.sub("", title or "")
-    return re.sub(r"\s+", " ", t).strip(" --·")
+    return re.sub(r"\s+", " ", t).strip(" -·")
 
 
 def _http_json(url, headers=None, retries=3):

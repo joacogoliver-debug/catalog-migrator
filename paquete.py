@@ -35,7 +35,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
-from audio import ETIQUETA_LOSSLESS, FORMATOS_LOSSLESS
+from audio import FORMATOS_LOSSLESS
 from i18n import T
 
 NAVY = "1F3864"

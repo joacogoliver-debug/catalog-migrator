@@ -433,10 +433,6 @@ TEXTOS = {
         "es": "No hay una conexión de Tidal en curso.",
         "en": "There is no Tidal connection in progress.",
     },
-    "srv.sin_seleccion": {
-        "es": "No hay productos seleccionados.",
-        "en": "No products are selected.",
-    },
     "srv.content_length": {
         "es": "El pedido trae un Content-Length inválido.",
         "en": "The request has an invalid Content-Length.",

@@ -120,6 +120,24 @@ def main():
               f"js={en_js!r} py={en_py!r}")
     i18n.poner_idioma("es")
 
+    # --- Ninguna clave definida dos veces -------------------------------
+    # Un diccionario de Python se come las claves repetidas sin decir nada: la
+    # ultima gana y la primera desaparece. Como las dos entradas suelen ser
+    # parecidas, el texto sigue saliendo en el idioma correcto y la unica senal
+    # es que cambio una palabra. Por eso se lee el archivo, no el diccionario ya
+    # construido: en el diccionario la duplicada ya no existe.
+    fuente = io.open(os.path.join(HERE, "i18n.py"), encoding="utf-8").read()
+    cuerpo = fuente[fuente.index("TEXTOS = {"):]
+    literales = re.findall(r'^    "([a-z0-9_.]+)":', cuerpo, re.M)
+    repetidas = sorted({k for k in literales if literales.count(k) > 1})
+    check("py.sin_claves_repetidas", not repetidas, f"definidas dos veces: {repetidas}")
+
+    fuente_js = io.open(os.path.join(HERE, "app", "web", "i18n.js"), encoding="utf-8").read()
+    cuerpo_js = fuente_js[fuente_js.index("const TEXTOS = {"):]
+    js_literales = re.findall(r"^  '([a-z0-9_.]+)':", cuerpo_js, re.M)
+    js_repetidas = sorted({k for k in js_literales if js_literales.count(k) > 1})
+    check("js.sin_claves_repetidas", not js_repetidas, f"definidas dos veces: {js_repetidas}")
+
     # --- El formato no se rompe al traducir -----------------------------
     # Una clave cuyo texto en inglés se olvida un {parametro} que el español sí
     # tiene deja un hueco en la frase, y al revés revienta el format().
