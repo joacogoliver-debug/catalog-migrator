@@ -48,9 +48,8 @@ Y ahora sí, para abrir la app:
 ./Migrador-de-Catalogos-macos-apple-silicon-completa
 ```
 
-La app se abre en su propia ventana; en algunas Mac, en tu navegador. Las dos
-cosas son normales y funcionan igual. **Dejá la Terminal abierta**: si la
-cerrás, se cierra la app.
+La app se abre **en su propia ventana**, como cualquier programa. **Dejá la
+Terminal abierta**: si la cerrás, se cierra la app.
 
 De acá en adelante, para volver a abrirla alcanza con las dos líneas del final
 (`cd ~/Downloads` y `./Migrador...`). Lo de `chmod` y `xattr` es una sola vez.
@@ -75,6 +74,10 @@ Terminal escribí `ls ~/Downloads/Migrador*` y fijate cómo se llama de verdad.
 
 **`Permission denied`**
 Te faltó la línea del `chmod +x`.
+
+**Se abrió en el navegador y no en una ventana propia**
+Funciona igual. Quiere decir que la Mac no pudo abrir la ventana nativa y la app
+cayó a su plan B, que es abrirla en el navegador.
 
 **No pasa nada, o querés saber qué encontró**
 Corré esto y mandale el resultado a Joaco:
