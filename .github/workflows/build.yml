@@ -30,7 +30,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
+        # macOS va dos veces a propósito. Un ejecutable de PyInstaller sirve
+        # para la arquitectura en la que se compiló y para ninguna otra: el que
+        # sale de un runner Apple Silicon NO abre en una Mac Intel, que falla
+        # con "bad CPU type in executable" sin decir por qué. Hasta acá se
+        # publicaba uno solo y se lo llamaba "macos".
+        os: [windows-latest, macos-latest, macos-15-intel, ubuntu-latest]
         # Dos variantes por plataforma:
         #   completa = módulo de audio, ffmpeg adentro y la clave de YouTube ya
         #              configurada. Se abre y funciona, sin instalar ni crear
@@ -42,7 +47,9 @@ jobs:
           - os: windows-latest
             nombre: windows
           - os: macos-latest
-            nombre: macos
+            nombre: macos-apple-silicon
+          - os: macos-15-intel
+            nombre: macos-intel
           - os: ubuntu-latest
             nombre: linux
 
@@ -121,6 +128,34 @@ jobs:
             mv "Migrador de Catalogos" "Migrador-de-Catalogos-${{ matrix.nombre }}-${{ matrix.variante }}"
           fi
           ls -la
+
+      - name: El ejecutable arranca y sirve la app
+        # Compilar no es arrancar. Un import que PyInstaller no ve se nota
+        # recién al abrirlo, y el binario se compila sin consola justamente
+        # para que ese fallo no se vea. Acá se levanta de verdad y se le pide
+        # la página: si no contesta, el build falla y no se publica.
+        #
+        # No se prueba la ventana nativa a propósito: el runner no tiene
+        # escritorio, y lo que importa es que el ejecutable llegue a servir.
+        shell: bash
+        run: |
+          cd dist
+          BIN=$(ls | grep '^Migrador-de-Catalogos-' | grep -v '\.sha256$' | grep -v instalador | head -1)
+          echo "probando: $BIN"
+          chmod +x "$BIN" || true
+          ./"$BIN" --puerto 8931 --no-abrir &
+          PID=$!
+          ok=0
+          for _ in $(seq 1 60); do
+            if curl -fsS -o /dev/null http://127.0.0.1:8931/; then ok=1; break; fi
+            sleep 1
+          done
+          kill $PID 2>/dev/null || true
+          if [ "$ok" != "1" ]; then
+            echo "::error::el ejecutable no llego a servir la app"
+            exit 1
+          fi
+          echo "arranca y sirve la app"
 
       - name: Publicar hash
         shell: bash
