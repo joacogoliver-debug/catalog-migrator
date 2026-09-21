@@ -35,33 +35,53 @@ and grab the file for your system.
 | `...-windows-completa-instalador.exe` | **The recommended one.** Double click, Next, and it lands in the Start menu with its uninstaller. It does not ask for administrator rights. |
 | `...-windows-completa.exe` | The same app as a single file, nothing installed. For a USB stick, or to try it out. |
 
-### macOS and Linux
+### macOS
 
-The experience here is worse than on Windows, and it is better said up front than
-discovered by you.
+There are **two files and they are not interchangeable**, because an executable
+serves the architecture it was compiled for and no other:
 
-What gets published is **a bare executable, not an `.app` or a `.deb`**. There is
-no installer, it does not show up in Launchpad, and double clicking it in Finder
-does not do what you expect: it opens a Terminal window. You run it like this,
-from the terminal, once per download:
+| If your Mac has | Download |
+|---|---|
+| An **Apple** chip (M1, M2, M3, M4…) | `...-macos-apple-silicon-completa` |
+| An **Intel** processor | `...-macos-intel-completa` |
+
+To find out which one you have:  menu → "About This Mac". If you download the
+wrong one, the Terminal answers `bad CPU type in executable`, which explains
+nothing.
+
+There is a [step-by-step macOS guide](docs/INSTALAR-MAC.en.md) written for
+someone who does not use the Terminal every day.
+
+What gets published is **a bare executable, not an `.app`**. There is no
+installer, it does not show up in Launchpad, and double clicking it in Finder
+does not do what you expect. You run it from the Terminal, once per download:
 
 ```bash
-chmod +x Migrador-de-Catalogos-macos-completa
-./Migrador-de-Catalogos-macos-completa
+cd ~/Downloads
+chmod +x Migrador-de-Catalogos-macos-apple-silicon-completa
+xattr -c Migrador-de-Catalogos-macos-apple-silicon-completa
+./Migrador-de-Catalogos-macos-apple-silicon-completa
 ```
 
-On **macOS** it is also unsigned and **not notarized**, so Gatekeeper will block
-it the first time. If right click → "Open" is not enough:
-
-```bash
-xattr -d com.apple.quarantine Migrador-de-Catalogos-macos-completa
-```
+The `xattr` line removes the quarantine flag macOS puts on everything downloaded
+from the internet. It is needed because the binary is **unsigned and not
+notarized**, and without it Gatekeeper blocks it. It uses `-c` rather than `-d
+com.apple.quarantine` on purpose: `-d` fails with `No such xattr` when the flag
+is not there, and that error worries people for no reason.
 
 Notarizing requires an Apple developer account, which costs money, and this tool
 is free. Packaging it as an `.app` is pending and does not depend on money.
 
-On **Linux**, the native window needs GTK and WebKit installed. If they are not
-there, the app opens in your default browser and works just the same.
+### Linux
+
+Also a bare executable, not a `.deb`. The native window needs GTK and WebKit
+installed; if they are not there, the app opens in your default browser and works
+just the same.
+
+```bash
+chmod +x Migrador-de-Catalogos-linux-completa
+./Migrador-de-Catalogos-linux-completa
+```
 
 If none of this appeals to you, on macOS and Linux it is easier to run it from
 source (see below): two commands and you skip all of the above.

@@ -86,9 +86,18 @@ def _navegador_app(url):
             os.path.join(local, "Google", "Chrome", "Application", "chrome.exe"),
         ]
     elif sys.platform == "darwin":
+        # ~/Applications además de /Applications: en Mac es igual de común
+        # instalar un navegador para el usuario y no para toda la máquina, y
+        # ahí no lo encontrábamos. Safari no entra en esta lista porque no
+        # tiene modo aplicación: con una Mac que sólo tenga Safari se cae al
+        # navegador normal, que es el último escalón y funciona igual.
+        casa = os.path.expanduser("~")
         candidatos = [
-            "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-            "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+            base + sufijo
+            for base in ("/Applications", os.path.join(casa, "Applications"))
+            for sufijo in ("/Google Chrome.app/Contents/MacOS/Google Chrome",
+                           "/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+                           "/Brave Browser.app/Contents/MacOS/Brave Browser")
         ]
     else:
         for n in ("google-chrome", "chromium", "chromium-browser", "microsoft-edge"):
