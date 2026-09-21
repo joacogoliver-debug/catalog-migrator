@@ -212,7 +212,14 @@ jobs:
             que hayas elegido.
 
             Si preferís no instalar nada, el portable es el `.exe` sin
-            `-instalador`. En macOS y Linux hay un único archivo, sin instalador.
+            `-instalador`. En Linux hay un único archivo, sin instalador.
+
+            **En macOS hay dos, y no son intercambiables**: uno para las Mac con
+            chip Apple (`-macos-apple-silicon-`) y otro para las Mac Intel
+            (`-macos-intel-`). Para saber cuál te toca:  → "Acerca de esta Mac".
+            Si bajás el que no es, la Terminal responde `bad CPU type in
+            executable`. Hay una guía paso a paso en
+            [docs/INSTALAR-MAC.md](https://github.com/${{ github.repository }}/blob/main/docs/INSTALAR-MAC.md).
 
             | Variante | Qué trae |
             |---|---|
@@ -269,8 +276,15 @@ jobs:
             downloads— stays in whichever one you pick.
 
             If you would rather not install anything, the portable one is the
-            `.exe` without `-instalador`. On macOS and Linux there is a single
-            file and no installer.
+            `.exe` without `-instalador`. On Linux there is a single file and
+            no installer.
+
+            **On macOS there are two, and they are not interchangeable**: one for
+            Macs with an Apple chip (`-macos-apple-silicon-`) and one for Intel
+            Macs (`-macos-intel-`). To find out which one you need:  → "About
+            This Mac". Downloading the wrong one gets you `bad CPU type in
+            executable`. There is a step-by-step guide in
+            [docs/INSTALAR-MAC.en.md](https://github.com/${{ github.repository }}/blob/main/docs/INSTALAR-MAC.en.md).
 
             | Variant | What it carries |
             |---|---|

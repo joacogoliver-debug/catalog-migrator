@@ -35,34 +35,53 @@ y bajá el archivo de tu sistema.
 | `...-windows-completa-instalador.exe` | **La recomendada.** Doble clic, Siguiente, y queda en el menú Inicio con su desinstalador. No pide permisos de administrador. |
 | `...-windows-completa.exe` | La misma app en un solo archivo, sin instalar nada. Para un pendrive o para probarla. |
 
-### macOS y Linux
+### macOS
 
-Acá la experiencia es peor que en Windows, y conviene decirlo antes de que lo
-descubras vos.
+Hay **dos archivos y no son intercambiables**, porque un ejecutable sirve para la
+arquitectura en la que se compiló y para ninguna otra:
 
-Lo que se publica es **un ejecutable suelto, no un `.app` ni un `.deb`**. No hay
-instalador, no aparece en el Launchpad y doble clic en el Finder no hace lo que
-esperás: abre una ventana de Terminal. Se corre así, desde la terminal, una vez
-por descarga:
+| Si tu Mac tiene | Bajá |
+|---|---|
+| Chip **Apple** (M1, M2, M3, M4…) | `...-macos-apple-silicon-completa` |
+| Procesador **Intel** | `...-macos-intel-completa` |
+
+Para saber cuál tenés: menú  → "Acerca de esta Mac". Si bajás el que no es, la
+Terminal responde `bad CPU type in executable`, que no explica nada.
+
+Hay una [guía paso a paso para macOS](docs/INSTALAR-MAC.md) pensada para alguien
+que no usa la Terminal todos los días.
+
+Lo que se publica es **un ejecutable suelto, no un `.app`**. No hay instalador,
+no aparece en el Launchpad y doble clic en el Finder no hace lo que esperás.
+Se corre desde la Terminal, una vez por descarga:
 
 ```bash
-chmod +x Migrador-de-Catalogos-macos-completa
-./Migrador-de-Catalogos-macos-completa
+cd ~/Downloads
+chmod +x Migrador-de-Catalogos-macos-apple-silicon-completa
+xattr -c Migrador-de-Catalogos-macos-apple-silicon-completa
+./Migrador-de-Catalogos-macos-apple-silicon-completa
 ```
 
-En **macOS** además está sin firmar y **sin notarizar**, así que Gatekeeper lo va
-a bloquear la primera vez. Si el clic derecho → "Abrir" no alcanza:
-
-```bash
-xattr -d com.apple.quarantine Migrador-de-Catalogos-macos-completa
-```
+La línea del `xattr` saca la marca de cuarentena que macOS le pone a todo lo que
+se baja de internet. Hace falta porque el binario está **sin firmar y sin
+notarizar**, y si no, Gatekeeper lo bloquea. Se usa `-c` y no `-d
+com.apple.quarantine` a propósito: `-d` falla con `No such xattr` cuando la marca
+no está, y ese error asusta sin motivo.
 
 Notarizar requiere la cuenta de desarrollador de Apple, que es paga, y esta
 herramienta es gratis. Empaquetarlo como `.app` sí está pendiente y no depende
 de plata.
 
-En **Linux**, la ventana nativa necesita GTK y WebKit instalados. Si no están, la
-app se abre en tu navegador por defecto y funciona igual.
+### Linux
+
+También es un ejecutable suelto, no un `.deb`. La ventana nativa necesita GTK y
+WebKit instalados; si no están, la app se abre en tu navegador por defecto y
+funciona igual.
+
+```bash
+chmod +x Migrador-de-Catalogos-linux-completa
+./Migrador-de-Catalogos-linux-completa
+```
 
 Si nada de esto te cierra, en macOS y Linux conviene correrla desde el código
 (ver más abajo): son dos comandos y te evitás todo lo anterior.
