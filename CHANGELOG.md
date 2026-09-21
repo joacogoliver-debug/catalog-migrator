@@ -6,7 +6,7 @@ Lo que cambió en cada versión publicada. Los números siguen
 [SemVer](https://semver.org/lang/es/), y las descargas están en
 [Releases](https://github.com/joacogoliver-debug/catalog-migrator/releases).
 
-## Sin publicar
+## [1.0.2] — 2026-09-21
 
 ### Agregado
 - **La app está en castellano y en inglés, entera**: la interfaz, el log del
@@ -18,8 +18,17 @@ Lo que cambió en cada versión publicada. Los números siguen
 - `SECURITY.md` con qué entra y qué no, y por dónde reportar en privado.
 - El linter (`ruff`) corre en el CI antes de los tests, con la configuración en
   `pyproject.toml`.
+- El CI **corre el ejecutable** que va a publicar, en las cuatro plataformas, y
+  falla el build si no llega a servir la app. Antes se publicaban binarios que
+  nadie había ejecutado.
 
 ### Corregido
+- **Faltaba el ejecutable para las Mac Intel.** Se compilaba uno solo, en un
+  runner Apple Silicon, y se lo publicaba llamándolo «macos»: en una Mac Intel
+  no arranca. Ahora se publican los dos, `macos-apple-silicon` y `macos-intel`,
+  y hay una [guía de instalación para macOS](docs/INSTALAR-MAC.md).
+- El navegador en modo aplicación no se buscaba en `~/Applications`, donde en
+  Mac es igual de común tenerlo instalado.
 - La barra de progreso de las portadas se congelaba en 5 % con la app en inglés:
   se deducía del texto del log con una expresión regular en castellano. Ahora el
   avance viaja por un callback y no se parsea nada.
@@ -70,5 +79,6 @@ Primera versión pública.
 - Ejecutables para Windows, macOS y Linux compilados en GitHub Actions, con
   SHA256 y atestación de procedencia.
 
+[1.0.2]: https://github.com/joacogoliver-debug/catalog-migrator/releases/tag/v1.0.2
 [1.0.1]: https://github.com/joacogoliver-debug/catalog-migrator/releases/tag/v1.0.1
 [1.0.0]: https://github.com/joacogoliver-debug/catalog-migrator/releases/tag/v1.0.0

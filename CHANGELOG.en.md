@@ -6,7 +6,7 @@ What changed in every published version. The numbers follow
 [SemVer](https://semver.org/), and the downloads are in
 [Releases](https://github.com/joacogoliver-debug/catalog-migrator/releases).
 
-## Unreleased
+## [1.0.2] — 2026-09-21
 
 ### Added
 - **The app is in Spanish and English, all of it**: the interface, the survey
@@ -18,8 +18,17 @@ What changed in every published version. The numbers follow
   privately.
 - The linter (`ruff`) runs in CI before the tests, configured in
   `pyproject.toml`.
+- CI **runs the executable** it is about to publish, on all four platforms, and
+  fails the build if it does not get to serve the app. Binaries used to be
+  published without anyone ever having run them.
 
 ### Fixed
+- **The executable for Intel Macs was missing.** Only one was compiled, on an
+  Apple Silicon runner, and it was published under the name "macos": on an Intel
+  Mac it does not start. Both are now published, `macos-apple-silicon` and
+  `macos-intel`, and there is a [macOS install guide](docs/INSTALAR-MAC.en.md).
+- The browser in app mode was not looked up in `~/Applications`, where on a Mac
+  it is just as common to have it installed.
 - The artwork progress bar froze at 5 % with the app in English: it was being
   inferred from the log text with a Spanish regular expression. Progress now
   travels through a callback and nothing is parsed.
@@ -69,5 +78,6 @@ First public version.
 - Executables for Windows, macOS and Linux compiled in GitHub Actions, with
   SHA256 and a build provenance attestation.
 
+[1.0.2]: https://github.com/joacogoliver-debug/catalog-migrator/releases/tag/v1.0.2
 [1.0.1]: https://github.com/joacogoliver-debug/catalog-migrator/releases/tag/v1.0.1
 [1.0.0]: https://github.com/joacogoliver-debug/catalog-migrator/releases/tag/v1.0.0

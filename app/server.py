@@ -70,7 +70,7 @@ import validar as V                           # noqa: E402
 from i18n import T                            # noqa: E402
 from jobs import Registry                     # noqa: E402
 
-VERSION = "1.0.1"
+VERSION = "1.0.2"
 # El nombre se pide a i18n en el momento de usarlo y no se guarda en una
 # constante: el idioma se elige en caliente.
 
