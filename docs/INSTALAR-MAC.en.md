@@ -48,8 +48,8 @@ And now, to open the app:
 ./Migrador-de-Catalogos-macos-apple-silicon-completa
 ```
 
-The app opens in its own window; on some Macs, in your browser. Both are normal
-and work the same. **Leave the Terminal open**: closing it closes the app.
+The app opens **in its own window**, like any other program. **Leave the
+Terminal open**: closing it closes the app.
 
 From now on, opening it again only takes the last two lines (`cd ~/Downloads` and
 `./Migrador...`). The `chmod` and `xattr` are a one-time thing.
@@ -73,6 +73,10 @@ Terminal type `ls ~/Downloads/Migrador*` and see what it is really called.
 
 **`Permission denied`**
 You skipped the `chmod +x` line.
+
+**It opened in the browser instead of its own window**
+It works the same. It means your Mac could not open the native window and the
+app fell back to its plan B, which is opening in the browser.
 
 **Nothing happens, or you want to know what it found**
 Run this and send the result to Joaco:
