@@ -22,6 +22,11 @@ Lo que cambió en cada versión publicada. Los números siguen
   misma suite antes de empaquetar. Si pytest no colecta nada, el build aborta.
 
 ### Agregado
+- **El linter, el formateador y el verificador de tipos corren solos.**
+  `pre-commit` pasa ruff y un control de claves de API antes de cada commit, y el
+  CI suma `ruff format --check` y `pyright`, que hoy corre en cero errores. El
+  control de claves es un solo script, `build/sin_claves.py`, compartido entre el
+  gancho y el CI.
 - **La CSP tiene test.** De las tres defensas del servidor local era la única
   sin uno, y es un string suelto adentro de un método, así que aflojarla no
   rompía nada. Ahora se verifica que esté entera, que ninguna directiva abra un
@@ -33,6 +38,12 @@ Lo que cambió en cada versión publicada. Los números siguen
 - `requirements-dev.txt` con las herramientas de quien desarrolla.
 - `docs/AUDITORIA.md` y `docs/MEJORAS.md`, el diagnóstico del repositorio y el
   backlog que sale de él.
+
+### Corregido
+- `relevar_core.py` usaba `urllib.error` sin haberlo importado nunca. Andaba de
+  rebote, porque `urllib.request` lo importa por dentro, pero cualquier cambio en
+  ese detalle de la biblioteca estándar habría roto el manejo de errores de
+  YouTube sin aviso. Lo encontró pyright.
 
 ## [1.0.2] — 2026-09-21
 

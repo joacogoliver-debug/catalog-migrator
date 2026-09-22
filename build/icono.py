@@ -61,7 +61,8 @@ def dibujar(lado):
             px, py, pr = cx * k + dx, cy * k + dy, r * k
             d.ellipse([px - pr, py - pr, px + pr, py + pr], fill=color)
 
-    return img.resize((lado, lado), Image.LANCZOS)
+    # Image.LANCZOS quedó como alias sin declarar; el enum es lo vigente.
+    return img.resize((lado, lado), Image.Resampling.LANCZOS)
 
 
 def main():

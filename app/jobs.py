@@ -44,7 +44,9 @@ class Job:
         # usa para ofrecer la salida concreta en vez de sólo mostrar un texto.
         self.codigo_error = ""
         self.creado = time.time()
-        self.terminado_en = None
+        # Anotado porque arranca en None y después guarda el reloj: sin esto,
+        # el tipo deducido es None y cada asignación queda como error.
+        self.terminado_en: float | None = None
         self._cancelar = threading.Event()
         self._lock = threading.Lock()
 

@@ -58,7 +58,16 @@ def idioma_castellano():
 
 
 def _track(
-    track, album="", year="", dist="ONErpm", label="Sello", upc="", isrc="", date=None, vid=None, dur=200
+    track,
+    album="",
+    year: "int | str" = "",
+    dist="ONErpm",
+    label="Sello",
+    upc="",
+    isrc="",
+    date=None,
+    vid=None,
+    dur=200,
 ):
     """Un track con la forma exacta que devuelve `relevar_core.build_tracks`.
 

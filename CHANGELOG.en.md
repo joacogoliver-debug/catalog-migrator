@@ -22,6 +22,10 @@ What changed in every published version. The numbers follow
   suite before packaging. If pytest collects nothing, the build aborts.
 
 ### Added
+- **The linter, the formatter and the type checker run on their own.**
+  `pre-commit` runs ruff and an API-key check before every commit, and CI adds
+  `ruff format --check` and `pyright`, which today runs at zero errors. The key
+  check is a single script, `build/sin_claves.py`, shared between the hook and CI.
 - **The CSP has a test.** Of the three local-server defenses it was the only one
   without one, and it is a loose string inside a method, so loosening it broke
   nothing. It now checks that the header is intact, that no directive opens an
@@ -33,6 +37,12 @@ What changed in every published version. The numbers follow
 - `requirements-dev.txt` with the developer tooling.
 - `docs/AUDITORIA.md` and `docs/MEJORAS.md`, the repository diagnosis and the
   backlog that comes out of it.
+
+### Fixed
+- `relevar_core.py` used `urllib.error` without ever importing it. It worked by
+  accident, because `urllib.request` imports it internally, but any change to
+  that standard-library detail would have broken YouTube error handling with no
+  warning. pyright found it.
 
 ## [1.0.2] — 2026-09-21
 

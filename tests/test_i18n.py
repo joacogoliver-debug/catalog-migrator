@@ -69,6 +69,7 @@ def claves_usadas_en_la_interfaz():
     usadas |= set(re.findall(r'data-t(?:-title|-aria)?="([a-z0-9_.]+)"', html))
     # Las que se arman concatenando un prefijo con un código.
     cods = re.search(r"const CODIGOS_HALLAZGO = \[(.*?)\];", app, re.S)
+    assert cods, "app.js ya no declara CODIGOS_HALLAZGO"
     usadas |= {"hallazgo." + c for c in re.findall(r"'(\w+)'", cods.group(1))}
     usadas |= {"stepper." + p for p in ("paso1", "paso2", "paso3", "paso4")}
     # Las que se eligen con un ternario adentro del propio T(...). Se exige el
@@ -161,8 +162,10 @@ def test_el_nombre_del_informe_de_validacion_coincide_de_los_dos_lados(idioma):
     """La pantalla 4 manda a abrir el informe de validación por su nombre. Si
     `paquete.py` lo escribe distinto, manda a buscar un archivo que no existe."""
     s = _leer("app", "web", "i18n.js")
-    bloque = re.search(r"'archivos\.validacion':\s*\{(.*?)\},", s, re.S).group(1)
-    en_js = re.search(rf"{idioma}:\s*'([^']+)'", bloque).group(1)
+    bloque = re.search(r"'archivos\.validacion':\s*\{(.*?)\},", s, re.S)
+    assert bloque, "i18n.js ya no define archivos.validacion"
+    en_js = re.search(rf"{idioma}:\s*'([^']+)'", bloque.group(1))
+    assert en_js, f"archivos.validacion no tiene el texto en {idioma}"
 
     i18n.poner_idioma(idioma)
-    assert en_js == i18n.T("paq.f_validacion")
+    assert en_js.group(1) == i18n.T("paq.f_validacion")

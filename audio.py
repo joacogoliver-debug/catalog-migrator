@@ -312,6 +312,11 @@ class TidalSession:
                 token=self._token,
                 cache_name=os.path.join(self._cache_dir, "api_cache"),
             )
+            # Los dos se llenan al completar el login, y `_token` de arriba ya
+            # garantiza que ocurrió. Se comprueba igual porque la API los pide
+            # como texto y un None acá saldría como un 400 sin explicación.
+            if not self.user_id or not self.country_code:
+                raise RuntimeError(T("aud.sin_cuenta"))
             self._api = TidalAPI(client, self.user_id, self.country_code)
         return self._api
 

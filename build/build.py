@@ -272,7 +272,10 @@ def resumen():
             continue
         h = hashlib.sha256()
         with open(ruta, "rb") as f:
-            for bloque in iter(lambda: f.read(1024 * 1024), b""):
+            while True:
+                bloque = f.read(1024 * 1024)
+                if not bloque:
+                    break
                 h.update(bloque)
         tam = os.path.getsize(ruta) / 1e6
         print(f"    {nombre}  ({tam:.1f} MB)")

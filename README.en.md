@@ -438,17 +438,38 @@ CI runs them on every push, deliberately **without** installing
 `build/build.py` runs the same suite before packaging and aborts if anything
 fails.
 
-The linter runs before the tests, with the same rules as on the author's
-machine:
+### Before committing
 
 ```bash
-ruff check .
+pre-commit install     # once
 ```
 
-The configuration is in [pyproject.toml](pyproject.toml). Four rule families
-(`E`, `F`, `W`, `B`) and no more: the opinion families find little and generate
-a lot of noise, and a linter that warns about things nobody is going to fix
-ends up ignored.
+From then on, every commit goes through the linter, the formatter and a check
+that no API key is being committed. It is the same code CI runs, so that there
+are not two similar checks that end up disagreeing with each other.
+
+By hand, over the whole repository:
+
+```bash
+ruff check .           # errors and style
+ruff format .          # formatting
+pyright                # types
+```
+
+The configuration for all three is in [pyproject.toml](pyproject.toml).
+
+- **ruff check** uses four rule families (`E`, `F`, `W`, `B`) and no more: the
+  opinion families find little and generate a lot of noise, and a linter that
+  warns about things nobody is going to fix ends up ignored.
+- **ruff format** is Black style. It has a cost worth stating: it collapses
+  right-aligned comments, and this codebase uses a fair few. In exchange,
+  formatting stops depending on each person's habits.
+- **pyright** runs in progressive strict mode. Today it runs in `basic` and the
+  repository passes with zero errors. The goal is `strict`, and the path is to
+  turn on each rule once the module that breaks it is typed; turning it all on at
+  once over code with no annotations leaves hundreds of errors nobody reads. It
+  runs in its own CI job, with the optional dependencies installed, so that it
+  does not report as missing a `tiddl` that exists on a user's machine.
 
 ## Credits
 

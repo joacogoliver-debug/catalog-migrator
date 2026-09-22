@@ -18,7 +18,14 @@ import validar as V
 
 
 def _prod(
-    title="Disco", upc="", year=2020, label="Sello", tracks=None, cover=None, orden_ok=True, cover_status="ok"
+    title="Disco",
+    upc="",
+    year: "int | str" = 2020,
+    label="Sello",
+    tracks=None,
+    cover=None,
+    orden_ok=True,
+    cover_status="ok",
 ):
     return {
         "product_id": "p001",

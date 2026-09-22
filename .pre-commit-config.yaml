@@ -1,0 +1,47 @@
+# Lo que corre antes de cada commit, para que el CI no sea el primero en
+# enterarse. Se instala una vez:
+#
+#     pip install -r requirements-dev.txt
+#     pre-commit install
+#
+# Y para pasarlo por todo el repositorio a mano:
+#
+#     pre-commit run --all-files
+#
+# No está pyright acá a propósito. Tarda varios segundos en arrancar y correrlo
+# en cada commit convierte un gancho útil en uno que se saltea con --no-verify.
+# Vive en el CI, junto a los tests.
+
+repos:
+  # La misma versión que el CI y que requirements-dev.txt. Clavada para que una
+  # release de ruff no cambie el formato de todo el repo un martes.
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.8
+    hooks:
+      - id: ruff-check
+      - id: ruff-format
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      # Los .bat y el .iss son de Windows y quieren CRLF, así que no se toca el
+      # final de línea: eso ya lo maneja .gitattributes.
+      - id: check-toml
+      - id: check-yaml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        # Las capturas del README son PNG de varios cientos de KB y son parte
+        # del repo a propósito.
+        args: ["--maxkb=2048"]
+
+  - repo: local
+    hooks:
+      # La red de seguridad que más importa acá. La clave de YouTube vive como
+      # secreto del CI y entra recién al compilar: que no se pueda commitear por
+      # accidente es más barato de garantizar que de revertir, porque una clave
+      # que llegó a un commit ya se considera filtrada.
+      - id: sin-claves
+        name: no hay claves de API en lo que se commitea
+        entry: python build/sin_claves.py
+        language: system
+        pass_filenames: true

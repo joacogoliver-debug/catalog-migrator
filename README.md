@@ -433,16 +433,38 @@ CI los corre en cada push, a propósito **sin** instalar `tiddl`/`yt-dlp`/`ffmpe
 para verificar que el núcleo no dependa de ellos. `build/build.py` corre la misma
 suite antes de empaquetar y aborta si algo falla.
 
-Antes de los tests corre el linter, con las mismas reglas que quien escribe:
+### Antes de commitear
 
 ```bash
-ruff check .
+pre-commit install     # una sola vez
 ```
 
-La configuración está en [pyproject.toml](pyproject.toml). Son cuatro familias
-de reglas (`E`, `F`, `W`, `B`) y no más: las familias de opinión encuentran
-poco y generan mucho ruido, y un linter que avisa de cosas que nadie va a
-arreglar termina ignorado.
+A partir de ahí, cada commit pasa por el linter, el formateador y un control de
+que no se esté commiteando una clave de API. Es el mismo código que corre el CI,
+para que no haya dos controles parecidos que terminen discrepando.
+
+A mano, sobre todo el repositorio:
+
+```bash
+ruff check .           # errores y estilo
+ruff format .          # formato
+pyright                # tipos
+```
+
+La configuración de los tres está en [pyproject.toml](pyproject.toml).
+
+- **ruff check** usa cuatro familias de reglas (`E`, `F`, `W`, `B`) y no más:
+  las familias de opinión encuentran poco y generan mucho ruido, y un linter que
+  avisa de cosas que nadie va a arreglar termina ignorado.
+- **ruff format** es estilo Black. Tiene un costo que conviene decir, colapsa los
+  comentarios alineados a la derecha, y acá se usan bastante. A cambio, el
+  formato deja de depender de la costumbre de cada uno.
+- **pyright** va en estricto progresivo. Hoy corre en modo `basic` y el
+  repositorio pasa en cero errores. El objetivo es `strict`, y el camino es
+  prender cada regla cuando el módulo que la rompe ya está tipado; prenderlo de
+  golpe sobre un código sin anotaciones deja cientos de errores que nadie lee.
+  Corre en su propio job del CI, con las dependencias opcionales instaladas, para
+  no reportar como faltante un `tiddl` que en la máquina de un usuario existe.
 
 ## Créditos
 

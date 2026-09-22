@@ -29,11 +29,17 @@ jobs:
           pip install -r requirements-dev.txt
 
       - name: Estilo y errores comunes (ruff)
-        # La configuración está en pyproject.toml, así que el CI y la máquina de
-        # quien escribe miran exactamente las mismas reglas. La versión va
-        # clavada en requirements-dev.txt para que una release de ruff no rompa
-        # el build un martes.
+        # La configuración está en pyproject.toml, así que el CI, el gancho de
+        # pre-commit y la máquina de quien escribe miran exactamente las mismas
+        # reglas. La versión va clavada en requirements-dev.txt para que una
+        # release de ruff no rompa el build un martes.
         run: ruff check --output-format=github .
+
+      - name: Formato (ruff format)
+        # `--check` no reescribe nada: falla y muestra qué archivo está fuera de
+        # formato. Localmente lo arregla el gancho de pre-commit antes de que
+        # llegue hasta acá.
+        run: ruff format --check .
 
       - name: Tests y cobertura
         # Un solo paso y una sola lista de tests, la de pyproject.toml. Antes
@@ -69,13 +75,41 @@ jobs:
           PY
 
       - name: No quedan claves en el repositorio
-        # Red de seguridad barata: la clave de YouTube vive como secreto del CI y
-        # no tiene que aparecer nunca en el árbol de archivos.
+        # El mismo script que corre el gancho de pre-commit, acá sobre el árbol
+        # entero. Es a propósito una sola implementación: dos controles parecidos
+        # escritos por separado terminan discrepando, y el que falla primero es
+        # el que nadie mira.
+        run: python build/sin_claves.py --todo
+
+  tipos:
+    # pyright va en su propio job, y no como un paso más del de arriba, por una
+    # razón concreta: el job `tests` corre a propósito SIN las dependencias
+    # opcionales, para demostrar que el núcleo no depende de ellas. Un
+    # verificador de tipos en ese entorno reportaría como faltantes los imports
+    # de `tiddl`, `webview` y `PIL`, que en la máquina de un usuario existen.
+    #
+    # Así cada job prueba una cosa distinta: aquél, que la degradación es
+    # correcta; éste, que los tipos cierran contra el conjunto real de
+    # dependencias.
+    name: tipos
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Instalar todas las dependencias, incluidas las opcionales
         run: |
-          if git ls-files | grep -q 'clave_yt.dat'; then
-            echo "Hay una clave commiteada"; exit 1
-          fi
-          if git grep -nE 'AIza[0-9A-Za-z_-]{30,}' -- . ; then
-            echo "Parece haber una clave de API en el código"; exit 1
-          fi
-          echo "sin claves en el repo"
+          python -m pip install --upgrade pip
+          pip install -r requirements-app.txt
+          pip install -r requirements-audio.txt
+          pip install -r requirements-dev.txt
+          pip install pillow
+
+      - name: pyright
+        # Modo estricto progresivo, configurado en pyproject.toml. Hoy el
+        # repositorio pasa en cero errores, así que cualquier número distinto de
+        # cero es algo que se introdujo en este cambio.
+        run: pyright

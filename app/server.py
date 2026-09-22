@@ -375,7 +375,9 @@ class Estado:
         self.productos = []
         self.artista = ""
         self.diagnostico = {}
-        self.tidal = None
+        # Sin anotar, el tipo deducido sería None y guardar la sesión daría
+        # error de tipos. Se escribe suelto para no importar `audio` acá.
+        self.tidal: "audio_mod.TidalSession | None" = None
         self.zips = {}  # job_id -> ruta del zip
         self.temporales = []
         self.lock = threading.RLock()

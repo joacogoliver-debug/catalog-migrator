@@ -152,12 +152,26 @@ def _filas_producto(ws, fila, p, con_archivo=True):
     return fila
 
 
+def _hoja(wb):
+    """La hoja activa de un libro recién creado.
+
+    openpyxl declara `Workbook.active` como opcional, y el código de acá la
+    usaba sin mirar. Un libro nuevo siempre la trae, así que esto no cambia
+    nada en la práctica; lo que cambia es que el día que no la traiga se vea
+    acá y no como un AttributeError a mitad de armar el ZIP.
+    """
+    ws = wb.active
+    if ws is None:
+        raise RuntimeError("el libro de Excel salió sin hoja activa")
+    return ws
+
+
 def planilla_maestra_bytes(productos, artista):
     """Excel con todo el catálogo seleccionado."""
     from io import BytesIO
 
     wb = Workbook()
-    ws = wb.active
+    ws = _hoja(wb)
     ws.title = T("paq.hoja_catalogo")
     fila = _encabezado(
         ws,
@@ -281,7 +295,7 @@ def planilla_producto_bytes(p, artista):
     from io import BytesIO
 
     wb = Workbook()
-    ws = wb.active
+    ws = _hoja(wb)
     ws.title = T("paq.hoja_producto")
     fila = _encabezado(
         ws,

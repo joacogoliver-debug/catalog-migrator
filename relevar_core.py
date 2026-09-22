@@ -16,6 +16,7 @@ import os
 import re
 import sys
 import unicodedata
+import urllib.error
 import urllib.parse
 import urllib.request
 import time
@@ -303,9 +304,14 @@ def _normalize(s):
     return unicodedata.normalize("NFD", s).encode("ascii", "ignore").decode("ascii").lower()
 
 
-def parse_description(desc):
+def parse_description(desc) -> dict[str, "str | int | None"]:
     """Extrae distribuidor, álbum, año y sello de una descripción auto-generada."""
-    res = {"distributor": None, "album": None, "release_year": None, "label": None}
+    res: dict[str, "str | int | None"] = {
+        "distributor": None,
+        "album": None,
+        "release_year": None,
+        "label": None,
+    }
     if not desc:
         return res
 
@@ -497,6 +503,8 @@ def deezer_match(t, artist):
         )
         if best is None or sc[0] > best[0]:
             best, best_meta = sc, c
+    if best is None or best_meta is None:
+        return "", None, ""
     conf = _confidence(best[1], best[2], best[3])
     if not conf:
         return "", None, ""

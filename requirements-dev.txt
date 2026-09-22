@@ -17,3 +17,11 @@ pytest-cov>=5.0
 # ruff no rompa el build un martes y para que la máquina de quien escribe mire
 # exactamente las mismas reglas que GitHub Actions.
 ruff==0.16.8
+
+# El verificador de tipos. Va en modo estricto progresivo: la configuración está
+# en pyproject.toml y hoy el repositorio pasa en cero errores.
+pyright>=1.1.400
+
+# Los ganchos que corren antes de cada commit (ruff y el control de claves).
+# Se enganchan una sola vez, con `pre-commit install`.
+pre-commit>=4.0

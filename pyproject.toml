@@ -31,6 +31,48 @@ select = ["E", "F", "W", "B"]
 "app/server.py" = ["E402"]
 "relevar_core.py" = ["E402"]
 
+[tool.ruff.format]
+# El formateador usa el mismo `line-length` de arriba. Se adopta con una salvedad
+# dicha en voz alta: es estilo Black, así que colapsa los comentarios alineados a
+# la derecha, y en un código que se apoya tanto en sus comentarios eso se nota. A
+# cambio, el formato deja de depender de la costumbre de cada uno.
+#
+# `skip-magic-trailing-comma = false` es el default y se deja explícito: una coma
+# final puesta a mano es una decisión de quien escribió, y el formateador la
+# respeta en vez de recomprimir la lista.
+skip-magic-trailing-comma = false
+
+
+# ============================================================
+# Tipos
+# ============================================================
+
+[tool.pyright]
+# Estricto progresivo. El objetivo es `strict`, pero prenderlo de golpe sobre un
+# código sin una sola anotación deja cientos de errores que nadie va a leer, y un
+# verificador que grita siempre es un verificador apagado.
+#
+# El camino es: `basic` limpio hoy, y cada regla de `strict` se prende cuando el
+# módulo que la rompe ya está tipado. El ítem que tipa los contratos entre
+# módulos es el que va a mover esta línea.
+typeCheckingMode = "basic"
+
+# Los módulos viven en la raíz y el backend en `app/`, y no hay paquete
+# instalable. Sin esto, pyright no resuelve `import server` ni `import jobs` y
+# reporta como error algo que en tiempo de ejecución funciona.
+extraPaths = [".", "app"]
+
+# La app apunta a la versión con la que se compila el binario, no a la que tenga
+# instalada quien desarrolla.
+pythonVersion = "3.13"
+
+include = ["app", "build", "tests", "*.py"]
+exclude = ["**/__pycache__", "build/migrador", "dist", ".venv"]
+
+# Dependencias opcionales del módulo de audio. No están instaladas en el CI a
+# propósito, y no tener sus stubs no es un error del código.
+reportMissingModuleSource = "none"
+
 
 # ============================================================
 # Tests
