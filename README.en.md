@@ -378,7 +378,7 @@ No frameworks and no build step, so that packaging is copying files:
 | `paquete.py` | Spreadsheets, ingestion sheet, reports and ZIP |
 | `audio.py` | Optional audio module |
 | `build/` | Packaging, installer, icon and screenshots |
-| `tests/` | The ten tests, no network and no keys |
+| `tests/` | The pytest suite, no network and no keys |
 | `docs/` | The product and design decisions |
 
 ### On the local server's security
@@ -401,26 +401,40 @@ outside, which is consistent with an app that works with no internet.
 They run with no network, no keys and without the audio dependencies:
 
 ```bash
-python tests/test_i18n.py                # both translation catalogs, complete and in agreement
-python tests/test_parse_description.py   # parsing of YouTube descriptions
-python tests/test_productos.py           # grouping into products + filters
-python tests/test_validar.py             # validation of codes, artwork and duplicates
-python tests/test_portadas.py            # real artwork resolution
-python tests/test_paquete.py             # ZIP structure + quality labeling
-python tests/test_app.py                 # backend: jobs, HTTP, token and Host
-python tests/test_migrar_core.py         # orchestrator contract
-python tests/test_errores_youtube.py     # translation of YouTube Data API errors
-python tests/test_audio_tidal.py         # tiddl contract (skipped if it is absent)
+pip install -r requirements-dev.txt
+pytest -q
 ```
+
+And with coverage, which has a threshold in `pyproject.toml` and fails the build
+if it drops:
+
+```bash
+pytest -q --cov
+```
+
+| File | What it covers |
+|---|---|
+| `tests/conftest.py` | Shared fixtures, the sample catalog and the pinned language |
+| `tests/test_i18n.py` | Both translation catalogs, complete and in agreement |
+| `tests/test_parse_description.py` | Parsing of YouTube descriptions |
+| `tests/test_productos.py` | Grouping into products and filters |
+| `tests/test_validar.py` | Validation of codes, artwork and duplicates |
+| `tests/test_portadas.py` | Real artwork resolution |
+| `tests/test_paquete.py` | ZIP structure and quality labeling |
+| `tests/test_app.py` | Backend, jobs, HTTP, token and Host |
+| `tests/test_migrar_core.py` | Orchestrator contract |
+| `tests/test_errores_youtube.py` | Translation of YouTube Data API errors |
+| `tests/test_audio_tidal.py` | tiddl contract, skipped when it is not installed |
 
 CI runs them on every push, deliberately **without** installing
 `tiddl`/`yt-dlp`/`ffmpeg`, to verify that the core does not depend on them.
+`build/build.py` runs the same suite before packaging and aborts if anything
+fails.
 
 The linter runs before the tests, with the same rules as on the author's
 machine:
 
 ```bash
-pip install ruff
 ruff check .
 ```
 

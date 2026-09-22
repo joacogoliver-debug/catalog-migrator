@@ -29,10 +29,6 @@ SPEC = os.path.join(RAIZ, "build", "migrador.spec")
 ISS = os.path.join(RAIZ, "build", "instalador.iss")
 DIST = os.path.join(RAIZ, "dist")
 
-TESTS = ["test_i18n.py", "test_parse_description.py", "test_productos.py",
-         "test_validar.py", "test_portadas.py", "test_paquete.py", "test_app.py",
-         "test_migrar_core.py", "test_audio_tidal.py", "test_errores_youtube.py"]
-
 
 def paso(texto):
     print(f"\n>>> {texto}")
@@ -55,6 +51,15 @@ def revisar_entorno():
         print("    openpyxl: ok")
     except ImportError:
         sys.exit("Falta openpyxl. Instalalo con:  pip install -r requirements-app.txt")
+
+    # Se avisa acá y no cuando falle la corrida: "No module named pytest" a
+    # mitad del build no dice qué instalar.
+    try:
+        import pytest  # noqa: F401
+        print("    pytest: ok")
+    except ImportError:
+        sys.exit("Falta pytest, que corre los tests antes de empaquetar. "
+                 "Instalalo con:  pip install -r requirements-dev.txt")
 
     faltan = [f for f in ("app/launcher.py", "app/server.py", "app/web/index.html",
                           "app/web/app.js", "app/web/app.css",
@@ -89,19 +94,27 @@ def revisar_entorno():
 
 
 def probar_tests():
-    """Corre la batería offline antes de empaquetar: no tiene sentido publicar un
-    binario que no pasa sus propios tests."""
+    """Corre la batería offline antes de empaquetar.
+
+    No tiene sentido publicar un binario que no pasa sus propios tests.
+
+    Se delega en pytest y no se enumeran los archivos acá: la lista estaba
+    escrita en tres lugares (este, el workflow del CI y el README) y un test
+    nuevo que se olvidara en éste no bloqueaba un release, que es justo lo que
+    este paso tiene que impedir.
+    """
     paso("Corriendo los tests")
     env = dict(os.environ, PYTHONIOENCODING="utf-8")
-    for t in TESTS:
-        r = subprocess.run([sys.executable, os.path.join("tests", t)], cwd=RAIZ, env=env,
-                           capture_output=True, text=True)
-        estado = "ok" if r.returncode == 0 else "FALLÓ"
-        print(f"    {t:28} {estado}")
-        if r.returncode != 0:
-            print(r.stdout[-2000:])
-            print(r.stderr[-2000:])
-            sys.exit("Los tests no pasaron: no empaqueto.")
+    r = subprocess.run([sys.executable, "-m", "pytest", "-q"], cwd=RAIZ, env=env,
+                       capture_output=True, text=True)
+    print((r.stdout or "").strip()[-3000:])
+    if r.returncode == 5:
+        # pytest sale 5 cuando no colectó ningún test. Sin este control, una
+        # suite que dejó de encontrarse se ve igual que una suite en verde.
+        sys.exit("pytest no encontró ningún test: no empaqueto.")
+    if r.returncode != 0:
+        print((r.stderr or "").strip()[-2000:])
+        sys.exit("Los tests no pasaron: no empaqueto.")
 
 
 def limpiar():

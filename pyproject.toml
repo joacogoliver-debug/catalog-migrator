@@ -30,3 +30,40 @@ select = ["E", "F", "W", "B"]
 "app/launcher.py" = ["E402"]
 "app/server.py" = ["E402"]
 "relevar_core.py" = ["E402"]
+
+
+# ============================================================
+# Tests
+# ============================================================
+
+[tool.pytest.ini_options]
+# Una sola lista de tests, y es esta carpeta. Antes estaba escrita tres veces,
+# en build/build.py, en el workflow del CI y en el README, y agregar un test
+# pedía acordarse de los tres lugares.
+testpaths = ["tests"]
+# `--strict-markers` para que una marca mal escrita falle en vez de ignorarse.
+addopts = "--strict-markers"
+
+[tool.coverage.run]
+# Se mide la app, no los tests. La cobertura de un test siempre da 100 y sólo
+# sirve para inflar el número.
+source = ["app", "audio", "i18n", "migrar_core", "paquete", "portadas",
+          "productos", "relevar_core", "validar"]
+
+[tool.coverage.report]
+# El umbral no está puesto donde nos gustaría, está puesto donde estamos. Subirlo
+# es trabajo; bajarlo, en cambio, tiene que romper el build.
+#
+# Por qué no es más alto. Tres módulos hacen casi sólo entrada y salida contra
+# servicios externos: `relevar_core` (YouTube), `portadas` (iTunes) y `audio`
+# (Tidal y YouTube), y probarlos de verdad pide red y credenciales. Lo que sí
+# está cubierto de ellos es el parseo y las decisiones, que es donde viven los
+# errores. `app/launcher.py` queda en cero porque abre ventanas del sistema y no
+# hay forma honesta de probar eso sin escritorio.
+fail_under = 55
+show_missing = true
+skip_covered = true
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+]

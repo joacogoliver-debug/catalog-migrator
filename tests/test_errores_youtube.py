@@ -1,30 +1,18 @@
 # -*- coding: utf-8 -*-
-"""Test offline de la traducción de errores de la YouTube Data API.
+"""Traducción de los errores de la YouTube Data API. Sin red y sin claves.
 
-Corré:  python test_errores_youtube.py
-Sale 0 si todo pasa, 1 si algo falla. No necesita red ni claves.
-
-Por qué existe: lo que devuelve Google viene en inglés, con jerga y a veces con
-un `<a href>` adentro del mensaje. Mostrarlo tal cual deja a la persona sin saber
-qué hacer, y el caso más probable,el cupo diario agotado cuando muchos usan la
-misma copiaes justo el que tiene solución simple. Este test fija que esa
-traducción exista y que el código que la acompaña sea el correcto, porque de ese
-código depende que la interfaz ofrezca el botón para cargar una clave propia.
+Por qué existe. Lo que devuelve Google viene en inglés, con jerga y a veces con
+un `<a href>` adentro del mensaje. Mostrarlo tal cual deja a la persona sin
+saber qué hacer, y el caso más probable, el cupo diario agotado cuando muchos
+usan la misma copia, es justo el que tiene solución simple. Este test fija que
+esa traducción exista y que el código que la acompaña sea el correcto, porque de
+ese código depende que la interfaz ofrezca el botón para cargar una clave
+propia.
 """
+
 import json
-import os
 
-# Este test compara los mensajes en español, así que el idioma se fija:
-# si no, en una máquina con el sistema en inglés compararía contra otra cosa.
-os.environ["MIGRADOR_IDIOMA"] = "es"
-import sys
-
-# Los tests viven en tests/ y los modulos en la raiz: sin esto, correr
-# `python tests/test_x.py` no encuentra nada que importar.
-RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, RAIZ)
-
-import relevar_core as R  # noqa: E402
+import relevar_core as R
 
 
 def cuerpo(reason, message, code=403):
@@ -39,77 +27,72 @@ def cuerpo(reason, message, code=403):
     })
 
 
-def main():
-    fails = []
-
-    def check(nombre, cond, detalle=""):
-        if not cond:
-            fails.append(f"  [{nombre}] falló {detalle}")
-
-    # --- cupo agotado: el caso que más va a pasar -------------------------
+def test_cupo_agotado_es_el_caso_que_mas_va_a_pasar():
     e = R._error_de_youtube(403, cuerpo(
         "quotaExceeded",
         'The request cannot be completed because you have exceeded your '
         '<a href="/youtube/v3/getting-started#quota">quota</a>.'))
-    check("cuota.es_relevar_error", isinstance(e, R.RelevarError))
-    check("cuota.codigo", e.codigo == "cuota", f"codigo={e.codigo!r}")
-    check("cuota.en_castellano", "cupo" in str(e).lower(), str(e))
-    check("cuota.dice_que_hacer", "clave" in str(e).lower(), str(e))
-    check("cuota.sin_html", "<a" not in str(e) and "href" not in str(e), str(e))
-    check("cuota.sin_ingles", "quota" not in str(e).lower(), str(e))
 
-    # --- clave inválida y API sin habilitar ------------------------------
+    assert isinstance(e, R.RelevarError)
+    assert e.codigo == "cuota"              # de esto depende el botón de la interfaz
+    texto = str(e)
+    assert "cupo" in texto.lower()
+    assert "clave" in texto.lower()         # dice qué hacer
+    assert "<a" not in texto and "href" not in texto
+    assert "quota" not in texto.lower()     # nada en inglés
+
+
+def test_clave_invalida():
     e = R._error_de_youtube(400, cuerpo("keyInvalid", "API key not valid.", 400))
-    check("clave.codigo", e.codigo == "clave", f"codigo={e.codigo!r}")
+    assert e.codigo == "clave"
 
-    # Google no siempre manda `reason`: a veces sólo el texto.
+
+def test_clave_invalida_aunque_google_no_mande_reason():
     e = R._error_de_youtube(400, json.dumps(
-        {"error": {"code": 400, "message": "API key not valid. Please pass a valid API key."}}))
-    check("clave.sin_reason", e.codigo == "clave", f"codigo={e.codigo!r}")
+        {"error": {"code": 400,
+                   "message": "API key not valid. Please pass a valid API key."}}))
+    assert e.codigo == "clave"
 
+
+def test_api_sin_habilitar_manda_a_la_consola_de_google():
     e = R._error_de_youtube(403, cuerpo(
         "accessNotConfigured", "YouTube Data API has not been used in project 123"))
-    check("api_sin_habilitar.codigo", e.codigo == "clave", f"codigo={e.codigo!r}")
-    check("api_sin_habilitar.menciona_consola", "Cloud" in str(e), str(e))
+    assert e.codigo == "clave"
+    assert "Cloud" in str(e)
 
-    # --- rate limit: no es cuota, no ofrece cargar una clave -------------
+
+def test_rate_limit_no_es_cuota_y_no_ofrece_cargar_una_clave():
     e = R._error_de_youtube(403, cuerpo("rateLimitExceeded", "Too many requests"))
-    check("rate.sin_codigo", e.codigo == "", f"codigo={e.codigo!r}")
-    check("rate.dice_esperar", "esperá" in str(e).lower(), str(e))
+    assert e.codigo == ""
+    assert "esperá" in str(e).lower()
 
-    # --- motivo desconocido: se muestra el de Google, pero limpio --------
+
+def test_motivo_desconocido_muestra_el_de_google_pero_limpio():
     e = R._error_de_youtube(403, cuerpo(
         "algoNuevoQueGoogleInvento", 'Mirá <a href="http://x">esto</a>.'))
-    check("desconocido.sin_codigo", e.codigo == "", f"codigo={e.codigo!r}")
-    check("desconocido.sin_html", "<a" not in str(e), str(e))
-    check("desconocido.conserva_texto", "esto" in str(e), str(e))
+    assert e.codigo == ""
+    assert "<a" not in str(e)
+    assert "esto" in str(e)
 
-    # --- cuerpo que no es JSON: no puede reventar ------------------------
+
+def test_un_cuerpo_que_no_es_json_no_revienta():
     e = R._error_de_youtube(500, "<html>502 Bad Gateway</html>")
-    check("basura.es_relevar_error", isinstance(e, R.RelevarError))
-    check("basura.no_vacio", len(str(e)) > 10, str(e))
+    assert isinstance(e, R.RelevarError)
+    assert len(str(e)) > 10
 
-    # --- el código sobrevive a la excepción ------------------------------
-    # Es lo que jobs.py lee con getattr(e, "codigo", "") para que la interfaz
-    # sepa qué salida ofrecer. Si RelevarError perdiera el atributo, el botón
-    # desaparecería sin que nada más se rompa, que es la peor forma de fallar.
+
+def test_el_codigo_sobrevive_a_la_excepcion():
+    """Es lo que `jobs.py` lee con `getattr(e, "codigo", "")` para que la
+    interfaz sepa qué salida ofrecer. Si RelevarError perdiera el atributo, el
+    botón desaparecería sin que nada más se rompa, que es la peor forma de
+    fallar."""
     try:
         raise R._error_de_youtube(403, cuerpo("quotaExceeded", "exceeded quota"))
     except R.RelevarError as err:
-        check("codigo.sobrevive", getattr(err, "codigo", "") == "cuota")
+        assert getattr(err, "codigo", "") == "cuota"
 
-    # Y un RelevarError común sigue funcionando sin código.
+
+def test_un_relevar_error_comun_sigue_funcionando_sin_codigo():
     simple = R.RelevarError("algo salió mal")
-    check("compat.sin_codigo", simple.codigo == "")
-    check("compat.mensaje", str(simple) == "algo salió mal")
-
-    if fails:
-        print("FALLARON:")
-        print("\n".join(fails))
-        return 1
-    print("OK - traduccion de errores de la YouTube Data API")
-    return 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())
+    assert simple.codigo == ""
+    assert str(simple) == "algo salió mal"

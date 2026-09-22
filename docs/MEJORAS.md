@@ -1,0 +1,34 @@
+# Backlog de mejoras
+
+Sale de [AUDITORIA.md](AUDITORIA.md). Un ítem por ciclo, en orden de prioridad,
+y cada uno se cierra con su verificación completa antes del commit.
+
+Estados posibles, `pendiente`, `en curso`, `hecho`, `bloqueado`.
+
+| id | prioridad | ítem | estado | notas |
+|---|---|---|---|---|
+| M01 | 1 | Migrar los tests a pytest, con `conftest.py`, fixtures compartidas de catálogo de ejemplo, una sola lista de tests, y cobertura en el CI con umbral que no baje | hecho | Cubre T1, T2, T4 y T6. 267 tests donde antes `pytest -q` colectaba cero. La lista quedó sólo en `testpaths` de `pyproject.toml`; `build/build.py` y el CI la consumen de ahí, y el build aborta si pytest no colecta nada. Umbral de cobertura en 55 %, medido en 56,18 %. De yapa, pyright pasó de 97 errores a 39. **Quedó afuera**, el test de la CSP (es M02) y `ruff format`, que falla en 25 archivos de todo el repo desde antes y es M03. Las capturas se regeneran bien pero se revirtieron: el re-render es ruido ajeno a este ítem. |
+| M02 | 2 | Test de la cabecera `Content-Security-Policy` | pendiente | T3. La tercera defensa del servidor es la única sin test, y es un string suelto en `app/server.py:958-962`. Chico, y en el estilo nuevo que deja M01. |
+| M03 | 3 | `ruff` (check y format) y `pyright` en estricto progresivo, con `pre-commit` configurado. Arreglar lo que salte | pendiente | D4. Hoy el CI corre `ruff check` pero no `ruff format --check`, y no hay pyright en ningún lado. Va antes de M04 porque tipar sin verificador de tipos es escribir documentación con sintaxis de Python. |
+| M04 | 4 | Tipar los contratos entre módulos con dataclasses o TypedDict, lo que devuelve `relevar_core` y consumen `productos`, `validar`, `portadas` y `paquete` | pendiente | C1. El producto es hoy un dict de dieciséis claves que cada consumidor adivina. `tests/test_migrar_core.py` ya fija ese contrato con un set de strings escrito a mano, que es la versión pobre de lo mismo. |
+| M05 | 5 | `CONTRIBUTING.md`, plantillas de issue, y corregir los errores de redacción del README | pendiente | D3 y P1. `SECURITY.md` ya está. El error concreto de redacción es `README.md:350`, una imagen sin línea en blanco antes que parte en dos la lista de «Cómo está hecha»; la versión en inglés está bien. Sumar el docstring de `build/capturas.py:5`, que dice que las capturas del README salen en claro cuando la línea 483 las genera en oscuro a propósito. |
+| M06 | 6 | Unificar los normalizadores de texto duplicados y desacoplar `paquete.py` de `audio.py` | pendiente | E3 y E4. Las tres `_norm` son idénticas palabra por palabra y `_mmss` está duplicada exacta. `paquete.py` importa el módulo opcional de audio sólo por la constante `FORMATOS_LOSSLESS`. Después de M04, porque los tipos dicen dónde vive cada helper. |
+| M07 | 7 | Tests de contrato contra respuestas reales grabadas de Deezer e iTunes, en fixtures JSON, sin red | pendiente | T5. Hoy los dobles se construyen a mano con la forma que el código espera, así que prueban consistencia interna y no comprensión de la API. Las fixtures se graban una vez y se versionan, sin claves. |
+| M08 | 8 | Generar las notas del release desde el `CHANGELOG`, en vez del bloque escrito a mano en el workflow | pendiente | D2, y es lo único que falta del ítem original de versionado semántico. La versión ya tiene una sola fuente (`app/server.py:73`), ya se ve en la interfaz y en `--diagnostico`, y los dos `CHANGELOG` ya existen. El bloque `body:` de `build.yml` son unas 130 líneas escritas a mano que repiten el README. |
+| M09 | 9 | Paquete `src/migrador/` con los módulos que hoy están en la raíz, lanzadores a `scripts/`, y `pyproject.toml` con extras `[app]`, `[audio]`, `[dev]`. Preservar `python app/launcher.py` y `python build/build.py` | pendiente | E1 y E2. Era el ítem 1 del backlog original y bajó a noveno a propósito. Toca los veinticinco archivos a la vez y hoy no hay red de contención, ni cobertura ni tipos. Hecho después de M01 y M04, el mismo movimiento se hace con el semáforo en verde y con `sys.path` ya sin razón de existir. |
+| M10 | 10 | Empaquetado `.app` para macOS y AppImage o `.deb` para Linux, aunque sigan sin firmar, y actualizar el README | pendiente | D1. Es el de mayor impacto para quien baja la app y el de mayor esfuerzo. El README ya dice hoy que están pendientes y que no dependen de plata, así que la promesa está declarada y sin cumplir; al cerrarse, esa línea se borra. |
+| M11 | 11 | Detalles, los trece `# noqa: BLE001` inertes, `log=print` como default en once funciones, y la diferencia entre Python 3.14 local y 3.13 del CI | pendiente | C2, C4 y D5. Ninguno rompe nada hoy. Se agrupan en un ciclo de limpieza para no gastar uno por cada uno. `BLE` no está en `select`, así que esos noqa no silencian nada. |
+| M12 | cerrado | Resolver `ux-audit/`, moverlo a `docs/` o borrarlo | hecho | D6. No requiere ningún cambio en el repositorio. Ya está en `.gitignore` con su justificación escrita, y `git ls-files ux-audit` no devuelve nada, así que nunca fue parte del repo público. Lo que queda es una decisión de escritorio de quien mantiene, borrar la carpeta local o dejarla; no es trabajo de código. |
+
+## Qué quedó afuera del backlog, y por qué
+
+**C3, el estado global del servidor.** `TOKEN`, `AUDIO_HABILITADO`, `ESTADO` y
+`JOBS` se calculan al importar `app/server.py`. Es incómodo para testear, pero
+está argumentado en el módulo y es coherente con una app local de un solo
+usuario. Convertirlo en inyección de dependencias sería un refactor grande, sin
+beneficio para quien usa la app, y con riesgo directo sobre las tres defensas.
+Si algún ítem futuro lo necesita de verdad, entra ahí y no como tarea propia.
+
+**P3 y P4**, la heurística de formato por cantidad de tracks y el módulo de
+audio apagado por defecto. Se revisaron y están bien declarados en el código y en
+el README. No son deuda, son decisiones.

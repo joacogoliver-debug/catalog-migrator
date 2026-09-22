@@ -374,7 +374,7 @@ Sin frameworks ni build step, para que empaquetar sea copiar archivos:
 | `paquete.py` | Planillas, hoja de ingesta, reportes y ZIP |
 | `audio.py` | Módulo de audio opcional |
 | `build/` | Empaquetado, instalador, icono y capturas |
-| `tests/` | Los diez tests, sin red y sin claves |
+| `tests/` | La suite de pytest, sin red y sin claves |
 | `docs/` | Las decisiones de producto y de diseño |
 
 ### Sobre la seguridad del servidor local
@@ -397,25 +397,38 @@ consistente con una app que funciona sin internet.
 Corren sin red, sin claves y sin las dependencias de audio:
 
 ```bash
-python tests/test_i18n.py                # los dos catálogos de traducción, completos y de acuerdo
-python tests/test_parse_description.py   # parseo de descripciones de YouTube
-python tests/test_productos.py           # agrupación en productos + filtros
-python tests/test_validar.py             # validación de códigos, portadas y duplicados
-python tests/test_portadas.py            # resolución real de las portadas
-python tests/test_paquete.py             # estructura del ZIP + etiquetado de calidad
-python tests/test_app.py                 # backend: trabajos, HTTP, token y Host
-python tests/test_migrar_core.py         # contrato del orquestador
-python tests/test_errores_youtube.py     # traducción de los errores de la YouTube Data API
-python tests/test_audio_tidal.py         # contrato con tiddl (se saltea si no está)
+pip install -r requirements-dev.txt
+pytest -q
 ```
 
+Y con la cobertura, que tiene un umbral en `pyproject.toml` y hace fallar el
+build si baja:
+
+```bash
+pytest -q --cov
+```
+
+| Archivo | Qué cubre |
+|---|---|
+| `tests/conftest.py` | Las fixtures compartidas, el catálogo de ejemplo y el idioma fijado |
+| `tests/test_i18n.py` | Los dos catálogos de traducción, completos y de acuerdo |
+| `tests/test_parse_description.py` | Parseo de las descripciones de YouTube |
+| `tests/test_productos.py` | Agrupación en productos y filtros |
+| `tests/test_validar.py` | Validación de códigos, portadas y duplicados |
+| `tests/test_portadas.py` | Resolución real de las portadas |
+| `tests/test_paquete.py` | Estructura del ZIP y etiquetado de calidad |
+| `tests/test_app.py` | Backend, trabajos, HTTP, token y Host |
+| `tests/test_migrar_core.py` | Contrato del orquestador |
+| `tests/test_errores_youtube.py` | Traducción de los errores de la YouTube Data API |
+| `tests/test_audio_tidal.py` | Contrato con tiddl, se saltea si no está instalado |
+
 CI los corre en cada push, a propósito **sin** instalar `tiddl`/`yt-dlp`/`ffmpeg`,
-para verificar que el núcleo no dependa de ellos.
+para verificar que el núcleo no dependa de ellos. `build/build.py` corre la misma
+suite antes de empaquetar y aborta si algo falla.
 
 Antes de los tests corre el linter, con las mismas reglas que quien escribe:
 
 ```bash
-pip install ruff
 ruff check .
 ```
 

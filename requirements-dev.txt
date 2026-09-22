@@ -1,0 +1,19 @@
+# Herramientas de quien desarrolla. No hacen falta para usar la app ni para
+# correrla desde el código: eso es requirements-app.txt.
+#
+#     pip install -r requirements-dev.txt
+#
+# La suite corre sin red, sin claves y sin las dependencias de audio. Si tiddl
+# está instalado, el test de contrato con esa librería corre además; si no, se
+# saltea solo.
+#
+#     pytest -q                    los tests
+#     pytest -q --cov              y la cobertura, con el umbral de pyproject.toml
+
+pytest>=8.0
+pytest-cov>=5.0
+
+# El linter. La versión va clavada, igual que en el CI, para que una release de
+# ruff no rompa el build un martes y para que la máquina de quien escribe mire
+# exactamente las mismas reglas que GitHub Actions.
+ruff==0.16.8

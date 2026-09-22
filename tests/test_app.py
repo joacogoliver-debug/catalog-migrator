@@ -1,299 +1,265 @@
 # -*- coding: utf-8 -*-
-"""Test offline del backend de la app: trabajos y servidor HTTP.
+"""Backend de la app. Trabajos en segundo plano y servidor HTTP. Sin red externa.
 
-Corré:  python test_app.py
-Sale 0 si todo pasa, 1 si algo falla. No necesita claves ni internet: levanta el
-servidor real en un puerto libre de localhost y le pega con urllib.
+Levanta el servidor real en un puerto libre de localhost y le pega con urllib.
+No necesita claves ni internet.
 
-Cubre lo que sostiene la app:
-  - trabajos en segundo plano: progreso, resultado, error, cancelación
-  - el log del trabajo no crece sin límite
+Cubre lo que sostiene la app.
+  - trabajos en segundo plano, progreso, resultado, error y cancelación
+  - que el log del trabajo no crezca sin límite
+  - la cadena del idioma, instalador, config, entorno y sistema
   - ruteo, 404 y errores de API con mensaje mostrable
-  - que no se pueda leer nada fuera de app/web (path traversal)
+  - las tres defensas del servidor local, token, Host y CSP
+  - que no se pueda leer nada fuera de app/web
   - el endpoint que recupera el catálogo tras recargar la página
   - la descarga del ZIP con sus cabeceras
-  - el idioma: qué devuelve /api/config y qué pasa al cambiarlo
 """
+
+import http.client
+import io
 import json
 import os
 import sys
-
-# Antes de importar el servidor: el idioma se resuelve al atender /api/config y,
-# sin esto, saldría de la config del usuario que corra el test o del locale de
-# la máquina. En CI eso significaba un ZIP en inglés y un test en rojo.
-os.environ["MIGRADOR_IDIOMA"] = "es"
-import shutil
-import tempfile
 import threading
 import time
 import urllib.error
 import urllib.request
 import zipfile
 
-# Los tests viven en tests/ y los modulos en la raiz: sin esto, correr
-# `python tests/test_x.py` no encuentra nada que importar.
-RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(RAIZ, "app"))
-sys.path.insert(0, RAIZ)
+import pytest
 
-import i18n                                                        # noqa: E402
-
-
-
-def _esperar(cond, segundos=30, paso=0.02):
-    """Espera hasta que cond() sea verdadera. Por reloj y no por cantidad de
-    vueltas: un runner de CI cargado puede tardar mucho mas que una maquina
-    libre, y un test que se rinde por conteo se vuelve inestable justo en la
-    puerta del build."""
-    import time as _t
-    limite = _t.monotonic() + segundos
-    while _t.monotonic() < limite:
-        if cond():
-            return True
-        _t.sleep(paso)
-    return cond()
+import i18n
+import jobs as J
+import productos as P
+import server as backend
+from conftest import _esperar, _track
 
 
-def main():
-    import jobs as J
-    import productos as P
-    import server as backend
+# ============================================================
+# Trabajos en segundo plano
+# ============================================================
 
-    fails = []
+@pytest.fixture
+def registro():
+    return J.Registry()
 
-    def expect(name, got, want):
-        if got != want:
-            fails.append(f"  [{name}] got {got!r}, want {want!r}")
 
-    def check(name, cond, detalle=""):
-        if not cond:
-            fails.append(f"  [{name}] falló {detalle}")
-
-    # ========================================================
-    # Trabajos en segundo plano
-    # ========================================================
-    reg = J.Registry()
-
-    # --- caso feliz, con progreso ---
+def test_trabajo_que_termina_bien(registro):
     def ok(job):
         job.avance("empezando", 0.1)
         job.avance("mitad", 0.5)
         return {"valor": 42}
 
-    j = reg.lanzar("prueba", ok)
+    j = registro.lanzar("prueba", ok)
     _esperar(lambda: j.estado in ("listo", "error"))
-    expect("job.estado_ok", j.estado, "listo")
-    expect("job.resultado", j.resultado, {"valor": 42})
-    expect("job.progreso_final", j.progreso, 1.0)
-    check("job.log_acumula", "mitad" in j.log, f"log={j.log}")
-    d = j.a_dict(con_log=True)
-    expect("job.dict_tiene_resultado", d["resultado"], {"valor": 42})
-    check("job.dict_tiene_log", "log" in d)
 
-    # --- error: el mensaje llega, el traceback queda en el log ---
+    assert j.estado == "listo"
+    assert j.resultado == {"valor": 42}
+    assert j.progreso == 1.0
+    assert "mitad" in j.log
+
+    d = j.a_dict(con_log=True)
+    assert d["resultado"] == {"valor": 42}
+    assert "log" in d
+
+
+def test_trabajo_que_falla_deja_el_mensaje_y_esconde_el_traceback(registro):
     def falla(job):
         raise RuntimeError("se rompió algo")
 
-    j = reg.lanzar("prueba", falla)
+    j = registro.lanzar("prueba", falla)
     _esperar(lambda: j.estado in ("listo", "error"))
-    expect("job.estado_error", j.estado, "error")
-    expect("job.error_mensaje", j.error, "se rompió algo")
-    check("job.traceback_al_log", any("TRACEBACK" in x for x in j.log))
-    # El dict de un trabajo con error NO debe traer resultado.
-    check("job.error_sin_resultado", "resultado" not in j.a_dict())
 
-    # --- cancelación: avance() la detecta y corta ---
-    arrancó = threading.Event()
+    assert j.estado == "error"
+    assert j.error == "se rompió algo"
+    assert any("TRACEBACK" in x for x in j.log)
+    # El dict de un trabajo con error NO debe traer resultado.
+    assert "resultado" not in j.a_dict()
+
+
+def test_cancelacion(registro):
+    arranco = threading.Event()
 
     def largo(job):
-        arrancó.set()
+        arranco.set()
         for i in range(1000):
             job.avance(f"paso {i}", i / 1000)
             time.sleep(0.01)
         return "no deberia llegar"
 
-    j = reg.lanzar("prueba", largo)
-    check("job.cancelable_arranco", arrancó.wait(30))
+    j = registro.lanzar("prueba", largo)
+    assert arranco.wait(30)
     time.sleep(0.05)
     j.cancelar()
     _esperar(lambda: j.estado in ("cancelado", "listo", "error"))
-    expect("job.cancelado", j.estado, "cancelado")
-    check("job.cancelado_sin_resultado", j.resultado is None, f"resultado={j.resultado!r}")
 
-    # --- el log no crece indefinidamente ---
+    assert j.estado == "cancelado"
+    assert j.resultado is None
+
+
+def test_el_log_del_trabajo_no_crece_sin_limite(registro):
     def charlatan(job):
         for i in range(J.MAX_LOG * 3):
             job.avance(f"linea {i}")
         return True
 
-    j = reg.lanzar("prueba", charlatan)
+    j = registro.lanzar("prueba", charlatan)
     _esperar(lambda: j.estado in ("listo", "error"), segundos=60)
-    expect("job.log_acotado_estado", j.estado, "listo")
-    check("job.log_acotado", len(j.log) <= J.MAX_LOG, f"len={len(j.log)}")
-    # Conserva el arranque y la cola.
-    check("job.log_conserva_inicio", j.log[0] == "linea 0", f"primero={j.log[0]!r}")
-    check("job.log_conserva_final", "linea " + str(J.MAX_LOG * 3 - 1) in j.log[-1])
 
-    # --- inexistente ---
-    check("job.get_inexistente", reg.get("nohay") is None)
+    assert j.estado == "listo"
+    assert len(j.log) <= J.MAX_LOG
+    # Conserva el arranque y la cola, que es donde está lo que importa.
+    assert j.log[0] == "linea 0"
+    assert "linea " + str(J.MAX_LOG * 3 - 1) in j.log[-1]
 
-    # ========================================================
-    # Idioma: la cadena instalador -> config -> app
-    # ========================================================
-    # Es la promesa central de la app bilingue: quien elige "English" en el
-    # instalador tiene que encontrarse la app entera en ingles, incluido lo que
-    # descarga. Esa cadena pasa por cuatro fuentes con prioridades distintas y
-    # no hay forma de verla de punta a punta sin instalar de verdad, asi que se
-    # prueba la funcion que las resuelve.
-    #
-    # Se le cambia `dir_datos` y `_RAIZ` a carpetas temporales: sin eso el test
-    # leeria y escribiria la config real de quien lo corre.
-    dir_idioma = tempfile.mkdtemp(prefix="migrador-idioma-")
-    datos_idioma = os.path.join(dir_idioma, "datos")
-    os.makedirs(datos_idioma, exist_ok=True)
-    dir_datos_real, raiz_real = backend.dir_datos, backend._RAIZ
-    forzado_real = os.environ.pop("MIGRADOR_IDIOMA", None)
-    backend.dir_datos = lambda: datos_idioma
-    backend._RAIZ = dir_idioma
-    try:
-        def poner_config(valor):
-            ruta = os.path.join(datos_idioma, "config.json")
+
+def test_un_trabajo_inexistente_devuelve_none(registro):
+    assert registro.get("nohay") is None
+
+
+# ============================================================
+# La cadena del idioma
+# ============================================================
+#
+# Es la promesa central de la app bilingüe. Quien elige "English" en el
+# instalador tiene que encontrarse la app entera en inglés, incluido lo que
+# descarga. Esa cadena pasa por cuatro fuentes con prioridades distintas y no
+# hay forma de verla de punta a punta sin instalar de verdad, así que se prueba
+# la función que las resuelve.
+
+@pytest.fixture
+def entorno_de_idioma(monkeypatch, tmp_path):
+    """Aísla la config y la raíz, para no leer ni escribir las del usuario."""
+    datos = tmp_path / "datos"
+    datos.mkdir()
+    monkeypatch.setattr(backend, "dir_datos", lambda: str(datos))
+    monkeypatch.setattr(backend, "_RAIZ", str(tmp_path))
+    monkeypatch.delenv("MIGRADOR_IDIOMA", raising=False)
+
+    class Entorno:
+        raiz = str(tmp_path)
+
+        @staticmethod
+        def config(valor):
+            ruta = datos / "config.json"
             if valor is None:
-                if os.path.exists(ruta):
-                    os.remove(ruta)
-                return
-            with open(ruta, "w", encoding="utf-8") as f:
-                json.dump({"idioma": valor}, f)
+                ruta.unlink(missing_ok=True)
+            else:
+                ruta.write_text(json.dumps({"idioma": valor}), encoding="utf-8")
 
-        def poner_instalador(valor):
-            ruta = os.path.join(dir_idioma, "idioma.txt")
+        @staticmethod
+        def instalador(valor):
+            ruta = tmp_path / "idioma.txt"
             if valor is None:
-                if os.path.exists(ruta):
-                    os.remove(ruta)
-                return
-            with open(ruta, "w", encoding="utf-8") as f:
-                f.write(valor)
+                ruta.unlink(missing_ok=True)
+            else:
+                ruta.write_text(valor, encoding="utf-8")
 
-        # 4) sin nada, manda el sistema operativo; lo unico exigible es que
-        #    devuelva un idioma que la app tenga.
-        poner_config(None)
-        poner_instalador(None)
-        check("idioma.sin_nada", backend.idioma_guardado() in i18n.IDIOMAS)
+    yield Entorno
+    backend.idioma_guardado()
 
-        # 3) el instalador dejo su eleccion al lado del ejecutable.
-        poner_instalador("en")
-        expect("idioma.instalador", backend.idioma_guardado(), "en")
 
-        # Un idioma.txt con basura no rompe nada: se ignora y sigue el sistema.
-        poner_instalador("klingon")
-        check("idioma.instalador_basura", backend.idioma_guardado() in i18n.IDIOMAS)
+def test_sin_nada_manda_el_sistema_operativo(entorno_de_idioma):
+    """Lo único exigible es que devuelva un idioma que la app tenga."""
+    entorno_de_idioma.config(None)
+    entorno_de_idioma.instalador(None)
+    assert backend.idioma_guardado() in i18n.IDIOMAS
 
-        # Y la rama que de verdad corre cuando esto es un .exe. No es la misma:
-        # empaquetado, la carpeta sale de sys.executable y no de _RAIZ, que
-        # apunta adentro del bundle temporal de PyInstaller. Si esta rama
-        # estuviera mal, el instalador escribiria el idioma.txt donde nadie lo
-        # lee y la eleccion del instalador no llegaria nunca a la app, que es
-        # justo lo unico que no se puede ver corriendo desde el codigo.
-        poner_instalador("en")
-        falso_exe = os.path.join(dir_idioma, "Migrador de Catalogos.exe")
-        backend._RAIZ = os.path.join(dir_idioma, "no-es-aca")
-        sys.frozen = True
-        exe_real = sys.executable
-        sys.executable = falso_exe
-        try:
-            expect("idioma.instalador_congelado", backend.idioma_del_instalador(), "en")
-        finally:
-            sys.executable = exe_real
-            del sys.frozen
-            backend._RAIZ = dir_idioma
-        # Sin congelar, ese mismo idioma.txt no se busca al lado del exe.
-        check("idioma.sin_congelar_usa_raiz",
-              backend.idioma_del_instalador() == "en")
 
-        # 2) lo que el usuario eligio en la app le gana al instalador.
-        poner_instalador("en")
-        poner_config("es")
-        expect("idioma.config_gana", backend.idioma_guardado(), "es")
+def test_el_instalador_deja_su_eleccion_al_lado_del_ejecutable(entorno_de_idioma):
+    entorno_de_idioma.config(None)
+    entorno_de_idioma.instalador("en")
+    assert backend.idioma_guardado() == "en"
 
-        # 1) la variable de entorno le gana a todo: es la que usan los tests y
-        #    quien quiere abrir la app en un idioma sin cambiar su config.
-        os.environ["MIGRADOR_IDIOMA"] = "en"
-        expect("idioma.entorno_gana", backend.idioma_guardado(), "en")
-        os.environ.pop("MIGRADOR_IDIOMA")
 
-        # El endpoint valida y guarda; la basura no se guarda.
-        poner_config(None)
-        poner_instalador(None)
-        expect("idioma.api_cambia", backend.api_idioma({"idioma": "en"})["idioma"], "en")
-        expect("idioma.api_persiste", backend.leer_config().get("idioma"), "en")
-        try:
-            backend.api_idioma({"idioma": "klingon"})
-            fails.append("  [idioma.api_rechaza] deberia fallar")
-        except ValueError:
-            pass
-        expect("idioma.api_no_guardo_basura", backend.leer_config().get("idioma"), "en")
+def test_un_idioma_txt_con_basura_no_rompe_nada(entorno_de_idioma):
+    entorno_de_idioma.config(None)
+    entorno_de_idioma.instalador("klingon")
+    assert backend.idioma_guardado() in i18n.IDIOMAS
 
-        # Y el cambio alcanza a lo que se descarga, que se arma de este lado.
-        import paquete
-        check("idioma.alcanza_al_zip",
-              paquete.nombres_archivos()["validacion"].startswith("_Pre-delivery"),
-              paquete.nombres_archivos()["validacion"])
-    finally:
-        backend.dir_datos, backend._RAIZ = dir_datos_real, raiz_real
-        if forzado_real is not None:
-            os.environ["MIGRADOR_IDIOMA"] = forzado_real
-        backend.idioma_guardado()
-        shutil.rmtree(dir_idioma, ignore_errors=True)
 
-    # ========================================================
-    # Servidor HTTP
-    # ========================================================
-    def t(track, album, year, isrc, upc, vid, dist="ONErpm", dur=200):
-        return {"video_id": vid, "track": track, "album": album, "distributor": dist,
-                "label": "Sello", "release_year": year, "isrc": isrc,
-                "upc": upc, "match": "", "duration_s": dur, "views": 10, "likes": 0,
-                "comments": 0, "upload_date": f"{year or 2020}-01-01", "desc3": "",
-                "url": f"https://youtu.be/{vid}"}
+def test_empaquetado_el_idioma_del_instalador_se_busca_al_lado_del_exe(
+        entorno_de_idioma, monkeypatch):
+    """No es la misma rama. Empaquetado, la carpeta sale de `sys.executable` y
+    no de `_RAIZ`, que apunta adentro del bundle temporal de PyInstaller. Si
+    esta rama estuviera mal, el instalador escribiría el idioma.txt donde nadie
+    lo lee, y es justo lo único que no se puede ver corriendo desde el código."""
+    entorno_de_idioma.instalador("en")
+    monkeypatch.setattr(backend, "_RAIZ", os.path.join(entorno_de_idioma.raiz, "no-es-aca"))
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.setattr(
+        sys, "executable",
+        os.path.join(entorno_de_idioma.raiz, "Migrador de Catalogos.exe"))
 
-    prods = P.group_products([
-        t("Tema A", "Disco Uno", 2020, "ARABC2000001", "036000291452", "a1"),
-        t("Tema B", "Disco Uno", 2020, "ARABC2000002", "036000291452", "a2"),
-        t("Single", "(single / sin álbum)", 2021, "MALFORMADO", "", "b1", dist="DistroKid"),
-    ], artist="Artista Test")
-    backend.ESTADO.productos = prods
-    backend.ESTADO.artista = "Artista Test"
+    assert backend.idioma_del_instalador() == "en"
 
-    srv = backend.crear_servidor(0)
-    puerto = srv.server_address[1]
-    base = f"http://127.0.0.1:{puerto}"
-    threading.Thread(target=srv.serve_forever, daemon=True).start()
 
-    # Toda ruta /api/ exige el token de sesion que el servidor inyecta en
-    # index.html. Los tests lo leen del modulo, que es justo lo que un atacante
-    # no puede hacer desde otra pestana del navegador.
-    def cab(extra=None):
+def test_sin_congelar_ese_mismo_idioma_txt_se_busca_en_la_raiz(entorno_de_idioma):
+    entorno_de_idioma.instalador("en")
+    assert backend.idioma_del_instalador() == "en"
+
+
+def test_lo_que_el_usuario_eligio_le_gana_al_instalador(entorno_de_idioma):
+    entorno_de_idioma.instalador("en")
+    entorno_de_idioma.config("es")
+    assert backend.idioma_guardado() == "es"
+
+
+def test_la_variable_de_entorno_le_gana_a_todo(entorno_de_idioma, monkeypatch):
+    entorno_de_idioma.instalador("es")
+    entorno_de_idioma.config("es")
+    monkeypatch.setenv("MIGRADOR_IDIOMA", "en")
+    assert backend.idioma_guardado() == "en"
+
+
+def test_el_endpoint_de_idioma_valida_y_guarda(entorno_de_idioma):
+    entorno_de_idioma.config(None)
+    entorno_de_idioma.instalador(None)
+
+    assert backend.api_idioma({"idioma": "en"})["idioma"] == "en"
+    assert backend.leer_config().get("idioma") == "en"
+
+    with pytest.raises(ValueError):
+        backend.api_idioma({"idioma": "klingon"})
+    assert backend.leer_config().get("idioma") == "en"
+
+
+def test_el_cambio_de_idioma_alcanza_a_lo_que_se_descarga(entorno_de_idioma):
+    """Los nombres de archivo del ZIP se arman de este lado."""
+    import paquete
+    entorno_de_idioma.config(None)
+    backend.api_idioma({"idioma": "en"})
+    assert paquete.nombres_archivos()["validacion"].startswith("_Pre-delivery")
+
+
+# ============================================================
+# Servidor HTTP
+# ============================================================
+
+class Cliente:
+    """Un cliente mínimo contra el servidor real, con el token de la sesión.
+
+    Los tests leen el token del módulo, que es justo lo que una página abierta
+    en otra pestaña del navegador no puede hacer.
+    """
+
+    def __init__(self, puerto):
+        self.puerto = puerto
+        self.base = f"http://127.0.0.1:{puerto}"
+
+    def cab(self, extra=None):
         h = {"X-App-Token": backend.TOKEN}
         if extra:
             h.update(extra)
         return h
 
-    def _responde():
-        try:
-            req = urllib.request.Request(f"{base}/api/config", headers=cab())
-            urllib.request.urlopen(req, timeout=2).read()
-            return True
-        except Exception:
-            return False
-
-    check("http.arranco", _esperar(_responde, 30, 0.05), "el servidor no respondio")
-
-    def get(ruta):
-        # Reintento ante cortes de conexion: con keep-alive en Windows una
+    def get(self, ruta):
+        # Reintento ante cortes de conexión. Con keep-alive en Windows una
         # consulta suelta puede abortar (WinError 10053). Acá probamos la lógica
         # del backend, no la sincronización de sockets del sistema.
         for intento in range(4):
             try:
-                pedido = urllib.request.Request(f"{base}{ruta}", headers=cab())
+                pedido = urllib.request.Request(f"{self.base}{ruta}", headers=self.cab())
                 with urllib.request.urlopen(pedido, timeout=20) as r:
                     return r.status, r.read(), dict(r.headers)
             except urllib.error.HTTPError as e:
@@ -303,10 +269,10 @@ def main():
                     raise
                 time.sleep(0.2)
 
-    def post(ruta, cuerpo):
+    def post(self, ruta, cuerpo):
         req = urllib.request.Request(
-            f"{base}{ruta}", data=json.dumps(cuerpo).encode(),
-            headers=cab({"Content-Type": "application/json"}), method="POST")
+            f"{self.base}{ruta}", data=json.dumps(cuerpo).encode(),
+            headers=self.cab({"Content-Type": "application/json"}), method="POST")
         for intento in range(4):
             try:
                 with urllib.request.urlopen(req, timeout=60) as r:
@@ -321,238 +287,300 @@ def main():
                     raise
                 time.sleep(0.2)
 
-    try:
-        # --- estáticos ---
-        cod, cuerpo, hdr = get("/")
-        expect("http.index", cod, 200)
-        check("http.index_es_html", b"Migrador de Cat" in cuerpo)
-        expect("http.css", get("/app.css")[0], 200)
-        expect("http.js", get("/app.js")[0], 200)
-        expect("http.token", get("/tokens/colors.css")[0], 200)
-        expect("http.inexistente", get("/no-existe.js")[0], 404)
-
-        # --- path traversal: nada fuera de app/web ---
-        for intento in ("/../server.py", "/../../relevar_core.py", "/%2e%2e/server.py",
-                        "/..%2f..%2fvalidar.py", "/web/../../server.py"):
-            expect(f"http.traversal:{intento}", get(intento)[0], 404)
-
-        # --- config ---
-        cod, cuerpo, _ = get("/api/config")
-        cfg = json.loads(cuerpo)
-        expect("api.config", cod, 200)
-        check("api.config_version", cfg.get("version") == backend.VERSION)
-        check("api.config_catalogo_cargado", cfg.get("catalogo_cargado") is True)
-        check("api.config_audio_apagado", cfg.get("audio_habilitado") is False,
-              "el audio debe venir apagado por defecto")
-
-        # --- seguridad: sin token no se toca la API -----------------------
-        # Una pagina cualquiera abierta en el navegador puede pegarle a
-        # 127.0.0.1, asi que "escucha solo en localhost" no alcanza como defensa.
-        def crudo(metodo, ruta, cabeceras=None, datos=None):
-            req = urllib.request.Request(f"{base}{ruta}", data=datos,
-                                         headers=cabeceras or {}, method=metodo)
-            try:
-                with urllib.request.urlopen(req, timeout=10) as r:
-                    return r.status
-            except urllib.error.HTTPError as e:
-                e.read()
-                return e.code
-
-        expect("seg.get_sin_token", crudo("GET", "/api/config"), 403)
-        expect("seg.post_sin_token", crudo("POST", "/api/validar",
-                                           {"Content-Type": "application/json"},
-                                           b"{}"), 403)
-        expect("seg.token_incorrecto", crudo("GET", "/api/config",
-                                             {"X-App-Token": "no-es-el-token"}), 403)
-        # Rebinding de DNS: el pedido llega con un Host que no es localhost.
-        expect("seg.host_ajeno", crudo("GET", "/api/config",
-                                       {"X-App-Token": backend.TOKEN,
-                                        "Host": "evil.example.com"}), 403)
-        # Los estaticos no llevan token, pero el Host igual se controla.
-        expect("seg.estatico_sin_token", crudo("GET", "/app.css"), 200)
-
-        # El token va adentro de index.html y el marcador no queda sin
-        # reemplazar: si quedara, el frontend mandaria "{{TOKEN}}" y todo daria 403.
-        cod, cuerpo, _ = get("/")
-        check("seg.token_en_pagina", backend.TOKEN.encode() in cuerpo)
-        check("seg.marcador_reemplazado", b"{{TOKEN}}" not in cuerpo)
-
-        # --- términos de uso ---
-        cod, res = post("/api/terminos", {})
-        expect("terminos.sin_aceptar", cod, 400)
-
-        # --- catálogo (recupera tras recargar la página) ---
-        cod, cuerpo, _ = get("/api/catalogo")
-        cat = json.loads(cuerpo)
-        expect("api.catalogo", cod, 200)
-        expect("api.catalogo_artista", cat["artista"], "Artista Test")
-        expect("api.catalogo_n", len(cat["productos"]), 2)
-        check("api.catalogo_tiene_filtros", "distribuidoras" in cat["filtros"])
-        check("api.catalogo_detalle", len(cat["productos"][0]["detalle"]) >= 1)
-
-        # --- validar ---
-        cod, res = post("/api/validar", {"ids": [p["product_id"] for p in prods]})
-        expect("api.validar", cod, 200)
-        check("api.validar_detecta_isrc", any(h["codigo"] == "isrc_invalido" for h in res["hallazgos"]),
-              f"hallazgos={[h['codigo'] for h in res['hallazgos']]}")
-        expect("api.validar_no_apto", res["apto"], False)
-
-        # --- errores mostrables ---
-        cod, res = post("/api/validar", {"ids": ["noexiste"]})
-        expect("api.validar_vacio_codigo", cod, 400)
-        check("api.validar_vacio_mensaje", "seleccionados" in res.get("error", ""))
-
-        cod, res = post("/api/relevar", {"url": ""})
-        expect("api.relevar_sin_url", cod, 400)
-        check("api.relevar_mensaje", "link" in res.get("error", "").lower())
-
-        expect("api.ruta_inexistente", post("/api/nada", {})[0], 404)
-
-        cod, res = post("/api/preparar", {"ids": [prods[0]["product_id"]],
-                                          "planilla": False, "portadas": False, "audio": False})
-        expect("api.preparar_sin_nada", cod, 400)
-
-        # El audio pedido con el módulo apagado no debe habilitarlo.
-        check("api.audio_apagado_no_se_activa", backend.AUDIO_HABILITADO is False)
-
-        # --- preparar de verdad (sin red: sólo planilla) ---
-        cod, res = post("/api/preparar", {"ids": [p["product_id"] for p in prods],
-                                          "planilla": True, "portadas": False, "audio": False})
-        expect("api.preparar", cod, 200)
-        job_id = res["job"]["id"]
-
-        resultado = None
-        import time as _t
-        limite = _t.monotonic() + 120
-        while _t.monotonic() < limite:
-            cod, cuerpo, _ = get(f"/api/job/{job_id}")
-            est = json.loads(cuerpo)
-            if est["estado"] == "listo":
-                resultado = est["resultado"]
-                break
-            if est["estado"] == "error":
-                fails.append(f"  [api.preparar_job] error: {est.get('error')}")
-                break
-            _t.sleep(0.05)
-
-        check("api.preparar_termino", resultado is not None)
-        if resultado:
-            check("api.preparar_bytes", resultado["bytes"] > 0)
-            check("api.preparar_validacion", resultado["validacion"]["resumen"]["errores"] >= 1)
-
-            cod, cuerpo, hdr = get(resultado["descarga"])
-            expect("api.descarga", cod, 200)
-            expect("api.descarga_tipo", hdr.get("Content-Type"), "application/zip")
-            disp = hdr.get("Content-Disposition") or ""
-            check("api.descarga_nombre", "attachment" in disp)
-            # El nombre del archivo que se baja tambien sigue al idioma. Nada lo
-            # cubria, y el sufijo estaba escrito a mano en castellano: la app en
-            # ingles bajaba un "...-migracion.zip".
-            check("api.descarga_nombre_idioma",
-                  "-%s.zip" % i18n.T("paq.f_zip_sufijo") in disp, disp)
-            check("api.descarga_nombre_sin_rarezas",
-                  i18n.T("paq.f_zip_sufijo").isalnum(), i18n.T("paq.f_zip_sufijo"))
-            expect("api.descarga_largo", int(hdr.get("Content-Length")), len(cuerpo))
-
-            import io
-            z = zipfile.ZipFile(io.BytesIO(cuerpo))
-            check("api.zip_integro", z.testzip() is None)
-            nombres = z.namelist()
-            check("api.zip_validacion", any("Validacion" in n for n in nombres), f"{nombres}")
-            check("api.zip_ingesta", any("ingesta" in n for n in nombres))
-            check("api.zip_por_producto", any("Disco Uno" in n for n in nombres))
-            # No pedimos portadas ni audio: no deben aparecer.
-            check("api.zip_sin_portada", not any(n.endswith("portada.jpg") for n in nombres))
-
-        # --- un trabajo largo por vez -------------------------------------
-        # Dos relevamientos simultaneos gastan cuota de YouTube por duplicado y
-        # escriben sobre el mismo catalogo en memoria: gana el que termine
-        # ultimo. Se rechaza el segundo con un mensaje, en vez de dejarlo pasar.
-        lento = backend.JOBS.lanzar("prueba", lambda job: _esperar(lambda: job.cancelado, 5, 0.05))
+    def crudo(self, metodo, ruta, cabeceras=None, datos=None):
+        """Sin token ni cabeceras, salvo las que se pasen. Para las defensas."""
+        req = urllib.request.Request(f"{self.base}{ruta}", data=datos,
+                                     headers=cabeceras or {}, method=metodo)
         try:
-            cod, res = post("/api/relevar", {"url": "https://youtube.com/@x"})
-            expect("api.un_trabajo_por_vez", cod, 400)
-            check("api.un_trabajo_mensaje", "en curso" in res.get("error", ""),
-                  f"error={res.get('error')!r}")
-        finally:
-            lento.cancelar()
-
-        # --- job inexistente ---
-        expect("api.job_inexistente", get("/api/job/deadbeef")[0], 404)
-        expect("api.descarga_inexistente", get("/api/descargar/deadbeef")[0], 404)
-
-        # --- cancelar por HTTP ---
-        cod, res = post(f"/api/job/{job_id}/cancelar", {})
-        expect("api.cancelar_existente", cod, 200)
-        expect("api.cancelar_inexistente", post("/api/job/deadbeef/cancelar", {})[0], 404)
-
-        # --- keep-alive: el cuerpo se consume aunque la ruta no lo use -----
-        # Bug real: las rutas "sin body" no leían el cuerpo, y con HTTP/1.1 esos
-        # bytes quedaban en el socket y se metían adelante del pedido siguiente.
-        # El método se parseaba como '{}POST' y el servidor devolvía 501. Se veía
-        # como un error aleatorio de Tidal que se arreglaba al reintentar, porque
-        # el reintento abría otra conexión. Por eso hay que probar DOS pedidos
-        # sobre LA MISMA conexión.
-        import http.client
-        conn = http.client.HTTPConnection("127.0.0.1", puerto, timeout=20)
-        try:
-            cuerpo = json.dumps({}).encode()
-            cabeceras = cab({"Content-Type": "application/json",
-                             "Content-Length": str(len(cuerpo))})
-
-            # 1) una ruta que NO usa el cuerpo, pero que lo recibe
-            conn.request("POST", "/api/tidal/desconectar", body=cuerpo, headers=cabeceras)
-            r1 = conn.getresponse()
-            r1.read()
-            expect("keepalive.primera", r1.status, 200)
-
-            # 2) sobre la MISMA conexión, otra ruta
-            # id inexistente -> 400 deterministico: prueba que la ruta corrio
-            # y produjo SU error, no un error de parseo del pedido.
-            cuerpo2 = json.dumps({"ids": ["noexiste"]}).encode()
-            conn.request("POST", "/api/validar", body=cuerpo2,
-                         headers=cab({"Content-Type": "application/json",
-                                      "Content-Length": str(len(cuerpo2))}))
-            r2 = conn.getresponse()
-            r2.read()
-            # Lo que importa: NO 501. 400 es la respuesta correcta (sin selección).
-            check("keepalive.segunda_no_501", r2.status != 501,
-                  f"status={r2.status} razon={r2.reason!r}: el cuerpo anterior "
-                  "contaminó el parseo del pedido siguiente")
-            expect("keepalive.segunda", r2.status, 400)
-
-            # 3) una tercera, para confirmar que la conexión sigue sana
-            conn.request("POST", "/api/validar", body=cuerpo2,
-                         headers=cab({"Content-Type": "application/json",
-                                      "Content-Length": str(len(cuerpo2))}))
-            r3 = conn.getresponse()
-            r3.read()
-            expect("keepalive.tercera", r3.status, 400)
-        finally:
-            conn.close()
-
-        # --- body inválido ---
-        req = urllib.request.Request(f"{base}/api/validar", data=b"{no es json}",
-                                     headers=cab({"Content-Type": "application/json"}),
-                                     method="POST")
-        try:
-            urllib.request.urlopen(req, timeout=10)
-            fails.append("  [api.body_invalido] debería fallar")
+            with urllib.request.urlopen(req, timeout=10) as r:
+                return r.status
         except urllib.error.HTTPError as e:
-            expect("api.body_invalido", e.code, 400)
+            e.read()
+            return e.code
 
+
+@pytest.fixture(scope="module")
+def productos_servidor():
+    return P.group_products([
+        _track("Tema A", "Disco Uno", 2020, isrc="ARABC2000001",
+               upc="036000291452", vid="a1", date="2020-01-01"),
+        _track("Tema B", "Disco Uno", 2020, isrc="ARABC2000002",
+               upc="036000291452", vid="a2", date="2020-01-02"),
+        _track("Single", "", 2021, isrc="MALFORMADO", vid="b1",
+               dist="DistroKid", date="2021-01-01"),
+    ], artist="Artista Test")
+
+
+@pytest.fixture(scope="module")
+def cliente(productos_servidor):
+    """El servidor real, con un catálogo ya cargado en memoria."""
+    backend.ESTADO.productos = productos_servidor
+    backend.ESTADO.artista = "Artista Test"
+
+    srv = backend.crear_servidor(0)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    c = Cliente(srv.server_address[1])
+
+    def responde():
+        try:
+            req = urllib.request.Request(f"{c.base}/api/config", headers=c.cab())
+            urllib.request.urlopen(req, timeout=2).read()
+            return True
+        except Exception:
+            return False
+
+    assert _esperar(responde, 30, 0.05), "el servidor no respondió"
+    yield c
+
+    srv.shutdown()
+    srv.server_close()
+    backend.ESTADO.limpiar()
+
+
+# ---- estáticos ----
+
+def test_la_pagina_se_sirve(cliente):
+    cod, cuerpo, _ = cliente.get("/")
+    assert cod == 200
+    assert b"Migrador de Cat" in cuerpo
+
+
+@pytest.mark.parametrize("ruta", ["/app.css", "/app.js", "/tokens/colors.css"])
+def test_los_estaticos_se_sirven(cliente, ruta):
+    assert cliente.get(ruta)[0] == 200
+
+
+def test_un_estatico_inexistente_es_404(cliente):
+    assert cliente.get("/no-existe.js")[0] == 404
+
+
+@pytest.mark.parametrize("intento", [
+    "/../server.py", "/../../relevar_core.py", "/%2e%2e/server.py",
+    "/..%2f..%2fvalidar.py", "/web/../../server.py",
+])
+def test_no_se_puede_leer_nada_fuera_de_app_web(cliente, intento):
+    assert cliente.get(intento)[0] == 404
+
+
+# ---- las tres defensas ----
+
+def test_sin_token_no_se_toca_la_api(cliente):
+    """Una página cualquiera abierta en el navegador puede pegarle a 127.0.0.1,
+    así que «escucha sólo en localhost» no alcanza como defensa."""
+    assert cliente.crudo("GET", "/api/config") == 403
+    assert cliente.crudo("POST", "/api/validar",
+                         {"Content-Type": "application/json"}, b"{}") == 403
+
+
+def test_con_un_token_equivocado_tampoco(cliente):
+    assert cliente.crudo("GET", "/api/config", {"X-App-Token": "no-es-el-token"}) == 403
+
+
+def test_un_host_ajeno_se_rechaza(cliente):
+    """Rebinding de DNS. El pedido llega con un Host que no es localhost."""
+    assert cliente.crudo("GET", "/api/config",
+                         {"X-App-Token": backend.TOKEN,
+                          "Host": "evil.example.com"}) == 403
+
+
+def test_los_estaticos_no_piden_token_pero_si_controlan_el_host(cliente):
+    assert cliente.crudo("GET", "/app.css") == 200
+    assert cliente.crudo("GET", "/app.css", {"Host": "evil.example.com"}) == 403
+
+
+def test_el_token_viaja_adentro_de_la_pagina(cliente):
+    """Si el marcador quedara sin reemplazar, el frontend mandaría "{{TOKEN}}" y
+    todo daría 403."""
+    _cod, cuerpo, _ = cliente.get("/")
+    assert backend.TOKEN.encode() in cuerpo
+    assert b"{{TOKEN}}" not in cuerpo
+
+
+# ---- API ----
+
+def test_config(cliente):
+    cod, cuerpo, _ = cliente.get("/api/config")
+    cfg = json.loads(cuerpo)
+    assert cod == 200
+    assert cfg["version"] == backend.VERSION
+    assert cfg["catalogo_cargado"] is True
+    assert cfg["audio_habilitado"] is False, "el audio debe venir apagado por defecto"
+
+
+def test_el_audio_pedido_con_el_modulo_apagado_no_lo_activa(cliente):
+    assert backend.AUDIO_HABILITADO is False
+
+
+def test_los_terminos_no_se_aceptan_solos(cliente):
+    assert cliente.post("/api/terminos", {})[0] == 400
+
+
+def test_el_catalogo_se_recupera_tras_recargar_la_pagina(cliente):
+    """El relevamiento cuesta cuota de YouTube y no queremos repetirlo por un F5
+    accidental."""
+    cod, cuerpo, _ = cliente.get("/api/catalogo")
+    cat = json.loads(cuerpo)
+    assert cod == 200
+    assert cat["artista"] == "Artista Test"
+    assert len(cat["productos"]) == 2
+    assert "distribuidoras" in cat["filtros"]
+    assert len(cat["productos"][0]["detalle"]) >= 1
+
+
+def test_validar(cliente, productos_servidor):
+    cod, res = cliente.post("/api/validar",
+                            {"ids": [p["product_id"] for p in productos_servidor]})
+    assert cod == 200
+    assert any(h["codigo"] == "isrc_invalido" for h in res["hallazgos"])
+    assert res["apto"] is False
+
+
+def test_una_seleccion_vacia_da_un_error_mostrable(cliente):
+    cod, res = cliente.post("/api/validar", {"ids": ["noexiste"]})
+    assert cod == 400
+    assert "seleccionados" in res.get("error", "")
+
+
+def test_relevar_sin_url_da_un_error_mostrable(cliente):
+    cod, res = cliente.post("/api/relevar", {"url": ""})
+    assert cod == 400
+    assert "link" in res.get("error", "").lower()
+
+
+def test_una_ruta_de_api_inexistente_es_404(cliente):
+    assert cliente.post("/api/nada", {})[0] == 404
+
+
+def test_preparar_sin_pedir_nada_es_un_error(cliente, productos_servidor):
+    cod, _res = cliente.post("/api/preparar",
+                             {"ids": [productos_servidor[0]["product_id"]],
+                              "planilla": False, "portadas": False, "audio": False})
+    assert cod == 400
+
+
+def test_un_body_invalido_es_400(cliente):
+    req = urllib.request.Request(
+        f"{cliente.base}/api/validar", data=b"{no es json}",
+        headers=cliente.cab({"Content-Type": "application/json"}), method="POST")
+    with pytest.raises(urllib.error.HTTPError) as exc:
+        urllib.request.urlopen(req, timeout=10)
+    assert exc.value.code == 400
+
+
+# ---- preparar de verdad, sin red ----
+
+@pytest.fixture(scope="module")
+def paquete_listo(cliente, productos_servidor):
+    """Arma el ZIP con sólo la planilla y espera a que el trabajo termine."""
+    cod, res = cliente.post("/api/preparar",
+                            {"ids": [p["product_id"] for p in productos_servidor],
+                             "planilla": True, "portadas": False, "audio": False})
+    assert cod == 200
+    job_id = res["job"]["id"]
+
+    estado = {}
+
+    def termino():
+        _c, cuerpo, _h = cliente.get(f"/api/job/{job_id}")
+        estado.update(json.loads(cuerpo))
+        return estado["estado"] in ("listo", "error")
+
+    assert _esperar(termino, 120, 0.05), "el trabajo no terminó"
+    assert estado["estado"] == "listo", estado.get("error")
+    return {"job_id": job_id, "resultado": estado["resultado"]}
+
+
+def test_el_paquete_se_arma(paquete_listo):
+    res = paquete_listo["resultado"]
+    assert res["bytes"] > 0
+    assert res["validacion"]["resumen"]["errores"] >= 1
+
+
+def test_la_descarga_trae_sus_cabeceras(cliente, paquete_listo):
+    cod, cuerpo, hdr = cliente.get(paquete_listo["resultado"]["descarga"])
+    assert cod == 200
+    assert hdr.get("Content-Type") == "application/zip"
+    assert int(hdr["Content-Length"]) == len(cuerpo)
+
+    disp = hdr.get("Content-Disposition") or ""
+    assert "attachment" in disp
+    # El nombre del archivo que se baja también sigue al idioma. Nada lo cubría,
+    # y el sufijo estaba escrito a mano en castellano, así que la app en inglés
+    # bajaba un "...-migracion.zip".
+    assert "-%s.zip" % i18n.T("paq.f_zip_sufijo") in disp
+    assert i18n.T("paq.f_zip_sufijo").isalnum()
+
+
+def test_el_zip_descargado_esta_integro_y_trae_lo_pedido(cliente, paquete_listo):
+    _cod, cuerpo, _hdr = cliente.get(paquete_listo["resultado"]["descarga"])
+    z = zipfile.ZipFile(io.BytesIO(cuerpo))
+    nombres = z.namelist()
+
+    assert z.testzip() is None
+    assert any("Validacion" in n for n in nombres)
+    assert any("ingesta" in n for n in nombres)
+    assert any("Disco Uno" in n for n in nombres)
+    # No pedimos portadas ni audio, así que no deben aparecer.
+    assert not any(n.endswith("portada.jpg") for n in nombres)
+
+
+def test_un_trabajo_largo_por_vez(cliente):
+    """Dos relevamientos simultáneos gastan cuota de YouTube por duplicado y
+    escriben sobre el mismo catálogo en memoria, así que gana el que termine
+    último. Se rechaza el segundo con un mensaje, en vez de dejarlo pasar."""
+    lento = backend.JOBS.lanzar(
+        "prueba", lambda job: _esperar(lambda: job.cancelado, 5, 0.05))
+    try:
+        cod, res = cliente.post("/api/relevar", {"url": "https://youtube.com/@x"})
+        assert cod == 400
+        assert "en curso" in res.get("error", "")
     finally:
-        srv.shutdown()
-        srv.server_close()
-        backend.ESTADO.limpiar()
-
-    if fails:
-        print("FALLARON:")
-        print("\n".join(fails))
-        return 1
-    print("OK - backend de la app (trabajos + servidor)")
-    return 0
+        lento.cancelar()
 
 
-if __name__ == "__main__":
-    sys.exit(main())
+def test_un_trabajo_o_una_descarga_que_no_existen_son_404(cliente):
+    assert cliente.get("/api/job/deadbeef")[0] == 404
+    assert cliente.get("/api/descargar/deadbeef")[0] == 404
+
+
+def test_cancelar_por_http(cliente, paquete_listo):
+    assert cliente.post(f"/api/job/{paquete_listo['job_id']}/cancelar", {})[0] == 200
+    assert cliente.post("/api/job/deadbeef/cancelar", {})[0] == 404
+
+
+# ---- keep-alive ----
+
+def test_el_cuerpo_se_consume_aunque_la_ruta_no_lo_use(cliente):
+    """Bug real. Las rutas «sin body» no leían el cuerpo, y con HTTP/1.1 esos
+    bytes quedaban en el socket y se metían adelante del pedido siguiente. El
+    método se parseaba como '{}POST' y el servidor devolvía 501. Se veía como un
+    error aleatorio de Tidal que se arreglaba al reintentar, porque el reintento
+    abría otra conexión. Por eso hay que probar DOS pedidos sobre LA MISMA
+    conexión.
+    """
+    conn = http.client.HTTPConnection("127.0.0.1", cliente.puerto, timeout=20)
+    try:
+        cuerpo = json.dumps({}).encode()
+        conn.request("POST", "/api/tidal/desconectar", body=cuerpo,
+                     headers=cliente.cab({"Content-Type": "application/json",
+                                          "Content-Length": str(len(cuerpo))}))
+        r1 = conn.getresponse()
+        r1.read()
+        assert r1.status == 200
+
+        # Sobre la MISMA conexión, otra ruta. Un id inexistente da un 400
+        # determinístico, que prueba que la ruta corrió y produjo SU error, y no
+        # un error de parseo del pedido.
+        cuerpo2 = json.dumps({"ids": ["noexiste"]}).encode()
+        for esperado in ("segunda", "tercera"):
+            conn.request("POST", "/api/validar", body=cuerpo2,
+                         headers=cliente.cab({"Content-Type": "application/json",
+                                              "Content-Length": str(len(cuerpo2))}))
+            r = conn.getresponse()
+            r.read()
+            assert r.status != 501, (
+                f"la {esperado} dio {r.status} {r.reason!r}: el cuerpo anterior "
+                "contaminó el parseo del pedido siguiente")
+            assert r.status == 400
+    finally:
+        conn.close()

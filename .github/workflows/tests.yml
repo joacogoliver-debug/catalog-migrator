@@ -20,50 +20,29 @@ jobs:
       - name: Instalar dependencias
         run: |
           python -m pip install --upgrade pip
-          # Sólo openpyxl: los extras de audio (tiddl / yt-dlp / ffmpeg) NO se
-          # instalan a propósito. Los tests son offline y tienen que pasar sin
-          # ellos, lo que además demuestra que la degradación es correcta.
+          # openpyxl y las herramientas de desarrollo. Los extras de audio
+          # (tiddl / yt-dlp / ffmpeg) NO se instalan a propósito: los tests son
+          # offline y tienen que pasar sin ellos, lo que además demuestra que la
+          # degradación es correcta. El test de contrato con tiddl se saltea
+          # solo cuando la librería no está.
           pip install openpyxl
+          pip install -r requirements-dev.txt
 
       - name: Estilo y errores comunes (ruff)
         # La configuración está en pyproject.toml, así que el CI y la máquina de
         # quien escribe miran exactamente las mismas reglas. La versión va
-        # clavada para que una release de ruff no rompa el build un martes.
-        run: |
-          pip install ruff==0.16.8
-          ruff check --output-format=github .
+        # clavada en requirements-dev.txt para que una release de ruff no rompa
+        # el build un martes.
+        run: ruff check --output-format=github .
 
-      - name: Los dos catálogos de traducción, completos y de acuerdo
-        run: python tests/test_i18n.py
-
-      - name: Parseo de descripciones de YouTube
-        run: python tests/test_parse_description.py
-
-      - name: Agrupación en productos y filtros
-        run: python tests/test_productos.py
-
-      - name: Validación pre-entrega
-        run: python tests/test_validar.py
-
-      - name: Resolución real de las portadas
-        run: python tests/test_portadas.py
-
-      - name: Estructura del entregable
-        run: python tests/test_paquete.py
-
-      - name: Backend (trabajos, HTTP, token y Host)
-        run: python tests/test_app.py
-
-      - name: Contrato del orquestador
-        run: python tests/test_migrar_core.py
-
-      - name: Traducción de errores de la YouTube Data API
-        run: python tests/test_errores_youtube.py
-
-      - name: Contrato con tiddl
-        # Sin tiddl instalado el test se saltea solo: verifica el contrato con la
-        # librería cuando está presente, y no obliga a instalarla en CI.
-        run: python tests/test_audio_tidal.py
+      - name: Tests y cobertura
+        # Un solo paso y una sola lista de tests, la de pyproject.toml. Antes
+        # había un step por archivo y la lista vivía además en build/build.py y
+        # en el README.
+        #
+        # El umbral de cobertura también sale de pyproject.toml y hace fallar el
+        # build si baja.
+        run: pytest -q --cov --cov-report=term
 
       - name: Los módulos importan sin los extras de audio
         run: |

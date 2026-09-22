@@ -1,128 +1,106 @@
 # -*- coding: utf-8 -*-
-"""Test offline de parse_description (sin red, sin pytest).
+"""Parseo de las descripciones auto-generadas de YouTube. Sin red.
 
-Corré:  python test_parse_description.py
-Sale 0 si todo pasa, 1 si algo falla. No necesita claves ni internet.
-
-Cubre las reglas frágiles del parseo de descripciones auto-generadas de YouTube:
-  - línea ℗ con año pero SIN sello  -> captura el año, sello = None (no inventa sello)
-  - línea ℗ con año + sello          -> captura ambos
-  - single/EP: el 3er bloque es la línea ℗ (o "Released on:") -> NO es un álbum
-  - fallback "Released on:" para el año cuando no hay ℗ con año
-  - descripción vacía -> dict todo-None
+Cubre las reglas frágiles de `relevar_core.parse_description`.
+  - línea ℗ con año pero SIN sello, captura el año y deja el sello en None
+  - línea ℗ con año y sello, captura los dos
+  - single o EP, donde el tercer bloque es la línea ℗ y no un álbum
+  - respaldo por «Released on:» para el año cuando el ℗ no lo trae
+  - descripción vacía, que devuelve un dict con todo en None
 """
-import os
-import sys
-import importlib.util
 
-# Los tests viven en tests/ y los modulos en la raiz: sin esto, correr
-# `python tests/test_x.py` no encuentra nada que importar.
-RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+import pytest
+
+from relevar_core import parse_description as parse
 
 
-def _load_core():
-    path = os.path.join(RAIZ, "relevar_core.py")
-    spec = importlib.util.spec_from_file_location("relevar_core_under_test", path)
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
-
-
-def main():
-    rc = _load_core()
-    parse = rc.parse_description
-    fails = []
-
-    def expect(name, got, want):
-        if got != want:
-            fails.append(f"  [{name}] got {got!r}, want {want!r}")
-
-    # ℗ con año pero sin sello: el año igual se captura; el sello queda None.
+def test_phono_con_anio_y_sin_sello():
+    """El año se captura igual. El sello queda en None, no se inventa."""
     r = parse("Provided to YouTube by DistroKid\n\nMi Cancion · Artista\n\n℗ 2023")
-    expect("year_only.release_year", r["release_year"], 2023)
-    expect("year_only.label", r["label"], None)
+    assert r["release_year"] == 2023
+    assert r["label"] is None
 
+
+def test_phono_con_espacio_al_final():
     r = parse("Provided to YouTube by DistroKid\n\nMi Cancion · Artista\n\n℗ 2023 ")
-    expect("year_trailing_space.release_year", r["release_year"], 2023)
-    expect("year_trailing_space.label", r["label"], None)
+    assert r["release_year"] == 2023
+    assert r["label"] is None
 
-    # ℗ con año + sello (caso normal, con bloque de álbum).
+
+def test_phono_con_anio_y_sello_y_bloque_de_album():
     r = parse("Provided to YouTube by DistroKid\n\nMi Cancion · Artista\n\n"
               "Album X\n\n℗ 2023 Sello Indie\n")
-    expect("year_label.release_year", r["release_year"], 2023)
-    expect("year_label.label", r["label"], "Sello Indie")
-    expect("year_label.album", r["album"], "Album X")
+    assert r["release_year"] == 2023
+    assert r["label"] == "Sello Indie"
+    assert r["album"] == "Album X"
 
-    # Single/EP: el 3er bloque es la línea ℗ -> no es álbum.
+
+def test_si_el_tercer_bloque_es_la_linea_phono_no_hay_album():
     r = parse("Provided to YouTube by DistroKid\n\nMi Cancion · Artista\n\n"
               "℗ 2023 Sello Indie\n\nReleased on: 2023-05-01\n")
-    expect("single.album", r["album"], None)
-    expect("single.release_year", r["release_year"], 2023)
-    expect("single.label", r["label"], "Sello Indie")
+    assert r["album"] is None
+    assert r["release_year"] == 2023
+    assert r["label"] == "Sello Indie"
 
+
+def test_single_sin_cuarto_bloque():
     r = parse("Provided to YouTube by ONErpm\n\nTema · Artista\n\n℗ 2024 Algun Sello")
-    expect("single3.album", r["album"], None)
-    expect("single3.release_year", r["release_year"], 2024)
+    assert r["album"] is None
+    assert r["release_year"] == 2024
 
-    # 3er bloque es "Released on:" -> tampoco es álbum.
+
+def test_si_el_tercer_bloque_es_released_on_tampoco_hay_album():
     r = parse("Provided to YouTube by DistroKid\n\nTema · Artista\n\n"
               "Released on: 2022-01-01\n\n℗ 2022")
-    expect("releasedon.album", r["album"], None)
-    expect("releasedon.release_year", r["release_year"], 2022)
+    assert r["album"] is None
+    assert r["release_year"] == 2022
 
-    # Fallback de año por "Released on:" cuando el ℗ no trae año.
+
+def test_released_on_es_el_respaldo_para_el_anio():
     r = parse("Provided to YouTube by DistroKid\n\nTema · Artista\n\nReleased on: 2021-03-03")
-    expect("released_fallback.release_year", r["release_year"], 2021)
+    assert r["release_year"] == 2021
 
-    # ---- El sello numérico de DistroKid no es un año --------------------
-    #
-    # Caso real, encontrado usando la app sobre un catálogo de verdad. DistroKid
-    # escribe "℗ 5358533 Records DK" cuando el artista no cargó ningún sello, y
-    # ese número es el id de su cuenta. El parseo agarraba los primeros cuatro
-    # dígitos y publicaba "año 5358" en los cuatro productos del catálogo.
-    real = ("Provided to YouTube by DistroKid\n\n"
-            "Cama De Dos Plazas · Santicuado.Q · Joaco Lynch\n\n"
-            "Breathless\n\n"
-            "℗ 5358533 Records DK\n\n"
-            "Released on: 2026-09-11\n\n"
-            "Auto-generated by YouTube.")
-    r = parse(real)
-    expect("distrokid.no_inventa_anio", r["release_year"], 2026)
-    # El relleno de DistroKid no es un sello y no se muestra como tal.
-    expect("distrokid.sello_relleno_descartado", r["label"], None)
-    expect("distrokid.album", r["album"], "Breathless")
-    expect("distrokid.distribuidora", r["distributor"], "DistroKid")
 
-    # Sin "Released on:" no hay de dónde sacar el año, y eso está bien: mejor
-    # vacío, que la app marca como aviso, que un número inventado.
+# ============================================================
+# El sello numérico de DistroKid no es un año
+# ============================================================
+#
+# Caso real, encontrado usando la app sobre un catálogo de verdad. DistroKid
+# escribe "℗ 5358533 Records DK" cuando el artista no cargó ningún sello, y ese
+# número es el id de su cuenta. El parseo agarraba los primeros cuatro dígitos y
+# publicaba "año 5358" en los cuatro productos del catálogo.
+
+def test_el_relleno_de_distrokid_no_se_toma_como_anio_ni_como_sello():
+    r = parse("Provided to YouTube by DistroKid\n\n"
+              "Cama De Dos Plazas · Santicuado.Q · Joaco Lynch\n\n"
+              "Breathless\n\n"
+              "℗ 5358533 Records DK\n\n"
+              "Released on: 2026-09-11\n\n"
+              "Auto-generated by YouTube.")
+    assert r["release_year"] == 2026          # sale de "Released on:", no del ℗
+    assert r["label"] is None
+    assert r["album"] == "Breathless"
+    assert r["distributor"] == "DistroKid"
+
+
+def test_sin_released_on_el_anio_queda_vacio_en_vez_de_inventado():
+    """Vacío lo marca la app como aviso. Un número inventado se publica."""
     r = parse("Provided to YouTube by DistroKid\n\nT · A\n\nDisco\n\n℗ 5358533 Records DK")
-    expect("distrokid.sin_released", r["release_year"], None)
-    expect("distrokid.sin_released_sello", r["label"], None)
-
-    # Un año que no puede existir se descarta y la línea queda entera como sello.
-    r = parse("Provided to YouTube by X\n\nT · A\n\nDisco\n\n℗ 1203 Algo")
-    expect("anio_imposible", r["release_year"], None)
-    expect("anio_imposible.sello", r["label"], "1203 Algo")
-
-    # Un año futuro lejano tampoco: es un error de carga, no un lanzamiento.
-    r = parse("Provided to YouTube by X\n\nT · A\n\nDisco\n\n℗ 2199 Sello")
-    expect("anio_futuro", r["release_year"], None)
-
-    # Y el caso normal sigue andando: cuatro dígitos que SÍ son un año.
-    r = parse("Provided to YouTube by X\n\nT · A\n\nDisco\n\n℗ 2023 Cerro Bayo")
-    expect("anio_normal", r["release_year"], 2023)
-    expect("anio_normal.sello", r["label"], "Cerro Bayo")
-
-    # Vacío -> dict todo-None.
-    expect("empty", parse(""),
-           {"distributor": None, "album": None, "release_year": None, "label": None})
-
-    if fails:
-        sys.stdout.write("FAIL:\n" + "\n".join(fails) + "\n")
-        return 1
-    sys.stdout.write("OK: parse_description (13 grupos de asserts) pasaron.\n")
-    return 0
+    assert r["release_year"] is None
+    assert r["label"] is None
 
 
-if __name__ == "__main__":
-    sys.exit(main())
+@pytest.mark.parametrize("linea, anio, sello", [
+    ("℗ 1203 Algo", None, "1203 Algo"),     # imposible, la línea entera es sello
+    ("℗ 2199 Sello", None, "2199 Sello"),   # futuro lejano, es un error de carga
+    ("℗ 2023 Cerro Bayo", 2023, "Cerro Bayo"),
+])
+def test_solo_pasan_los_anios_plausibles(linea, anio, sello):
+    r = parse(f"Provided to YouTube by X\n\nT · A\n\nDisco\n\n{linea}")
+    assert r["release_year"] == anio
+    assert r["label"] == sello
+
+
+def test_descripcion_vacia():
+    assert parse("") == {"distributor": None, "album": None,
+                         "release_year": None, "label": None}

@@ -1,50 +1,43 @@
 # -*- coding: utf-8 -*-
-"""Test offline de los dos catálogos de traducción (sin red, sin pytest).
+"""Los dos catálogos de traducción, completos y de acuerdo entre sí.
 
-Corré:  python test_i18n.py
-Sale 0 si todo pasa, 1 si algo falla.
+La app tiene dos catálogos, uno por proceso. `i18n.py` para lo que arma Python
+(el log, los errores, los archivos del ZIP) y `app/web/i18n.js` para la
+interfaz. Son dos porque son dos procesos, y eso abre tres formas de romperlos
+que no se ven hasta que alguien abre la app en inglés.
 
-La app tiene dos catálogos, uno por proceso: `i18n.py` para lo que arma Python
-(el log, los errores, los archivos del ZIP) y `app/web/i18n.js` para la interfaz.
-Son dos porque son dos procesos, y eso abre tres formas de romperlos que no se
-ven hasta que alguien abre la app en inglés:
-
-  - una clave traducida al español y no al inglés, que sale en español sin avisar;
+  - una clave traducida al español y no al inglés, que sale en español sin avisar
   - una clave que la interfaz usa y el catálogo no define, que sale como
-    "paso2.titulo" en la pantalla;
+    "paso2.titulo" en la pantalla
   - el nombre de un archivo del ZIP que la interfaz nombra distinto de como lo
-    escribe `paquete.py`, que manda a buscar algo que no existe.
+    escribe `paquete.py`, que manda a buscar algo que no existe
 
-Este test cubre las tres.
+Este archivo cubre las tres.
 """
+
 import io
 import os
 import re
-import sys
 
-# Los tests viven en tests/ y los modulos en la raiz: sin esto, correr
-# `python tests/test_x.py` no encuentra nada que importar.
-RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, RAIZ)
+import pytest
 
-import i18n                                                        # noqa: E402
-
-FALLOS = []
+import i18n
+from conftest import RAIZ
 
 
-def check(nombre, cond, detalle=""):
-    if not cond:
-        FALLOS.append(f"  [{nombre}] {detalle}")
+def _leer(*partes):
+    return io.open(os.path.join(RAIZ, *partes), encoding="utf-8").read()
 
 
-def _catalogo_js():
-    """Las entradas de app/web/i18n.js, como {clave: {es, en}}.
+@pytest.fixture(scope="module")
+def catalogo_js():
+    """Las entradas de `app/web/i18n.js`, como {clave: {es: bool, en: bool}}.
 
-    Se parsea con expresiones regulares y no con un motor de JS: el archivo es
+    Se parsea con expresiones regulares y no con un motor de JS. El archivo es
     un objeto literal plano y meter una dependencia para leerlo sería peor que
     el problema que resuelve.
     """
-    s = io.open(os.path.join(RAIZ, "app", "web", "i18n.js"), encoding="utf-8").read()
+    s = _leer("app", "web", "i18n.js")
     cuerpo = s[s.index("const TEXTOS = {"):]
     entradas = {}
 
@@ -54,7 +47,7 @@ def _catalogo_js():
             "en": bool(re.search(r"\ben:\s*[`'\"]", bloque)),
         }
 
-    # Las de una sola línea: 'clave': { es: '...', en: '...' },
+    # Las de una sola línea, 'clave': { es: '...', en: '...' },
     for m in re.finditer(r"^  '([a-z0-9_.]+)':\s*\{([^\n]*)\},$", cuerpo, re.M):
         anotar(m.group(1), m.group(2))
 
@@ -68,9 +61,10 @@ def _catalogo_js():
     return entradas
 
 
-def _claves_usadas_en_la_interfaz():
-    app = io.open(os.path.join(RAIZ, "app", "web", "app.js"), encoding="utf-8").read()
-    html = io.open(os.path.join(RAIZ, "app", "web", "index.html"), encoding="utf-8").read()
+@pytest.fixture(scope="module")
+def claves_usadas_en_la_interfaz():
+    app = _leer("app", "web", "app.js")
+    html = _leer("app", "web", "index.html")
     usadas = set(re.findall(r"T\(\s*'([a-z0-9_.]+)'", app))
     usadas |= set(re.findall(r'data-t(?:-title|-aria)?="([a-z0-9_.]+)"', html))
     # Las que se arman concatenando un prefijo con un código.
@@ -86,75 +80,87 @@ def _claves_usadas_en_la_interfaz():
     return {k for k in usadas if not k.endswith(".")}
 
 
-def main():
-    # --- Python: ninguna clave a medio traducir -------------------------
-    sin_en = i18n.claves_sin_traducir("es", "en")
-    check("py.todas_en_ingles", not sin_en, f"sin traducir: {sin_en}")
-    sin_es = i18n.claves_sin_traducir("en", "es")
-    check("py.todas_en_espanol", not sin_es, f"sin original: {sin_es}")
-    check("py.hay_catalogo", len(i18n.TEXTOS) > 100, f"{len(i18n.TEXTOS)} claves")
+# ============================================================
+# Catálogo de Python
+# ============================================================
 
-    # --- Interfaz: ídem -------------------------------------------------
-    js = _catalogo_js()
-    check("js.hay_catalogo", len(js) > 100, f"{len(js)} claves")
-    js_sin_en = sorted(k for k, v in js.items() if v["es"] and not v["en"])
-    check("js.todas_en_ingles", not js_sin_en, f"sin traducir: {js_sin_en}")
-    js_sin_es = sorted(k for k, v in js.items() if v["en"] and not v["es"])
-    check("js.todas_en_espanol", not js_sin_es, f"sin original: {js_sin_es}")
+def test_ninguna_clave_a_medio_traducir_en_python():
+    assert i18n.claves_sin_traducir("es", "en") == []
+    assert i18n.claves_sin_traducir("en", "es") == []
 
-    # --- Interfaz: nada sin definir, nada de más ------------------------
-    usadas = _claves_usadas_en_la_interfaz()
-    faltan = sorted(usadas - set(js))
-    check("js.sin_definir", not faltan, f"usadas y no definidas: {faltan}")
-    sobran = sorted(set(js) - usadas)
-    check("js.sin_usar", not sobran, f"definidas y sin usar: {sobran}")
 
-    # --- El nombre del archivo tiene que decir lo mismo de los dos lados -
-    # La pantalla 4 manda a abrir el informe de validación por su nombre. Si
-    # `paquete.py` lo escribe distinto, manda a buscar un archivo que no existe.
-    s = io.open(os.path.join(RAIZ, "app", "web", "i18n.js"), encoding="utf-8").read()
-    bloque = re.search(r"'archivos\.validacion':\s*\{(.*?)\},", s, re.S).group(1)
-    for idioma in ("es", "en"):
-        en_js = re.search(rf"{idioma}:\s*'([^']+)'", bloque).group(1)
-        i18n.poner_idioma(idioma)
-        en_py = i18n.T("paq.f_validacion")
-        check(f"archivo.validacion.{idioma}", en_js == en_py,
-              f"js={en_js!r} py={en_py!r}")
-    i18n.poner_idioma("es")
+def test_el_catalogo_de_python_no_esta_vacio():
+    assert len(i18n.TEXTOS) > 100
 
-    # --- Ninguna clave definida dos veces -------------------------------
-    # Un diccionario de Python se come las claves repetidas sin decir nada: la
-    # ultima gana y la primera desaparece. Como las dos entradas suelen ser
-    # parecidas, el texto sigue saliendo en el idioma correcto y la unica senal
-    # es que cambio una palabra. Por eso se lee el archivo, no el diccionario ya
-    # construido: en el diccionario la duplicada ya no existe.
-    fuente = io.open(os.path.join(RAIZ, "i18n.py"), encoding="utf-8").read()
+
+def test_ninguna_clave_definida_dos_veces_en_python():
+    """Un diccionario se come las claves repetidas sin decir nada. La última
+    gana y la primera desaparece. Como las dos entradas suelen ser parecidas, el
+    texto sigue saliendo en el idioma correcto y la única señal es que cambió
+    una palabra. Por eso se lee el archivo y no el diccionario ya construido, en
+    el que la duplicada ya no existe."""
+    fuente = _leer("i18n.py")
     cuerpo = fuente[fuente.index("TEXTOS = {"):]
     literales = re.findall(r'^    "([a-z0-9_.]+)":', cuerpo, re.M)
     repetidas = sorted({k for k in literales if literales.count(k) > 1})
-    check("py.sin_claves_repetidas", not repetidas, f"definidas dos veces: {repetidas}")
+    assert repetidas == []
 
-    fuente_js = io.open(os.path.join(RAIZ, "app", "web", "i18n.js"), encoding="utf-8").read()
-    cuerpo_js = fuente_js[fuente_js.index("const TEXTOS = {"):]
-    js_literales = re.findall(r"^  '([a-z0-9_.]+)':", cuerpo_js, re.M)
-    js_repetidas = sorted({k for k in js_literales if js_literales.count(k) > 1})
-    check("js.sin_claves_repetidas", not js_repetidas, f"definidas dos veces: {js_repetidas}")
 
-    # --- El formato no se rompe al traducir -----------------------------
-    # Una clave cuyo texto en inglés se olvida un {parametro} que el español sí
-    # tiene deja un hueco en la frase, y al revés revienta el format().
+def test_el_formato_no_se_rompe_al_traducir():
+    """Una clave cuyo texto en inglés se olvida un {parametro} que el español sí
+    tiene deja un hueco en la frase, y al revés revienta el format()."""
+    desparejas = {}
     for clave, entrada in i18n.TEXTOS.items():
         pes = set(re.findall(r"\{(\w+)\}", entrada.get("es", "")))
         pen = set(re.findall(r"\{(\w+)\}", entrada.get("en", "")))
-        check(f"formato.{clave}", pes == pen, f"es={sorted(pes)} en={sorted(pen)}")
-
-    if FALLOS:
-        print("FALLARON:")
-        print("\n".join(FALLOS))
-        return 1
-    print(f"OK - i18n ({len(i18n.TEXTOS)} claves en Python, {len(js)} en la interfaz)")
-    return 0
+        if pes != pen:
+            desparejas[clave] = (sorted(pes), sorted(pen))
+    assert desparejas == {}
 
 
-if __name__ == "__main__":
-    sys.exit(main())
+# ============================================================
+# Catálogo de la interfaz
+# ============================================================
+
+def test_el_catalogo_de_la_interfaz_no_esta_vacio(catalogo_js):
+    assert len(catalogo_js) > 100
+
+
+def test_ninguna_clave_a_medio_traducir_en_la_interfaz(catalogo_js):
+    sin_en = sorted(k for k, v in catalogo_js.items() if v["es"] and not v["en"])
+    sin_es = sorted(k for k, v in catalogo_js.items() if v["en"] and not v["es"])
+    assert sin_en == []
+    assert sin_es == []
+
+
+def test_la_interfaz_no_usa_claves_sin_definir(catalogo_js, claves_usadas_en_la_interfaz):
+    assert sorted(claves_usadas_en_la_interfaz - set(catalogo_js)) == []
+
+
+def test_el_catalogo_de_la_interfaz_no_tiene_claves_de_mas(
+        catalogo_js, claves_usadas_en_la_interfaz):
+    assert sorted(set(catalogo_js) - claves_usadas_en_la_interfaz) == []
+
+
+def test_ninguna_clave_definida_dos_veces_en_la_interfaz():
+    fuente = _leer("app", "web", "i18n.js")
+    cuerpo = fuente[fuente.index("const TEXTOS = {"):]
+    literales = re.findall(r"^  '([a-z0-9_.]+)':", cuerpo, re.M)
+    repetidas = sorted({k for k in literales if literales.count(k) > 1})
+    assert repetidas == []
+
+
+# ============================================================
+# Los dos catálogos, de acuerdo
+# ============================================================
+
+@pytest.mark.parametrize("idioma", ["es", "en"])
+def test_el_nombre_del_informe_de_validacion_coincide_de_los_dos_lados(idioma):
+    """La pantalla 4 manda a abrir el informe de validación por su nombre. Si
+    `paquete.py` lo escribe distinto, manda a buscar un archivo que no existe."""
+    s = _leer("app", "web", "i18n.js")
+    bloque = re.search(r"'archivos\.validacion':\s*\{(.*?)\},", s, re.S).group(1)
+    en_js = re.search(rf"{idioma}:\s*'([^']+)'", bloque).group(1)
+
+    i18n.poner_idioma(idioma)
+    assert en_js == i18n.T("paq.f_validacion")

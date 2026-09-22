@@ -1,135 +1,123 @@
 # -*- coding: utf-8 -*-
-"""Test offline del módulo de portadas (sin red, sin pytest).
+"""Portadas vía iTunes Search API. Sin red.
 
-Corré:  python test_portadas.py
-Sale 0 si todo pasa, 1 si algo falla. No necesita claves ni internet.
-
-Lo importante que cubre: que el estado de la portada reporte la resolución
+Lo importante que cubre. Que el estado de la portada reporte la resolución
 REAL y no la pedida. Apple sirve el tamaño máximo que tiene y responde 200
-aunque sea más chico que el pedido, pedir 3000x3000 puede devolver 600x604.
-Reportar el tamaño pedido haría que la planilla diga que la portada cumple el
-mínimo de ingesta cuando en realidad la van a rechazar.
+aunque sea más chico que el pedido, así que pedir 3000x3000 puede devolver
+600x604. Reportar el tamaño pedido haría que la planilla diga que la portada
+cumple el mínimo de ingesta cuando en realidad la van a rechazar.
 """
-import os
 
-# Este test compara los mensajes en español, así que el idioma se fija:
-# si no, en una máquina con el sistema en inglés compararía contra otra cosa.
-os.environ["MIGRADOR_IDIOMA"] = "es"
-import sys
-import struct
-import importlib.util
+import pytest
 
-# Los tests viven en tests/ y los modulos en la raiz: sin esto, correr
-# `python tests/test_x.py` no encuentra nada que importar.
-RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# Ademas del path para _load(): los modulos que se cargan por ruta importan a su
-# vez `i18n`, y eso se resuelve por sys.path como cualquier import normal.
-sys.path.insert(0, RAIZ)
+import portadas as PT
 
 
-def _load(nombre):
-    path = os.path.join(RAIZ, f"{nombre}.py")
-    spec = importlib.util.spec_from_file_location(nombre, path)
-    mod = importlib.util.module_from_spec(spec)
-    sys.modules[nombre] = mod
-    spec.loader.exec_module(mod)
-    return mod
+# ============================================================
+# Reescritura de la URL del CDN de Apple
+# ============================================================
+
+@pytest.mark.parametrize("url, px, esperado", [
+    ("https://is1-ssl.mzstatic.com/image/thumb/abc/100x100bb.jpg", 3000,
+     "https://is1-ssl.mzstatic.com/image/thumb/abc/3000x3000bb.jpg"),
+    ("https://is1-ssl.mzstatic.com/image/thumb/abc/500x500bb.jpg", 2000,
+     "https://is1-ssl.mzstatic.com/image/thumb/abc/2000x2000bb.jpg"),
+    # Entra .png y sale .jpg, que es lo que el CDN sirve para ese nombre.
+    ("https://is1-ssl.mzstatic.com/image/thumb/abc/100x100bb.png", 1200,
+     "https://is1-ssl.mzstatic.com/image/thumb/abc/1200x1200bb.jpg"),
+    ("", 3000, ""),
+])
+def test_upscale_de_la_url(url, px, esperado):
+    assert PT._upscale(url, px) == esperado
 
 
-def _jpeg(ancho, alto, comps=3):
-    sof = (b"\xff\xc0" + struct.pack(">H", 8 + 3 * comps) + b"\x08"
-           + struct.pack(">HH", alto, ancho) + bytes([comps]) + b"\x00" * (3 * comps))
-    return b"\xff\xd8" + sof + b"\xff\xd9" + b"\x00" * 200
+# ============================================================
+# Limpieza de títulos antes de buscar
+# ============================================================
 
-
-def main():
-    _load("validar")                 # portadas importa medir_imagen de validar
-    PT = _load("portadas")
-    fails = []
-
-    def expect(name, got, want):
-        if got != want:
-            fails.append(f"  [{name}] got {got!r}, want {want!r}")
-
-    def check(name, cond, detalle=""):
-        if not cond:
-            fails.append(f"  [{name}] falló {detalle}")
-
-    # --- Reescritura de la URL del CDN de Apple --------------------------
-    base = "https://is1-ssl.mzstatic.com/image/thumb/abc/100x100bb.jpg"
-    expect("upscale.3000", PT._upscale(base, 3000),
-           "https://is1-ssl.mzstatic.com/image/thumb/abc/3000x3000bb.jpg")
-    expect("upscale.desde_otro_tamano", PT._upscale(base.replace("100x100", "500x500"), 2000),
-           "https://is1-ssl.mzstatic.com/image/thumb/abc/2000x2000bb.jpg")
-    expect("upscale.png", PT._upscale(base.replace(".jpg", ".png"), 1200),
-           "https://is1-ssl.mzstatic.com/image/thumb/abc/1200x1200bb.jpg")
-    expect("upscale.vacio", PT._upscale("", 3000), "")
-
-    # --- Limpieza de títulos --------------------------------------------
-    expect("ruido.official_video", PT._strip_ruido("Tema (Official Video)"), "Tema")
-    expect("ruido.remaster", PT._strip_ruido("Album [Remastered 2011]"), "Album")
-    expect("ruido.en_vivo", PT._strip_ruido("Disco (En Vivo)"), "Disco")
-    expect("ruido.limpio_queda_igual", PT._strip_ruido("Bocanada"), "Bocanada")
+@pytest.mark.parametrize("titulo, limpio", [
+    ("Tema (Official Video)", "Tema"),
+    ("Album [Remastered 2011]", "Album"),
+    ("Disco (En Vivo)", "Disco"),
+    ("Bocanada", "Bocanada"),
     # No debe comerse paréntesis que son parte del título.
-    expect("ruido.conserva_parentesis_util",
-           PT._strip_ruido("Cosquillas (feat. Alguien)"), "Cosquillas (feat. Alguien)")
+    ("Cosquillas (feat. Alguien)", "Cosquillas (feat. Alguien)"),
+])
+def test_strip_ruido(titulo, limpio):
+    assert PT._strip_ruido(titulo) == limpio
 
-    # --- El estado reporta la resolución REAL ---------------------------
-    # Reemplazamos la búsqueda y la descarga para no tocar la red.
-    PT.buscar_portada = lambda artista, album, upc="": {
+
+# ============================================================
+# El estado reporta la resolución real
+# ============================================================
+
+@pytest.fixture
+def portada_de(monkeypatch, jpeg):
+    """Devuelve una función que corre `fetch_portadas` con una resolución dada.
+
+    Reemplaza la búsqueda y la descarga para no tocar la red. Va por
+    `monkeypatch` y no por asignación directa para que los parches se deshagan
+    al terminar el test, aunque falle.
+    """
+    monkeypatch.setattr(PT, "buscar_portada", lambda artista, album, upc="": {
         "url100": "https://x/100x100bb.jpg", "matched_album": album,
-        "matched_artist": artista, "match": "alta", "ratio": 1.0}
+        "matched_artist": artista, "match": "alta", "ratio": 1.0})
 
-    def con_resolucion(px_real, no_cuadrada=False):
-        alto = px_real if not no_cuadrada else px_real + 4
-        PT.descargar_portada = lambda url100, _px=px_real, _a=alto: (
-            _jpeg(_px, _a), min(_px, _a))
+    def correr(px_real, no_cuadrada=False):
+        alto = px_real + 4 if no_cuadrada else px_real
+        monkeypatch.setattr(PT, "descargar_portada",
+                            lambda url100: (jpeg(px_real, alto, relleno=200),
+                                            min(px_real, alto)))
         p = {"title": "Disco", "upc": ""}
         PT.fetch_portadas([p], "Artista", log=lambda *_: None)
         return p
 
-    # Caso real de Radiohead: Apple sí tiene 3000.
-    p = con_resolucion(3000)
-    check("estado.3000_es_ok", p["cover_status"].startswith("3000x3000"), p["cover_status"])
-    expect("estado.3000_px", p["cover_px"], 3000)
+    return correr
 
-    # Caso real de Daft Punk: pedimos 3000, Apple tiene 1500. Entra en ingesta
-    # pero el estado tiene que decir 1500, no 3000.
-    p = con_resolucion(1500)
-    check("estado.1500_dice_1500", "1500x1500" in p["cover_status"], p["cover_status"])
-    check("estado.1500_no_miente_3000", "3000" not in p["cover_status"], p["cover_status"])
 
-    # Caso real de Cerati: 600x604. Debajo del mínimo Y no cuadrada.
-    p = con_resolucion(600, no_cuadrada=True)
-    check("estado.600_avisa_minimo", "DEBAJO DEL MINIMO" in p["cover_status"], p["cover_status"])
-    check("estado.600_no_miente", "3000" not in p["cover_status"], p["cover_status"])
+def test_cuando_apple_tiene_3000_el_estado_dice_3000(portada_de):
+    """Caso real de Radiohead."""
+    p = portada_de(3000)
+    assert p["cover_status"].startswith("3000x3000")
+    assert p["cover_px"] == 3000
 
-    # Exactamente el mínimo de ingesta: no debe avisar.
-    p = con_resolucion(PT.COVER_MIN_INGESTA)
-    check("estado.minimo_exacto_no_avisa",
-          "DEBAJO DEL MINIMO" not in p["cover_status"], p["cover_status"])
 
-    # Descarga fallida.
-    PT.descargar_portada = lambda url100: (None, 0)
+def test_cuando_apple_tiene_menos_el_estado_no_miente(portada_de):
+    """Caso real de Daft Punk. Pedimos 3000, Apple tiene 1500. Entra en ingesta
+    pero el estado tiene que decir 1500."""
+    p = portada_de(1500)
+    assert "1500x1500" in p["cover_status"]
+    assert "3000" not in p["cover_status"]
+
+
+def test_debajo_del_minimo_de_ingesta_se_avisa(portada_de):
+    """Caso real de Cerati, 600x604. Debajo del mínimo y además no cuadrada."""
+    p = portada_de(600, no_cuadrada=True)
+    assert "DEBAJO DEL MINIMO" in p["cover_status"]
+    assert "3000" not in p["cover_status"]
+
+
+def test_el_minimo_exacto_no_dispara_el_aviso(portada_de):
+    p = portada_de(PT.COVER_MIN_INGESTA)
+    assert "DEBAJO DEL MINIMO" not in p["cover_status"]
+
+
+def test_descarga_fallida(monkeypatch):
+    monkeypatch.setattr(PT, "buscar_portada", lambda artista, album, upc="": {
+        "url100": "https://x/100x100bb.jpg", "matched_album": album,
+        "matched_artist": artista, "match": "alta", "ratio": 1.0})
+    monkeypatch.setattr(PT, "descargar_portada", lambda url100: (None, 0))
+
     p = {"title": "Disco", "upc": ""}
     PT.fetch_portadas([p], "Artista", log=lambda *_: None)
-    check("estado.fallo_descarga", "falló la descarga" in p["cover_status"], p["cover_status"])
-    expect("estado.fallo_sin_bytes", p["cover_bytes"], None)
+    assert "falló la descarga" in p["cover_status"]
+    assert p["cover_bytes"] is None
 
-    # Sin match en iTunes.
-    PT.buscar_portada = lambda artista, album, upc="": None
+
+def test_sin_match_en_itunes(monkeypatch):
+    monkeypatch.setattr(PT, "buscar_portada", lambda artista, album, upc="": None)
+
     p = {"title": "Disco Inexistente", "upc": ""}
     PT.fetch_portadas([p], "Artista", log=lambda *_: None)
-    check("estado.sin_match", "no está en Apple Music" in p["cover_status"], p["cover_status"])
-    expect("estado.sin_match_sin_bytes", p["cover_bytes"], None)
-
-    if fails:
-        print("FALLARON:")
-        print("\n".join(fails))
-        return 1
-    print("OK - portadas (resolucion real)")
-    return 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())
+    assert "no está en Apple Music" in p["cover_status"]
+    assert p["cover_bytes"] is None

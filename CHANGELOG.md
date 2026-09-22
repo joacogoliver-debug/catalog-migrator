@@ -6,6 +6,29 @@ Lo que cambió en cada versión publicada. Los números siguen
 [SemVer](https://semver.org/lang/es/), y las descargas están en
 [Releases](https://github.com/joacogoliver-debug/catalog-migrator/releases).
 
+## [Sin publicar]
+
+### Cambiado
+- **La suite de tests corre con pytest.** Los diez archivos eran scripts con un
+  `main()` y una lista de strings, y `pytest -q` no colectaba ninguno: salía con
+  éxito sin haber corrido nada. Ahora son 267 tests de verdad, con
+  `tests/conftest.py`, fixtures compartidas del catálogo de ejemplo y el idioma
+  fijado en un solo lugar.
+- **Una sola lista de tests.** Estaba escrita tres veces, en `build/build.py`,
+  en el workflow del CI y en el README, así que un test nuevo pedía acordarse de
+  tres lugares y uno olvidado en `build.py` no bloqueaba un release. Ahora sale
+  de `testpaths` en `pyproject.toml`.
+- El CI corre un solo paso de tests en vez de once, y `build/build.py` corre la
+  misma suite antes de empaquetar. Si pytest no colecta nada, el build aborta.
+
+### Agregado
+- **Cobertura con umbral.** `pytest -q --cov` mide la app y falla si baja del
+  umbral de `pyproject.toml`. El umbral está puesto donde estamos, no donde nos
+  gustaría.
+- `requirements-dev.txt` con las herramientas de quien desarrolla.
+- `docs/AUDITORIA.md` y `docs/MEJORAS.md`, el diagnóstico del repositorio y el
+  backlog que sale de él.
+
 ## [1.0.2] — 2026-09-21
 
 ### Agregado

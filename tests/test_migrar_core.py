@@ -1,218 +1,226 @@
 # -*- coding: utf-8 -*-
-"""Test offline del orquestador (sin red, sin pytest, sin clave).
+"""Contrato del orquestador con `relevar_core`. Sin red y sin clave.
 
-Corré:  python test_migrar_core.py
-Sale 0 si todo pasa, 1 si algo falla.
-
-Existe por un bug concreto: relevar_catalogo() desempaquetaba como tupla el
-DICT que devuelve relevar_core.relevar(), y tiraba "too many values to unpack"
+Existe por un bug concreto. `relevar_catalogo()` desempaquetaba como tupla el
+DICT que devuelve `relevar_core.relevar()`, y tiraba «too many values to unpack»
 en cuanto se relevaba de verdad. Ningún test lo agarró porque todos sembraban
 los productos directamente, así que la única función que no se podía probar sin
 clave era justo la puerta de entrada de la app.
 
-La idea acá es fijar el CONTRATO entre relevar_core y migrar_core: se reemplaza
-relevar_core.relevar por un doble que devuelve exactamente la forma real
-(mismas claves), sin tocar la red.
+La idea es fijar el CONTRATO. Se reemplaza `relevar_core.relevar` por un doble
+que devuelve exactamente la forma real, con las mismas claves, sin tocar la red.
 """
+
+import inspect
 import os
-import sys
 
-# Los tests viven en tests/ y los modulos en la raiz: sin esto, correr
-# `python tests/test_x.py` no encuentra nada que importar.
-RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, RAIZ)
+import pytest
+
+import migrar_core as M
+import relevar_core
+
+# Las claves que `relevar()` devuelve y que `migrar_core` consume. Si alguna
+# desaparece, este test se rompe y avisa, que es justamente el punto.
+CLAVES_REALES = {
+    "artist", "channel_title", "tracks", "distribs", "total_views", "units", "codes",
+    # Diagnóstico del canal. Sin esto la app no puede contar que cambió de canal
+    # ni que descartó videos.
+    "es_topic", "cobertura_metadata", "topic_sugerido",
+    "via_topic", "canal_pedido", "descartados",
+}
 
 
-def main():
-    import relevar_core
-    import migrar_core as M
+def _track(titulo, album, anio, isrc="", upc="", vid="v1"):
+    return {"video_id": vid, "track": titulo, "album": album,
+            "distributor": "ONErpm", "label": "Sello",
+            "release_year": anio, "isrc": isrc, "upc": upc, "match": "",
+            "duration_s": 200, "views": 100, "likes": 1, "comments": 0,
+            "upload_date": f"{anio}-01-01", "desc3": "",
+            "url": f"https://youtu.be/{vid}"}
 
-    fails = []
 
-    def expect(name, got, want):
-        if got != want:
-            fails.append(f"  [{name}] got {got!r}, want {want!r}")
+TRACKS_FALSOS = [
+    _track("Tema A", "Disco", 2020, "ARABC2000001", "036000291452", "a1"),
+    _track("Tema B", "Disco", 2020, "ARABC2000002", "036000291452", "a2"),
+    _track("Single", "(single / sin álbum)", 2021, "ARABC2100001", "", "b1"),
+]
 
-    def check(name, cond, detalle=""):
-        if not cond:
-            fails.append(f"  [{name}] falló {detalle}")
 
-    # --- La forma REAL que devuelve relevar_core.relevar() -----------------
-    # Si algún día cambia, este test se rompe y avisa: es justamente el punto.
-    CLAVES_REALES = {"artist", "channel_title", "tracks", "distribs",
-                     "total_views", "units", "codes",
-                     # diagnostico del canal: sin esto la app no puede contar que
-                     # cambio de canal ni que descarto videos
-                     "es_topic", "cobertura_metadata", "topic_sugerido",
-                     "via_topic", "canal_pedido", "descartados"}
+def _respuesta_topic():
+    """Lo que devuelve relevar() cuando el canal es un Topic y todo salió bien."""
+    return {
+        "artist": "Artista Doble",
+        "channel_title": "Artista Doble - Topic",
+        "tracks": TRACKS_FALSOS,
+        "distribs": {"ONErpm": {"videos": 3, "views": 300}},
+        "total_views": 300,
+        "units": 3,
+        "codes": {"isrc": 3, "upc": 2, "matched": 3, "source": "Deezer"},
+        "es_topic": True,
+        "cobertura_metadata": 1.0,
+        "topic_sugerido": None,
+        "via_topic": False,
+        "canal_pedido": "Artista Doble - Topic",
+        "descartados": 0,
+    }
 
-    import inspect
-    fuente = inspect.getsource(relevar_core.relevar)
-    for clave in CLAVES_REALES:
-        check(f"contrato.devuelve:{clave}", f'"{clave}"' in fuente,
-              "relevar() ya no devuelve esta clave; actualizá migrar_core")
 
-    def track(titulo, album, anio, isrc="", upc="", vid="v1"):
-        return {"video_id": vid, "track": titulo, "album": album,
-                "distributor": "ONErpm", "label": "Sello",
-                "release_year": anio, "isrc": isrc, "upc": upc, "match": "",
-                "duration_s": 200, "views": 100, "likes": 1, "comments": 0,
-                "upload_date": f"{anio}-01-01", "desc3": "",
-                "url": f"https://youtu.be/{vid}"}
+def _respuesta_canal_comun():
+    """Canal común. Sin metadata, con el Topic sugerido, y simulando el caso en
+    que se pegó un OAC y la app relevó su Topic."""
+    sin_datos = [dict(t, distributor="(sin datos)", album="(single / sin álbum)",
+                      release_year="", label="", isrc="", upc="")
+                 for t in TRACKS_FALSOS]
+    return {
+        "artist": "Artista Doble",
+        "channel_title": "Artista Doble",
+        "tracks": sin_datos,
+        "distribs": {},
+        "total_views": 300,
+        "units": 3,
+        "codes": None,
+        "es_topic": False,
+        "cobertura_metadata": 0.0,
+        "topic_sugerido": {"id": "UCxxx", "titulo": "Artista Doble - Topic",
+                           "url": "https://www.youtube.com/channel/UCxxx"},
+        "via_topic": True,
+        "canal_pedido": "Artista Doble Oficial",
+        "descartados": 7,
+    }
 
-    tracks_falsos = [
-        track("Tema A", "Disco", 2020, "ARABC2000001", "036000291452", "a1"),
-        track("Tema B", "Disco", 2020, "ARABC2000002", "036000291452", "a2"),
-        track("Single", "(single / sin álbum)", 2021, "ARABC2100001", "", "b1"),
-    ]
 
-    llamadas = {}
+@pytest.fixture
+def relevar_doble(monkeypatch):
+    """Reemplaza `relevar_core.relevar` y registra con qué lo llamaron.
 
-    escenario = {"topic": True}
+    Devuelve un dict de control. `escenario` elige qué respuesta dar, `llamadas`
+    guarda los argumentos que recibió.
+    """
+    control = {"escenario": "topic", "llamadas": {}}
 
-    def relevar_doble(url, yt_key, with_codes=True, progress=None, use_musicbrainz=False):
-        llamadas["url"] = url
-        llamadas["yt_key"] = yt_key
-        llamadas["with_codes"] = with_codes
+    def doble(url, yt_key, with_codes=True, progress=None, use_musicbrainz=False):
+        control["llamadas"] = {"url": url, "yt_key": yt_key, "with_codes": with_codes}
         if progress:
             progress("probando el callback", 0.5)
-        # EXACTAMENTE la forma real, incluidas todas las claves.
-        if escenario["topic"]:
-            return {
-                "artist": "Artista Doble",
-                "channel_title": "Artista Doble - Topic",
-                "tracks": tracks_falsos,
-                "distribs": {"ONErpm": {"videos": 3, "views": 300}},
-                "total_views": 300,
-                "units": 3,
-                "codes": {"isrc": 3, "upc": 2, "matched": 3, "source": "Deezer"},
-                "es_topic": True,
-                "cobertura_metadata": 1.0,
-                "topic_sugerido": None,
-                "via_topic": False,
-                "canal_pedido": "Artista Doble - Topic",
-                "descartados": 0,
-            }
-        # Canal comun: sin metadata y con el Topic sugerido.
-        sin_datos = [dict(t, distributor="(sin datos)", album="(single / sin álbum)",
-                          release_year="", label="", isrc="", upc="")
-                     for t in tracks_falsos]
-        return {
-            "artist": "Artista Doble",
-            "channel_title": "Artista Doble",
-            "tracks": sin_datos,
-            "distribs": {},
-            "total_views": 300,
-            "units": 3,
-            "codes": None,
-            "es_topic": False,
-            "cobertura_metadata": 0.0,
-            "topic_sugerido": {"id": "UCxxx", "titulo": "Artista Doble - Topic",
-                               "url": "https://www.youtube.com/channel/UCxxx"},
-            # Simula el caso en que se pego un OAC y la app relevo su Topic.
-            "via_topic": True,
-            "canal_pedido": "Artista Doble Oficial",
-            "descartados": 7,
-        }
+        if control["escenario"] == "topic":
+            return _respuesta_topic()
+        return _respuesta_canal_comun()
 
-    original = relevar_core.relevar
-    relevar_core.relevar = relevar_doble
-    try:
-        avances = []
-        prods, artista, tracks, diag = M.relevar_catalogo(
-            "https://www.youtube.com/@Test", "clave-falsa",
-            progress=lambda m, f=None: avances.append(m))
-
-        # Lo que se rompía: el desempaquetado.
-        expect("relevar_catalogo.artista", artista, "Artista Doble")
-        expect("relevar_catalogo.n_tracks", len(tracks), 3)
-        check("relevar_catalogo.tracks_son_dicts",
-              all(isinstance(t, dict) for t in tracks),
-              "si desempaqueta mal, acá vendrían strings (las claves del dict)")
-        expect("relevar_catalogo.n_productos", len(prods), 2)   # Disco + single
-        check("relevar_catalogo.productos_agrupados",
-              {p["title"] for p in prods} == {"Disco", "Single"},
-              f"{[p['title'] for p in prods]}")
-        check("relevar_catalogo.artista_propagado",
-              all(p["artist"] == "Artista Doble" for p in prods))
-
-        # Los argumentos llegan tal cual.
-        expect("relevar_catalogo.pasa_url", llamadas["url"], "https://www.youtube.com/@Test")
-        expect("relevar_catalogo.pasa_clave", llamadas["yt_key"], "clave-falsa")
-        expect("relevar_catalogo.pasa_with_codes", llamadas["with_codes"], True)
-        check("relevar_catalogo.progress_llega", "probando el callback" in avances,
-              f"avances={avances}")
-        check("relevar_catalogo.loguea_productos",
-              any("productos" in a for a in avances), f"avances={avances}")
-
-        # --- diagnostico del canal (caso Topic: todo bien) ---------------
-        expect("diag.es_topic", diag["es_topic"], True)
-        expect("diag.cobertura", diag["cobertura_metadata"], 1.0)
-        expect("diag.sin_sugerencia", diag["topic_sugerido"], None)
-        expect("diag.no_cambio_de_canal", diag["via_topic"], False)
-
-        # --- diagnostico del canal (caso canal comun: hay que avisar) ----
-        escenario["topic"] = False
-        avisos2 = []
-        prods2, _a2, _t2, diag2 = M.relevar_catalogo(
-            "https://www.youtube.com/@Test", "clave-falsa",
-            progress=lambda m, f=None: avisos2.append(m))
-        expect("diag2.no_es_topic", diag2["es_topic"], False)
-        # Lo importante del caso OAC: que se avise el cambio de canal y lo
-        # descartado, en vez de que ocurra en silencio.
-        expect("diag2.via_topic", diag2["via_topic"], True)
-        expect("diag2.canal_pedido", diag2["canal_pedido"], "Artista Doble Oficial")
-        expect("diag2.descartados", diag2["descartados"], 7)
-        check("diag2.loguea_el_cambio",
-              any("relev" in a and "Topic" in a for a in avisos2), f"avisos={avisos2}")
-        check("diag2.loguea_descartados",
-              any("afuera" in a and "7 videos" in a for a in avisos2), f"avisos={avisos2}")
-        expect("diag2.cobertura_cero", diag2["cobertura_metadata"], 0.0)
-        check("diag2.sugiere_topic",
-              (diag2["topic_sugerido"] or {}).get("titulo") == "Artista Doble - Topic",
-              f"{diag2['topic_sugerido']}")
-        # Sin álbumes declarados, cada track queda como su propio producto: es el
-        # sintoma que ve el usuario (N productos = N tracks).
-        expect("diag2.un_producto_por_track", len(prods2), len(tracks_falsos))
-        escenario["topic"] = True
-
-        # --- opciones_de_filtro sobre lo relevado ------------------------
-        op = M.opciones_de_filtro(prods)
-        expect("opciones.total", op["total"], 2)
-        expect("opciones.anio_min", op["año_min"], 2020)
-        expect("opciones.anio_max", op["año_max"], 2021)
-        check("opciones.distribuidoras", op["distribuidoras"][0]["name"] == "ONErpm")
-
-        # --- flujo completo sin red: sólo planilla ----------------------
-        import tempfile
-        destino = os.path.join(tempfile.mkdtemp(), "salida.zip")
-        res = M.migrar("https://www.youtube.com/@Test", "clave-falsa",
-                       quiere_planilla=True, quiere_portadas=False,
-                       quiere_audio=False, out_path=destino,
-                       log=lambda *_: None)
-        expect("migrar.artista", res["artista"], "Artista Doble")
-        expect("migrar.productos", res["productos"], 2)
-        check("migrar.zip_existe", os.path.exists(res["zip"]))
-        check("migrar.pesa", res["bytes"] > 0)
-        expect("migrar.resumen_tracks", res["resumen"]["tracks"], 3)
-
-        # Filtro que no deja nada -> error mostrable, no una excepción rara.
-        try:
-            M.migrar("https://www.youtube.com/@Test", "clave-falsa",
-                     year_from=2099, out_path=destino, log=lambda *_: None)
-            fails.append("  [migrar.seleccion_vacia] debería lanzar RelevarError")
-        except relevar_core.RelevarError as e:
-            check("migrar.seleccion_vacia_mensaje", "filtros" in str(e), str(e))
-    finally:
-        relevar_core.relevar = original
-
-    if fails:
-        print("FALLARON:")
-        print("\n".join(fails))
-        return 1
-    print("OK - orquestador (contrato con relevar_core)")
-    return 0
+    monkeypatch.setattr(relevar_core, "relevar", doble)
+    return control
 
 
-if __name__ == "__main__":
-    sys.exit(main())
+# ============================================================
+# El contrato en sí
+# ============================================================
+
+@pytest.mark.parametrize("clave", sorted(CLAVES_REALES))
+def test_relevar_sigue_devolviendo_la_clave(clave):
+    """Se mira la fuente y no una llamada real, porque relevar() necesita red y
+    una clave de YouTube."""
+    fuente = inspect.getsource(relevar_core.relevar)
+    assert f'"{clave}"' in fuente, "relevar() ya no devuelve esta clave, actualizá migrar_core"
+
+
+# ============================================================
+# relevar_catalogo, el desempaquetado que se rompía
+# ============================================================
+
+def test_relevar_catalogo_desempaqueta_bien(relevar_doble):
+    prods, artista, tracks, _diag = M.relevar_catalogo(
+        "https://www.youtube.com/@Test", "clave-falsa")
+
+    assert artista == "Artista Doble"
+    assert len(tracks) == 3
+    # Si desempaquetara mal, acá vendrían strings, que son las claves del dict.
+    assert all(isinstance(t, dict) for t in tracks)
+    assert len(prods) == 2                       # Disco + el single
+    assert {p["title"] for p in prods} == {"Disco", "Single"}
+    assert all(p["artist"] == "Artista Doble" for p in prods)
+
+
+def test_los_argumentos_llegan_tal_cual(relevar_doble):
+    M.relevar_catalogo("https://www.youtube.com/@Test", "clave-falsa")
+    assert relevar_doble["llamadas"] == {
+        "url": "https://www.youtube.com/@Test",
+        "yt_key": "clave-falsa",
+        "with_codes": True,
+    }
+
+
+def test_el_callback_de_progreso_llega_y_se_usa(relevar_doble):
+    avances = []
+    M.relevar_catalogo("https://www.youtube.com/@Test", "clave-falsa",
+                       progress=lambda m, f=None: avances.append(m))
+    assert "probando el callback" in avances
+    assert any("productos" in a for a in avances)
+
+
+# ============================================================
+# Diagnóstico del canal
+# ============================================================
+
+def test_diagnostico_de_un_canal_topic(relevar_doble):
+    _p, _a, _t, diag = M.relevar_catalogo("https://www.youtube.com/@Test", "clave-falsa")
+    assert diag["es_topic"] is True
+    assert diag["cobertura_metadata"] == 1.0
+    assert diag["topic_sugerido"] is None
+    assert diag["via_topic"] is False
+
+
+def test_diagnostico_de_un_canal_comun(relevar_doble):
+    """Lo importante del caso OAC. Que se avise el cambio de canal y lo
+    descartado, en vez de que ocurra en silencio."""
+    relevar_doble["escenario"] = "comun"
+    avisos = []
+    prods, _a, _t, diag = M.relevar_catalogo(
+        "https://www.youtube.com/@Test", "clave-falsa",
+        progress=lambda m, f=None: avisos.append(m))
+
+    assert diag["es_topic"] is False
+    assert diag["via_topic"] is True
+    assert diag["canal_pedido"] == "Artista Doble Oficial"
+    assert diag["descartados"] == 7
+    assert diag["cobertura_metadata"] == 0.0
+    assert (diag["topic_sugerido"] or {}).get("titulo") == "Artista Doble - Topic"
+
+    assert any("relev" in a and "Topic" in a for a in avisos)
+    assert any("afuera" in a and "7 videos" in a for a in avisos)
+
+    # Sin álbumes declarados, cada track queda como su propio producto. Es el
+    # síntoma que ve el usuario, N productos igual a N tracks.
+    assert len(prods) == len(TRACKS_FALSOS)
+
+
+# ============================================================
+# Opciones de filtro y flujo completo
+# ============================================================
+
+def test_opciones_de_filtro_sobre_lo_relevado(relevar_doble):
+    prods, _a, _t, _d = M.relevar_catalogo("https://www.youtube.com/@Test", "clave-falsa")
+    op = M.opciones_de_filtro(prods)
+    assert op["total"] == 2
+    assert op["año_min"] == 2020
+    assert op["año_max"] == 2021
+    assert op["distribuidoras"][0]["name"] == "ONErpm"
+
+
+def test_flujo_completo_sin_red_solo_planilla(relevar_doble, tmp_path):
+    destino = str(tmp_path / "salida.zip")
+    res = M.migrar("https://www.youtube.com/@Test", "clave-falsa",
+                   quiere_planilla=True, quiere_portadas=False,
+                   quiere_audio=False, out_path=destino, log=lambda *_: None)
+
+    assert res["artista"] == "Artista Doble"
+    assert res["productos"] == 2
+    assert os.path.exists(res["zip"])
+    assert res["bytes"] > 0
+    assert res["resumen"]["tracks"] == 3
+
+
+def test_un_filtro_que_no_deja_nada_es_un_error_mostrable(relevar_doble, tmp_path):
+    destino = str(tmp_path / "salida.zip")
+    with pytest.raises(relevar_core.RelevarError) as exc:
+        M.migrar("https://www.youtube.com/@Test", "clave-falsa",
+                 year_from=2099, out_path=destino, log=lambda *_: None)
+    assert "filtros" in str(exc.value)
