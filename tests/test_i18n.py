@@ -38,7 +38,7 @@ def catalogo_js():
     el problema que resuelve.
     """
     s = _leer("app", "web", "i18n.js")
-    cuerpo = s[s.index("const TEXTOS = {"):]
+    cuerpo = s[s.index("const TEXTOS = {") :]
     entradas = {}
 
     def anotar(clave, bloque):
@@ -84,6 +84,7 @@ def claves_usadas_en_la_interfaz():
 # Catálogo de Python
 # ============================================================
 
+
 def test_ninguna_clave_a_medio_traducir_en_python():
     assert i18n.claves_sin_traducir("es", "en") == []
     assert i18n.claves_sin_traducir("en", "es") == []
@@ -100,7 +101,7 @@ def test_ninguna_clave_definida_dos_veces_en_python():
     una palabra. Por eso se lee el archivo y no el diccionario ya construido, en
     el que la duplicada ya no existe."""
     fuente = _leer("i18n.py")
-    cuerpo = fuente[fuente.index("TEXTOS = {"):]
+    cuerpo = fuente[fuente.index("TEXTOS = {") :]
     literales = re.findall(r'^    "([a-z0-9_.]+)":', cuerpo, re.M)
     repetidas = sorted({k for k in literales if literales.count(k) > 1})
     assert repetidas == []
@@ -122,6 +123,7 @@ def test_el_formato_no_se_rompe_al_traducir():
 # Catálogo de la interfaz
 # ============================================================
 
+
 def test_el_catalogo_de_la_interfaz_no_esta_vacio(catalogo_js):
     assert len(catalogo_js) > 100
 
@@ -137,14 +139,13 @@ def test_la_interfaz_no_usa_claves_sin_definir(catalogo_js, claves_usadas_en_la_
     assert sorted(claves_usadas_en_la_interfaz - set(catalogo_js)) == []
 
 
-def test_el_catalogo_de_la_interfaz_no_tiene_claves_de_mas(
-        catalogo_js, claves_usadas_en_la_interfaz):
+def test_el_catalogo_de_la_interfaz_no_tiene_claves_de_mas(catalogo_js, claves_usadas_en_la_interfaz):
     assert sorted(set(catalogo_js) - claves_usadas_en_la_interfaz) == []
 
 
 def test_ninguna_clave_definida_dos_veces_en_la_interfaz():
     fuente = _leer("app", "web", "i18n.js")
-    cuerpo = fuente[fuente.index("const TEXTOS = {"):]
+    cuerpo = fuente[fuente.index("const TEXTOS = {") :]
     literales = re.findall(r"^  '([a-z0-9_.]+)':", cuerpo, re.M)
     repetidas = sorted({k for k in literales if literales.count(k) > 1})
     assert repetidas == []
@@ -153,6 +154,7 @@ def test_ninguna_clave_definida_dos_veces_en_la_interfaz():
 # ============================================================
 # Los dos catálogos, de acuerdo
 # ============================================================
+
 
 @pytest.mark.parametrize("idioma", ["es", "en"])
 def test_el_nombre_del_informe_de_validacion_coincide_de_los_dos_lados(idioma):

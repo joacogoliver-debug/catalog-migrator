@@ -17,29 +17,34 @@ import relevar_core as R
 
 def cuerpo(reason, message, code=403):
     """Un error con la forma real de los de Google."""
-    return json.dumps({
-        "error": {
-            "code": code,
-            "message": message,
-            "errors": [{"domain": "youtube.quota", "reason": reason,
-                        "message": message}],
+    return json.dumps(
+        {
+            "error": {
+                "code": code,
+                "message": message,
+                "errors": [{"domain": "youtube.quota", "reason": reason, "message": message}],
+            }
         }
-    })
+    )
 
 
 def test_cupo_agotado_es_el_caso_que_mas_va_a_pasar():
-    e = R._error_de_youtube(403, cuerpo(
-        "quotaExceeded",
-        'The request cannot be completed because you have exceeded your '
-        '<a href="/youtube/v3/getting-started#quota">quota</a>.'))
+    e = R._error_de_youtube(
+        403,
+        cuerpo(
+            "quotaExceeded",
+            "The request cannot be completed because you have exceeded your "
+            '<a href="/youtube/v3/getting-started#quota">quota</a>.',
+        ),
+    )
 
     assert isinstance(e, R.RelevarError)
-    assert e.codigo == "cuota"              # de esto depende el botón de la interfaz
+    assert e.codigo == "cuota"  # de esto depende el botón de la interfaz
     texto = str(e)
     assert "cupo" in texto.lower()
-    assert "clave" in texto.lower()         # dice qué hacer
+    assert "clave" in texto.lower()  # dice qué hacer
     assert "<a" not in texto and "href" not in texto
-    assert "quota" not in texto.lower()     # nada en inglés
+    assert "quota" not in texto.lower()  # nada en inglés
 
 
 def test_clave_invalida():
@@ -48,15 +53,17 @@ def test_clave_invalida():
 
 
 def test_clave_invalida_aunque_google_no_mande_reason():
-    e = R._error_de_youtube(400, json.dumps(
-        {"error": {"code": 400,
-                   "message": "API key not valid. Please pass a valid API key."}}))
+    e = R._error_de_youtube(
+        400,
+        json.dumps({"error": {"code": 400, "message": "API key not valid. Please pass a valid API key."}}),
+    )
     assert e.codigo == "clave"
 
 
 def test_api_sin_habilitar_manda_a_la_consola_de_google():
-    e = R._error_de_youtube(403, cuerpo(
-        "accessNotConfigured", "YouTube Data API has not been used in project 123"))
+    e = R._error_de_youtube(
+        403, cuerpo("accessNotConfigured", "YouTube Data API has not been used in project 123")
+    )
     assert e.codigo == "clave"
     assert "Cloud" in str(e)
 
@@ -68,8 +75,7 @@ def test_rate_limit_no_es_cuota_y_no_ofrece_cargar_una_clave():
 
 
 def test_motivo_desconocido_muestra_el_de_google_pero_limpio():
-    e = R._error_de_youtube(403, cuerpo(
-        "algoNuevoQueGoogleInvento", 'Mirá <a href="http://x">esto</a>.'))
+    e = R._error_de_youtube(403, cuerpo("algoNuevoQueGoogleInvento", 'Mirá <a href="http://x">esto</a>.'))
     assert e.codigo == ""
     assert "<a" not in str(e)
     assert "esto" in str(e)

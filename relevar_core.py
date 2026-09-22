@@ -27,8 +27,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Va después del sys.path.insert de arriba: i18n vive al lado de este archivo y
 # no siempre se importa con la raíz del repo ya en el path.
-from i18n import T                                                  # noqa: E402
-from productos import SIN_ALBUM, SIN_DATOS                          # noqa: E402
+from i18n import T  # noqa: E402
+from productos import SIN_ALBUM, SIN_DATOS  # noqa: E402
 
 API = "https://www.googleapis.com/youtube/v3"
 
@@ -86,8 +86,7 @@ def api_get(endpoint, params, key, intentos=3):
             if intento < intentos - 1:
                 time.sleep(1.5 * (intento + 1))
                 continue
-            raise RelevarError(
-                T("yt.sin_conexion", detalle=f"{type(e).__name__}: {e}")) from e
+            raise RelevarError(T("yt.sin_conexion", detalle=f"{type(e).__name__}: {e}")) from e
     raise RelevarError(T("yt.sin_respuesta", detalle=ultimo))
 
 
@@ -213,8 +212,9 @@ def buscar_canal_topic(titulo_canal, key):
     if not objetivo:
         return None
     try:
-        data = api_get("search", {"part": "snippet", "q": f"{artista} - Topic",
-                                  "type": "channel", "maxResults": 10}, key)
+        data = api_get(
+            "search", {"part": "snippet", "q": f"{artista} - Topic", "type": "channel", "maxResults": 10}, key
+        )
     except Exception:
         return None
 
@@ -229,7 +229,7 @@ def buscar_canal_topic(titulo_canal, key):
             continue
         base = _normalize(_nombre_artista(titulo))
         if base == objetivo:
-            return cid, titulo                      # exacto: no hay nada mejor
+            return cid, titulo  # exacto: no hay nada mejor
         score = SequenceMatcher(None, objetivo, base).ratio()
         if score > mejor_score:
             mejor, mejor_score = (cid, titulo), score
@@ -258,7 +258,7 @@ def list_video_ids(uploads_playlist, key):
 def fetch_videos(video_ids, key):
     out = []
     for i in range(0, len(video_ids), 50):
-        batch = video_ids[i:i + 50]
+        batch = video_ids[i : i + 50]
         data = api_get("videos", {"part": "snippet,statistics,contentDetails", "id": ",".join(batch)}, key)
         out.extend(data.get("items", []))
     return out
@@ -312,7 +312,7 @@ def parse_description(desc):
     first = desc.split("\n")[0].strip()
     prefix = "provided to youtube by "
     if first.lower().startswith(prefix):
-        res["distributor"] = first[len(prefix):].strip()
+        res["distributor"] = first[len(prefix) :].strip()
 
     # Álbum: tercer bloque del formato auto-generado
     #   [0] Provided to YouTube by X / [1] Track · Artista / [2] Álbum
@@ -365,30 +365,32 @@ def build_tracks(videos):
         meta = parse_description(desc)
         pub = (sn.get("publishedAt") or "")[:10]
         desc3 = "\n".join((desc.split("\n"))[:3]).strip()
-        tracks.append({
-            "video_id": v.get("id") or "",
-            "track": sn.get("title") or "",
-            # OJO: estos dos son CENTINELAS, no texto para mostrar, y por eso
-            # no se traducen: `relevar()` filtra por SIN_DATOS y `productos`
-            # agrupa por SIN_ALBUM, así que traducirlos rompería el filtrado y
-            # la agrupación en silencio. Ninguno llega a la pantalla: los tracks
-            # sin distribuidora se descartan, y a los que no tienen álbum el
-            # producto los titula con el nombre del track.
-            "album": meta["album"] or SIN_ALBUM,
-            "distributor": meta["distributor"] or SIN_DATOS,
-            "label": meta["label"] or "",
-            "release_year": meta["release_year"] or "",
-            "isrc": "",   # se completa por enriquecimiento (Deezer), si está disponible
-            "upc": "",    # idem (a nivel álbum)
-            "match": "",  # confianza del match con Deezer: alta / media / ""
-            "duration_s": _iso_duration_to_seconds(cd.get("duration")),
-            "views": int(st.get("viewCount", 0) or 0),
-            "likes": int(st.get("likeCount", 0) or 0),
-            "comments": int(st.get("commentCount", 0) or 0),
-            "upload_date": pub,
-            "desc3": desc3,
-            "url": f"https://youtu.be/{v.get('id')}",
-        })
+        tracks.append(
+            {
+                "video_id": v.get("id") or "",
+                "track": sn.get("title") or "",
+                # OJO: estos dos son CENTINELAS, no texto para mostrar, y por eso
+                # no se traducen: `relevar()` filtra por SIN_DATOS y `productos`
+                # agrupa por SIN_ALBUM, así que traducirlos rompería el filtrado y
+                # la agrupación en silencio. Ninguno llega a la pantalla: los tracks
+                # sin distribuidora se descartan, y a los que no tienen álbum el
+                # producto los titula con el nombre del track.
+                "album": meta["album"] or SIN_ALBUM,
+                "distributor": meta["distributor"] or SIN_DATOS,
+                "label": meta["label"] or "",
+                "release_year": meta["release_year"] or "",
+                "isrc": "",  # se completa por enriquecimiento (Deezer), si está disponible
+                "upc": "",  # idem (a nivel álbum)
+                "match": "",  # confianza del match con Deezer: alta / media / ""
+                "duration_s": _iso_duration_to_seconds(cd.get("duration")),
+                "views": int(st.get("viewCount", 0) or 0),
+                "likes": int(st.get("likeCount", 0) or 0),
+                "comments": int(st.get("commentCount", 0) or 0),
+                "upload_date": pub,
+                "desc3": desc3,
+                "url": f"https://youtu.be/{v.get('id')}",
+            }
+        )
     return tracks
 
 
@@ -422,10 +424,13 @@ def _deezer_json(path):
         return data
     return None
 
+
 # Sufijos de YouTube que ensucian el match (no están en el catálogo del DSP).
 _RE_TITLE_NOISE = re.compile(
     r"\((?:[^)]*?(?:video|oficial|official|audio|en vivo|live|lyric|letra|"
-    r"visualizer|remaster|hd|4k|cover)[^)]*?)\)|\[[^\]]*\]", re.IGNORECASE)
+    r"visualizer|remaster|hd|4k|cover)[^)]*?)\)|\[[^\]]*\]",
+    re.IGNORECASE,
+)
 
 
 def _clean_title(title):
@@ -451,11 +456,9 @@ def _http_json(url, headers=None, retries=3):
 
 
 def _match_score(yt_title, yt_artist, yt_dur, cand_title, cand_artist, cand_dur):
-    ratio = SequenceMatcher(None, _normalize(_clean_title(yt_title)),
-                            _normalize(cand_title or "")).ratio()
+    ratio = SequenceMatcher(None, _normalize(_clean_title(yt_title)), _normalize(cand_title or "")).ratio()
     na, ns = _normalize(yt_artist), _normalize(cand_artist or "")
-    artist_ok = bool(na) and (na in ns or ns in na or
-                              SequenceMatcher(None, na, ns).ratio() >= 0.6)
+    artist_ok = bool(na) and (na in ns or ns in na or SequenceMatcher(None, na, ns).ratio() >= 0.6)
     dur_close = None
     if yt_dur and cand_dur:
         dur_close = abs(yt_dur - cand_dur) <= 4
@@ -484,9 +487,14 @@ def deezer_match(t, artist):
         return "", None, ""
     best, best_meta = None, None
     for c in items:
-        sc = _match_score(t["track"], artist, t.get("duration_s", 0),
-                          c.get("title", ""), (c.get("artist") or {}).get("name", ""),
-                          c.get("duration", 0))
+        sc = _match_score(
+            t["track"],
+            artist,
+            t.get("duration_s", 0),
+            c.get("title", ""),
+            (c.get("artist") or {}).get("name", ""),
+            c.get("duration", 0),
+        )
         if best is None or sc[0] > best[0]:
             best, best_meta = sc, c
     conf = _confidence(best[1], best[2], best[3])
@@ -517,18 +525,19 @@ def deezer_album_upcs(album_ids):
 def musicbrainz_isrc(t, artist):
     """ISRC desde MusicBrainz. 2 pedidos (search + lookup). Devuelve '' si no hay."""
     q = urllib.parse.quote(f'recording:"{_clean_title(t["track"])}" AND artist:"{artist}"')
-    data = _http_json(f"{MUSICBRAINZ_API}/recording?query={q}&fmt=json&limit=5",
-                      headers={"User-Agent": USER_AGENT})
+    data = _http_json(
+        f"{MUSICBRAINZ_API}/recording?query={q}&fmt=json&limit=5", headers={"User-Agent": USER_AGENT}
+    )
     for r in (data or {}).get("recordings", []) or []:
-        ac = " ".join(a.get("name", "") for a in (r.get("artist-credit") or [])
-                      if isinstance(a, dict))
+        ac = " ".join(a.get("name", "") for a in (r.get("artist-credit") or []) if isinstance(a, dict))
         dur = round((r.get("length") or 0) / 1000)
-        sc = _match_score(t["track"], artist, t.get("duration_s", 0),
-                          r.get("title", ""), ac, dur)
+        sc = _match_score(t["track"], artist, t.get("duration_s", 0), r.get("title", ""), ac, dur)
         if _confidence(sc[1], sc[2], sc[3]):
             time.sleep(1.1)  # respetar el límite de MusicBrainz entre los 2 pedidos
-            look = _http_json(f"{MUSICBRAINZ_API}/recording/{r['id']}?fmt=json&inc=isrcs",
-                              headers={"User-Agent": USER_AGENT})
+            look = _http_json(
+                f"{MUSICBRAINZ_API}/recording/{r['id']}?fmt=json&inc=isrcs",
+                headers={"User-Agent": USER_AGENT},
+            )
             isrcs = (look or {}).get("isrcs") or []
             return isrcs[0] if isrcs else ""
     return ""
@@ -598,6 +607,7 @@ def slugify(name):
 # Orquestador (lo llama la app web)
 # ============================================================
 
+
 def relevar(url, yt_key, with_codes=True, progress=None, use_musicbrainz=False):
     """Releva el catálogo completo de un canal.
 
@@ -606,6 +616,7 @@ def relevar(url, yt_key, with_codes=True, progress=None, use_musicbrainz=False):
     Devuelve dict: artist, channel_title, tracks, distribs, total_views, units, codes.
     Lanza RelevarError ante problemas mostrables al usuario.
     """
+
     def step(msg, frac):
         if progress:
             progress(msg, frac)
@@ -667,7 +678,8 @@ def relevar(url, yt_key, with_codes=True, progress=None, use_musicbrainz=False):
     if with_codes:
         step(T("rel.buscando_codigos"), 0.55)
         codes_stats = enrich_with_codes(
-            tracks, artist, log=lambda m: step(m, 0.75), use_musicbrainz=use_musicbrainz)
+            tracks, artist, log=lambda m: step(m, 0.75), use_musicbrainz=use_musicbrainz
+        )
 
     step(T("rel.armando_excel"), 0.95)
     units = 1 + 2 * ((len(vids) + 49) // 50)

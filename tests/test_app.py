@@ -39,6 +39,7 @@ from conftest import _esperar, _track
 # Trabajos en segundo plano
 # ============================================================
 
+
 @pytest.fixture
 def registro():
     return J.Registry()
@@ -127,6 +128,7 @@ def test_un_trabajo_inexistente_devuelve_none(registro):
 # hay forma de verla de punta a punta sin instalar de verdad, así que se prueba
 # la función que las resuelve.
 
+
 @pytest.fixture
 def entorno_de_idioma(monkeypatch, tmp_path):
     """Aísla la config y la raíz, para no leer ni escribir las del usuario."""
@@ -178,8 +180,7 @@ def test_un_idioma_txt_con_basura_no_rompe_nada(entorno_de_idioma):
     assert backend.idioma_guardado() in i18n.IDIOMAS
 
 
-def test_empaquetado_el_idioma_del_instalador_se_busca_al_lado_del_exe(
-        entorno_de_idioma, monkeypatch):
+def test_empaquetado_el_idioma_del_instalador_se_busca_al_lado_del_exe(entorno_de_idioma, monkeypatch):
     """No es la misma rama. Empaquetado, la carpeta sale de `sys.executable` y
     no de `_RAIZ`, que apunta adentro del bundle temporal de PyInstaller. Si
     esta rama estuviera mal, el instalador escribiría el idioma.txt donde nadie
@@ -187,9 +188,7 @@ def test_empaquetado_el_idioma_del_instalador_se_busca_al_lado_del_exe(
     entorno_de_idioma.instalador("en")
     monkeypatch.setattr(backend, "_RAIZ", os.path.join(entorno_de_idioma.raiz, "no-es-aca"))
     monkeypatch.setattr(sys, "frozen", True, raising=False)
-    monkeypatch.setattr(
-        sys, "executable",
-        os.path.join(entorno_de_idioma.raiz, "Migrador de Catalogos.exe"))
+    monkeypatch.setattr(sys, "executable", os.path.join(entorno_de_idioma.raiz, "Migrador de Catalogos.exe"))
 
     assert backend.idioma_del_instalador() == "en"
 
@@ -227,6 +226,7 @@ def test_el_endpoint_de_idioma_valida_y_guarda(entorno_de_idioma):
 def test_el_cambio_de_idioma_alcanza_a_lo_que_se_descarga(entorno_de_idioma):
     """Los nombres de archivo del ZIP se arman de este lado."""
     import paquete
+
     entorno_de_idioma.config(None)
     backend.api_idioma({"idioma": "en"})
     assert paquete.nombres_archivos()["validacion"].startswith("_Pre-delivery")
@@ -235,6 +235,7 @@ def test_el_cambio_de_idioma_alcanza_a_lo_que_se_descarga(entorno_de_idioma):
 # ============================================================
 # Servidor HTTP
 # ============================================================
+
 
 class Cliente:
     """Un cliente mínimo contra el servidor real, con el token de la sesión.
@@ -271,8 +272,11 @@ class Cliente:
 
     def post(self, ruta, cuerpo):
         req = urllib.request.Request(
-            f"{self.base}{ruta}", data=json.dumps(cuerpo).encode(),
-            headers=self.cab({"Content-Type": "application/json"}), method="POST")
+            f"{self.base}{ruta}",
+            data=json.dumps(cuerpo).encode(),
+            headers=self.cab({"Content-Type": "application/json"}),
+            method="POST",
+        )
         for intento in range(4):
             try:
                 with urllib.request.urlopen(req, timeout=60) as r:
@@ -289,8 +293,7 @@ class Cliente:
 
     def crudo(self, metodo, ruta, cabeceras=None, datos=None):
         """Sin token ni cabeceras, salvo las que se pasen. Para las defensas."""
-        req = urllib.request.Request(f"{self.base}{ruta}", data=datos,
-                                     headers=cabeceras or {}, method=metodo)
+        req = urllib.request.Request(f"{self.base}{ruta}", data=datos, headers=cabeceras or {}, method=metodo)
         try:
             with urllib.request.urlopen(req, timeout=10) as r:
                 return r.status
@@ -301,14 +304,30 @@ class Cliente:
 
 @pytest.fixture(scope="module")
 def productos_servidor():
-    return P.group_products([
-        _track("Tema A", "Disco Uno", 2020, isrc="ARABC2000001",
-               upc="036000291452", vid="a1", date="2020-01-01"),
-        _track("Tema B", "Disco Uno", 2020, isrc="ARABC2000002",
-               upc="036000291452", vid="a2", date="2020-01-02"),
-        _track("Single", "", 2021, isrc="MALFORMADO", vid="b1",
-               dist="DistroKid", date="2021-01-01"),
-    ], artist="Artista Test")
+    return P.group_products(
+        [
+            _track(
+                "Tema A",
+                "Disco Uno",
+                2020,
+                isrc="ARABC2000001",
+                upc="036000291452",
+                vid="a1",
+                date="2020-01-01",
+            ),
+            _track(
+                "Tema B",
+                "Disco Uno",
+                2020,
+                isrc="ARABC2000002",
+                upc="036000291452",
+                vid="a2",
+                date="2020-01-02",
+            ),
+            _track("Single", "", 2021, isrc="MALFORMADO", vid="b1", dist="DistroKid", date="2021-01-01"),
+        ],
+        artist="Artista Test",
+    )
 
 
 @pytest.fixture(scope="module")
@@ -339,6 +358,7 @@ def cliente(productos_servidor):
 
 # ---- estáticos ----
 
+
 def test_la_pagina_se_sirve(cliente):
     cod, cuerpo, _ = cliente.get("/")
     assert cod == 200
@@ -354,22 +374,28 @@ def test_un_estatico_inexistente_es_404(cliente):
     assert cliente.get("/no-existe.js")[0] == 404
 
 
-@pytest.mark.parametrize("intento", [
-    "/../server.py", "/../../relevar_core.py", "/%2e%2e/server.py",
-    "/..%2f..%2fvalidar.py", "/web/../../server.py",
-])
+@pytest.mark.parametrize(
+    "intento",
+    [
+        "/../server.py",
+        "/../../relevar_core.py",
+        "/%2e%2e/server.py",
+        "/..%2f..%2fvalidar.py",
+        "/web/../../server.py",
+    ],
+)
 def test_no_se_puede_leer_nada_fuera_de_app_web(cliente, intento):
     assert cliente.get(intento)[0] == 404
 
 
 # ---- las tres defensas ----
 
+
 def test_sin_token_no_se_toca_la_api(cliente):
     """Una página cualquiera abierta en el navegador puede pegarle a 127.0.0.1,
     así que «escucha sólo en localhost» no alcanza como defensa."""
     assert cliente.crudo("GET", "/api/config") == 403
-    assert cliente.crudo("POST", "/api/validar",
-                         {"Content-Type": "application/json"}, b"{}") == 403
+    assert cliente.crudo("POST", "/api/validar", {"Content-Type": "application/json"}, b"{}") == 403
 
 
 def test_con_un_token_equivocado_tampoco(cliente):
@@ -378,9 +404,9 @@ def test_con_un_token_equivocado_tampoco(cliente):
 
 def test_un_host_ajeno_se_rechaza(cliente):
     """Rebinding de DNS. El pedido llega con un Host que no es localhost."""
-    assert cliente.crudo("GET", "/api/config",
-                         {"X-App-Token": backend.TOKEN,
-                          "Host": "evil.example.com"}) == 403
+    assert (
+        cliente.crudo("GET", "/api/config", {"X-App-Token": backend.TOKEN, "Host": "evil.example.com"}) == 403
+    )
 
 
 def test_los_estaticos_no_piden_token_pero_si_controlan_el_host(cliente):
@@ -397,6 +423,7 @@ def test_el_token_viaja_adentro_de_la_pagina(cliente):
 
 
 # ---- API ----
+
 
 def test_config(cliente):
     cod, cuerpo, _ = cliente.get("/api/config")
@@ -428,8 +455,7 @@ def test_el_catalogo_se_recupera_tras_recargar_la_pagina(cliente):
 
 
 def test_validar(cliente, productos_servidor):
-    cod, res = cliente.post("/api/validar",
-                            {"ids": [p["product_id"] for p in productos_servidor]})
+    cod, res = cliente.post("/api/validar", {"ids": [p["product_id"] for p in productos_servidor]})
     assert cod == 200
     assert any(h["codigo"] == "isrc_invalido" for h in res["hallazgos"])
     assert res["apto"] is False
@@ -452,16 +478,20 @@ def test_una_ruta_de_api_inexistente_es_404(cliente):
 
 
 def test_preparar_sin_pedir_nada_es_un_error(cliente, productos_servidor):
-    cod, _res = cliente.post("/api/preparar",
-                             {"ids": [productos_servidor[0]["product_id"]],
-                              "planilla": False, "portadas": False, "audio": False})
+    cod, _res = cliente.post(
+        "/api/preparar",
+        {"ids": [productos_servidor[0]["product_id"]], "planilla": False, "portadas": False, "audio": False},
+    )
     assert cod == 400
 
 
 def test_un_body_invalido_es_400(cliente):
     req = urllib.request.Request(
-        f"{cliente.base}/api/validar", data=b"{no es json}",
-        headers=cliente.cab({"Content-Type": "application/json"}), method="POST")
+        f"{cliente.base}/api/validar",
+        data=b"{no es json}",
+        headers=cliente.cab({"Content-Type": "application/json"}),
+        method="POST",
+    )
     with pytest.raises(urllib.error.HTTPError) as exc:
         urllib.request.urlopen(req, timeout=10)
     assert exc.value.code == 400
@@ -469,12 +499,19 @@ def test_un_body_invalido_es_400(cliente):
 
 # ---- preparar de verdad, sin red ----
 
+
 @pytest.fixture(scope="module")
 def paquete_listo(cliente, productos_servidor):
     """Arma el ZIP con sólo la planilla y espera a que el trabajo termine."""
-    cod, res = cliente.post("/api/preparar",
-                            {"ids": [p["product_id"] for p in productos_servidor],
-                             "planilla": True, "portadas": False, "audio": False})
+    cod, res = cliente.post(
+        "/api/preparar",
+        {
+            "ids": [p["product_id"] for p in productos_servidor],
+            "planilla": True,
+            "portadas": False,
+            "audio": False,
+        },
+    )
     assert cod == 200
     job_id = res["job"]["id"]
 
@@ -528,8 +565,7 @@ def test_un_trabajo_largo_por_vez(cliente):
     """Dos relevamientos simultáneos gastan cuota de YouTube por duplicado y
     escriben sobre el mismo catálogo en memoria, así que gana el que termine
     último. Se rechaza el segundo con un mensaje, en vez de dejarlo pasar."""
-    lento = backend.JOBS.lanzar(
-        "prueba", lambda job: _esperar(lambda: job.cancelado, 5, 0.05))
+    lento = backend.JOBS.lanzar("prueba", lambda job: _esperar(lambda: job.cancelado, 5, 0.05))
     try:
         cod, res = cliente.post("/api/relevar", {"url": "https://youtube.com/@x"})
         assert cod == 400
@@ -550,6 +586,7 @@ def test_cancelar_por_http(cliente, paquete_listo):
 
 # ---- keep-alive ----
 
+
 def test_el_cuerpo_se_consume_aunque_la_ruta_no_lo_use(cliente):
     """Bug real. Las rutas «sin body» no leían el cuerpo, y con HTTP/1.1 esos
     bytes quedaban en el socket y se metían adelante del pedido siguiente. El
@@ -561,9 +598,12 @@ def test_el_cuerpo_se_consume_aunque_la_ruta_no_lo_use(cliente):
     conn = http.client.HTTPConnection("127.0.0.1", cliente.puerto, timeout=20)
     try:
         cuerpo = json.dumps({}).encode()
-        conn.request("POST", "/api/tidal/desconectar", body=cuerpo,
-                     headers=cliente.cab({"Content-Type": "application/json",
-                                          "Content-Length": str(len(cuerpo))}))
+        conn.request(
+            "POST",
+            "/api/tidal/desconectar",
+            body=cuerpo,
+            headers=cliente.cab({"Content-Type": "application/json", "Content-Length": str(len(cuerpo))}),
+        )
         r1 = conn.getresponse()
         r1.read()
         assert r1.status == 200
@@ -573,14 +613,20 @@ def test_el_cuerpo_se_consume_aunque_la_ruta_no_lo_use(cliente):
         # un error de parseo del pedido.
         cuerpo2 = json.dumps({"ids": ["noexiste"]}).encode()
         for esperado in ("segunda", "tercera"):
-            conn.request("POST", "/api/validar", body=cuerpo2,
-                         headers=cliente.cab({"Content-Type": "application/json",
-                                              "Content-Length": str(len(cuerpo2))}))
+            conn.request(
+                "POST",
+                "/api/validar",
+                body=cuerpo2,
+                headers=cliente.cab(
+                    {"Content-Type": "application/json", "Content-Length": str(len(cuerpo2))}
+                ),
+            )
             r = conn.getresponse()
             r.read()
             assert r.status != 501, (
                 f"la {esperado} dio {r.status} {r.reason!r}: el cuerpo anterior "
-                "contaminó el parseo del pedido siguiente")
+                "contaminó el parseo del pedido siguiente"
+            )
             assert r.status == 400
     finally:
         conn.close()
@@ -599,6 +645,7 @@ def test_el_cuerpo_se_consume_aunque_la_ruta_no_lo_use(cliente):
 # Es la defensa más fácil de romper sin darse cuenta, porque es un string suelto
 # adentro de un método, y hasta acá no la miraba ningún test.
 
+
 def _csp(cliente):
     _cod, _cuerpo, hdr = cliente.get("/")
     return hdr.get("Content-Security-Policy") or ""
@@ -608,14 +655,17 @@ def test_la_pagina_declara_una_csp(cliente):
     assert _csp(cliente)
 
 
-@pytest.mark.parametrize("directiva", [
-    "default-src 'self'",       # nada de afuera, salvo lo que se abra abajo
-    "img-src 'self' data:",     # data: lo necesitan las portadas ya descargadas
-    "font-src 'self'",          # las tipografías viajan adentro
-    "connect-src 'self'",       # la página no puede llamar a ningún lado
-    "form-action 'none'",       # ni mandar un formulario afuera
-    "base-uri 'none'",          # ni cambiar la base de las URLs relativas
-])
+@pytest.mark.parametrize(
+    "directiva",
+    [
+        "default-src 'self'",  # nada de afuera, salvo lo que se abra abajo
+        "img-src 'self' data:",  # data: lo necesitan las portadas ya descargadas
+        "font-src 'self'",  # las tipografías viajan adentro
+        "connect-src 'self'",  # la página no puede llamar a ningún lado
+        "form-action 'none'",  # ni mandar un formulario afuera
+        "base-uri 'none'",  # ni cambiar la base de las URLs relativas
+    ],
+)
 def test_la_csp_declara_la_directiva(cliente, directiva):
     assert directiva in _csp(cliente)
 
@@ -669,8 +719,7 @@ def test_la_pagina_cumple_su_propia_csp():
     html = open(os.path.join(RAIZ, "app", "web", "index.html"), encoding="utf-8").read()
 
     # Ningún <script> con código adentro. Los tres que hay son archivos.
-    inline = [m for m in re.findall(r"<script\b[^>]*>(.*?)</script>", html, re.S)
-              if m.strip()]
+    inline = [m for m in re.findall(r"<script\b[^>]*>(.*?)</script>", html, re.S) if m.strip()]
     assert inline == []
 
     # Ningún recurso de afuera. Los enlaces de navegación (un <a href>) no
@@ -688,9 +737,9 @@ def test_las_tipografias_no_vienen_de_ningun_cdn():
     from conftest import RAIZ
 
     urls = []
-    for ruta in (glob.glob(os.path.join(RAIZ, "app", "web", "*.css"))
-                 + glob.glob(os.path.join(RAIZ, "app", "web", "tokens", "*.css"))):
+    for ruta in glob.glob(os.path.join(RAIZ, "app", "web", "*.css")) + glob.glob(
+        os.path.join(RAIZ, "app", "web", "tokens", "*.css")
+    ):
         with open(ruta, encoding="utf-8") as f:
-            urls += [u for u in re.findall(r"url\(['\"]?([^'\")]+)", f.read())
-                     if "//" in u]
+            urls += [u for u in re.findall(r"url\(['\"]?([^'\")]+)", f.read()) if "//" in u]
     assert urls == []

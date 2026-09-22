@@ -69,57 +69,87 @@ TRAMA = 88
 VISTAS = [
     # --- entrada ---
     dict(nombre="entrada", readme=True, alto=1000, prep=""),
-    dict(nombre="entrada-error-cuota", alto=1180, cortes=[0, 280], prep="""
+    dict(
+        nombre="entrada-error-cuota",
+        alto=1180,
+        cortes=[0, 280],
+        prep="""
         S.error = 'Se agotó el cupo diario de la API de YouTube. Si esta copia trae '
                 + 'una clave compartida, el cupo se reparte entre todos los que la usan. '
                 + 'Cargando tu propia clave tenés el cupo entero para vos, es gratis y '
                 + 'se saca en tres pasos.';
-        S.errorCodigo = 'cuota';"""),
+        S.errorCodigo = 'cuota';""",
+    ),
     dict(nombre="clave-propia", alto=1000, prep="S.vista = 'clave';"),
-    dict(nombre="terminos", alto=4000, cortes=[0, 850, 1700, 2550],
-         prep="S.vista = 'terminos';"),
-
+    dict(nombre="terminos", alto=4000, cortes=[0, 850, 1700, 2550], prep="S.vista = 'terminos';"),
     # --- catálogo ---
     dict(nombre="catalogo", readme=True, alto=1340, cortes=[0, 440], prep="CAT();"),
-    dict(nombre="catalogo-detalle", alto=1950, cortes=[620, 1050],
-         prep="CAT(); S.expandidos.add('p2');"),
-    dict(nombre="catalogo-seleccion", alto=1340, cortes=[440],
-         prep="CAT(); S.seleccion.delete('p3'); S.seleccion.delete('p4');"),
-    dict(nombre="catalogo-filtro-fecha", alto=1480, cortes=[420],
-         prep="CAT(); S.filtro.modo='fechas'; S.filtro.anioDesde=2022; S.filtro.anioHasta=2024;"),
-    dict(nombre="catalogo-filtro-distribuidora", alto=1480, cortes=[420],
-         prep="CAT(); S.filtro.modo='distribuidora'; S.filtro.distribs=new Set(['DistroKid']);"),
-    dict(nombre="catalogo-busqueda", alto=1200, cortes=[300],
-         prep="CAT(); S.filtro.texto='jacar';"),
-    dict(nombre="catalogo-vacio", alto=1150, cortes=[260],
-         prep="CAT(); S.filtro.texto='zzz';"),
-
+    dict(nombre="catalogo-detalle", alto=1950, cortes=[620, 1050], prep="CAT(); S.expandidos.add('p2');"),
+    dict(
+        nombre="catalogo-seleccion",
+        alto=1340,
+        cortes=[440],
+        prep="CAT(); S.seleccion.delete('p3'); S.seleccion.delete('p4');",
+    ),
+    dict(
+        nombre="catalogo-filtro-fecha",
+        alto=1480,
+        cortes=[420],
+        prep="CAT(); S.filtro.modo='fechas'; S.filtro.anioDesde=2022; S.filtro.anioHasta=2024;",
+    ),
+    dict(
+        nombre="catalogo-filtro-distribuidora",
+        alto=1480,
+        cortes=[420],
+        prep="CAT(); S.filtro.modo='distribuidora'; S.filtro.distribs=new Set(['DistroKid']);",
+    ),
+    dict(nombre="catalogo-busqueda", alto=1200, cortes=[300], prep="CAT(); S.filtro.texto='jacar';"),
+    dict(nombre="catalogo-vacio", alto=1150, cortes=[260], prep="CAT(); S.filtro.texto='zzz';"),
     # --- qué descargar ---
     dict(nombre="descargar", readme=True, alto=1060, prep="CAT(); S.paso=3;"),
-    dict(nombre="descargar-audio", alto=1320, cortes=[0, 420],
-         prep="CAT(); S.paso=3; S.opciones.audio=true;"),
-    dict(nombre="descargar-tidal-conectando", alto=1320, cortes=[380], prep="""
+    dict(
+        nombre="descargar-audio", alto=1320, cortes=[0, 420], prep="CAT(); S.paso=3; S.opciones.audio=true;"
+    ),
+    dict(
+        nombre="descargar-tidal-conectando",
+        alto=1320,
+        cortes=[380],
+        prep="""
         CAT(); S.paso = 3; S.opciones.audio = true;
         S.tidal = {url: 'https://link.tidal.com/ABC12', codigo: 'ABC12',
-                   device_code: 'x', esperando: true};"""),
-    dict(nombre="descargar-tidal-ok", alto=1180, cortes=[280], prep="""
+                   device_code: 'x', esperando: true};""",
+    ),
+    dict(
+        nombre="descargar-tidal-ok",
+        alto=1180,
+        cortes=[280],
+        prep="""
         CAT(); S.paso = 3; S.opciones.audio = true;
-        S.config.tidal_conectada = true;"""),
-
+        S.config.tidal_conectada = true;""",
+    ),
     # --- trabajo y resultado ---
     # Las lineas del log salen de LOG_PORTADAS, que esta en los dos idiomas.
-    dict(nombre="progreso", readme=True, alto=1000, prep="""
+    dict(
+        nombre="progreso",
+        readme=True,
+        alto=1000,
+        prep="""
         CAT(); S.paso = 4; S.ocupado = true;
-        S.job = {progreso: 0.65, mensaje: LOG[LOG.length - 1], log: LOG.slice()};"""),
-    dict(nombre="listo", readme=True, alto=1300, cortes=[0, 400],
-         prep="CAT(); S.paso=4; S.resultado = RES;"),
-    dict(nombre="listo-avisos", alto=1500, cortes=[420], prep="""
+        S.job = {progreso: 0.65, mensaje: LOG[LOG.length - 1], log: LOG.slice()};""",
+    ),
+    dict(nombre="listo", readme=True, alto=1300, cortes=[0, 400], prep="CAT(); S.paso=4; S.resultado = RES;"),
+    dict(
+        nombre="listo-avisos",
+        alto=1500,
+        cortes=[420],
+        prep="""
         CAT(); S.paso = 4; S.resultado = RES;
         DESPUES = function () {
           var d = document.querySelectorAll('details.acordeon');
           if (d[0]) d[0].open = false;
           if (d[1]) d[1].open = true;
-        };"""),
+        };""",
+    ),
 ]
 
 
@@ -127,8 +157,7 @@ def navegador():
     for ruta in (
         r"C:\Program Files\Google\Chrome\Application\chrome.exe",
         r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
-        os.path.join(os.environ.get("LOCALAPPDATA", ""),
-                     r"Google\Chrome\Application\chrome.exe"),
+        os.path.join(os.environ.get("LOCALAPPDATA", ""), r"Google\Chrome\Application\chrome.exe"),
         r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
         "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     ):
@@ -145,57 +174,137 @@ def navegador():
 # Datos de ejemplo
 # ============================================================
 
+
 def catalogo_demo():
     def tracks(n, titulos, prefijo, con_isrc):
-        return [{
-            "n": i + 1,
-            "titulo": titulos[i],
-            "isrc": f"AR{prefijo}{2400000 + i:07d}"[:12] if i < con_isrc else "",
-            "duracion": f"{2 + (i % 3)}:{(17 + i * 7) % 60:02d}",
-            "views": 48210 - i * 3100,
-            "url": "#",
-        } for i in range(n)]
+        return [
+            {
+                "n": i + 1,
+                "titulo": titulos[i],
+                "isrc": f"AR{prefijo}{2400000 + i:07d}"[:12] if i < con_isrc else "",
+                "duracion": f"{2 + (i % 3)}:{(17 + i * 7) % 60:02d}",
+                "views": 48210 - i * 3100,
+                "url": "#",
+            }
+            for i in range(n)
+        ]
 
     productos = [
-        {"id": "p1", "titulo": "Cartografía del ruido", "tipo": "album",
-         "anio": 2021, "fecha": "2021-04-16", "upc": "0885012345678",
-         "sello": "Cerro Bayo", "distribuidora": "DistroKid",
-         "tracks": 9, "views": 412_338, "orden_estimado": False, "con_isrc": 9,
-         "detalle": tracks(9, ["Andén norte", "Cartografía del ruido", "Bagual",
-                               "Tarde de abril", "Sin señal", "Kerosén",
-                               "La última pieza", "Nadie mira el río",
-                               "Cierre"], "CB1", 9)},
-        {"id": "p2", "titulo": "Ducha fría", "tipo": "EP",
-         "anio": 2023, "fecha": "2023-08-02", "upc": "0885012345685",
-         "sello": "Cerro Bayo", "distribuidora": "DistroKid",
-         "tracks": 5, "views": 188_402, "orden_estimado": False, "con_isrc": 3,
-         "detalle": tracks(5, ["Ducha fría", "Mediodía", "Pileta vacía",
-                               "Hormiga", "Nueve y cuarto"], "CB2", 3)},
-        {"id": "p3", "titulo": "Sesiones del jacarandá", "tipo": "album",
-         "anio": 2022, "fecha": "2022-12-27", "upc": "",
-         "sello": "", "distribuidora": "Believe",
-         "tracks": 12, "views": 96_771, "orden_estimado": True, "con_isrc": 0,
-         "detalle": tracks(12, ["Walsh", "Quimeras", "Desenredo", "Vidrio",
-                                "Telón de plomo", "Calavera", "Generala",
-                                "Cornisa", "Velasco", "Engranaje", "Nagasaki",
-                                "Abejorro azul"], "CB3", 0)},
-        {"id": "p4", "titulo": "Muéstrame la mini", "tipo": "Single",
-         "anio": 2024, "fecha": "2024-02-09", "upc": "0885012345708",
-         "sello": "Garra", "distribuidora": "ONErpm",
-         "tracks": 1, "views": 731_005, "orden_estimado": False, "con_isrc": 1,
-         "detalle": tracks(1, ["Muéstrame la mini"], "CB4", 1)},
+        {
+            "id": "p1",
+            "titulo": "Cartografía del ruido",
+            "tipo": "album",
+            "anio": 2021,
+            "fecha": "2021-04-16",
+            "upc": "0885012345678",
+            "sello": "Cerro Bayo",
+            "distribuidora": "DistroKid",
+            "tracks": 9,
+            "views": 412_338,
+            "orden_estimado": False,
+            "con_isrc": 9,
+            "detalle": tracks(
+                9,
+                [
+                    "Andén norte",
+                    "Cartografía del ruido",
+                    "Bagual",
+                    "Tarde de abril",
+                    "Sin señal",
+                    "Kerosén",
+                    "La última pieza",
+                    "Nadie mira el río",
+                    "Cierre",
+                ],
+                "CB1",
+                9,
+            ),
+        },
+        {
+            "id": "p2",
+            "titulo": "Ducha fría",
+            "tipo": "EP",
+            "anio": 2023,
+            "fecha": "2023-08-02",
+            "upc": "0885012345685",
+            "sello": "Cerro Bayo",
+            "distribuidora": "DistroKid",
+            "tracks": 5,
+            "views": 188_402,
+            "orden_estimado": False,
+            "con_isrc": 3,
+            "detalle": tracks(
+                5, ["Ducha fría", "Mediodía", "Pileta vacía", "Hormiga", "Nueve y cuarto"], "CB2", 3
+            ),
+        },
+        {
+            "id": "p3",
+            "titulo": "Sesiones del jacarandá",
+            "tipo": "album",
+            "anio": 2022,
+            "fecha": "2022-12-27",
+            "upc": "",
+            "sello": "",
+            "distribuidora": "Believe",
+            "tracks": 12,
+            "views": 96_771,
+            "orden_estimado": True,
+            "con_isrc": 0,
+            "detalle": tracks(
+                12,
+                [
+                    "Walsh",
+                    "Quimeras",
+                    "Desenredo",
+                    "Vidrio",
+                    "Telón de plomo",
+                    "Calavera",
+                    "Generala",
+                    "Cornisa",
+                    "Velasco",
+                    "Engranaje",
+                    "Nagasaki",
+                    "Abejorro azul",
+                ],
+                "CB3",
+                0,
+            ),
+        },
+        {
+            "id": "p4",
+            "titulo": "Muéstrame la mini",
+            "tipo": "Single",
+            "anio": 2024,
+            "fecha": "2024-02-09",
+            "upc": "0885012345708",
+            "sello": "Garra",
+            "distribuidora": "ONErpm",
+            "tracks": 1,
+            "views": 731_005,
+            "orden_estimado": False,
+            "con_isrc": 1,
+            "detalle": tracks(1, ["Muéstrame la mini"], "CB4", 1),
+        },
     ]
     return {
         "artista": "Delta Serrano",
-        "diagnostico": {"via_topic": True, "canal": "Delta Serrano - Topic",
-                        "canal_pedido": "Delta Serrano", "descartados": 17},
+        "diagnostico": {
+            "via_topic": True,
+            "canal": "Delta Serrano - Topic",
+            "canal_pedido": "Delta Serrano",
+            "descartados": 17,
+        },
         "productos": productos,
-        "resumen": {"products": 4, "tracks": 27, "with_upc": 3,
-                    "with_isrc": 13, "views": 1_428_516},
-        "filtros": {"distribuidoras": [{"name": "DistroKid", "count": 2},
-                                       {"name": "Believe", "count": 1},
-                                       {"name": "ONErpm", "count": 1}],
-                    "anio_min": 2021, "anio_max": 2024},
+        "resumen": {"products": 4, "tracks": 27, "with_upc": 3, "with_isrc": 13, "views": 1_428_516},
+        "filtros": {
+            "distribuidoras": [
+                {"name": "DistroKid", "count": 2},
+                {"name": "Believe", "count": 1},
+                {"name": "ONErpm", "count": 1},
+            ],
+            "anio_min": 2021,
+            "anio_max": 2024,
+        },
     }
 
 
@@ -227,20 +336,25 @@ HALLAZGOS = {
 }
 
 LOG_PORTADAS = {
-    "es": ["Preparando",
-           "Portada 1 de 4, Cartografia del ruido: 3000x3000",
-           "Portada 2 de 4, Ducha fria: 1400x1400, el maximo que tiene Apple",
-           "Portada 3 de 4, Sesiones del jacaranda: no esta en Apple Music"],
-    "en": ["Getting ready",
-           "Cover 1 of 4, Cartografia del ruido: 3000x3000",
-           "Cover 2 of 4, Ducha fria: 1400x1400, the largest Apple has",
-           "Cover 3 of 4, Sesiones del jacaranda: not on Apple Music"],
+    "es": [
+        "Preparando",
+        "Portada 1 de 4, Cartografia del ruido: 3000x3000",
+        "Portada 2 de 4, Ducha fria: 1400x1400, el maximo que tiene Apple",
+        "Portada 3 de 4, Sesiones del jacaranda: no esta en Apple Music",
+    ],
+    "en": [
+        "Getting ready",
+        "Cover 1 of 4, Cartografia del ruido: 3000x3000",
+        "Cover 2 of 4, Ducha fria: 1400x1400, the largest Apple has",
+        "Cover 3 of 4, Sesiones del jacaranda: not on Apple Music",
+    ],
 }
 
 
 def idioma():
     """El idioma de las capturas, el mismo que va a usar la app."""
     import i18n
+
     return i18n.idioma()
 
 
@@ -261,18 +375,48 @@ def resultado_demo():
                 # titulo. Sin el, la app los mete a todos en la misma bolsa y la
                 # captura muestra la validacion agrupando mal: son los mismos
                 # codigos que emite validar.py.
-                {"nivel": "error", "codigo": "upc_falta",
-                 "producto": "Sesiones del jacarandá", "track": "", "mensaje": msg[0]},
-                {"nivel": "error", "codigo": "isrc_invalido",
-                 "producto": "Ducha fría", "track": "Hormiga", "mensaje": msg[1]},
-                {"nivel": "aviso", "codigo": "orden_sin_confirmar",
-                 "producto": "Sesiones del jacarandá", "track": "", "mensaje": msg[2]},
-                {"nivel": "aviso", "codigo": "sello_falta",
-                 "producto": "Sesiones del jacarandá", "track": "", "mensaje": msg[3]},
-                {"nivel": "aviso", "codigo": "portada_bajo_recomendado",
-                 "producto": "Ducha fría", "track": "", "mensaje": msg[4]},
-                {"nivel": "aviso", "codigo": "titulo_con_ruido",
-                 "producto": "Muéstrame la mini", "track": "", "mensaje": msg[5]},
+                {
+                    "nivel": "error",
+                    "codigo": "upc_falta",
+                    "producto": "Sesiones del jacarandá",
+                    "track": "",
+                    "mensaje": msg[0],
+                },
+                {
+                    "nivel": "error",
+                    "codigo": "isrc_invalido",
+                    "producto": "Ducha fría",
+                    "track": "Hormiga",
+                    "mensaje": msg[1],
+                },
+                {
+                    "nivel": "aviso",
+                    "codigo": "orden_sin_confirmar",
+                    "producto": "Sesiones del jacarandá",
+                    "track": "",
+                    "mensaje": msg[2],
+                },
+                {
+                    "nivel": "aviso",
+                    "codigo": "sello_falta",
+                    "producto": "Sesiones del jacarandá",
+                    "track": "",
+                    "mensaje": msg[3],
+                },
+                {
+                    "nivel": "aviso",
+                    "codigo": "portada_bajo_recomendado",
+                    "producto": "Ducha fría",
+                    "track": "",
+                    "mensaje": msg[4],
+                },
+                {
+                    "nivel": "aviso",
+                    "codigo": "titulo_con_ruido",
+                    "producto": "Muéstrame la mini",
+                    "track": "",
+                    "mensaje": msg[5],
+                },
             ],
         },
     }
@@ -285,13 +429,25 @@ CONFIG = {
     # Sin esto la pagina cae a `navigator.language`, y las capturas salian en el
     # idioma del Chrome que las saca y no en el que se pidio: el juego en
     # castellano tenia la interfaz en ingles.
-    "idioma": None, "idiomas": ["es", "en"],
-    "terminos_aceptados": True, "terminos_version": "1.0",
-    "tiene_clave": True, "clave_incluida": True, "audio_habilitado": True,
-    "entorno": {"ffmpeg": True, "ffmpeg_incluido": True, "ffprobe": True,
-                "js_runtime": True, "tiddl": True, "yt_dlp": True,
-                "puede_flac": True, "puede_referencia": True},
-    "tidal_conectada": False, "catalogo_cargado": False,
+    "idioma": None,
+    "idiomas": ["es", "en"],
+    "terminos_aceptados": True,
+    "terminos_version": "1.0",
+    "tiene_clave": True,
+    "clave_incluida": True,
+    "audio_habilitado": True,
+    "entorno": {
+        "ffmpeg": True,
+        "ffmpeg_incluido": True,
+        "ffprobe": True,
+        "js_runtime": True,
+        "tiddl": True,
+        "yt_dlp": True,
+        "puede_flac": True,
+        "puede_referencia": True,
+    },
+    "tidal_conectada": False,
+    "catalogo_cargado": False,
     "trabajo_en_curso": False,
 }
 
@@ -299,6 +455,7 @@ CONFIG = {
 # ============================================================
 # La página de capturas
 # ============================================================
+
 
 def escribir_pagina():
     """index.html con `fetch` interceptado y el estado puesto a mano.
@@ -308,7 +465,7 @@ def escribir_pagina():
     with open(os.path.join(WEB, "index.html"), encoding="utf-8") as f:
         html = f.read()
 
-    html = html.replace("{{TOKEN}}", "capturas")   # nunca sale un pedido de verdad
+    html = html.replace("{{TOKEN}}", "capturas")  # nunca sale un pedido de verdad
 
     # Solo para capturar: la app estira `main` para que el pie quede pegado al
     # fondo de la ventana. Renderizando a un alto generoso eso deja un hueco
@@ -319,10 +476,12 @@ def escribir_pagina():
     # Y sin animaciones: la de entrada dura 240 ms, y como el reloj virtual de
     # Chrome corre solo, la foto caia a veces en la mitad del fade y salia toda
     # lavada. Una captura no tiene que depender de cuando se disparo.
-    html = html.replace("</head>",
-                        "<style id=\"sin-animacion\">"
-                        "*,*::before,*::after{animation:none!important;transition:none!important}"
-                        "</style></head>")
+    html = html.replace(
+        "</head>",
+        '<style id="sin-animacion">'
+        "*,*::before,*::after{animation:none!important;transition:none!important}"
+        "</style></head>",
+    )
 
     preps = {v["nombre"]: v.get("prep", "") for v in VISTAS}
 
@@ -387,11 +546,13 @@ def escribir_pagina():
   })();
 })();
 </script>
-""" % {"config": json.dumps(CONFIG, ensure_ascii=False),
-       "catalogo": json.dumps(catalogo_demo(), ensure_ascii=False),
-       "resultado": json.dumps(resultado_demo(), ensure_ascii=False),
-       "preps": json.dumps(preps, ensure_ascii=False),
-       "log": json.dumps(LOG_PORTADAS[idioma()], ensure_ascii=False)}
+""" % {
+        "config": json.dumps(CONFIG, ensure_ascii=False),
+        "catalogo": json.dumps(catalogo_demo(), ensure_ascii=False),
+        "resultado": json.dumps(resultado_demo(), ensure_ascii=False),
+        "preps": json.dumps(preps, ensure_ascii=False),
+        "log": json.dumps(LOG_PORTADAS[idioma()], ensure_ascii=False),
+    }
 
     html = html.replace('<script src="app.js"></script>', stub)
     with open(PAGINA, "w", encoding="utf-8") as f:
@@ -454,8 +615,7 @@ def _fin_del_contenido(img, margen=48, periodo=TRAMA):
     if periodo < 1 or alto <= periodo:
         return alto
 
-    referencia = {y % periodo: [pix[x, y] for x in xs]
-                  for y in range(alto - periodo, alto)}
+    referencia = {y % periodo: [pix[x, y] for x in xs] for y in range(alto - periodo, alto)}
 
     for y in range(alto - periodo - 1, -1, -1):
         fila = referencia[y % periodo]
@@ -467,10 +627,10 @@ def _fin_del_contenido(img, margen=48, periodo=TRAMA):
 
 def main():
     ap = argparse.ArgumentParser(description="Capturas de la app, en 16:9.")
-    ap.add_argument("--todo", action="store_true",
-                    help="Todas las vistas, en claro y oscuro, al doble de resolución.")
-    ap.add_argument("--salida", default=None,
-                    help="Carpeta destino. Por defecto docs/capturas.")
+    ap.add_argument(
+        "--todo", action="store_true", help="Todas las vistas, en claro y oscuro, al doble de resolución."
+    )
+    ap.add_argument("--salida", default=None, help="Carpeta destino. Por defecto docs/capturas.")
     args = ap.parse_args()
 
     destino = args.salida or os.path.join(RAIZ, "docs", "capturas")
@@ -483,10 +643,10 @@ def main():
     temas = ("oscuro", "claro") if args.todo else ("oscuro",)
     # El numero sale de la lista completa, asi los nombres no se corren
     # cuando se marca o desmarca una vista como del README.
-    vistas = [(i, v) for i, v in enumerate(VISTAS, 1)
-              if args.todo or v.get("readme")]
+    vistas = [(i, v) for i, v in enumerate(VISTAS, 1) if args.todo or v.get("readme")]
 
     import server as backend
+
     CONFIG["version"] = backend.VERSION
     CONFIG["idioma"] = idioma()
 
@@ -517,27 +677,36 @@ def main():
             os.makedirs(carpeta, exist_ok=True)
             for i, v in vistas:
                 alto = v.get("alto", ALTO)
-                url = (f"http://127.0.0.1:{puerto}/_capturas.html"
-                       f"?vista={v['nombre']}&tema={tema}")
+                url = f"http://127.0.0.1:{puerto}/_capturas.html?vista={v['nombre']}&tema={tema}"
                 if os.path.exists(crudo):
                     os.remove(crudo)
-                r = subprocess.run([
-                    chrome, "--headless=new", "--disable-gpu", "--hide-scrollbars",
-                    f"--user-data-dir={perfil}", "--no-first-run",
-                    f"--window-size={ANCHO},{alto}",
-                    f"--force-device-scale-factor={escala}",
-                    # Tiempo virtual: Chrome adelanta el reloj hasta que la
-                    # pagina se queda quieta, asi no hay que adivinar cuanto
-                    # tardan las fuentes.
-                    "--virtual-time-budget=6000",
-                    f"--screenshot={crudo}", url,
-                ], capture_output=True, text=True)
+                r = subprocess.run(
+                    [
+                        chrome,
+                        "--headless=new",
+                        "--disable-gpu",
+                        "--hide-scrollbars",
+                        f"--user-data-dir={perfil}",
+                        "--no-first-run",
+                        f"--window-size={ANCHO},{alto}",
+                        f"--force-device-scale-factor={escala}",
+                        # Tiempo virtual: Chrome adelanta el reloj hasta que la
+                        # pagina se queda quieta, asi no hay que adivinar cuanto
+                        # tardan las fuentes.
+                        "--virtual-time-budget=6000",
+                        f"--screenshot={crudo}",
+                        url,
+                    ],
+                    capture_output=True,
+                    text=True,
+                )
                 if not os.path.exists(crudo):
                     print(r.stdout[-600:])
                     print(r.stderr[-600:])
                     sys.exit(f"No se genero el render de {v['nombre']}")
-                hechas += recortar(crudo, carpeta, f"{i:02d}-{v['nombre']}",
-                                   v.get("cortes", [0]), escala, tema)
+                hechas += recortar(
+                    crudo, carpeta, f"{i:02d}-{v['nombre']}", v.get("cortes", [0]), escala, tema
+                )
     finally:
         srv.shutdown()
         srv.server_close()

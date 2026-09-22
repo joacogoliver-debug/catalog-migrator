@@ -17,16 +17,29 @@ import portadas as PT
 # Reescritura de la URL del CDN de Apple
 # ============================================================
 
-@pytest.mark.parametrize("url, px, esperado", [
-    ("https://is1-ssl.mzstatic.com/image/thumb/abc/100x100bb.jpg", 3000,
-     "https://is1-ssl.mzstatic.com/image/thumb/abc/3000x3000bb.jpg"),
-    ("https://is1-ssl.mzstatic.com/image/thumb/abc/500x500bb.jpg", 2000,
-     "https://is1-ssl.mzstatic.com/image/thumb/abc/2000x2000bb.jpg"),
-    # Entra .png y sale .jpg, que es lo que el CDN sirve para ese nombre.
-    ("https://is1-ssl.mzstatic.com/image/thumb/abc/100x100bb.png", 1200,
-     "https://is1-ssl.mzstatic.com/image/thumb/abc/1200x1200bb.jpg"),
-    ("", 3000, ""),
-])
+
+@pytest.mark.parametrize(
+    "url, px, esperado",
+    [
+        (
+            "https://is1-ssl.mzstatic.com/image/thumb/abc/100x100bb.jpg",
+            3000,
+            "https://is1-ssl.mzstatic.com/image/thumb/abc/3000x3000bb.jpg",
+        ),
+        (
+            "https://is1-ssl.mzstatic.com/image/thumb/abc/500x500bb.jpg",
+            2000,
+            "https://is1-ssl.mzstatic.com/image/thumb/abc/2000x2000bb.jpg",
+        ),
+        # Entra .png y sale .jpg, que es lo que el CDN sirve para ese nombre.
+        (
+            "https://is1-ssl.mzstatic.com/image/thumb/abc/100x100bb.png",
+            1200,
+            "https://is1-ssl.mzstatic.com/image/thumb/abc/1200x1200bb.jpg",
+        ),
+        ("", 3000, ""),
+    ],
+)
 def test_upscale_de_la_url(url, px, esperado):
     assert PT._upscale(url, px) == esperado
 
@@ -35,14 +48,18 @@ def test_upscale_de_la_url(url, px, esperado):
 # Limpieza de títulos antes de buscar
 # ============================================================
 
-@pytest.mark.parametrize("titulo, limpio", [
-    ("Tema (Official Video)", "Tema"),
-    ("Album [Remastered 2011]", "Album"),
-    ("Disco (En Vivo)", "Disco"),
-    ("Bocanada", "Bocanada"),
-    # No debe comerse paréntesis que son parte del título.
-    ("Cosquillas (feat. Alguien)", "Cosquillas (feat. Alguien)"),
-])
+
+@pytest.mark.parametrize(
+    "titulo, limpio",
+    [
+        ("Tema (Official Video)", "Tema"),
+        ("Album [Remastered 2011]", "Album"),
+        ("Disco (En Vivo)", "Disco"),
+        ("Bocanada", "Bocanada"),
+        # No debe comerse paréntesis que son parte del título.
+        ("Cosquillas (feat. Alguien)", "Cosquillas (feat. Alguien)"),
+    ],
+)
 def test_strip_ruido(titulo, limpio):
     assert PT._strip_ruido(titulo) == limpio
 
@@ -50,6 +67,7 @@ def test_strip_ruido(titulo, limpio):
 # ============================================================
 # El estado reporta la resolución real
 # ============================================================
+
 
 @pytest.fixture
 def portada_de(monkeypatch, jpeg):
@@ -59,15 +77,23 @@ def portada_de(monkeypatch, jpeg):
     `monkeypatch` y no por asignación directa para que los parches se deshagan
     al terminar el test, aunque falle.
     """
-    monkeypatch.setattr(PT, "buscar_portada", lambda artista, album, upc="": {
-        "url100": "https://x/100x100bb.jpg", "matched_album": album,
-        "matched_artist": artista, "match": "alta", "ratio": 1.0})
+    monkeypatch.setattr(
+        PT,
+        "buscar_portada",
+        lambda artista, album, upc="": {
+            "url100": "https://x/100x100bb.jpg",
+            "matched_album": album,
+            "matched_artist": artista,
+            "match": "alta",
+            "ratio": 1.0,
+        },
+    )
 
     def correr(px_real, no_cuadrada=False):
         alto = px_real + 4 if no_cuadrada else px_real
-        monkeypatch.setattr(PT, "descargar_portada",
-                            lambda url100: (jpeg(px_real, alto, relleno=200),
-                                            min(px_real, alto)))
+        monkeypatch.setattr(
+            PT, "descargar_portada", lambda url100: (jpeg(px_real, alto, relleno=200), min(px_real, alto))
+        )
         p = {"title": "Disco", "upc": ""}
         PT.fetch_portadas([p], "Artista", log=lambda *_: None)
         return p
@@ -103,9 +129,17 @@ def test_el_minimo_exacto_no_dispara_el_aviso(portada_de):
 
 
 def test_descarga_fallida(monkeypatch):
-    monkeypatch.setattr(PT, "buscar_portada", lambda artista, album, upc="": {
-        "url100": "https://x/100x100bb.jpg", "matched_album": album,
-        "matched_artist": artista, "match": "alta", "ratio": 1.0})
+    monkeypatch.setattr(
+        PT,
+        "buscar_portada",
+        lambda artista, album, upc="": {
+            "url100": "https://x/100x100bb.jpg",
+            "matched_album": album,
+            "matched_artist": artista,
+            "match": "alta",
+            "ratio": 1.0,
+        },
+    )
     monkeypatch.setattr(PT, "descargar_portada", lambda url100: (None, 0))
 
     p = {"title": "Disco", "upc": ""}

@@ -24,16 +24,17 @@ import audio
 
 pytest.importorskip("tiddl", reason="el módulo de audio es opcional")
 
-from tiddl.core.api import TidalAPI, TidalClient                      # noqa: E402
+from tiddl.core.api import TidalAPI, TidalClient  # noqa: E402
 from tiddl.core.api.api import AlbumItems, ArtistAlbumsItems, Search  # noqa: E402
-from tiddl.core.api.models.base import AlbumItems as BaseAlbumItems   # noqa: E402
-from tiddl.core.api.models.resources import Album, Track              # noqa: E402
-from tiddl.core.auth import AuthAPI, AuthClientError                  # noqa: E402
+from tiddl.core.api.models.base import AlbumItems as BaseAlbumItems  # noqa: E402
+from tiddl.core.api.models.resources import Album, Track  # noqa: E402
+from tiddl.core.auth import AuthAPI, AuthClientError  # noqa: E402
 
 
 # ============================================================
 # Constructores
 # ============================================================
+
 
 def test_firma_de_tidal_api():
     p = list(inspect.signature(TidalAPI.__init__).parameters)
@@ -51,10 +52,17 @@ def test_tidal_client_acepta_token_y_cache_propia(param):
 # Métodos que usa audio.py
 # ============================================================
 
-@pytest.mark.parametrize("metodo", [
-    "get_search", "get_artist_albums", "get_album_items",
-    "get_track", "get_track_stream",
-])
+
+@pytest.mark.parametrize(
+    "metodo",
+    [
+        "get_search",
+        "get_artist_albums",
+        "get_album_items",
+        "get_track",
+        "get_track_stream",
+    ],
+)
 def test_la_api_tiene_el_metodo(metodo):
     assert hasattr(TidalAPI, metodo)
 
@@ -87,6 +95,7 @@ def test_get_track_stream_acepta_calidad():
 # Autenticación
 # ============================================================
 
+
 @pytest.mark.parametrize("metodo", ["get_device_auth", "get_auth", "refresh_token"])
 def test_la_autenticacion_tiene_el_metodo(metodo):
     assert hasattr(AuthAPI, metodo)
@@ -101,6 +110,7 @@ def test_el_error_de_auth_expone_el_motivo():
 # ============================================================
 # Campos de los modelos que leemos
 # ============================================================
+
 
 @pytest.mark.parametrize("modelo", [ArtistAlbumsItems, AlbumItems])
 @pytest.mark.parametrize("campo", ["items", "totalNumberOfItems"])
@@ -118,9 +128,17 @@ def test_del_album_leemos_upc_y_titulo(campo):
     assert campo in Album.model_fields
 
 
-@pytest.mark.parametrize("campo", [
-    "id", "title", "isrc", "trackNumber", "volumeNumber", "mediaMetadata",
-])
+@pytest.mark.parametrize(
+    "campo",
+    [
+        "id",
+        "title",
+        "isrc",
+        "trackNumber",
+        "volumeNumber",
+        "mediaMetadata",
+    ],
+)
 def test_del_track_leemos_isrc_y_el_orden_real(campo):
     """El orden real de los tracks es justo lo que YouTube no da."""
     assert campo in Track.model_fields
@@ -131,20 +149,22 @@ def test_los_items_del_album_vienen_envueltos():
 
 
 def test_las_utilidades_de_descarga_existen():
-    from tiddl.core.metadata import add_track_metadata            # noqa: F401
-    from tiddl.core.utils import get_track_stream_data            # noqa: F401
-    from tiddl.core.utils.ffmpeg import extract_flac              # noqa: F401
+    from tiddl.core.metadata import add_track_metadata  # noqa: F401
+    from tiddl.core.utils import get_track_stream_data  # noqa: F401
+    from tiddl.core.utils.ffmpeg import extract_flac  # noqa: F401
 
 
 # ============================================================
 # Y que audio.py haga lo que dice
 # ============================================================
 
+
 def test_el_indice_pide_eps_y_singles_y_pagina():
     src = inspect.getsource(audio.construir_indice_isrc)
     assert "EPSANDSINGLES" in src, "sin esto los singles y EPs nunca entran al índice"
-    assert "offset" in src and "totalNumberOfItems" in src, \
+    assert "offset" in src and "totalNumberOfItems" in src, (
         "sin paginar, la discografía queda cortada en el ítem 10"
+    )
 
 
 def test_las_clases_se_importan_de_verdad():

@@ -20,8 +20,8 @@ from i18n import T
 
 # Cuánto se conserva un trabajo terminado antes de descartarlo. Tiene que
 # alcanzar para que el usuario descargue el ZIP con calma.
-TTL_TERMINADO = 60 * 60          # 1 hora
-MAX_LOG = 400                    # líneas de log que guardamos por trabajo
+TTL_TERMINADO = 60 * 60  # 1 hora
+MAX_LOG = 400  # líneas de log que guardamos por trabajo
 
 
 class Cancelado(Exception):
@@ -34,7 +34,7 @@ class Job:
     def __init__(self, tipo):
         self.id = uuid.uuid4().hex[:12]
         self.tipo = tipo
-        self.estado = "pendiente"        # pendiente|corriendo|listo|error|cancelado
+        self.estado = "pendiente"  # pendiente|corriendo|listo|error|cancelado
         self.progreso = 0.0
         self.mensaje = ""
         self.log = []
@@ -62,7 +62,7 @@ class Job:
             if len(self.log) > MAX_LOG:
                 # Conservamos el arranque y la cola: el medio de un log largo
                 # casi nunca aporta y no queremos crecer sin límite.
-                del self.log[1:len(self.log) - MAX_LOG + 1]
+                del self.log[1 : len(self.log) - MAX_LOG + 1]
 
     def abortar_si_cancelado(self):
         if self._cancelar.is_set():
@@ -132,7 +132,7 @@ class Registry:
                 job.mensaje = "Cancelado."
                 job.terminado_en = time.time()
                 job.estado = "cancelado"
-            except Exception as e:                      # noqa: BLE001
+            except Exception as e:  # noqa: BLE001
                 job.error = str(e) or e.__class__.__name__
                 job.codigo_error = getattr(e, "codigo", "") or ""
                 job.mensaje = T("job.error")
@@ -154,8 +154,9 @@ class Registry:
         (los resultados incluyen el catálogo entero)."""
         ahora = time.time()
         with self._lock:
-            viejos = [k for k, j in self._jobs.items()
-                      if j.terminado_en and ahora - j.terminado_en > TTL_TERMINADO]
+            viejos = [
+                k for k, j in self._jobs.items() if j.terminado_en and ahora - j.terminado_en > TTL_TERMINADO
+            ]
             for k in viejos:
                 self._jobs.pop(k, None)
         # Fuera del lock: el callback toca el disco y no tiene por qué bloquear
@@ -164,7 +165,7 @@ class Registry:
             if self._al_descartar:
                 try:
                     self._al_descartar(k)
-                except Exception:                    # noqa: BLE001
+                except Exception:  # noqa: BLE001
                     pass
 
     def activos(self):

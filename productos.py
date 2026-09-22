@@ -67,15 +67,16 @@ def _mode(values):
 def _slug(s, maxlen=60):
     """Nombre seguro para carpeta en Windows/macOS/Linux."""
     s = unicodedata.normalize("NFD", s or "").encode("ascii", "ignore").decode("ascii")
-    s = re.sub(r'[<>:"/\\|?*]', "", s)          # prohibidos en Windows
-    s = re.sub(r"[\x00-\x1f]", "", s)           # control
-    s = re.sub(r"\s+", " ", s).strip(" .")      # Windows no admite terminar en " " ni "."
-    return (s[:maxlen].strip() or "Sin titulo")
+    s = re.sub(r'[<>:"/\\|?*]', "", s)  # prohibidos en Windows
+    s = re.sub(r"[\x00-\x1f]", "", s)  # control
+    s = re.sub(r"\s+", " ", s).strip(" .")  # Windows no admite terminar en " " ni "."
+    return s[:maxlen].strip() or "Sin titulo"
 
 
 # ============================================================
 # Agrupación
 # ============================================================
+
 
 def group_products(tracks, artist=""):
     """Agrupa una lista de tracks en productos.
@@ -109,22 +110,24 @@ def group_products(tracks, artist=""):
             # Orden provisorio por fecha de subida; se marca como no confirmado.
             t["track_number"] = t.get("track_number") or i
 
-        productos.append({
-            "product_id": f"p{len(productos) + 1:03d}",
-            "title": titulo,
-            "kind": _kind(len(ts)),
-            "artist": artist or "",
-            "release_year": min(años) if años else "",
-            "release_date": min(fechas) if fechas else "",
-            "label": _mode(t.get("label") for t in ts),
-            "distributor": _mode(t.get("distributor") for t in ts),
-            "upc": _mode(t.get("upc") for t in ts),
-            "tracks": ts,
-            "track_count": len(ts),
-            "total_views": sum(int(t.get("views") or 0) for t in ts),
-            # True cuando el orden salió sólo de la fecha de subida (sin confirmar).
-            "order_unconfirmed": len(ts) > 1,
-        })
+        productos.append(
+            {
+                "product_id": f"p{len(productos) + 1:03d}",
+                "title": titulo,
+                "kind": _kind(len(ts)),
+                "artist": artist or "",
+                "release_year": min(años) if años else "",
+                "release_date": min(fechas) if fechas else "",
+                "label": _mode(t.get("label") for t in ts),
+                "distributor": _mode(t.get("distributor") for t in ts),
+                "upc": _mode(t.get("upc") for t in ts),
+                "tracks": ts,
+                "track_count": len(ts),
+                "total_views": sum(int(t.get("views") or 0) for t in ts),
+                # True cuando el orden salió sólo de la fecha de subida (sin confirmar).
+                "order_unconfirmed": len(ts) > 1,
+            }
+        )
 
     # Más nuevo primero: es el orden en que la gente revisa su catálogo.
     productos.sort(key=lambda p: (str(p["release_year"] or ""), p["release_date"] or ""), reverse=True)
@@ -136,7 +139,7 @@ def group_products(tracks, artist=""):
 
 def folder_name(p):
     """Nombre de carpeta del producto dentro del ZIP: '2019 - Album [UPC]'."""
-    año = p.get("release_year") or "s-f"          # s-f = sin fecha
+    año = p.get("release_year") or "s-f"  # s-f = sin fecha
     base = f"{año} - {_slug(p.get('title'))}"
     upc = (p.get("upc") or "").strip()
     return f"{base} [{upc}]" if upc else base
@@ -146,8 +149,10 @@ def folder_name(p):
 # Filtros de selección
 # ============================================================
 
-def filter_products(productos, ids=None, year_from=None, year_to=None,
-                    date_from=None, date_to=None, distributors=None):
+
+def filter_products(
+    productos, ids=None, year_from=None, year_to=None, date_from=None, date_to=None, distributors=None
+):
     """Filtra productos para la migración. Los filtros se combinan con AND.
 
     - ids:          selección manual por product_id (lista o set)

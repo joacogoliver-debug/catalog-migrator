@@ -53,7 +53,9 @@ def _strip_ruido(titulo):
     t = re.sub(
         r"\s*[\(\[]\s*(official|video|audio|lyric[s]?|visualizer|hd|4k|remaster(ed)?|"
         r"en vivo|live|explicit)\b[^\)\]]*[\)\]]",
-        "", titulo or "", flags=re.I,
+        "",
+        titulo or "",
+        flags=re.I,
     )
     return re.sub(r"\s+", " ", t).strip(" -,|")
 
@@ -174,6 +176,7 @@ def fetch_portadas(productos, artista, log=print, avance=None):
     el servidor la sacaba con un `^Portada (\\d+) de (\\d+)`, y con la app en
     inglés esa expresión dejaba de coincidir y la barra se congelaba en 5 %.
     """
+
     def una(p):
         info = buscar_portada(artista, p.get("title", ""), p.get("upc", ""))
         if not info:
@@ -204,8 +207,7 @@ def fetch_portadas(productos, artista, log=print, avance=None):
             # quedaba con el avance de la portada anterior.
             if avance:
                 avance(i, len(productos))
-            log(T("por.una", i=i, total=len(productos), titulo=p["title"][:40],
-                  estado=p["cover_status"]))
+            log(T("por.una", i=i, total=len(productos), titulo=p["title"][:40], estado=p["cover_status"]))
 
     ok = sum(1 for p in productos if p.get("cover_bytes"))
     log(T("por.total", ok=ok, total=len(productos)))

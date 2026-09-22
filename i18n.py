@@ -40,6 +40,7 @@ _actual = POR_DEFECTO
 # Estado
 # ============================================================
 
+
 def idioma():
     """El idioma en uso, siempre uno de IDIOMAS."""
     return _actual
@@ -103,15 +104,17 @@ def idioma_del_sistema():
 
     try:
         import locale
-        v = (locale.getlocale()[0] or "")
+
+        v = locale.getlocale()[0] or ""
         if not v:
             # En Windows getlocale() devuelve None hasta que alguien llama a
             # setlocale. getdefaultlocale está deprecada pero es lo único que
             # contesta sin efectos de borde.
             import warnings
+
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", DeprecationWarning)
-                v = (locale.getdefaultlocale()[0] or "")
+                v = locale.getdefaultlocale()[0] or ""
         v = v.strip().lower()
         if v.startswith("en"):
             return "en"
@@ -130,6 +133,7 @@ def idioma_del_sistema():
 # ============================================================
 # Traducción
 # ============================================================
+
 
 def T(clave, **kw):
     """El texto de `clave` en el idioma actual, con los parámetros aplicados.
@@ -163,7 +167,6 @@ def claves_sin_traducir(a="es", b="en"):
 # ============================================================
 
 TEXTOS = {
-
     # ---- server ------------------------------------------------------------
     "server.idioma_invalido": {
         "es": "Idioma no reconocido. Los que hay son: {idiomas}.",
@@ -177,52 +180,72 @@ TEXTOS = {
         "es": "Ese link es demasiado largo para ser un canal de YouTube.",
         "en": "That link is too long to be a YouTube channel.",
     },
-
     # ---- errores de la YouTube Data API -------------------------------------
     # Lo que devuelve Google no está pensado para mostrarse: viene en inglés, con
     # jerga y a veces con HTML adentro. Acá está traducido y con la salida
     # concreta al lado.
     "yt.cuota_compartida": {
-        "es": ("Se agotó el cupo diario de la API de YouTube. Si esta copia trae una "
-               "clave compartida, el cupo se reparte entre todos los que la usan. "
-               "Cargando tu propia clave tenés el cupo entero para vos, es gratis y se "
-               "saca en tres pasos."),
-        "en": ("The YouTube API daily quota ran out. If this copy ships with a shared "
-               "key, the quota is split across everyone using it. With your own key you "
-               "get the whole quota to yourself; it is free and takes three steps."),
+        "es": (
+            "Se agotó el cupo diario de la API de YouTube. Si esta copia trae una "
+            "clave compartida, el cupo se reparte entre todos los que la usan. "
+            "Cargando tu propia clave tenés el cupo entero para vos, es gratis y se "
+            "saca en tres pasos."
+        ),
+        "en": (
+            "The YouTube API daily quota ran out. If this copy ships with a shared "
+            "key, the quota is split across everyone using it. With your own key you "
+            "get the whole quota to yourself; it is free and takes three steps."
+        ),
     },
     "yt.cuota": {
-        "es": ("Se agotó el cupo diario de la API de YouTube. Cargando tu propia clave "
-               "tenés el cupo entero para vos, es gratis y se saca en tres pasos."),
-        "en": ("The YouTube API daily quota ran out. With your own key you get the whole "
-               "quota to yourself; it is free and takes three steps."),
+        "es": (
+            "Se agotó el cupo diario de la API de YouTube. Cargando tu propia clave "
+            "tenés el cupo entero para vos, es gratis y se saca en tres pasos."
+        ),
+        "en": (
+            "The YouTube API daily quota ran out. With your own key you get the whole "
+            "quota to yourself; it is free and takes three steps."
+        ),
     },
     "yt.rate_limit": {
-        "es": ("YouTube está recibiendo demasiadas consultas seguidas desde esta clave. "
-               "Esperá un minuto y probá de nuevo."),
-        "en": ("YouTube is getting too many requests in a row from this key. Wait a "
-               "minute and try again."),
+        "es": (
+            "YouTube está recibiendo demasiadas consultas seguidas desde esta clave. "
+            "Esperá un minuto y probá de nuevo."
+        ),
+        "en": ("YouTube is getting too many requests in a row from this key. Wait a minute and try again."),
     },
     "yt.clave_invalida": {
-        "es": ("YouTube rechazó la clave. Revisá que la hayas copiado entera y que sea "
-               "una clave de API, no un ID de cliente."),
-        "en": ("YouTube turned the key down. Check that you copied it whole and that it "
-               "is an API key, not a client ID."),
+        "es": (
+            "YouTube rechazó la clave. Revisá que la hayas copiado entera y que sea "
+            "una clave de API, no un ID de cliente."
+        ),
+        "en": (
+            "YouTube turned the key down. Check that you copied it whole and that it "
+            "is an API key, not a client ID."
+        ),
     },
     "yt.api_sin_habilitar": {
-        "es": ("El proyecto de esta clave no tiene habilitada la YouTube Data API v3. "
-               "Entrá a Google Cloud Console, buscá esa API en la biblioteca y "
-               "habilitala."),
-        "en": ("The project behind this key does not have YouTube Data API v3 enabled. "
-               "Go to Google Cloud Console, find that API in the library and enable it."),
+        "es": (
+            "El proyecto de esta clave no tiene habilitada la YouTube Data API v3. "
+            "Entrá a Google Cloud Console, buscá esa API en la biblioteca y "
+            "habilitala."
+        ),
+        "en": (
+            "The project behind this key does not have YouTube Data API v3 enabled. "
+            "Go to Google Cloud Console, find that API in the library and enable it."
+        ),
     },
     "yt.clave_restringida": {
-        "es": ("Las restricciones de esta clave no permiten usarla desde esta "
-               "computadora. En Google Cloud Console, dejá la restricción de "
-               "aplicación en «Ninguna» y restringila sólo por API."),
-        "en": ("This key's restrictions do not allow using it from this computer. In "
-               "Google Cloud Console, set the application restriction to \"None\" and "
-               "restrict it by API only."),
+        "es": (
+            "Las restricciones de esta clave no permiten usarla desde esta "
+            "computadora. En Google Cloud Console, dejá la restricción de "
+            "aplicación en «Ninguna» y restringila sólo por API."
+        ),
+        "en": (
+            "This key's restrictions do not allow using it from this computer. In "
+            'Google Cloud Console, set the application restriction to "None" and '
+            "restrict it by API only."
+        ),
     },
     "yt.prohibido": {
         "es": "YouTube no permitió la consulta con esta clave.",
@@ -257,19 +280,22 @@ TEXTOS = {
         "en": "The channel has no releases to survey.",
     },
     "yt.sin_lanzamientos": {
-        "es": ("No encontré lanzamientos en este canal: ninguno de sus {n} videos tiene "
-               "la descripción auto-generada de YouTube (la que dice «Provided to "
-               "YouTube by»). Eso pasa cuando el canal es un OAC con videos subidos a "
-               "mano. Probá pegando el link del canal «<artista> - Topic», que es el "
-               "que YouTube genera solo con el catálogo distribuido."),
-        "en": ("No releases found on this channel: none of its {n} videos carries "
-               "YouTube's auto-generated description (the one that says \"Provided to "
-               "YouTube by\"). That happens when the channel is an official artist "
-               "channel with hand-uploaded videos. Try pasting the link to the "
-               "\"<artist> - Topic\" channel, the one YouTube builds on its own from "
-               "the distributed catalog."),
+        "es": (
+            "No encontré lanzamientos en este canal: ninguno de sus {n} videos tiene "
+            "la descripción auto-generada de YouTube (la que dice «Provided to "
+            "YouTube by»). Eso pasa cuando el canal es un OAC con videos subidos a "
+            "mano. Probá pegando el link del canal «<artista> - Topic», que es el "
+            "que YouTube genera solo con el catálogo distribuido."
+        ),
+        "en": (
+            "No releases found on this channel: none of its {n} videos carries "
+            "YouTube's auto-generated description (the one that says \"Provided to "
+            'YouTube by"). That happens when the channel is an official artist '
+            "channel with hand-uploaded videos. Try pasting the link to the "
+            '"<artist> - Topic" channel, the one YouTube builds on its own from '
+            "the distributed catalog."
+        ),
     },
-
     # ---- relevamiento: el log del trabajo -----------------------------------
     "rel.resolviendo": {"es": "Resolviendo canal…", "en": "Working out the channel…"},
     "rel.buscando_topic": {
@@ -299,7 +325,6 @@ TEXTOS = {
         "es": "MusicBrainz (respaldo): {n} sin ISRC",
         "en": "MusicBrainz (fallback): {n} without ISRC",
     },
-
     # ---- orquestador --------------------------------------------------------
     "mig.agrupados": {
         "es": "{productos} productos a partir de {tracks} tracks",
@@ -307,7 +332,7 @@ TEXTOS = {
     },
     "mig.via_topic": {
         "es": "Pegaste «{pedido}»; se relevó su Topic, «{topic}»",
-        "en": "You pasted \"{pedido}\"; its Topic was surveyed instead, \"{topic}\"",
+        "en": 'You pasted "{pedido}"; its Topic was surveyed instead, "{topic}"',
     },
     "mig.descartados": {
         "es": "Quedaron afuera {n} videos que no son lanzamientos",
@@ -333,7 +358,6 @@ TEXTOS = {
         "es": "Audio: falta yt-dlp o ffmpeg: no puedo bajar ni la referencia",
         "en": "Audio: yt-dlp or ffmpeg is missing, so not even the reference can be downloaded",
     },
-
     # ---- audio --------------------------------------------------------------
     "aud.codigo_expiro": {
         "es": "[tidal] el código expiró sin confirmación",
@@ -348,10 +372,14 @@ TEXTOS = {
         "en": "The Tidal session is not valid or has expired. Connect the account again.",
     },
     "aud.artista_no_encontrado": {
-        "es": ("[tidal] no encontré a '{artista}' en el catálogo de Tidal. Si el nombre "
-               "difiere del de Tidal, el match por ISRC no se puede armar."),
-        "en": ("[tidal] could not find '{artista}' in Tidal's catalog. If the name differs "
-               "from Tidal's, the ISRC match cannot be built."),
+        "es": (
+            "[tidal] no encontré a '{artista}' en el catálogo de Tidal. Si el nombre "
+            "difiere del de Tidal, el match por ISRC no se puede armar."
+        ),
+        "en": (
+            "[tidal] could not find '{artista}' in Tidal's catalog. If the name differs "
+            "from Tidal's, the ISRC match cannot be built."
+        ),
     },
     "aud.no_pude_listar": {
         "es": "[tidal] no pude listar {filtro}: {error}",
@@ -367,7 +395,7 @@ TEXTOS = {
     },
     "aud.match": {
         "es": "[tidal] match por ISRC: {hit} encontrados, {miss} sin match, "
-              "{sin_isrc} sin ISRC en el relevamiento",
+        "{sin_isrc} sin ISRC en el relevamiento",
         "en": "[tidal] ISRC match: {hit} found, {miss} unmatched, {sin_isrc} with no ISRC in the survey",
     },
     "aud.fallo_descarga": {
@@ -384,7 +412,6 @@ TEXTOS = {
         "es": "[audio] listos: {aptos} aptos para entrega, {ref} de referencia, {sin} sin audio",
         "en": "[audio] done: {aptos} fit for delivery, {ref} reference, {sin} with no audio",
     },
-
     # ---- servidor -----------------------------------------------------------
     "srv.aceptar_terminos": {
         "es": "Hay que aceptar los términos para usar la herramienta.",
@@ -411,10 +438,14 @@ TEXTOS = {
         "en": "The YouTube API key has not been set up.",
     },
     "srv.poco_espacio": {
-        "es": ("Queda poco espacio en disco ({libre} GB libres) y este paquete necesita al "
-               "menos {minimo} GB. Liberá espacio y probá de nuevo."),
-        "en": ("Disk space is running low ({libre} GB free) and this package needs at least "
-               "{minimo} GB. Free up space and try again."),
+        "es": (
+            "Queda poco espacio en disco ({libre} GB libres) y este paquete necesita al "
+            "menos {minimo} GB. Liberá espacio y probá de nuevo."
+        ),
+        "en": (
+            "Disk space is running low ({libre} GB free) and this package needs at least "
+            "{minimo} GB. Free up space and try again."
+        ),
     },
     "srv.elegi_algo": {
         "es": "Elegí al menos una cosa para descargar.",
@@ -459,10 +490,8 @@ TEXTOS = {
     "srv.no_encontrado": {"es": "No encontrado.", "en": "Not found."},
     "srv.inesperado": {"es": "Error inesperado. {error}", "en": "Unexpected error. {error}"},
     "srv.falta_index": {"es": "Falta index.html.", "en": "index.html is missing."},
-
     # ---- trabajos -----------------------------------------------------------
     "job.error": {"es": "Hubo un error.", "en": "Something went wrong."},
-
     # ---- launcher -----------------------------------------------------------
     # El cuerpo del reporte de `--diagnostico` queda en español a propósito: no
     # es algo que se lea en el uso normal, es un volcado técnico para pegar en un
@@ -499,14 +528,20 @@ TEXTOS = {
     "diag.entorno": {"es": "entorno de audio:", "en": "audio environment:"},
     "diag.ventana": {"es": "ventana:", "en": "window:"},
     "diag.pywebview_ok": {"es": "  pywebview importa: si", "en": "  pywebview imports: yes"},
-    "diag.pywebview_no": {"es": "  pywebview importa: no ({error})",
-                          "en": "  pywebview imports: no ({error})"},
-    "diag.prueba_ventana": {"es": "  abrir una ventana de prueba: {resultado}",
-                            "en": "  open a test window: {resultado}"},
+    "diag.pywebview_no": {
+        "es": "  pywebview importa: no ({error})",
+        "en": "  pywebview imports: no ({error})",
+    },
+    "diag.prueba_ventana": {
+        "es": "  abrir una ventana de prueba: {resultado}",
+        "en": "  open a test window: {resultado}",
+    },
     "diag.abrio_si": {"es": "si", "en": "yes"},
     "diag.abrio_no": {"es": "no abrio", "en": "did not open"},
-    "diag.prueba_fallo": {"es": "  abrir una ventana de prueba: FALLO ({tipo}: {error})",
-                          "en": "  open a test window: FAILED ({tipo}: {error})"},
+    "diag.prueba_fallo": {
+        "es": "  abrir una ventana de prueba: FALLO ({tipo}: {error})",
+        "en": "  open a test window: FAILED ({tipo}: {error})",
+    },
     "diag.titulo_prueba": {"es": "Prueba de ventana", "en": "Window test"},
     "diag.detalle": {"es": "  detalle: {detalle}", "en": "  detail: {detalle}"},
     "diag.guardado": {"es": "Guardado en: {ruta}", "en": "Saved to: {ruta}"},
@@ -530,7 +565,6 @@ TEXTOS = {
         "en": "Could not start the app: {error}",
     },
     "lau.detalle_en": {"es": "El detalle quedó en: {ruta}", "en": "The detail is in: {ruta}"},
-
     # ---- portadas -----------------------------------------------------------
     # `cover_status` se muestra en el log y dentro del aviso "Sin portada: …",
     # así que se traduce. No se compara contra su texto en ningún lado.
@@ -552,14 +586,12 @@ TEXTOS = {
         "en": "Cover {i} of {total}, {titulo}: {estado}",
     },
     "por.total": {"es": "Portadas: {ok} de {total}", "en": "Covers: {ok} of {total}"},
-
     # ---- validar ------------------------------------------------------------
     # Estos mensajes viajan en cada hallazgo y terminan en tres lugares: la
     # pantalla 4, el informe de texto del ZIP y la hoja de validación. El
     # `codigo` del hallazgo no está acá porque no se traduce.
     "val.sin_titulo": {"es": "(sin título)", "en": "(untitled)"},
     "val.no_se_busco": {"es": "no se buscó", "en": "not looked up"},
-
     "val.portada_falta": {
         "es": "Sin portada: {motivo}.",
         "en": "No cover art: {motivo}.",
@@ -584,7 +616,6 @@ TEXTOS = {
         "es": "La portada parece estar en CMYK y tiene que ser RGB.",
         "en": "The cover looks like CMYK and has to be RGB.",
     },
-
     "val.producto_sin_titulo": {
         "es": "El producto no tiene título.",
         "en": "The release has no title.",
@@ -631,7 +662,6 @@ TEXTOS = {
         "es": "El orden de los tracks es estimado por fecha de subida y no está confirmado.",
         "en": "Track order is estimated from the upload date and is not confirmed.",
     },
-
     "val.track_sin_titulo": {"es": "El track no tiene título.", "en": "The track has no title."},
     "val.isrc_falta": {
         "es": "Sin ISRC. La distribuidora va a asignar uno nuevo y se pierde el historial de la grabación.",
@@ -650,7 +680,6 @@ TEXTOS = {
         "es": "El título arrastra texto de YouTube, como (Official Video). Conviene limpiarlo.",
         "en": "The title carries YouTube text, such as (Official Video). Worth cleaning up.",
     },
-
     "val.isrc_duplicado": {
         "es": "el ISRC {isrc} está repetido: aparece en '{uno}' y en '{otro}'",
         "en": "ISRC {isrc} is repeated: it shows up in '{uno}' and in '{otro}'",
@@ -659,7 +688,6 @@ TEXTOS = {
         "es": "el UPC {upc} está repetido: lo usan '{uno}' y '{otro}'",
         "en": "UPC {upc} is repeated: it is used by '{uno}' and '{otro}'",
     },
-
     # ---- validar: el informe de texto que va en el ZIP ----------------------
     "val.rep_titulo": {
         "es": "VALIDACIÓN PRE-ENTREGA: {artista}",
@@ -685,7 +713,6 @@ TEXTOS = {
     "val.rep_h_errores": {"es": "ERRORES", "en": "ERRORS"},
     "val.rep_h_avisos": {"es": "AVISOS", "en": "WARNINGS"},
     "val.rep_catalogo": {"es": "(catálogo)", "en": "(catalog)"},
-
     # ---- paquete: cabeceras de las planillas --------------------------------
     # Estas SÍ se traducen: las lee el usuario. Las de la hoja de ingesta no,
     # porque son nombres de campo de la distribuidora (ver COLUMNAS_INGESTA).
@@ -700,7 +727,6 @@ TEXTOS = {
     "paq.col_archivo": {"es": "Archivo", "en": "File"},
     "paq.col_reproducciones": {"es": "Reproducciones", "en": "Plays"},
     "paq.col_url": {"es": "URL YouTube", "en": "YouTube URL"},
-
     # ---- paquete: nombres de archivo y de carpeta ---------------------------
     "paq.carpeta_raiz": {"es": "Migracion", "en": "Migration"},
     "paq.log_carpeta": {"es": "Carpeta {carpeta}", "en": "Folder {carpeta}"},
@@ -717,7 +743,6 @@ TEXTOS = {
     "paq.f_ingesta": {"es": "_Hoja de ingesta.csv", "en": "_Ingestion sheet.csv"},
     "paq.f_datos": {"es": "datos.xlsx", "en": "data.xlsx"},
     "paq.f_portada": {"es": "portada.jpg", "en": "cover.jpg"},
-
     # ---- paquete: el reporte de migración -----------------------------------
     "paq.rep_titulo": {
         "es": "REPORTE DE MIGRACIÓN: {artista}",
@@ -737,20 +762,28 @@ TEXTOS = {
     "paq.rep_referencia": {"es": "Sólo referencia (lossy)", "en": "Reference only (lossy)"},
     "paq.rep_sin_audio": {"es": "Sin audio", "en": "No audio"},
     "paq.rep_sin_tidal": {
-        "es": ("! No se conectó una cuenta de Tidal, así que NO hay audio apto para\n"
-               "  entrega. Todo el audio de este paquete es referencia lossy de\n"
-               "  YouTube. Para una entrega real hace falta el máster original."),
-        "en": ("! No Tidal account was connected, so there is NO audio fit for\n"
-               "  delivery. Every audio file in this package is a lossy YouTube\n"
-               "  reference. A real delivery needs the original master."),
+        "es": (
+            "! No se conectó una cuenta de Tidal, así que NO hay audio apto para\n"
+            "  entrega. Todo el audio de este paquete es referencia lossy de\n"
+            "  YouTube. Para una entrega real hace falta el máster original."
+        ),
+        "en": (
+            "! No Tidal account was connected, so there is NO audio fit for\n"
+            "  delivery. Every audio file in this package is a lossy YouTube\n"
+            "  reference. A real delivery needs the original master."
+        ),
     },
     "paq.rep_algunos_aac": {
-        "es": ("! Algunos tracks bajaron en AAC y no en FLAC: Tidal no tiene máster\n"
-               "  lossless para esas grabaciones. Están marcados como lossy y NO\n"
-               "  son aptos para entrega, hay que pedir el máster al sello/artista."),
-        "en": ("! Some tracks came down as AAC and not FLAC: Tidal has no lossless\n"
-               "  master for those recordings. They are marked as lossy and are NOT\n"
-               "  fit for delivery; ask the label or artist for the master."),
+        "es": (
+            "! Algunos tracks bajaron en AAC y no en FLAC: Tidal no tiene máster\n"
+            "  lossless para esas grabaciones. Están marcados como lossy y NO\n"
+            "  son aptos para entrega, hay que pedir el máster al sello/artista."
+        ),
+        "en": (
+            "! Some tracks came down as AAC and not FLAC: Tidal has no lossless\n"
+            "  master for those recordings. They are marked as lossy and are NOT\n"
+            "  fit for delivery; ask the label or artist for the master."
+        ),
     },
     "paq.rep_pendientes": {"es": "PENDIENTES POR PRODUCTO", "en": "OPEN ITEMS BY RELEASE"},
     "paq.rep_sin_pendientes": {
@@ -760,7 +793,6 @@ TEXTOS = {
     "paq.rep_entorno": {"es": "ENTORNO", "en": "ENVIRONMENT"},
     "paq.si": {"es": "sí", "en": "yes"},
     "paq.no": {"es": "NO", "en": "NO"},
-
     "paq.falta_upc": {"es": "sin UPC", "en": "no UPC"},
     "paq.no_buscada": {"es": "no buscada", "en": "not looked up"},
     "paq.falta_portada": {"es": "sin portada ({motivo})", "en": "no cover ({motivo})"},
@@ -777,7 +809,6 @@ TEXTOS = {
         "es": "orden de tracks sin confirmar (estimado por fecha de subida)",
         "en": "track order unconfirmed (estimated from the upload date)",
     },
-
     # ---- paquete: planillas -------------------------------------------------
     "paq.sin_audio": {"es": "sin audio", "en": "no audio"},
     "paq.hoja_catalogo": {"es": "Catálogo", "en": "Catalog"},
@@ -796,7 +827,6 @@ TEXTOS = {
     },
     "paq.sin_fecha": {"es": "s/f", "en": "n/d"},
     "paq.sin_upc_par": {"es": "(sin UPC)", "en": "(no UPC)"},
-
     # ---- paquete: el LEEME que va en la raíz del ZIP ------------------------
     "paq.leeme": {
         "es": """CÓMO ESTÁ ORGANIZADO ESTE PAQUETE

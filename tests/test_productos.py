@@ -20,16 +20,20 @@ import productos as pr
 # Agrupación
 # ============================================================
 
+
 def test_tracks_del_mismo_album_son_un_producto(hacer_track):
-    ps = pr.group_products([
-        hacer_track("Tema A", "Mi Album", 2019, date="2019-05-01"),
-        hacer_track("Tema B", "Mi Album", 2019, date="2019-05-02"),
-        hacer_track("Tema C", "Mi Album", 2019, date="2019-05-03"),
-    ], artist="Artista")
+    ps = pr.group_products(
+        [
+            hacer_track("Tema A", "Mi Album", 2019, date="2019-05-01"),
+            hacer_track("Tema B", "Mi Album", 2019, date="2019-05-02"),
+            hacer_track("Tema C", "Mi Album", 2019, date="2019-05-03"),
+        ],
+        artist="Artista",
+    )
 
     assert len(ps) == 1
     assert ps[0]["track_count"] == 3
-    assert ps[0]["kind"] == "single"        # 3 tracks, por convención es single
+    assert ps[0]["kind"] == "single"  # 3 tracks, por convención es single
     assert ps[0]["title"] == "Mi Album"
     assert ps[0]["release_year"] == 2019
     # El orden salió de la fecha de subida, así que queda marcado sin confirmar.
@@ -40,60 +44,75 @@ def test_tracks_del_mismo_album_son_un_producto(hacer_track):
 def test_un_album_y_su_reedicion_no_se_fusionan(hacer_track):
     """Mismo título, otro año. En una migración son dos productos con UPC
     distinto, y fusionarlos perdería uno."""
-    ps = pr.group_products([
-        hacer_track("Tema A", "Clasico", 2005, date="2005-01-01"),
-        hacer_track("Tema A", "Clasico", 2020, date="2020-01-01"),
-    ])
+    ps = pr.group_products(
+        [
+            hacer_track("Tema A", "Clasico", 2005, date="2005-01-01"),
+            hacer_track("Tema A", "Clasico", 2020, date="2020-01-01"),
+        ]
+    )
     assert len(ps) == 2
 
 
 def test_agrupa_sin_importar_acentos_ni_puntuacion(hacer_track):
-    ps = pr.group_products([
-        hacer_track("T1", "Corazón Roto", 2018, date="2018-01-01"),
-        hacer_track("T2", "Corazon Roto!", 2018, date="2018-01-02"),
-    ])
+    ps = pr.group_products(
+        [
+            hacer_track("T1", "Corazón Roto", 2018, date="2018-01-01"),
+            hacer_track("T2", "Corazon Roto!", 2018, date="2018-01-02"),
+        ]
+    )
     assert len(ps) == 1
 
 
 def test_cada_single_es_su_propio_producto(hacer_track):
-    ps = pr.group_products([
-        hacer_track("Single Uno", "", 2021, vid="a1", date="2021-01-01"),
-        hacer_track("Single Dos", "", 2021, vid="a2", date="2021-02-01"),
-    ])
+    ps = pr.group_products(
+        [
+            hacer_track("Single Uno", "", 2021, vid="a1", date="2021-01-01"),
+            hacer_track("Single Dos", "", 2021, vid="a2", date="2021-02-01"),
+        ]
+    )
     assert len(ps) == 2
     assert ps[0]["kind"] == "single"
     assert sorted(p["title"] for p in ps) == ["Single Dos", "Single Uno"]
 
 
-@pytest.mark.parametrize("n_tracks, esperado", [
-    (1, "single"), (3, "single"),        # convención de distribuidoras, 1-3
-    (4, "ep"), (6, "ep"),                # 4-6
-    (7, "album"), (12, "album"),         # 7+
-])
+@pytest.mark.parametrize(
+    "n_tracks, esperado",
+    [
+        (1, "single"),
+        (3, "single"),  # convención de distribuidoras, 1-3
+        (4, "ep"),
+        (6, "ep"),  # 4-6
+        (7, "album"),
+        (12, "album"),  # 7+
+    ],
+)
 def test_formato_por_cantidad_de_tracks(hacer_track, n_tracks, esperado):
-    ps = pr.group_products([
-        hacer_track(f"T{i}", "Disco", 2020, date=f"2020-01-{i:02d}")
-        for i in range(1, n_tracks + 1)
-    ])
+    ps = pr.group_products(
+        [hacer_track(f"T{i}", "Disco", 2020, date=f"2020-01-{i:02d}") for i in range(1, n_tracks + 1)]
+    )
     assert ps[0]["kind"] == esperado
 
 
 def test_consolida_datos_despareros_entre_tracks(hacer_track):
     """Dos tracks traen UPC y sello, uno viene vacío. Gana el valor no vacío."""
-    ps = pr.group_products([
-        hacer_track("T1", "Disco", 2020, upc="123", label="Sello Real", date="2020-01-01"),
-        hacer_track("T2", "Disco", 2020, upc="123", label="Sello Real", date="2020-01-02"),
-        hacer_track("T3", "Disco", 2020, upc="", label="", date="2020-01-03"),
-    ])
+    ps = pr.group_products(
+        [
+            hacer_track("T1", "Disco", 2020, upc="123", label="Sello Real", date="2020-01-01"),
+            hacer_track("T2", "Disco", 2020, upc="123", label="Sello Real", date="2020-01-02"),
+            hacer_track("T3", "Disco", 2020, upc="", label="", date="2020-01-03"),
+        ]
+    )
     assert ps[0]["upc"] == "123"
     assert ps[0]["label"] == "Sello Real"
 
 
 def test_sin_datos_no_le_gana_a_una_distribuidora_real(hacer_track):
-    ps = pr.group_products([
-        hacer_track("T1", "Disco", 2020, dist=pr.SIN_DATOS, date="2020-01-01"),
-        hacer_track("T2", "Disco", 2020, dist="ONErpm", date="2020-01-02"),
-    ])
+    ps = pr.group_products(
+        [
+            hacer_track("T1", "Disco", 2020, dist=pr.SIN_DATOS, date="2020-01-01"),
+            hacer_track("T2", "Disco", 2020, dist="ONErpm", date="2020-01-02"),
+        ]
+    )
     assert ps[0]["distributor"] == "ONErpm"
 
 
@@ -106,14 +125,17 @@ def test_catalogo_vacio():
 # Filtros
 # ============================================================
 
+
 @pytest.fixture
 def catalogo(hacer_track):
     """Tres productos de años y distribuidoras distintas."""
-    return pr.group_products([
-        hacer_track("A", "Viejo", 2010, dist="DistroKid", date="2010-06-01"),
-        hacer_track("B", "Medio", 2015, dist="ONErpm", date="2015-06-01"),
-        hacer_track("C", "Nuevo", 2022, dist="ONErpm", date="2022-06-01"),
-    ])
+    return pr.group_products(
+        [
+            hacer_track("A", "Viejo", 2010, dist="DistroKid", date="2010-06-01"),
+            hacer_track("B", "Medio", 2015, dist="ONErpm", date="2015-06-01"),
+            hacer_track("C", "Nuevo", 2022, dist="ONErpm", date="2022-06-01"),
+        ]
+    )
 
 
 def test_el_catalogo_sale_ordenado_del_mas_nuevo_al_mas_viejo(catalogo):
@@ -122,10 +144,8 @@ def test_el_catalogo_sale_ordenado_del_mas_nuevo_al_mas_viejo(catalogo):
 
 
 def test_filtro_por_rango_de_anios(catalogo):
-    assert sorted(p["title"] for p in pr.filter_products(catalogo, year_from=2015)) \
-        == ["Medio", "Nuevo"]
-    assert sorted(p["title"] for p in pr.filter_products(catalogo, year_to=2015)) \
-        == ["Medio", "Viejo"]
+    assert sorted(p["title"] for p in pr.filter_products(catalogo, year_from=2015)) == ["Medio", "Nuevo"]
+    assert sorted(p["title"] for p in pr.filter_products(catalogo, year_to=2015)) == ["Medio", "Viejo"]
     acotado = pr.filter_products(catalogo, year_from=2015, year_to=2015)
     assert [p["title"] for p in acotado] == ["Medio"]
 
@@ -160,9 +180,11 @@ def test_un_producto_sin_anio_no_se_cuela_en_un_filtro_por_anio(hacer_track):
 # Lo que consume la interfaz
 # ============================================================
 
+
 def test_opciones_de_distribuidora_y_rango_de_anios(catalogo):
     assert pr.distributor_options(catalogo) == [
-        {"name": "ONErpm", "count": 2}, {"name": "DistroKid", "count": 1},
+        {"name": "ONErpm", "count": 2},
+        {"name": "DistroKid", "count": 1},
     ]
     assert pr.year_range(catalogo) == (2010, 2022)
     assert pr.year_range([]) == (None, None)
@@ -179,14 +201,18 @@ def test_resumen_de_la_seleccion(catalogo):
 # Nombres de carpeta
 # ============================================================
 
-@pytest.mark.parametrize("producto, esperado", [
-    ({"release_year": 2019, "title": "Mi Album", "upc": "123"}, "2019 - Mi Album [123]"),
-    ({"release_year": 2019, "title": "Mi Album", "upc": ""}, "2019 - Mi Album"),
-    ({"release_year": "", "title": "Album", "upc": ""}, "s-f - Album"),
-    # Prohibidos en Windows. Se sacan, no se escapan.
-    ({"release_year": 2020, "title": 'A/B:C*D?"E<F>G|H', "upc": ""}, "2020 - ABCDEFGH"),
-    # Windows no admite carpetas que terminen en punto o espacio.
-    ({"release_year": 2020, "title": "Album...", "upc": ""}, "2020 - Album"),
-])
+
+@pytest.mark.parametrize(
+    "producto, esperado",
+    [
+        ({"release_year": 2019, "title": "Mi Album", "upc": "123"}, "2019 - Mi Album [123]"),
+        ({"release_year": 2019, "title": "Mi Album", "upc": ""}, "2019 - Mi Album"),
+        ({"release_year": "", "title": "Album", "upc": ""}, "s-f - Album"),
+        # Prohibidos en Windows. Se sacan, no se escapan.
+        ({"release_year": 2020, "title": 'A/B:C*D?"E<F>G|H', "upc": ""}, "2020 - ABCDEFGH"),
+        # Windows no admite carpetas que terminen en punto o espacio.
+        ({"release_year": 2020, "title": "Album...", "upc": ""}, "2020 - Album"),
+    ],
+)
 def test_nombre_de_carpeta_seguro(producto, esperado):
     assert pr.folder_name(producto) == esperado

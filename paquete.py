@@ -49,7 +49,7 @@ def _slug_archivo(s, maxlen=80):
     s = re.sub(r'[<>:"/\\|?*]', "", s)
     s = re.sub(r"[\x00-\x1f]", "", s)
     s = re.sub(r"\s+", " ", s).strip(" .")
-    return (s[:maxlen].strip(" .") or "sin-titulo")
+    return s[:maxlen].strip(" .") or "sin-titulo"
 
 
 def _fuente_corta(t):
@@ -68,6 +68,7 @@ def _fuente_corta(t):
 # Planillas
 # ============================================================
 
+
 # Las columnas de las planillas SÍ se traducen: las lee el usuario. Las de la
 # hoja de ingesta no, y por eso están aparte (ver COLUMNAS_INGESTA).
 #
@@ -76,10 +77,19 @@ def _fuente_corta(t):
 # arrancar y no cambiaría más.
 def columnas():
     return [
-        (T("paq.col_producto"), 34), (T("paq.col_tipo"), 8), (T("paq.col_anio"), 6), ("UPC", 15),
-        ("#", 4), (T("paq.col_track"), 34), ("ISRC", 14),
-        (T("paq.col_duracion"), 9), (T("paq.col_sello"), 22), (T("paq.col_distribuidora"), 22),
-        (T("paq.col_fuente"), 26), (T("paq.col_archivo"), 30), (T("paq.col_reproducciones"), 14),
+        (T("paq.col_producto"), 34),
+        (T("paq.col_tipo"), 8),
+        (T("paq.col_anio"), 6),
+        ("UPC", 15),
+        ("#", 4),
+        (T("paq.col_track"), 34),
+        ("ISRC", 14),
+        (T("paq.col_duracion"), 9),
+        (T("paq.col_sello"), 22),
+        (T("paq.col_distribuidora"), 22),
+        (T("paq.col_fuente"), 26),
+        (T("paq.col_archivo"), 30),
+        (T("paq.col_reproducciones"), 14),
         (T("paq.col_url"), 30),
     ]
 
@@ -110,12 +120,20 @@ def _filas_producto(ws, fila, p, con_archivo=True):
     for t in p["tracks"]:
         fuente = _fuente_corta(t)
         valores = [
-            p["title"], p["kind"], p.get("release_year", ""), p.get("upc", ""),
-            t.get("track_number", ""), t.get("track", ""), t.get("isrc", ""),
-            _mmss(t.get("duration_s")), p.get("label", ""), p.get("distributor", ""),
+            p["title"],
+            p["kind"],
+            p.get("release_year", ""),
+            p.get("upc", ""),
+            t.get("track_number", ""),
+            t.get("track", ""),
+            t.get("isrc", ""),
+            _mmss(t.get("duration_s")),
+            p.get("label", ""),
+            p.get("distributor", ""),
             fuente,
             os.path.basename(t["audio_path"]) if (con_archivo and t.get("audio_path")) else "",
-            t.get("views", 0), t.get("url", ""),
+            t.get("views", 0),
+            t.get("url", ""),
         ]
         for i, v in enumerate(valores, 1):
             c = ws.cell(row=fila, column=i, value=v)
@@ -137,13 +155,19 @@ def _filas_producto(ws, fila, p, con_archivo=True):
 def planilla_maestra_bytes(productos, artista):
     """Excel con todo el catálogo seleccionado."""
     from io import BytesIO
+
     wb = Workbook()
     ws = wb.active
     ws.title = T("paq.hoja_catalogo")
     fila = _encabezado(
-        ws, T("paq.maestra_titulo", artista=artista),
-        T("paq.maestra_sub", fecha=date.today().isoformat(), productos=len(productos),
-          tracks=sum(p["track_count"] for p in productos)),
+        ws,
+        T("paq.maestra_titulo", artista=artista),
+        T(
+            "paq.maestra_sub",
+            fecha=date.today().isoformat(),
+            productos=len(productos),
+            tracks=sum(p["track_count"] for p in productos),
+        ),
     )
     for p in productos:
         fila = _filas_producto(ws, fila, p)
@@ -169,13 +193,33 @@ MARCA_COMPLETAR = "<<COMPLETAR>>"
 
 COLUMNAS_INGESTA = [
     # --- nivel release ---
-    "UPC", "Release Title", "Release Artist", "Release Type", "Release Date",
-    "Label", "P Line", "C Line", "Genre", "Language", "Territories",
+    "UPC",
+    "Release Title",
+    "Release Artist",
+    "Release Type",
+    "Release Date",
+    "Label",
+    "P Line",
+    "C Line",
+    "Genre",
+    "Language",
+    "Territories",
     # --- nivel track ---
-    "Disc Number", "Track Number", "ISRC", "Track Title", "Track Artist",
-    "Duration", "Explicit", "Composer", "Publisher", "Lyrics Language",
+    "Disc Number",
+    "Track Number",
+    "ISRC",
+    "Track Title",
+    "Track Artist",
+    "Duration",
+    "Explicit",
+    "Composer",
+    "Publisher",
+    "Lyrics Language",
     # --- referencia interna ---
-    "Audio File", "Cover File", "Source Quality", "YouTube URL",
+    "Audio File",
+    "Cover File",
+    "Source Quality",
+    "YouTube URL",
 ]
 
 
@@ -200,49 +244,55 @@ def hoja_ingesta_csv(productos, artista):
         # inventamos.
         p_line = f"{anio} {sello}".strip() if anio and p.get("label") else MARCA_COMPLETAR
         for t in p["tracks"]:
-            w.writerow([
-                p.get("upc") or MARCA_COMPLETAR,
-                p.get("title", ""),
-                artista,
-                p.get("kind", ""),
-                p.get("release_date") or (f"{anio}-01-01" if anio else MARCA_COMPLETAR),
-                sello,
-                p_line,
-                MARCA_COMPLETAR,            # C Line: no sale de YouTube
-                MARCA_COMPLETAR,            # Genre
-                MARCA_COMPLETAR,            # Language
-                "Worldwide",
-                t.get("tidal", {}).get("volume_number") if t.get("tidal") else 1,
-                t.get("track_number") or "",
-                t.get("isrc") or MARCA_COMPLETAR,
-                t.get("track", ""),
-                artista,
-                _mmss(t.get("duration_s")),
-                MARCA_COMPLETAR,            # Explicit
-                MARCA_COMPLETAR,            # Composer
-                MARCA_COMPLETAR,            # Publisher
-                MARCA_COMPLETAR,            # Lyrics Language
-                os.path.basename(t["audio_path"]) if t.get("audio_path") else "",
-                "portada.jpg" if p.get("cover_bytes") else "",
-                _fuente_corta(t),
-                t.get("url", ""),
-            ])
+            w.writerow(
+                [
+                    p.get("upc") or MARCA_COMPLETAR,
+                    p.get("title", ""),
+                    artista,
+                    p.get("kind", ""),
+                    p.get("release_date") or (f"{anio}-01-01" if anio else MARCA_COMPLETAR),
+                    sello,
+                    p_line,
+                    MARCA_COMPLETAR,  # C Line: no sale de YouTube
+                    MARCA_COMPLETAR,  # Genre
+                    MARCA_COMPLETAR,  # Language
+                    "Worldwide",
+                    t.get("tidal", {}).get("volume_number") if t.get("tidal") else 1,
+                    t.get("track_number") or "",
+                    t.get("isrc") or MARCA_COMPLETAR,
+                    t.get("track", ""),
+                    artista,
+                    _mmss(t.get("duration_s")),
+                    MARCA_COMPLETAR,  # Explicit
+                    MARCA_COMPLETAR,  # Composer
+                    MARCA_COMPLETAR,  # Publisher
+                    MARCA_COMPLETAR,  # Lyrics Language
+                    os.path.basename(t["audio_path"]) if t.get("audio_path") else "",
+                    "portada.jpg" if p.get("cover_bytes") else "",
+                    _fuente_corta(t),
+                    t.get("url", ""),
+                ]
+            )
     return buf.getvalue()
 
 
 def planilla_producto_bytes(p, artista):
     """Excel de un solo producto, para que viaje dentro de su carpeta."""
     from io import BytesIO
+
     wb = Workbook()
     ws = wb.active
     ws.title = T("paq.hoja_producto")
     fila = _encabezado(
-        ws, f"{artista}: {p['title']}",
-        T("paq.producto_sub",
-          tipo=p["kind"].upper(),
-          anio=p.get("release_year") or T("paq.sin_fecha"),
-          upc=p.get("upc") or T("paq.sin_upc_par"),
-          tracks=p["track_count"]),
+        ws,
+        f"{artista}: {p['title']}",
+        T(
+            "paq.producto_sub",
+            tipo=p["kind"].upper(),
+            anio=p.get("release_year") or T("paq.sin_fecha"),
+            upc=p.get("upc") or T("paq.sin_upc_par"),
+            tracks=p["track_count"],
+        ),
     )
     _filas_producto(ws, fila, p)
     buf = BytesIO()
@@ -253,6 +303,7 @@ def planilla_producto_bytes(p, artista):
 # ============================================================
 # Reporte y leeme
 # ============================================================
+
 
 def reporte_texto(productos, artista, entorno=None, con_tidal=False):
     """Reporte honesto de qué se pudo migrar y qué no. Es la pieza que evita
@@ -272,12 +323,12 @@ def reporte_texto(productos, artista, entorno=None, con_tidal=False):
     L.append("")
     L.append(T("paq.rep_productos").ljust(a1) + f": {len(productos)}")
     L.append(T("paq.rep_tracks").ljust(a1) + f": {len(tracks)}")
-    L.append(("  " + T("paq.rep_con_isrc")).ljust(a1)
-             + f": {sum(1 for t in tracks if t.get('isrc'))}")
-    L.append(T("paq.rep_con_upc").ljust(a1)
-             + f": {sum(1 for p in productos if p.get('upc'))}")
-    L.append(T("paq.rep_portadas").ljust(a1)
-             + f": {sum(1 for p in productos if p.get('cover_bytes'))}/{len(productos)}")
+    L.append(("  " + T("paq.rep_con_isrc")).ljust(a1) + f": {sum(1 for t in tracks if t.get('isrc'))}")
+    L.append(T("paq.rep_con_upc").ljust(a1) + f": {sum(1 for p in productos if p.get('upc'))}")
+    L.append(
+        T("paq.rep_portadas").ljust(a1)
+        + f": {sum(1 for p in productos if p.get('cover_bytes'))}/{len(productos)}"
+    )
     L.append("")
     L.append(T("paq.rep_audio"))
     L.append(("  " + T("paq.rep_aptos")).ljust(a2) + f": {len(aptos)}")
@@ -300,8 +351,7 @@ def reporte_texto(productos, artista, entorno=None, con_tidal=False):
         if not p.get("upc"):
             faltas.append(T("paq.falta_upc"))
         if not p.get("cover_bytes"):
-            faltas.append(T("paq.falta_portada",
-                            motivo=p.get("cover_status") or T("paq.no_buscada")))
+            faltas.append(T("paq.falta_portada", motivo=p.get("cover_status") or T("paq.no_buscada")))
         sin = [t for t in p["tracks"] if not t.get("audio_path")]
         if sin:
             faltas.append(T("paq.falta_audio", n=len(sin), total=p["track_count"]))
@@ -310,8 +360,11 @@ def reporte_texto(productos, artista, entorno=None, con_tidal=False):
             for t in sin:
                 if t.get("audio_error"):
                     faltas.append(f"     {t.get('track', '')[:40]}: {t['audio_error']}")
-        lossy = [t for t in p["tracks"]
-                 if t.get("audio_path") and (t.get("audio_format") or "") not in FORMATOS_LOSSLESS]
+        lossy = [
+            t
+            for t in p["tracks"]
+            if t.get("audio_path") and (t.get("audio_format") or "") not in FORMATOS_LOSSLESS
+        ]
         if lossy:
             faltas.append(T("paq.falta_lossy", n=len(lossy)))
         sin_isrc = [t for t in p["tracks"] if not t.get("isrc")]
@@ -331,9 +384,11 @@ def reporte_texto(productos, artista, entorno=None, con_tidal=False):
         si, no = T("paq.si"), T("paq.no")
         L.append("")
         L.append(T("paq.rep_entorno"))
-        L.append(f"  ffmpeg: {si if entorno.get('ffmpeg') else no}, "
-                 f"tiddl: {si if entorno.get('tiddl') else no}, "
-                 f"yt-dlp: {si if entorno.get('yt_dlp') else no}")
+        L.append(
+            f"  ffmpeg: {si if entorno.get('ffmpeg') else no}, "
+            f"tiddl: {si if entorno.get('tiddl') else no}, "
+            f"yt-dlp: {si if entorno.get('yt_dlp') else no}"
+        )
     return "\n".join(L) + "\n"
 
 
@@ -365,9 +420,18 @@ def leeme():
 # ZIP
 # ============================================================
 
-def build_zip(productos, artista, out_path, entorno=None, con_tidal=False,
-              incluir_planilla=True, incluir_audio=True, incluir_portadas=True,
-              log=print):
+
+def build_zip(
+    productos,
+    artista,
+    out_path,
+    entorno=None,
+    con_tidal=False,
+    incluir_planilla=True,
+    incluir_audio=True,
+    incluir_portadas=True,
+    log=print,
+):
     """Arma el ZIP del entregable en `out_path`. Devuelve (ruta, bytes).
 
     Se escribe directo a disco porque un catálogo en FLAC son varios GB.
@@ -380,21 +444,21 @@ def build_zip(productos, artista, out_path, entorno=None, con_tidal=False,
         # Los .txt van con BOM (utf-8-sig): los abre gente en Windows y sin BOM
         # algunos editores viejos muestran los acentos rotos.
         z.writestr(f"{raiz}/{F['leeme']}", leeme().encode("utf-8-sig"))
-        z.writestr(f"{raiz}/{F['reporte']}",
-                   reporte_texto(productos, artista, entorno, con_tidal).encode("utf-8-sig"))
+        z.writestr(
+            f"{raiz}/{F['reporte']}",
+            reporte_texto(productos, artista, entorno, con_tidal).encode("utf-8-sig"),
+        )
 
         # La validación va siempre: es lo que evita que la entrega se rechace.
         import validar as V
+
         res_val = V.validar(productos, artista)
-        z.writestr(f"{raiz}/{F['validacion']}",
-                   V.reporte_validacion(res_val, artista).encode("utf-8-sig"))
+        z.writestr(f"{raiz}/{F['validacion']}", V.reporte_validacion(res_val, artista).encode("utf-8-sig"))
 
         if incluir_planilla:
-            z.writestr(f"{raiz}/{F['catalogo']}",
-                       planilla_maestra_bytes(productos, artista))
+            z.writestr(f"{raiz}/{F['catalogo']}", planilla_maestra_bytes(productos, artista))
             # CSV de ingesta: es el archivo que se carga en la distribuidora.
-            z.writestr(f"{raiz}/{F['ingesta']}",
-                       hoja_ingesta_csv(productos, artista).encode("utf-8-sig"))
+            z.writestr(f"{raiz}/{F['ingesta']}", hoja_ingesta_csv(productos, artista).encode("utf-8-sig"))
 
         for p in productos:
             carpeta = f"{raiz}/{p['folder']}"

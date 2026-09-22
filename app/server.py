@@ -61,14 +61,14 @@ for _p in (_RAIZ, _AQUI):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-import audio as audio_mod                     # noqa: E402
-import i18n                                   # noqa: E402
-import migrar_core as M                       # noqa: E402
-import productos as P                         # noqa: E402
-import relevar_core as R                      # noqa: E402
-import validar as V                           # noqa: E402
-from i18n import T                            # noqa: E402
-from jobs import Registry                     # noqa: E402
+import audio as audio_mod  # noqa: E402
+import i18n  # noqa: E402
+import migrar_core as M  # noqa: E402
+import productos as P  # noqa: E402
+import relevar_core as R  # noqa: E402
+import validar as V  # noqa: E402
+from i18n import T  # noqa: E402
+from jobs import Registry  # noqa: E402
 
 VERSION = "1.0.2"
 # El nombre se pide a i18n en el momento de usarlo y no se guarda en una
@@ -115,7 +115,7 @@ def _base_recursos():
 
 WEB_DIR = os.path.join(_base_recursos(), "web")
 AUDIO_HABILITADO = _audio_habilitado()
-MAX_BODY = 8 * 1024 * 1024          # 8 MB: los payloads son listas de ids
+MAX_BODY = 8 * 1024 * 1024  # 8 MB: los payloads son listas de ids
 
 # Espacio libre mínimo antes de empezar a armar un paquete. Con audio un
 # catálogo entero puede pasar los 2 GB, y quedarse sin disco a mitad deja el ZIP
@@ -134,6 +134,7 @@ def dir_datos():
 # ============================================================
 # Config del usuario (clave de YouTube + aceptación de términos)
 # ============================================================
+
 
 def _ruta_config():
     return os.path.join(dir_datos(), "config.json")
@@ -173,7 +174,7 @@ def guardar_config(cambios):
         os.fsync(f.fileno())
     os.replace(tmp, destino)
     try:
-        os.chmod(destino, 0o600)    # en Windows es no-op, en Unix protege el archivo
+        os.chmod(destino, 0o600)  # en Windows es no-op, en Unix protege el archivo
     except OSError:
         pass
     return datos
@@ -256,7 +257,7 @@ def idioma_del_instalador():
     "es" o "en". Se usa sólo como valor inicial: apenas el usuario toca el
     selector de la cabecera, su elección queda en la config y manda.
     """
-    base = (os.path.dirname(sys.executable) if getattr(sys, "frozen", False) else _RAIZ)
+    base = os.path.dirname(sys.executable) if getattr(sys, "frozen", False) else _RAIZ
     try:
         with open(os.path.join(base, "idioma.txt"), encoding="utf-8") as f:
             v = f.read().strip().lower()[:2]
@@ -310,13 +311,18 @@ def entorno_audio(forzar=False):
         if forzar or _ENTORNO["valor"] is None or ahora - _ENTORNO["cuando"] > _ENTORNO_TTL:
             try:
                 _ENTORNO["valor"] = audio_mod.verificar_entorno()
-            except Exception:                        # noqa: BLE001
+            except Exception:  # noqa: BLE001
                 # Si la detección falla, la app tiene que seguir andando sin
                 # audio, no romperse entera.
                 _ENTORNO["valor"] = {
-                    "ffmpeg": False, "ffmpeg_incluido": False, "ffprobe": False,
-                    "js_runtime": False, "tiddl": False, "yt_dlp": False,
-                    "puede_flac": False, "puede_referencia": False,
+                    "ffmpeg": False,
+                    "ffmpeg_incluido": False,
+                    "ffprobe": False,
+                    "js_runtime": False,
+                    "tiddl": False,
+                    "yt_dlp": False,
+                    "puede_flac": False,
+                    "puede_referencia": False,
                 }
             _ENTORNO["cuando"] = ahora
         return _ENTORNO["valor"]
@@ -361,6 +367,7 @@ def limpiar_temporales_viejos(horas=12):
 # Estado de la sesión
 # ============================================================
 
+
 class Estado:
     """Estado del catálogo en curso. Vive en memoria: al cerrar la app se va."""
 
@@ -369,7 +376,7 @@ class Estado:
         self.artista = ""
         self.diagnostico = {}
         self.tidal = None
-        self.zips = {}              # job_id -> ruta del zip
+        self.zips = {}  # job_id -> ruta del zip
         self.temporales = []
         self.lock = threading.RLock()
 
@@ -414,7 +421,7 @@ class Estado:
         if tidal:
             try:
                 tidal.close()
-            except Exception:                        # noqa: BLE001
+            except Exception:  # noqa: BLE001
                 pass
         for d in temporales:
             shutil.rmtree(d, ignore_errors=True)
@@ -429,6 +436,7 @@ JOBS = Registry(al_descartar=lambda job_id: ESTADO.olvidar_zip(job_id))
 # ============================================================
 # Serialización para el frontend
 # ============================================================
+
 
 def _mmss(seg):
     seg = int(seg or 0)
@@ -450,14 +458,17 @@ def producto_json(p):
         "views": p.get("total_views", 0),
         "orden_estimado": bool(p.get("order_unconfirmed")),
         "con_isrc": sum(1 for t in p.get("tracks", []) if t.get("isrc")),
-        "detalle": [{
-            "n": t.get("track_number") or "",
-            "titulo": t.get("track", ""),
-            "isrc": t.get("isrc") or "",
-            "duracion": _mmss(t.get("duration_s")),
-            "views": t.get("views", 0),
-            "url": t.get("url", ""),
-        } for t in p.get("tracks", [])],
+        "detalle": [
+            {
+                "n": t.get("track_number") or "",
+                "titulo": t.get("track", ""),
+                "isrc": t.get("isrc") or "",
+                "duracion": _mmss(t.get("duration_s")),
+                "views": t.get("views", 0),
+                "url": t.get("url", ""),
+            }
+            for t in p.get("tracks", [])
+        ],
     }
 
 
@@ -480,6 +491,7 @@ def catalogo_json(productos, artista, diag=None):
 # Handlers de la API
 # ============================================================
 
+
 def api_config():
     # El frontend pasa por acá al abrir y después de cada operación larga: es el
     # mejor lugar para descartar trabajos vencidos y los ZIP que dejaron.
@@ -496,9 +508,11 @@ def api_config():
         "tiene_clave": bool(leer_clave()),
         # Para poder aclarar en la interfaz que está usando una clave incluida y
         # no la propia.
-        "clave_incluida": (bool(_clave_incluida())
-                           and not os.environ.get("YOUTUBE_API_KEY", "").strip()
-                           and not (leer_config().get("youtube_api_key") or "").strip()),
+        "clave_incluida": (
+            bool(_clave_incluida())
+            and not os.environ.get("YOUTUBE_API_KEY", "").strip()
+            and not (leer_config().get("youtube_api_key") or "").strip()
+        ),
         "audio_habilitado": AUDIO_HABILITADO,
         "entorno": entorno_audio(),
         "tidal_conectada": bool(ESTADO.tidal and ESTADO.tidal.conectada),
@@ -537,7 +551,7 @@ def api_guardar_clave(body):
     # el usuario se entera acá y no a mitad de un relevamiento.
     try:
         R.api_get("channels", {"part": "id", "id": "UC_x5XG1OV2P6uZZ5FSM9Ttw"}, clave)
-    except Exception as e:                       # noqa: BLE001
+    except Exception as e:  # noqa: BLE001
         raise ValueError(T("srv.clave_no_funciono", error=e)) from e
     guardar_clave(clave)
     return {"ok": True}
@@ -576,8 +590,8 @@ def api_relevar(body):
 
     def trabajo(job):
         prods, artista, _, diag = M.relevar_catalogo(
-            url, clave, with_codes=con_codigos,
-            progress=lambda m, f=None: job.avance(m, f))
+            url, clave, with_codes=con_codigos, progress=lambda m, f=None: job.avance(m, f)
+        )
         ESTADO.guardar_catalogo(prods, artista, diag)
         job.avance(f"{len(prods)} productos encontrados.", 1.0)
         return catalogo_json(prods, artista, diag)
@@ -602,10 +616,9 @@ def _revisar_espacio(con_audio):
     try:
         libre = shutil.disk_usage(tempfile.gettempdir()).free
     except OSError:
-        return                                   # si no se puede medir, seguimos
+        return  # si no se puede medir, seguimos
     if libre < minimo:
-        raise ValueError(T("srv.poco_espacio",
-                           libre=f"{libre / 1e9:.1f}", minimo=f"{minimo / 1e9:.1f}"))
+        raise ValueError(T("srv.poco_espacio", libre=f"{libre / 1e9:.1f}", minimo=f"{minimo / 1e9:.1f}"))
 
 
 def api_preparar(body):
@@ -656,22 +669,32 @@ def api_preparar(body):
 
         try:
             _, dir_audio, ent = M.preparar(
-                copias, artista, quiere_planilla=quiere_planilla,
-                quiere_audio=quiere_audio, quiere_portadas=quiere_portadas,
-                tidal_session=ses, log=avance_preparar,
-                avance_portadas=avance_portadas)
+                copias,
+                artista,
+                quiere_planilla=quiere_planilla,
+                quiere_audio=quiere_audio,
+                quiere_portadas=quiere_portadas,
+                tidal_session=ses,
+                log=avance_preparar,
+                avance_portadas=avance_portadas,
+            )
             if dir_audio:
                 ESTADO.registrar_temporal(dir_audio)
 
             job.avance(T("srv.armando_zip"), 0.9)
             carpeta = tempfile.mkdtemp(prefix="migrador_zip_")
-            destino = os.path.join(
-                carpeta, f'{R.slugify(artista)}-{T("paq.f_zip_sufijo")}.zip')
+            destino = os.path.join(carpeta, f"{R.slugify(artista)}-{T('paq.f_zip_sufijo')}.zip")
             ruta, tam = M.empaquetar(
-                copias, artista, out_path=destino, entorno=ent,
+                copias,
+                artista,
+                out_path=destino,
+                entorno=ent,
                 con_tidal=bool(ses and ses.conectada),
-                incluir_planilla=quiere_planilla, incluir_audio=quiere_audio,
-                incluir_portadas=quiere_portadas, log=lambda m: job.avance(m))
+                incluir_planilla=quiere_planilla,
+                incluir_audio=quiere_audio,
+                incluir_portadas=quiere_portadas,
+                log=lambda m: job.avance(m),
+            )
         except BaseException:
             # Si el armado falla o lo cancelan, la carpeta del ZIP a medio
             # escribir no tiene por qué quedarse en el disco.
@@ -690,8 +713,7 @@ def api_preparar(body):
             "archivo": os.path.basename(ruta),
             "bytes": tam,
             "descarga": f"/api/descargar/{job.id}",
-            "validacion": {"apto": val["apto"], "resumen": val["resumen"],
-                           "hallazgos": val["hallazgos"]},
+            "validacion": {"apto": val["apto"], "resumen": val["resumen"], "hallazgos": val["hallazgos"]},
             "portadas": sum(1 for p in copias if p.get("cover_bytes")),
             "productos": len(copias),
         }
@@ -710,11 +732,15 @@ def api_tidal_iniciar():
     if anterior:
         try:
             anterior.close()
-        except Exception:                            # noqa: BLE001
+        except Exception:  # noqa: BLE001
             pass
     # Sólo lo necesario para que el usuario complete el login en el sitio de Tidal.
-    return {"url": info["url"], "codigo": info["user_code"],
-            "device_code": info["device_code"], "expira_en": info["expires_in"]}
+    return {
+        "url": info["url"],
+        "codigo": info["user_code"],
+        "device_code": info["device_code"],
+        "expira_en": info["expires_in"],
+    }
 
 
 def api_tidal_confirmar(body):
@@ -728,7 +754,7 @@ def api_tidal_desconectar():
     if ESTADO.tidal:
         try:
             ESTADO.tidal.close()
-        except Exception:                            # noqa: BLE001
+        except Exception:  # noqa: BLE001
             pass
         ESTADO.tidal = None
     return {"ok": True}
@@ -752,6 +778,7 @@ RUTAS_POST_SIN_BODY = {
 # ============================================================
 # Servidor
 # ============================================================
+
 
 class Handler(BaseHTTPRequestHandler):
     server_version = f"Migrador/{VERSION}"
@@ -841,12 +868,12 @@ class Handler(BaseHTTPRequestHandler):
             self._get()
         except (BrokenPipeError, ConnectionError):
             self.close_connection = True
-        except Exception as e:                       # noqa: BLE001
+        except Exception as e:  # noqa: BLE001
             # Sin esto, una excepción acá la imprime http.server como traceback y
             # el cliente ve la conexión cortada sin ningún mensaje.
             try:
                 self._error(T("srv.inesperado", error=e), HTTPStatus.INTERNAL_SERVER_ERROR)
-            except Exception:                        # noqa: BLE001
+            except Exception:  # noqa: BLE001
                 self.close_connection = True
 
     def _get(self):
@@ -868,8 +895,7 @@ class Handler(BaseHTTPRequestHandler):
                 # un F5 accidental.
                 if not ESTADO.productos:
                     return self._error(T("srv.sin_catalogo"), HTTPStatus.NOT_FOUND)
-                return self._json(catalogo_json(ESTADO.productos, ESTADO.artista,
-                                                ESTADO.diagnostico))
+                return self._json(catalogo_json(ESTADO.productos, ESTADO.artista, ESTADO.diagnostico))
 
             m = re.fullmatch(r"/api/job/([0-9a-f]{6,32})", ruta)
             if m:
@@ -889,12 +915,11 @@ class Handler(BaseHTTPRequestHandler):
     def _descargar(self, job_id):
         ruta = ESTADO.zip_de(job_id)
         if not ruta or not os.path.exists(ruta):
-            return self._error(T("srv.zip_vencido"),
-                               HTTPStatus.NOT_FOUND)
+            return self._error(T("srv.zip_vencido"), HTTPStatus.NOT_FOUND)
         tam = os.path.getsize(ruta)
         # El nombre sale de slugify(), pero igual lo limpiamos antes de meterlo en
         # una cabecera: un salto de línea ahí parte la respuesta en dos.
-        nombre = re.sub(r'[^A-Za-z0-9._\- ]', "_", os.path.basename(ruta))
+        nombre = re.sub(r"[^A-Za-z0-9._\- ]", "_", os.path.basename(ruta))
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", "application/zip")
         self.send_header("Content-Disposition", f'attachment; filename="{nombre}"')
@@ -928,7 +953,7 @@ class Handler(BaseHTTPRequestHandler):
 
         tipo = mimetypes.guess_type(destino)[0] or "application/octet-stream"
         if destino.endswith(".woff2"):
-            tipo = "font/woff2"                  # no todos los sistemas lo tienen
+            tipo = "font/woff2"  # no todos los sistemas lo tienen
         with open(destino, "rb") as f:
             cuerpo = f.read()
         self.send_response(HTTPStatus.OK)
@@ -958,7 +983,8 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header(
             "Content-Security-Policy",
             "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; "
-            "font-src 'self'; connect-src 'self'; form-action 'none'; base-uri 'none'")
+            "font-src 'self'; connect-src 'self'; form-action 'none'; base-uri 'none'",
+        )
         self._cabeceras_base()
         self.end_headers()
         self.wfile.write(cuerpo)
@@ -970,10 +996,10 @@ class Handler(BaseHTTPRequestHandler):
             self._post()
         except (BrokenPipeError, ConnectionError):
             self.close_connection = True
-        except Exception as e:                       # noqa: BLE001
+        except Exception as e:  # noqa: BLE001
             try:
                 self._error(T("srv.inesperado", error=e), HTTPStatus.INTERNAL_SERVER_ERROR)
-            except Exception:                        # noqa: BLE001
+            except Exception:  # noqa: BLE001
                 self.close_connection = True
 
     def _post(self):
@@ -1018,7 +1044,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._error(e, HTTPStatus.BAD_REQUEST)
         except R.RelevarError as e:
             return self._error(e, HTTPStatus.UNPROCESSABLE_ENTITY)
-        except Exception as e:                        # noqa: BLE001
+        except Exception as e:  # noqa: BLE001
             return self._error(T("srv.inesperado", error=e), HTTPStatus.INTERNAL_SERVER_ERROR)
 
 
@@ -1032,10 +1058,11 @@ def crear_servidor(puerto=0):
 def main(puerto=0, abrir=True):
     srv = crear_servidor(puerto)
     url = f"http://127.0.0.1:{srv.server_address[1]}"
-    print(f'{T("app.nombre")} v{VERSION}')
+    print(f"{T('app.nombre')} v{VERSION}")
     print(f"Servidor local: {url}")
     if abrir:
         import webbrowser
+
         threading.Timer(0.6, lambda: webbrowser.open(url)).start()
     try:
         srv.serve_forever()

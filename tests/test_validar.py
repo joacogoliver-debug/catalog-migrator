@@ -17,13 +17,21 @@ import pytest
 import validar as V
 
 
-def _prod(title="Disco", upc="", year=2020, label="Sello", tracks=None,
-          cover=None, orden_ok=True, cover_status="ok"):
+def _prod(
+    title="Disco", upc="", year=2020, label="Sello", tracks=None, cover=None, orden_ok=True, cover_status="ok"
+):
     return {
-        "product_id": "p001", "title": title, "kind": "album", "upc": upc,
-        "release_year": year, "label": label, "distributor": "ONErpm",
-        "track_count": len(tracks or []), "order_unconfirmed": not orden_ok,
-        "cover_bytes": cover, "cover_status": cover_status,
+        "product_id": "p001",
+        "title": title,
+        "kind": "album",
+        "upc": upc,
+        "release_year": year,
+        "label": label,
+        "distributor": "ONErpm",
+        "track_count": len(tracks or []),
+        "order_unconfirmed": not orden_ok,
+        "cover_bytes": cover,
+        "cover_status": cover_status,
         "tracks": tracks or [],
     }
 
@@ -35,27 +43,30 @@ def _track(track="Tema", isrc="ARABC2000001", dur=200):
 def codigos(res, nivel=None):
     """Los códigos de los hallazgos, que es lo que la interfaz agrupa y el test
     busca. El mensaje se traduce, el código nunca."""
-    return sorted(h["codigo"] for h in res["hallazgos"]
-                  if nivel is None or h["nivel"] == nivel)
+    return sorted(h["codigo"] for h in res["hallazgos"] if nivel is None or h["nivel"] == nivel)
 
 
 # ============================================================
 # ISRC
 # ============================================================
 
-@pytest.mark.parametrize("isrc, valido", [
-    ("ARABC2000001", True),
-    ("AR-ABC-20-00001", True),            # con guiones
-    ("arabc2000001", True),               # en minúsculas
-    ("QM24S2000001", True),               # QM/QZ los usan muchos digitales
-    ("USA2P2100001", True),               # registrante alfanumérico
-    ("ARABC200000", False),               # corto
-    ("ARABC20000012", False),             # largo
-    ("12ABC2000001", False),              # país numérico
-    ("ARABC200000A", False),              # designación con letra
-    ("", False),
-    (None, False),
-])
+
+@pytest.mark.parametrize(
+    "isrc, valido",
+    [
+        ("ARABC2000001", True),
+        ("AR-ABC-20-00001", True),  # con guiones
+        ("arabc2000001", True),  # en minúsculas
+        ("QM24S2000001", True),  # QM/QZ los usan muchos digitales
+        ("USA2P2100001", True),  # registrante alfanumérico
+        ("ARABC200000", False),  # corto
+        ("ARABC20000012", False),  # largo
+        ("12ABC2000001", False),  # país numérico
+        ("ARABC200000A", False),  # designación con letra
+        ("", False),
+        (None, False),
+    ],
+)
 def test_formato_de_isrc(isrc, valido):
     assert V.isrc_valido(isrc) is valido
 
@@ -64,16 +75,20 @@ def test_formato_de_isrc(isrc, valido):
 # UPC y EAN
 # ============================================================
 
-@pytest.mark.parametrize("codigo, valido", [
-    ("036000291452", True),               # UPC-A real, verificador 2
-    ("036000291453", False),              # el mismo con el verificador mal
-    ("4006381333931", True),              # EAN-13 real, verificador 3
-    ("4006381333932", False),
-    ("0-36000-29145-2", True),            # con guiones
-    ("12345", False),                     # largo que no existe
-    ("03600029145X", False),              # con letras
-    ("", False),
-])
+
+@pytest.mark.parametrize(
+    "codigo, valido",
+    [
+        ("036000291452", True),  # UPC-A real, verificador 2
+        ("036000291453", False),  # el mismo con el verificador mal
+        ("4006381333931", True),  # EAN-13 real, verificador 3
+        ("4006381333932", False),
+        ("0-36000-29145-2", True),  # con guiones
+        ("12345", False),  # largo que no existe
+        ("03600029145X", False),  # con letras
+        ("", False),
+    ],
+)
 def test_digito_verificador_de_upc(codigo, valido):
     assert V.upc_valido(codigo)[0] is valido
 
@@ -87,10 +102,11 @@ def test_el_motivo_del_upc_invalido_es_informativo():
 # Medición de imágenes
 # ============================================================
 
+
 def test_mide_png_y_jpeg_sin_pillow(png, jpeg):
     assert V.medir_imagen(png(3000, 3000)) == (3000, 3000, 3)
     assert V.medir_imagen(jpeg(3000, 3000)) == (3000, 3000, 3)
-    assert V.medir_imagen(jpeg(3000, 3000, 4)) == (3000, 3000, 4)     # CMYK
+    assert V.medir_imagen(jpeg(3000, 3000, 4)) == (3000, 3000, 4)  # CMYK
     assert V.medir_imagen(jpeg(3000, 1500)) == (3000, 1500, 3)
 
 
@@ -103,6 +119,7 @@ def test_lo_que_no_es_una_imagen_devuelve_none():
 # Portadas
 # ============================================================
 
+
 def _cods_portada(cover, **kw):
     return codigos(V.validar([_prod(cover=cover, tracks=[_track()], **kw)]))
 
@@ -112,11 +129,14 @@ def test_una_portada_perfecta_no_genera_hallazgos(jpeg):
     assert [x for x in c if x.startswith("portada")] == []
 
 
-@pytest.mark.parametrize("imagen, codigo", [
-    ((500, 500), "portada_chica"),
-    ((3000, 2000), "portada_no_cuadrada"),
-    ((1500, 1500), "portada_bajo_recomendado"),
-])
+@pytest.mark.parametrize(
+    "imagen, codigo",
+    [
+        ((500, 500), "portada_chica"),
+        ((3000, 2000), "portada_no_cuadrada"),
+        ((1500, 1500), "portada_bajo_recomendado"),
+    ],
+)
 def test_problemas_de_portada(jpeg, imagen, codigo):
     assert codigo in _cods_portada(jpeg(*imagen))
 
@@ -139,11 +159,14 @@ def test_portada_ilegible_o_ausente():
 # Duplicados
 # ============================================================
 
+
 def test_isrc_y_upc_duplicados_son_error():
-    res = V.validar([
-        _prod(title="A", upc="036000291452", tracks=[_track("T1", "ARABC2000001")]),
-        _prod(title="B", upc="036000291452", tracks=[_track("T2", "ARABC2000001")]),
-    ])
+    res = V.validar(
+        [
+            _prod(title="A", upc="036000291452", tracks=[_track("T1", "ARABC2000001")]),
+            _prod(title="B", upc="036000291452", tracks=[_track("T2", "ARABC2000001")]),
+        ]
+    )
     assert "isrc_duplicado" in codigos(res, "error")
     assert "upc_duplicado" in codigos(res, "error")
     assert res["apto"] is False
@@ -154,24 +177,29 @@ def test_isrc_y_upc_duplicados_son_error():
 
 
 def test_el_duplicado_se_detecta_con_guiones_o_minusculas():
-    res = V.validar([
-        _prod(title="A", tracks=[_track("T1", "AR-ABC-20-00001")]),
-        _prod(title="B", tracks=[_track("T2", "arabc2000001")]),
-    ])
+    res = V.validar(
+        [
+            _prod(title="A", tracks=[_track("T1", "AR-ABC-20-00001")]),
+            _prod(title="B", tracks=[_track("T2", "arabc2000001")]),
+        ]
+    )
     assert "isrc_duplicado" in codigos(res, "error")
 
 
 def test_los_codigos_vacios_no_cuentan_como_duplicados():
-    res = V.validar([
-        _prod(title="A", upc="", tracks=[_track("T1", "")]),
-        _prod(title="B", upc="", tracks=[_track("T2", "")]),
-    ])
+    res = V.validar(
+        [
+            _prod(title="A", upc="", tracks=[_track("T1", "")]),
+            _prod(title="B", upc="", tracks=[_track("T2", "")]),
+        ]
+    )
     assert [c for c in codigos(res) if "duplicado" in c] == []
 
 
 # ============================================================
 # Años
 # ============================================================
+
 
 def test_anio_futuro_o_absurdo_es_error():
     futuro = V.validar([_prod(year=date.today().year + 2, tracks=[_track()])])
@@ -192,6 +220,7 @@ def test_anio_faltante_es_aviso():
 # ============================================================
 # Error contra aviso
 # ============================================================
+
 
 def test_los_campos_faltantes_son_aviso_y_no_bloquean():
     """Faltar un código no bloquea la entrega. La distribuidora asigna uno
@@ -214,15 +243,22 @@ def test_los_errores_de_formato_si_bloquean():
 # Duraciones y títulos
 # ============================================================
 
+
 def test_duracion_cero_es_error_y_duracion_larga_es_aviso():
     assert "duracion_falta" in codigos(V.validar([_prod(tracks=[_track(dur=0)])]), "error")
     assert "duracion_larga" in codigos(V.validar([_prod(tracks=[_track(dur=3600)])]), "aviso")
 
 
-@pytest.mark.parametrize("titulo", [
-    "Tema (Official Video)", "Tema [Lyric Video]", "Tema - Video Oficial",
-    "Tema (Official Audio)", "Tema 4K",
-])
+@pytest.mark.parametrize(
+    "titulo",
+    [
+        "Tema (Official Video)",
+        "Tema [Lyric Video]",
+        "Tema - Video Oficial",
+        "Tema (Official Audio)",
+        "Tema 4K",
+    ],
+)
 def test_detecta_texto_de_youtube_arrastrado_al_titulo(titulo):
     assert "titulo_con_ruido" in codigos(V.validar([_prod(tracks=[_track(titulo)])]))
 
@@ -242,16 +278,21 @@ def test_el_orden_sin_confirmar_se_avisa():
 # Catálogo entero y reporte
 # ============================================================
 
+
 def test_un_catalogo_limpio_es_apto(jpeg):
-    res = V.validar([_prod(upc="036000291452", cover=jpeg(3000, 3000),
-                           tracks=[_track("Amanecer", "ARABC2000001")])], "Artista")
+    res = V.validar(
+        [_prod(upc="036000291452", cover=jpeg(3000, 3000), tracks=[_track("Amanecer", "ARABC2000001")])],
+        "Artista",
+    )
     assert res["apto"] is True
     assert res["resumen"]["errores"] == 0
 
 
 def test_el_reporte_dice_si_hay_errores(jpeg):
-    limpio = V.validar([_prod(upc="036000291452", cover=jpeg(3000, 3000),
-                              tracks=[_track("Amanecer", "ARABC2000001")])], "Artista")
+    limpio = V.validar(
+        [_prod(upc="036000291452", cover=jpeg(3000, 3000), tracks=[_track("Amanecer", "ARABC2000001")])],
+        "Artista",
+    )
     assert "Sin errores" in V.reporte_validacion(limpio, "Artista")
 
     malo = V.validar([_prod(upc="123", tracks=[_track(isrc="MAL")])])

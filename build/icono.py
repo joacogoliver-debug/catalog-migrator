@@ -24,13 +24,12 @@ from PIL import Image, ImageDraw
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DESTINO = os.path.join(RAIZ, "app", "web", "assets")
 
-TEAL = (56, 127, 126, 255)      # #387F7E
-HUESO = (245, 242, 237, 255)    # #F5F2ED
-GRAFITO = (20, 20, 20, 255)     # #141414
+TEAL = (56, 127, 126, 255)  # #387F7E
+HUESO = (245, 242, 237, 255)  # #F5F2ED
+GRAFITO = (20, 20, 20, 255)  # #141414
 
 # Mismos datos que app/web/assets/logo-compacto.svg, en un viewBox de 64.
-ORIGEN = [(15, 17, 6.4), (15, 32, 6.4), (15, 47, 6.4),
-          (29, 17, 5.2), (29, 32, 5.2), (29, 47, 5.2)]
+ORIGEN = [(15, 17, 6.4), (15, 32, 6.4), (15, 47, 6.4), (29, 17, 5.2), (29, 32, 5.2), (29, 47, 5.2)]
 MIGRADO = [(42, 24, 3.8), (42, 40, 3.8), (53, 32, 2.6)]
 
 # El símbolo ocupa el 80% del cuadrado, como pide el manual de marca.
@@ -76,9 +75,7 @@ def main():
     tamanos = (256, 128, 64, 48, 32, 24, 16)
     capas = [dibujar(n) for n in tamanos]
     ico = os.path.join(DESTINO, "icono.ico")
-    capas[0].save(ico, format="ICO",
-                  sizes=[(n, n) for n in tamanos],
-                  append_images=capas[1:])
+    capas[0].save(ico, format="ICO", sizes=[(n, n) for n in tamanos], append_images=capas[1:])
 
     for ruta in (png, ico):
         print(f"    {os.path.relpath(ruta, RAIZ)}  {os.path.getsize(ruta) / 1024:.1f} KB")

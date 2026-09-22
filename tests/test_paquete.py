@@ -27,28 +27,41 @@ from conftest import RAIZ
 def zip_completo(productos_entregable, tmp_path):
     """El ZIP armado con todo, y sus nombres ya leídos."""
     destino = str(tmp_path / "salida.zip")
-    ruta, tam = pq.build_zip(productos_entregable, "Artista Test", destino,
-                             con_tidal=True, log=lambda *_: None)
+    ruta, tam = pq.build_zip(
+        productos_entregable, "Artista Test", destino, con_tidal=True, log=lambda *_: None
+    )
     with zipfile.ZipFile(ruta) as z:
         nombres = z.namelist()
         raiz = nombres[0].split("/")[0]
         crudo = z.read(f"{raiz}/_Reporte de migracion.txt")
-    return {"ruta": ruta, "tam": tam, "nombres": nombres, "raiz": raiz,
-            "reporte_crudo": crudo, "reporte": crudo.decode("utf-8-sig")}
+    return {
+        "ruta": ruta,
+        "tam": tam,
+        "nombres": nombres,
+        "raiz": raiz,
+        "reporte_crudo": crudo,
+        "reporte": crudo.decode("utf-8-sig"),
+    }
 
 
 # ============================================================
 # Estructura
 # ============================================================
 
+
 def test_el_zip_existe_y_pesa(zip_completo):
     assert os.path.exists(zip_completo["ruta"])
     assert zip_completo["tam"] > 0
 
 
-@pytest.mark.parametrize("archivo", [
-    "_LEEME.txt", "_Reporte de migracion.txt", "_Catalogo completo.xlsx",
-])
+@pytest.mark.parametrize(
+    "archivo",
+    [
+        "_LEEME.txt",
+        "_Reporte de migracion.txt",
+        "_Catalogo completo.xlsx",
+    ],
+)
 def test_los_archivos_de_raiz_estan(zip_completo, archivo):
     assert f"{zip_completo['raiz']}/{archivo}" in zip_completo["nombres"]
 
@@ -68,6 +81,7 @@ def test_la_portada_va_solo_donde_habia(zip_completo):
 # Etiquetado de calidad
 # ============================================================
 
+
 def test_el_lossless_no_lleva_marca(zip_completo):
     esperado = f"{zip_completo['raiz']}/2020 - Album Bueno [111]/01 - Tema Lossless.flac"
     assert esperado in zip_completo["nombres"]
@@ -83,11 +97,14 @@ def test_un_track_sin_audio_no_genera_archivo(zip_completo):
     assert not any("Tema Sin Audio" in n for n in zip_completo["nombres"])
 
 
-@pytest.mark.parametrize("track, esperado", [
-    ({"audio_path": "x", "audio_format": ".flac"}, "LOSSLESS (flac)"),
-    ({"audio_path": "x", "audio_format": ".m4a"}, "LOSSY (m4a)"),
-    ({}, "sin audio"),
-])
+@pytest.mark.parametrize(
+    "track, esperado",
+    [
+        ({"audio_path": "x", "audio_format": ".flac"}, "LOSSLESS (flac)"),
+        ({"audio_path": "x", "audio_format": ".m4a"}, "LOSSY (m4a)"),
+        ({}, "sin audio"),
+    ],
+)
 def test_fuente_corta(track, esperado):
     assert pq._fuente_corta(track) == esperado
 
@@ -96,29 +113,41 @@ def test_fuente_corta(track, esperado):
 # Reporte
 # ============================================================
 
+
 def test_el_reporte_va_con_bom_y_los_acentos_sobreviven(zip_completo):
     """Con BOM, para que Windows muestre bien los acentos."""
     assert zip_completo["reporte_crudo"].startswith(b"\xef\xbb\xbf")
     assert "MIGRACIÓN" in zip_completo["reporte"]
 
 
-@pytest.mark.parametrize("rotulo, valor", [
-    ("Aptos para entrega (FLAC lossless)", 1),
-    ("Sólo referencia (lossy)", 1),
-    ("Sin audio", 1),
-])
+@pytest.mark.parametrize(
+    "rotulo, valor",
+    [
+        ("Aptos para entrega (FLAC lossless)", 1),
+        ("Sólo referencia (lossy)", 1),
+        ("Sin audio", 1),
+    ],
+)
 def test_el_reporte_cuenta_los_audios_por_calidad(zip_completo, rotulo, valor):
     """Se compara rótulo y valor sin fijar los espacios del medio. El reporte
     alinea con ljust y el ancho depende del largo de la palabra, que cambia con
     el idioma. Fijar la separación exacta hacía que el test dependiera de una
     decisión de maquetado."""
-    assert any(x.strip().startswith(rotulo) and x.rstrip().endswith(f": {valor}")
-               for x in zip_completo["reporte"].splitlines())
+    assert any(
+        x.strip().startswith(rotulo) and x.rstrip().endswith(f": {valor}")
+        for x in zip_completo["reporte"].splitlines()
+    )
 
 
-@pytest.mark.parametrize("pendiente", [
-    "sin UPC", "sin portada", "orden de tracks sin confirmar", "tracks sin ISRC",
-])
+@pytest.mark.parametrize(
+    "pendiente",
+    [
+        "sin UPC",
+        "sin portada",
+        "orden de tracks sin confirmar",
+        "tracks sin ISRC",
+    ],
+)
 def test_el_reporte_lista_los_pendientes_reales(zip_completo, pendiente):
     assert pendiente in zip_completo["reporte"]
 
@@ -136,10 +165,17 @@ def test_con_tidal_conectado_pero_con_lossy_avisa_lo_otro(zip_completo):
 # Los checkboxes de la pantalla 3
 # ============================================================
 
+
 def test_sin_audio_y_sin_portadas(productos_entregable, tmp_path):
     destino = str(tmp_path / "solo_planilla.zip")
-    pq.build_zip(productos_entregable, "Artista Test", destino, incluir_audio=False,
-                 incluir_portadas=False, log=lambda *_: None)
+    pq.build_zip(
+        productos_entregable,
+        "Artista Test",
+        destino,
+        incluir_audio=False,
+        incluir_portadas=False,
+        log=lambda *_: None,
+    )
     with zipfile.ZipFile(destino) as z:
         nombres = z.namelist()
 
@@ -151,8 +187,7 @@ def test_sin_audio_y_sin_portadas(productos_entregable, tmp_path):
 def test_sin_planilla_el_reporte_igual_va(productos_entregable, tmp_path):
     """El reporte va siempre. Es lo que explica qué falta."""
     destino = str(tmp_path / "solo_audio.zip")
-    pq.build_zip(productos_entregable, "Artista Test", destino,
-                 incluir_planilla=False, log=lambda *_: None)
+    pq.build_zip(productos_entregable, "Artista Test", destino, incluir_planilla=False, log=lambda *_: None)
     with zipfile.ZipFile(destino) as z:
         nombres = z.namelist()
 
@@ -164,11 +199,15 @@ def test_sin_planilla_el_reporte_igual_va(productos_entregable, tmp_path):
 # Nombres de archivo
 # ============================================================
 
-@pytest.mark.parametrize("titulo, esperado", [
-    ('Tema/Con:Barras*?', "TemaConBarras"),
-    ("Tema...", "Tema"),
-    ("", "sin-titulo"),
-])
+
+@pytest.mark.parametrize(
+    "titulo, esperado",
+    [
+        ("Tema/Con:Barras*?", "TemaConBarras"),
+        ("Tema...", "Tema"),
+        ("", "sin-titulo"),
+    ],
+)
 def test_slug_de_archivo(titulo, esperado):
     assert pq._slug_archivo(titulo) == esperado
 
@@ -177,6 +216,7 @@ def test_slug_de_archivo(titulo, esperado):
 # El paquete entero sigue al idioma
 # ============================================================
 
+
 @pytest.fixture
 def zip_en_ingles(productos_entregable, tmp_path):
     """Es lo que se promete. Quien elige inglés abre el ZIP en inglés, nombres
@@ -184,13 +224,11 @@ def zip_en_ingles(productos_entregable, tmp_path):
     el idioma al terminar, así que no contamina lo que venga después."""
     i18n.poner_idioma("en")
     destino = str(tmp_path / "en.zip")
-    pq.build_zip(productos_entregable, "Artista Test", destino,
-                 con_tidal=True, log=lambda *_: None)
+    pq.build_zip(productos_entregable, "Artista Test", destino, con_tidal=True, log=lambda *_: None)
     with zipfile.ZipFile(destino) as z:
         nombres = z.namelist()
         raiz = nombres[0].split("/")[0]
-        leidos = {n.split("/")[-1]: z.read(n) for n in nombres if n.endswith(".txt")
-                  or n.endswith(".csv")}
+        leidos = {n.split("/")[-1]: z.read(n) for n in nombres if n.endswith(".txt") or n.endswith(".csv")}
     return {"nombres": nombres, "raiz": raiz, "leidos": leidos}
 
 
@@ -198,10 +236,16 @@ def test_la_carpeta_raiz_sale_en_ingles(zip_en_ingles):
     assert zip_en_ingles["raiz"].endswith(f"Migration {pq.date.today().isoformat()}")
 
 
-@pytest.mark.parametrize("archivo", [
-    "_READ ME.txt", "_Migration report.txt", "_Pre-delivery validation.txt",
-    "_Full catalog.xlsx", "_Ingestion sheet.csv",
-])
+@pytest.mark.parametrize(
+    "archivo",
+    [
+        "_READ ME.txt",
+        "_Migration report.txt",
+        "_Pre-delivery validation.txt",
+        "_Full catalog.xlsx",
+        "_Ingestion sheet.csv",
+    ],
+)
 def test_los_archivos_de_raiz_salen_en_ingles(zip_en_ingles, archivo):
     assert any(x.endswith(archivo) for x in zip_en_ingles["nombres"])
 
@@ -234,6 +278,7 @@ def test_las_columnas_de_la_hoja_de_ingesta_no_se_traducen(zip_en_ingles):
 # ============================================================
 # Los logs tienen que poder imprimirse en una consola de Windows
 # ============================================================
+
 
 def test_ningun_log_usa_caracteres_que_cp1252_no_puede_imprimir():
     """Los mensajes de log van a stdout, y la consola de Windows usa cp1252. Un

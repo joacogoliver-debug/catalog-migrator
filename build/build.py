@@ -42,12 +42,14 @@ def revisar_entorno():
 
     try:
         import PyInstaller  # noqa: F401
+
         print("    PyInstaller: ok")
     except ImportError:
         sys.exit("Falta PyInstaller. Instalalo con:  pip install pyinstaller")
 
     try:
         import openpyxl  # noqa: F401
+
         print("    openpyxl: ok")
     except ImportError:
         sys.exit("Falta openpyxl. Instalalo con:  pip install -r requirements-app.txt")
@@ -56,15 +58,28 @@ def revisar_entorno():
     # mitad del build no dice qué instalar.
     try:
         import pytest  # noqa: F401
+
         print("    pytest: ok")
     except ImportError:
-        sys.exit("Falta pytest, que corre los tests antes de empaquetar. "
-                 "Instalalo con:  pip install -r requirements-dev.txt")
+        sys.exit(
+            "Falta pytest, que corre los tests antes de empaquetar. "
+            "Instalalo con:  pip install -r requirements-dev.txt"
+        )
 
-    faltan = [f for f in ("app/launcher.py", "app/server.py", "app/web/index.html",
-                          "app/web/app.js", "app/web/app.css",
-                          "relevar_core.py", "validar.py", "paquete.py")
-              if not os.path.exists(os.path.join(RAIZ, f))]
+    faltan = [
+        f
+        for f in (
+            "app/launcher.py",
+            "app/server.py",
+            "app/web/index.html",
+            "app/web/app.js",
+            "app/web/app.css",
+            "relevar_core.py",
+            "validar.py",
+            "paquete.py",
+        )
+        if not os.path.exists(os.path.join(RAIZ, f))
+    ]
     if faltan:
         sys.exit(f"No encuentro estos archivos (¿estás corriendo desde la raíz del repo?): {faltan}")
     print("    archivos del proyecto: ok")
@@ -82,8 +97,7 @@ def revisar_entorno():
     if not pedidas:
         sys.exit(f"No pude leer ninguna fuente de {css}.")
     fuentes = os.path.join(RAIZ, "app", "web", "fonts")
-    faltan_fuentes = [f for f in pedidas
-                      if not os.path.exists(os.path.join(fuentes, f))]
+    faltan_fuentes = [f for f in pedidas if not os.path.exists(os.path.join(fuentes, f))]
     if faltan_fuentes:
         sys.exit(f"fonts.css pide fuentes que no están en app/web/fonts: {faltan_fuentes}")
     print(f"    fuentes: {len(pedidas)} archivos, los que pide fonts.css")
@@ -105,8 +119,9 @@ def probar_tests():
     """
     paso("Corriendo los tests")
     env = dict(os.environ, PYTHONIOENCODING="utf-8")
-    r = subprocess.run([sys.executable, "-m", "pytest", "-q"], cwd=RAIZ, env=env,
-                       capture_output=True, text=True)
+    r = subprocess.run(
+        [sys.executable, "-m", "pytest", "-q"], cwd=RAIZ, env=env, capture_output=True, text=True
+    )
     print((r.stdout or "").strip()[-3000:])
     if r.returncode == 5:
         # pytest sale 5 cuando no colectó ningún test. Sin este control, una
@@ -128,9 +143,20 @@ def limpiar():
 def empaquetar():
     paso("Empaquetando con PyInstaller (tarda unos minutos)")
     r = subprocess.run(
-        [sys.executable, "-m", "PyInstaller", SPEC, "--noconfirm", "--clean",
-         "--distpath", DIST, "--workpath", os.path.join(RAIZ, "build", "migrador")],
-        cwd=RAIZ)
+        [
+            sys.executable,
+            "-m",
+            "PyInstaller",
+            SPEC,
+            "--noconfirm",
+            "--clean",
+            "--distpath",
+            DIST,
+            "--workpath",
+            os.path.join(RAIZ, "build", "migrador"),
+        ],
+        cwd=RAIZ,
+    )
     if r.returncode != 0:
         sys.exit("PyInstaller falló.")
 
@@ -143,6 +169,7 @@ def version():
     temprano digan cosas distintas.
     """
     import re
+
     ruta = os.path.join(RAIZ, "app", "server.py")
     with open(ruta, encoding="utf-8") as f:
         m = re.search(r'^VERSION\s*=\s*"([^"]+)"', f.read(), re.M)
@@ -158,8 +185,10 @@ def _iscc():
     encontrado = shutil.which("iscc") or shutil.which("ISCC")
     if encontrado:
         return encontrado
-    for base in (os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)"),
-                 os.environ.get("ProgramFiles", r"C:\Program Files")):
+    for base in (
+        os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)"),
+        os.environ.get("ProgramFiles", r"C:\Program Files"),
+    ):
         ruta = os.path.join(base, "Inno Setup 6", "ISCC.exe")
         if os.path.exists(ruta):
             return ruta
@@ -177,6 +206,7 @@ def terminos_txt():
     idioma que se eligió en la primera pantalla. Devuelve la lista de rutas.
     """
     import re
+
     pares = [("TERMINOS.md", "TERMINOS.txt"), ("TERMS.md", "TERMS.txt")]
     salidas = []
     for nombre_md, nombre_txt in pares:
@@ -190,11 +220,11 @@ def terminos_txt():
             if linea.strip() == "---":
                 lineas.append("=" * 68)
                 continue
-            linea = re.sub(r"^#{1,6}\s*", "", linea)                       # titulos
-            linea = re.sub(r"\*\*(.+?)\*\*", r"\1", linea)                 # negrita
-            linea = re.sub(r"`([^`]+)`", r"\1", linea)                     # codigo
+            linea = re.sub(r"^#{1,6}\s*", "", linea)  # titulos
+            linea = re.sub(r"\*\*(.+?)\*\*", r"\1", linea)  # negrita
+            linea = re.sub(r"`([^`]+)`", r"\1", linea)  # codigo
             linea = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r"\1 (\2)", linea)  # links
-            linea = re.sub(r"^(\s*)-\s", r"\1* ", linea)                   # vinetas
+            linea = re.sub(r"^(\s*)-\s", r"\1* ", linea)  # vinetas
             lineas.append(linea)
 
         # Inno Setup lee el archivo de licencia como texto del sistema, asi que
@@ -225,10 +255,9 @@ def instalador(variante):
     terminos_txt()
     v = version()
     print(f"    version: {v}")
-    r = subprocess.run([exe, ISS,
-                        f"/DMiVariante={variante}",
-                        f"/DMiVersion={v}",
-                        f"/DMiRaiz={RAIZ}"], cwd=RAIZ)
+    r = subprocess.run(
+        [exe, ISS, f"/DMiVariante={variante}", f"/DMiVersion={v}", f"/DMiRaiz={RAIZ}"], cwd=RAIZ
+    )
     if r.returncode != 0:
         sys.exit("Inno Setup falló.")
 
@@ -269,6 +298,7 @@ def preparar_clave():
     YouTube Data API v3 y con tope de cuota.
     """
     import json as _json
+
     clave = os.environ.get("MIGRADOR_CLAVE_YT", "").strip()
     origen = "la variable MIGRADOR_CLAVE_YT"
     if not clave:
@@ -281,8 +311,7 @@ def preparar_clave():
             except (OSError, ValueError):
                 clave = ""
     if not clave:
-        sys.exit("No encontré ninguna clave. Poné MIGRADOR_CLAVE_YT=... o cargala "
-                 "primero en la app.")
+        sys.exit("No encontré ninguna clave. Poné MIGRADOR_CLAVE_YT=... o cargala primero en la app.")
 
     # XOR con una semilla fija. NO es seguridad: sólo evita que la clave aparezca
     # en un `strings` del ejecutable y que la levante un scraper automático.

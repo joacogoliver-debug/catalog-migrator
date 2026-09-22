@@ -39,6 +39,7 @@ import productos as P
 # Idioma
 # ============================================================
 
+
 @pytest.fixture(autouse=True)
 def idioma_castellano():
     """Deja el idioma en castellano antes y después de cada test.
@@ -55,8 +56,10 @@ def idioma_castellano():
 # Catálogo de ejemplo
 # ============================================================
 
-def _track(track, album="", year="", dist="ONErpm", label="Sello", upc="",
-           isrc="", date=None, vid=None, dur=200):
+
+def _track(
+    track, album="", year="", dist="ONErpm", label="Sello", upc="", isrc="", date=None, vid=None, dur=200
+):
     """Un track con la forma exacta que devuelve `relevar_core.build_tracks`.
 
     Si esta forma cambia, los tests que la usan tienen que enterarse acá y no
@@ -97,12 +100,13 @@ def tracks_ejemplo():
     sirva de entrada al validador sin tener que inventar otro.
     """
     return [
-        _track("Tema A", "Disco Uno", 2020, isrc="ARABC2000001",
-               upc="036000291452", vid="a1", date="2020-01-01"),
-        _track("Tema B", "Disco Uno", 2020, isrc="ARABC2000002",
-               upc="036000291452", vid="a2", date="2020-01-02"),
-        _track("Single", "", 2021, isrc="MALFORMADO", vid="b1",
-               dist="DistroKid", date="2021-01-01"),
+        _track(
+            "Tema A", "Disco Uno", 2020, isrc="ARABC2000001", upc="036000291452", vid="a1", date="2020-01-01"
+        ),
+        _track(
+            "Tema B", "Disco Uno", 2020, isrc="ARABC2000002", upc="036000291452", vid="a2", date="2020-01-02"
+        ),
+        _track("Single", "", 2021, isrc="MALFORMADO", vid="b1", dist="DistroKid", date="2021-01-01"),
     ]
 
 
@@ -128,32 +132,73 @@ def productos_entregable(tmp_path):
 
     return [
         {
-            "product_id": "p001", "title": "Album Bueno", "kind": "album",
-            "release_year": 2020, "upc": "111", "label": "Sello",
-            "distributor": "ONErpm", "track_count": 1,
-            "total_views": 10, "order_unconfirmed": False,
+            "product_id": "p001",
+            "title": "Album Bueno",
+            "kind": "album",
+            "release_year": 2020,
+            "upc": "111",
+            "label": "Sello",
+            "distributor": "ONErpm",
+            "track_count": 1,
+            "total_views": 10,
+            "order_unconfirmed": False,
             "folder": "2020 - Album Bueno [111]",
-            "cover_bytes": b"\xff\xd8jpeg-falso", "cover_status": "ok 3000x3000",
-            "tracks": [{
-                "track": "Tema Lossless", "track_number": 1, "isrc": "ARABC2000001",
-                "duration_s": 200, "views": 10, "url": "https://youtu.be/x",
-                "video_id": "x", "audio_path": str(flac), "audio_format": ".flac",
-                "audio_label": audio_mod.ETIQUETA_LOSSLESS,
-            }],
+            "cover_bytes": b"\xff\xd8jpeg-falso",
+            "cover_status": "ok 3000x3000",
+            "tracks": [
+                {
+                    "track": "Tema Lossless",
+                    "track_number": 1,
+                    "isrc": "ARABC2000001",
+                    "duration_s": 200,
+                    "views": 10,
+                    "url": "https://youtu.be/x",
+                    "video_id": "x",
+                    "audio_path": str(flac),
+                    "audio_format": ".flac",
+                    "audio_label": audio_mod.ETIQUETA_LOSSLESS,
+                }
+            ],
         },
         {
-            "product_id": "p002", "title": "Single Flojo", "kind": "single",
-            "release_year": 2021, "upc": "", "label": "", "distributor": "DistroKid",
-            "track_count": 2, "total_views": 5,
-            "order_unconfirmed": True, "folder": "2021 - Single Flojo",
-            "cover_bytes": None, "cover_status": "sin match en iTunes",
+            "product_id": "p002",
+            "title": "Single Flojo",
+            "kind": "single",
+            "release_year": 2021,
+            "upc": "",
+            "label": "",
+            "distributor": "DistroKid",
+            "track_count": 2,
+            "total_views": 5,
+            "order_unconfirmed": True,
+            "folder": "2021 - Single Flojo",
+            "cover_bytes": None,
+            "cover_status": "sin match en iTunes",
             "tracks": [
-                {"track": "Tema Lossy", "track_number": 1, "isrc": "", "duration_s": 180,
-                 "views": 5, "url": "", "video_id": "y", "audio_path": str(m4a),
-                 "audio_format": ".m4a", "audio_label": "lossy"},
-                {"track": "Tema Sin Audio", "track_number": 2, "isrc": "", "duration_s": 90,
-                 "views": 0, "url": "", "video_id": "z", "audio_path": None,
-                 "audio_format": None, "audio_label": None},
+                {
+                    "track": "Tema Lossy",
+                    "track_number": 1,
+                    "isrc": "",
+                    "duration_s": 180,
+                    "views": 5,
+                    "url": "",
+                    "video_id": "y",
+                    "audio_path": str(m4a),
+                    "audio_format": ".m4a",
+                    "audio_label": "lossy",
+                },
+                {
+                    "track": "Tema Sin Audio",
+                    "track_number": 2,
+                    "isrc": "",
+                    "duration_s": 90,
+                    "views": 0,
+                    "url": "",
+                    "video_id": "z",
+                    "audio_path": None,
+                    "audio_format": None,
+                    "audio_label": None,
+                },
             ],
         },
     ]
@@ -163,20 +208,27 @@ def productos_entregable(tmp_path):
 # Imágenes mínimas, para no depender de Pillow ni de archivos binarios
 # ============================================================
 
+
 def _png(ancho, alto):
     """PNG mínimo con un IHDR válido. Alcanza para leer las dimensiones."""
     import struct
+
     ihdr = struct.pack(">II", ancho, alto) + b"\x08\x06\x00\x00\x00"
-    return (b"\x89PNG\r\n\x1a\n" + struct.pack(">I", 13) + b"IHDR" + ihdr
-            + b"\x00\x00\x00\x00")
+    return b"\x89PNG\r\n\x1a\n" + struct.pack(">I", 13) + b"IHDR" + ihdr + b"\x00\x00\x00\x00"
 
 
 def _jpeg(ancho, alto, comps=3, relleno=0):
     """JPEG mínimo con un marcador SOF0 válido. `comps=4` simula CMYK."""
     import struct
-    sof = (b"\xff\xc0" + struct.pack(">H", 8 + 3 * comps) + b"\x08"
-           + struct.pack(">HH", alto, ancho) + bytes([comps])
-           + b"\x00" * (3 * comps))
+
+    sof = (
+        b"\xff\xc0"
+        + struct.pack(">H", 8 + 3 * comps)
+        + b"\x08"
+        + struct.pack(">HH", alto, ancho)
+        + bytes([comps])
+        + b"\x00" * (3 * comps)
+    )
     return b"\xff\xd8" + sof + b"\xff\xd9" + b"\x00" * relleno
 
 
@@ -194,6 +246,7 @@ def jpeg():
 # Espera por reloj
 # ============================================================
 
+
 def _esperar(cond, segundos=30, paso=0.02):
     """Espera hasta que `cond()` sea verdadera, o hasta agotar el tiempo.
 
@@ -202,6 +255,7 @@ def _esperar(cond, segundos=30, paso=0.02):
     inestable justo en la puerta del build.
     """
     import time
+
     limite = time.monotonic() + segundos
     while time.monotonic() < limite:
         if cond():

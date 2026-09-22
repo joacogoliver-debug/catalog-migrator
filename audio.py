@@ -60,6 +60,7 @@ PAGINA_TIDAL = 100
 # Chequeo de entorno
 # ============================================================
 
+
 def _ffmpeg_incluido():
     """Ruta al ffmpeg que viaja con la app, o None.
 
@@ -76,6 +77,7 @@ def _ffmpeg_incluido():
         return None
     try:
         import imageio_ffmpeg
+
         ruta = imageio_ffmpeg.get_ffmpeg_exe()
         return ruta if os.path.isfile(ruta) else None
     except Exception:
@@ -150,12 +152,14 @@ def verificar_entorno():
     """
     try:
         import tiddl  # noqa: F401
+
         tiene_tiddl = True
     except ImportError:
         tiene_tiddl = False
 
     try:
         import yt_dlp  # noqa: F401
+
         tiene_ytdlp = True
     except ImportError:
         tiene_ytdlp = _existe("yt-dlp")
@@ -192,12 +196,14 @@ def clases_tidal():
     ninguna pista de por qué.
     """
     from tiddl.core.api import TidalAPI, TidalClient
+
     return TidalAPI, TidalClient
 
 
 # ============================================================
 # Sesión de Tidal, aislada por usuario
 # ============================================================
+
 
 class TidalSession:
     """Sesión de Tidal de UN usuario. Token en memoria, cache en dir temporal
@@ -227,6 +233,7 @@ class TidalSession:
         """Arranca el flujo device-code. Devuelve los datos para mostrarle al
         usuario a dónde ir y qué código poner. Nunca pedimos su contraseña."""
         from tiddl.core.auth import AuthAPI
+
         d = AuthAPI().get_device_auth()
         return {
             "device_code": d.deviceCode,
@@ -240,6 +247,7 @@ class TidalSession:
         """Consulta una vez si el usuario ya confirmó.
         Devuelve 'ok', 'pendiente', o un mensaje de error."""
         from tiddl.core.auth import AuthAPI, AuthClientError
+
         try:
             auth = AuthAPI().get_auth(device_code)
         except AuthClientError as e:
@@ -283,6 +291,7 @@ class TidalSession:
     def _refrescar_si_hace_falta(self):
         if self._token and time.time() >= self._expires_at - 60 and self._refresh_token:
             from tiddl.core.auth import AuthAPI
+
             try:
                 auth = AuthAPI().refresh_token(self._refresh_token)
                 self._token = auth.access_token
@@ -324,6 +333,7 @@ class TidalSession:
 # Índice por ISRC, el corazón del matcheo exacto
 # ============================================================
 
+
 def _norm(s):
     return re.sub(r"\s+", " ", re.sub(r"[^\w\s]", " ", (s or "").lower())).strip()
 
@@ -348,9 +358,7 @@ def buscar_artista_tidal(session, nombre):
     except Exception as e:
         texto = str(e).lower()
         if "401" in texto or "token" in texto or "unauthorized" in texto:
-            raise TidalAuthError(
-                T("aud.sesion_vencida")
-            ) from e
+            raise TidalAuthError(T("aud.sesion_vencida")) from e
         return None, None
     artistas = getattr(res, "artists", None)
     items = getattr(artistas, "items", None) or []
@@ -358,10 +366,10 @@ def buscar_artista_tidal(session, nombre):
         return None, None
 
     objetivo = _norm(nombre)
-    for a in items:                      # coincidencia exacta primero
+    for a in items:  # coincidencia exacta primero
         if _norm(getattr(a, "name", "")) == objetivo:
             return getattr(a, "id", None), getattr(a, "name", "")
-    a = items[0]                         # si no, el primero que ranquea Tidal
+    a = items[0]  # si no, el primero que ranquea Tidal
     return getattr(a, "id", None), getattr(a, "name", "")
 
 
@@ -395,7 +403,8 @@ def construir_indice_isrc(session, artista, log=print):
         while True:
             try:
                 pagina = session.api.get_artist_albums(
-                    artist_id, limit=PAGINA_TIDAL, offset=offset, filter=filtro)
+                    artist_id, limit=PAGINA_TIDAL, offset=offset, filter=filtro
+                )
             except Exception as e:
                 log(T("aud.no_pude_listar", filtro=filtro, error=e))
                 break
@@ -417,8 +426,7 @@ def construir_indice_isrc(session, artista, log=print):
         offset = 0
         while True:
             try:
-                pagina = session.api.get_album_items(
-                    album_id, limit=PAGINA_TIDAL, offset=offset)
+                pagina = session.api.get_album_items(album_id, limit=PAGINA_TIDAL, offset=offset)
             except Exception:
                 break
             lote = getattr(pagina, "items", None) or []
@@ -479,9 +487,7 @@ def matchear_por_isrc(productos, indice, log=print):
         if encontrados == p["track_count"] and all(
             t.get("tidal", {}) and t["tidal"].get("track_number") for t in p["tracks"]
         ):
-            p["tracks"].sort(key=lambda t: (
-                t["tidal"].get("volume_number") or 1, t["tidal"]["track_number"]
-            ))
+            p["tracks"].sort(key=lambda t: (t["tidal"].get("volume_number") or 1, t["tidal"]["track_number"]))
             p["order_unconfirmed"] = False
         p["tidal_cobertura"] = f"{encontrados}/{p['track_count']}"
 
@@ -492,6 +498,7 @@ def matchear_por_isrc(productos, indice, log=print):
 # ============================================================
 # Descarga NIVEL A, Tidal FLAC
 # ============================================================
+
 
 def bajar_flac(session, track_id, dest_dir, calidad="LOSSLESS"):
     """Baja un track de Tidal y devuelve (ruta, etiqueta_calidad, formato).
@@ -532,6 +539,7 @@ def bajar_flac(session, track_id, dest_dir, calidad="LOSSLESS"):
 # Descarga NIVEL B, YouTube (referencia lossy)
 # ============================================================
 
+
 def _falla(motivo, video_id, log, errores):
     """Registra el motivo del fallo y devuelve la terna vacía."""
     log(f"[yt] {video_id}: {motivo}")
@@ -552,6 +560,7 @@ def bajar_referencia_youtube(video_id, dest_dir, log=print, errores=None):
     original (Opus/M4A), que es lo más fiel a lo que YouTube tiene.
     """
     from pathlib import Path
+
     salida = Path(dest_dir) / f"yt_{video_id}.%(ext)s"
     cmd = ["yt-dlp", "-f", "bestaudio", "--no-playlist", "--quiet", "--no-warnings"]
     js = _runtime_js()
@@ -568,9 +577,10 @@ def bajar_referencia_youtube(video_id, dest_dir, log=print, errores=None):
         # video", "Sign in to confirm your age"...). Es justo lo que el usuario
         # necesita saber para decidir qué hacer con ese track.
         crudo = (e.stderr or "").strip().splitlines()
-        motivo = next((x.replace("ERROR:", "").strip() for x in reversed(crudo)
-                       if "ERROR" in x.upper()),
-                      crudo[-1] if crudo else T("aud.fallo_descarga"))
+        motivo = next(
+            (x.replace("ERROR:", "").strip() for x in reversed(crudo) if "ERROR" in x.upper()),
+            crudo[-1] if crudo else T("aud.fallo_descarga"),
+        )
         return _falla(motivo[:160], video_id, log, errores)
     except subprocess.TimeoutExpired:
         return _falla(T("aud.timeout"), video_id, log, errores)
@@ -584,8 +594,8 @@ def bajar_referencia_youtube(video_id, dest_dir, log=print, errores=None):
 # Orquestación
 # ============================================================
 
-def fetch_audio(productos, session=None, usar_referencia=True, dest_dir=None,
-                calidad="LOSSLESS", log=print):
+
+def fetch_audio(productos, session=None, usar_referencia=True, dest_dir=None, calidad="LOSSLESS", log=print):
     """Baja el audio de todos los tracks de los productos seleccionados.
 
     Estrategia: si hay sesión de Tidal y el track matcheó por ISRC, va por FLAC.
@@ -596,8 +606,9 @@ def fetch_audio(productos, session=None, usar_referencia=True, dest_dir=None,
     os.makedirs(dest_dir, exist_ok=True)
     tracks = [t for p in productos for t in p["tracks"]]
 
-    con_tidal = [t for t in tracks
-                 if session and session.conectada and (t.get("tidal") or {}).get("track_id")]
+    con_tidal = [
+        t for t in tracks if session and session.conectada and (t.get("tidal") or {}).get("track_id")
+    ]
     sin_tidal = [t for t in tracks if t not in con_tidal]
 
     def _init(t):
@@ -631,7 +642,8 @@ def fetch_audio(productos, session=None, usar_referencia=True, dest_dir=None,
     def _yt(t):
         errs = []
         ruta, etiqueta, fmt = bajar_referencia_youtube(
-            t.get("video_id"), dest_dir, log=lambda *_: None, errores=errs)
+            t.get("video_id"), dest_dir, log=lambda *_: None, errores=errs
+        )
         if ruta:
             t["audio_path"], t["audio_label"], t["audio_format"] = str(ruta), etiqueta, fmt
         elif errs:
@@ -647,7 +659,8 @@ def fetch_audio(productos, session=None, usar_referencia=True, dest_dir=None,
                 log(f"[audio] yt {i}/{len(pendientes)} {t['track'][:40]} -> {estado}")
 
     aptos = sum(1 for t in tracks if (t.get("audio_format") or "") in FORMATOS_LOSSLESS)
-    ref = sum(1 for t in tracks if t.get("audio_path")
-              and (t.get("audio_format") or "") not in FORMATOS_LOSSLESS)
+    ref = sum(
+        1 for t in tracks if t.get("audio_path") and (t.get("audio_format") or "") not in FORMATOS_LOSSLESS
+    )
     log(T("aud.listos", aptos=aptos, ref=ref, sin=len(tracks) - aptos - ref))
     return productos, dest_dir

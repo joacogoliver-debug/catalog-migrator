@@ -24,8 +24,8 @@ for _p in (_RAIZ, _AQUI):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-import server as backend            # noqa: E402
-from i18n import T                  # noqa: E402
+import server as backend  # noqa: E402
+from i18n import T  # noqa: E402
 
 # El idioma se resuelve antes que nada: la primera linea que imprime el launcher
 # ya tiene que salir en el idioma que corresponde.
@@ -36,10 +36,10 @@ def titulo():
     return T("app.nombre")
 
 
-
 # ============================================================
 # Ventana de la aplicación
 # ============================================================
+
 
 def _abrir_ventana_pywebview(url):
     """Ventana nativa propia. Es el camino por defecto: la app tiene que sentirse
@@ -95,9 +95,11 @@ def _navegador_app(url):
         candidatos = [
             base + sufijo
             for base in ("/Applications", os.path.join(casa, "Applications"))
-            for sufijo in ("/Google Chrome.app/Contents/MacOS/Google Chrome",
-                           "/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
-                           "/Brave Browser.app/Contents/MacOS/Brave Browser")
+            for sufijo in (
+                "/Google Chrome.app/Contents/MacOS/Google Chrome",
+                "/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+                "/Brave Browser.app/Contents/MacOS/Brave Browser",
+            )
         ]
     else:
         for n in ("google-chrome", "chromium", "chromium-browser", "microsoft-edge"):
@@ -113,9 +115,16 @@ def _navegador_app(url):
             # navegador del usuario, y quede como una app independiente.
             perfil = os.path.join(backend.dir_datos(), "ventana")
             subprocess.Popen(
-                [exe, f"--app={url}", f"--user-data-dir={perfil}",
-                 "--no-first-run", "--no-default-browser-check"],
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                [
+                    exe,
+                    f"--app={url}",
+                    f"--user-data-dir={perfil}",
+                    "--no-first-run",
+                    "--no-default-browser-check",
+                ],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
             return True
         except Exception:
             continue
@@ -131,6 +140,7 @@ def _diagnostico(url):
     """
     import datetime
     import platform
+
     ahora = datetime.datetime.now().isoformat(timespec="seconds")
     lineas = [
         f"{titulo()} v{backend.VERSION}",
@@ -144,22 +154,26 @@ def _diagnostico(url):
         T("diag.entorno"),
     ]
     import audio as audio_mod
+
     for k, v in audio_mod.verificar_entorno().items():
         lineas.append(f"  {k}: {v}")
 
     lineas += ["", T("diag.ventana")]
     try:
         import webview
+
         lineas.append(T("diag.pywebview_ok"))
         # Y ahora lo que de verdad importa: intentar abrirla. Que el import ande
         # no significa que el backend pueda crear una ventana, y ese es
         # exactamente el caso que no se ve de ninguna otra forma en un binario
         # compilado sin consola.
         import threading as _th
+
         estado = {"abrio": False, "error": None}
 
         def _cerrar():
             import time as _t
+
             _t.sleep(4)
             try:
                 estado["abrio"] = len(webview.windows) > 0
@@ -170,8 +184,7 @@ def _diagnostico(url):
 
         try:
             _th.Thread(target=_cerrar, daemon=True).start()
-            webview.create_window(T("diag.titulo_prueba"), html="<p>ok</p>",
-                                  width=420, height=240)
+            webview.create_window(T("diag.titulo_prueba"), html="<p>ok</p>", width=420, height=240)
             webview.start()
             resultado = T("diag.abrio_si") if estado["abrio"] else T("diag.abrio_no")
             lineas.append(T("diag.prueba_ventana", resultado=resultado))
@@ -179,6 +192,7 @@ def _diagnostico(url):
                 lineas.append(T("diag.detalle", detalle=estado["error"]))
         except Exception as e:
             import traceback
+
             lineas.append(T("diag.prueba_fallo", tipo=type(e).__name__, error=e))
             for _l in traceback.format_exc().splitlines():
                 lineas.append("    " + _l)
@@ -199,6 +213,7 @@ def _registrar_falla(e):
     forma de saber por qué."""
     import datetime
     import traceback
+
     try:
         ruta = os.path.join(backend.dir_datos(), "error.log")
         with open(ruta, "a", encoding="utf-8") as f:
@@ -214,8 +229,9 @@ def main(argv=None):
     ap.add_argument("--puerto", type=int, default=0, help=T("lau.h_puerto"))
     ap.add_argument("--no-abrir", action="store_true", help=T("lau.h_no_abrir"))
     ap.add_argument("--navegador", action="store_true", help=T("lau.h_navegador"))
-    ap.add_argument("--sin-ventana-nativa", action="store_true", dest="sin_nativa",
-                    help=T("lau.h_sin_ventana"))
+    ap.add_argument(
+        "--sin-ventana-nativa", action="store_true", dest="sin_nativa", help=T("lau.h_sin_ventana")
+    )
     ap.add_argument("--diagnostico", action="store_true", help=T("lau.h_diagnostico"))
     args = ap.parse_args(argv)
 
@@ -247,6 +263,7 @@ def main(argv=None):
             hilo.join()
         elif args.navegador:
             import webbrowser
+
             webbrowser.open(url)
             hilo.join()
         elif not args.sin_nativa and _abrir_ventana_pywebview(url):
@@ -261,6 +278,7 @@ def main(argv=None):
             hilo.join()
         else:
             import webbrowser
+
             webbrowser.open(url)
             print(T("lau.en_navegador"))
             hilo.join()
@@ -278,7 +296,7 @@ if __name__ == "__main__":
         sys.exit(main())
     except SystemExit:
         raise
-    except Exception as e:                       # noqa: BLE001
+    except Exception as e:  # noqa: BLE001
         print(T("lau.no_arranco", error=e))
         _registrar_falla(e)
         sys.exit(1)

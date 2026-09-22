@@ -31,6 +31,7 @@ from i18n import T
 # Paso 1 + 2, relevar y agrupar
 # ============================================================
 
+
 def relevar_catalogo(url, yt_key, with_codes=True, progress=None, use_musicbrainz=False):
     """Releva el catálogo y lo devuelve ya agrupado en productos.
 
@@ -40,7 +41,10 @@ def relevar_catalogo(url, yt_key, with_codes=True, progress=None, use_musicbrain
     # relevar_core.relevar() devuelve un DICT, no una tupla: desempaquetarlo como
     # tupla toma sus claves y tira "too many values to unpack".
     res = relevar_core.relevar(
-        url, yt_key, with_codes=with_codes, progress=progress,
+        url,
+        yt_key,
+        with_codes=with_codes,
+        progress=progress,
         use_musicbrainz=use_musicbrainz,
     )
     tracks = res["tracks"]
@@ -83,9 +87,19 @@ def opciones_de_filtro(prods):
 # Paso 3, preparar el contenido pedido
 # ============================================================
 
-def preparar(seleccion, artista, quiere_planilla=True, quiere_audio=False,
-             quiere_portadas=True, tidal_session=None, usar_referencia=True,
-             calidad="LOSSLESS", log=print, avance_portadas=None):
+
+def preparar(
+    seleccion,
+    artista,
+    quiere_planilla=True,
+    quiere_audio=False,
+    quiere_portadas=True,
+    tidal_session=None,
+    usar_referencia=True,
+    calidad="LOSSLESS",
+    log=print,
+    avance_portadas=None,
+):
     """Baja lo que se pidió para los productos seleccionados.
 
     Muta los productos agregándoles `cover_bytes` y, a cada track, `audio_path`
@@ -115,8 +129,11 @@ def preparar(seleccion, artista, quiere_planilla=True, quiere_audio=False,
             log(T("mig.sin_referencia"))
         else:
             _, dir_audio = audio_mod.fetch_audio(
-                seleccion, session=tidal_session if con_tidal else None,
-                usar_referencia=usar_referencia, calidad=calidad, log=log,
+                seleccion,
+                session=tidal_session if con_tidal else None,
+                usar_referencia=usar_referencia,
+                calidad=calidad,
+                log=log,
             )
 
     return seleccion, dir_audio, entorno
@@ -126,19 +143,34 @@ def preparar(seleccion, artista, quiere_planilla=True, quiere_audio=False,
 # Paso 4, empaquetar
 # ============================================================
 
-def empaquetar(seleccion, artista, out_path=None, entorno=None, con_tidal=False,
-               incluir_planilla=True, incluir_audio=True, incluir_portadas=True,
-               log=print):
+
+def empaquetar(
+    seleccion,
+    artista,
+    out_path=None,
+    entorno=None,
+    con_tidal=False,
+    incluir_planilla=True,
+    incluir_audio=True,
+    incluir_portadas=True,
+    log=print,
+):
     """Arma el ZIP del entregable. Devuelve (ruta, tamaño_bytes)."""
     if out_path is None:
         out_path = os.path.join(
             tempfile.mkdtemp(prefix="migrador_zip_"),
-            f'{relevar_core.slugify(artista)}-{T("paq.f_zip_sufijo")}.zip',
+            f"{relevar_core.slugify(artista)}-{T('paq.f_zip_sufijo')}.zip",
         )
     return paquete.build_zip(
-        seleccion, artista, out_path, entorno=entorno, con_tidal=con_tidal,
-        incluir_planilla=incluir_planilla, incluir_audio=incluir_audio,
-        incluir_portadas=incluir_portadas, log=log,
+        seleccion,
+        artista,
+        out_path,
+        entorno=entorno,
+        con_tidal=con_tidal,
+        incluir_planilla=incluir_planilla,
+        incluir_audio=incluir_audio,
+        incluir_portadas=incluir_portadas,
+        log=log,
     )
 
 
@@ -152,27 +184,54 @@ def limpiar(dir_audio):
 # Flujo completo (para uso desde script / CLI)
 # ============================================================
 
-def migrar(url, yt_key, ids=None, year_from=None, year_to=None, distributors=None,
-           quiere_planilla=True, quiere_audio=False, quiere_portadas=True,
-           tidal_session=None, out_path=None, log=print):
+
+def migrar(
+    url,
+    yt_key,
+    ids=None,
+    year_from=None,
+    year_to=None,
+    distributors=None,
+    quiere_planilla=True,
+    quiere_audio=False,
+    quiere_portadas=True,
+    tidal_session=None,
+    out_path=None,
+    log=print,
+):
     """Corre los 4 pasos de una. Devuelve dict con el resultado."""
     prods, artista, _, _diag = relevar_catalogo(url, yt_key, progress=log)
     seleccion = productos_mod.filter_products(
-        prods, ids=ids, year_from=year_from, year_to=year_to, distributors=distributors,
+        prods,
+        ids=ids,
+        year_from=year_from,
+        year_to=year_to,
+        distributors=distributors,
     )
     if not seleccion:
         raise relevar_core.RelevarError(T("mig.seleccion_vacia"))
     log(T("mig.seleccionados", n=len(seleccion), total=len(prods)))
 
     seleccion, dir_audio, entorno = preparar(
-        seleccion, artista, quiere_planilla=quiere_planilla, quiere_audio=quiere_audio,
-        quiere_portadas=quiere_portadas, tidal_session=tidal_session, log=log,
+        seleccion,
+        artista,
+        quiere_planilla=quiere_planilla,
+        quiere_audio=quiere_audio,
+        quiere_portadas=quiere_portadas,
+        tidal_session=tidal_session,
+        log=log,
     )
     con_tidal = bool(tidal_session and tidal_session.conectada)
     ruta, tam = empaquetar(
-        seleccion, artista, out_path=out_path, entorno=entorno, con_tidal=con_tidal,
-        incluir_planilla=quiere_planilla, incluir_audio=quiere_audio,
-        incluir_portadas=quiere_portadas, log=log,
+        seleccion,
+        artista,
+        out_path=out_path,
+        entorno=entorno,
+        con_tidal=con_tidal,
+        incluir_planilla=quiere_planilla,
+        incluir_audio=quiere_audio,
+        incluir_portadas=quiere_portadas,
+        log=log,
     )
     limpiar(dir_audio)
     return {

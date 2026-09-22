@@ -38,20 +38,22 @@ COVER_RECOMENDADO = 3000
 RE_RUIDO_TITULO = re.compile(
     r"\b(official\s*(music\s*)?video|video\s*oficial|lyric\s*video|video\s*lyric|"
     r"letra\s*oficial|audio\s*oficial|official\s*audio|visualizer|"
-    r"hd|4k|full\s*album|en\s*vivo|live\s*session)\b", re.I)
+    r"hd|4k|full\s*album|en\s*vivo|live\s*session)\b",
+    re.I,
+)
 
-DURACION_MAX_SOSPECHOSA = 15 * 60   # 15 min: puede ser un mix o un álbum entero
+DURACION_MAX_SOSPECHOSA = 15 * 60  # 15 min: puede ser un mix o un álbum entero
 ANIO_MIN = 1900
 
 
 def _hallazgo(nivel, codigo, mensaje, producto="", track=None):
-    return {"nivel": nivel, "codigo": codigo, "mensaje": mensaje,
-            "producto": producto, "track": track}
+    return {"nivel": nivel, "codigo": codigo, "mensaje": mensaje, "producto": producto, "track": track}
 
 
 # ============================================================
 # Códigos
 # ============================================================
+
 
 def isrc_valido(isrc):
     """True si el ISRC tiene formato válido. Acepta guiones y minúsculas."""
@@ -90,6 +92,7 @@ def upc_valido(upc):
 # Portadas, dimensiones y espacio de color desde la cabecera
 # ============================================================
 
+
 def medir_imagen(data):
     """Lee (ancho, alto, componentes) de un JPEG o PNG desde sus bytes.
 
@@ -122,14 +125,14 @@ def medir_imagen(data):
             marcador = data[i + 1]
             # SOF0..SOF15 traen las dimensiones; C4/C8/CC no son SOF.
             if 0xC0 <= marcador <= 0xCF and marcador not in (0xC4, 0xC8, 0xCC):
-                alto = int.from_bytes(data[i + 5:i + 7], "big")
-                ancho = int.from_bytes(data[i + 7:i + 9], "big")
+                alto = int.from_bytes(data[i + 5 : i + 7], "big")
+                ancho = int.from_bytes(data[i + 7 : i + 9], "big")
                 comps = data[i + 9]
                 return ancho, alto, comps
             if marcador in (0xD8, 0x01) or 0xD0 <= marcador <= 0xD7:
                 i += 2
                 continue
-            largo = int.from_bytes(data[i + 2:i + 4], "big")
+            largo = int.from_bytes(data[i + 2 : i + 4], "big")
             if largo <= 0:
                 break
             i += 2 + largo
@@ -143,9 +146,14 @@ def validar_portada(p):
     data = p.get("cover_bytes")
 
     if not data:
-        out.append(_hallazgo("aviso", "portada_falta",
-                             T("val.portada_falta",
-                               motivo=p.get("cover_status") or T("val.no_se_busco")), nombre))
+        out.append(
+            _hallazgo(
+                "aviso",
+                "portada_falta",
+                T("val.portada_falta", motivo=p.get("cover_status") or T("val.no_se_busco")),
+                nombre,
+            )
+        )
         return out
 
     medida = medir_imagen(data)
@@ -156,15 +164,29 @@ def validar_portada(p):
     ancho, alto, comps = medida
 
     if ancho != alto:
-        out.append(_hallazgo("error", "portada_no_cuadrada",
-                             T("val.portada_no_cuadrada", ancho=ancho, alto=alto), nombre))
+        out.append(
+            _hallazgo(
+                "error", "portada_no_cuadrada", T("val.portada_no_cuadrada", ancho=ancho, alto=alto), nombre
+            )
+        )
     if min(ancho, alto) < COVER_MIN:
-        out.append(_hallazgo("error", "portada_chica",
-                             T("val.portada_chica", ancho=ancho, alto=alto, min=COVER_MIN), nombre))
+        out.append(
+            _hallazgo(
+                "error",
+                "portada_chica",
+                T("val.portada_chica", ancho=ancho, alto=alto, min=COVER_MIN),
+                nombre,
+            )
+        )
     elif min(ancho, alto) < COVER_RECOMENDADO:
-        out.append(_hallazgo("aviso", "portada_bajo_recomendado",
-                             T("val.portada_bajo_recomendado", ancho=ancho, alto=alto,
-                               rec=COVER_RECOMENDADO), nombre))
+        out.append(
+            _hallazgo(
+                "aviso",
+                "portada_bajo_recomendado",
+                T("val.portada_bajo_recomendado", ancho=ancho, alto=alto, rec=COVER_RECOMENDADO),
+                nombre,
+            )
+        )
     if comps == 4:
         out.append(_hallazgo("error", "portada_cmyk", T("val.portada_cmyk"), nombre))
     return out
@@ -173,6 +195,7 @@ def validar_portada(p):
 # ============================================================
 # Validación del catálogo
 # ============================================================
+
 
 def validar(productos, artista=""):
     """Valida una selección de productos. Devuelve dict con hallazgos y resumen."""
@@ -192,8 +215,9 @@ def validar(productos, artista=""):
         else:
             ok, motivo = upc_valido(upc)
             if not ok:
-                out.append(_hallazgo("error", "upc_invalido",
-                                     T("val.upc_invalido", upc=upc, motivo=motivo), nombre))
+                out.append(
+                    _hallazgo("error", "upc_invalido", T("val.upc_invalido", upc=upc, motivo=motivo), nombre)
+                )
 
         anio = p.get("release_year")
         if not anio:
@@ -206,8 +230,7 @@ def validar(productos, artista=""):
                 elif a < ANIO_MIN:
                     out.append(_hallazgo("error", "anio_absurdo", T("val.anio_absurdo", anio=a), nombre))
             except (TypeError, ValueError):
-                out.append(_hallazgo("error", "anio_invalido",
-                                     T("val.anio_invalido", anio=anio), nombre))
+                out.append(_hallazgo("error", "anio_invalido", T("val.anio_invalido", anio=anio), nombre))
 
         if not (p.get("label") or "").strip():
             out.append(_hallazgo("aviso", "sello_falta", T("val.sello_falta"), nombre))
@@ -222,26 +245,28 @@ def validar(productos, artista=""):
             titulo = t.get("track", "") or T("val.sin_titulo")
 
             if not (t.get("track") or "").strip():
-                out.append(_hallazgo("error", "track_sin_titulo",
-                                     T("val.track_sin_titulo"), nombre, titulo))
+                out.append(_hallazgo("error", "track_sin_titulo", T("val.track_sin_titulo"), nombre, titulo))
 
             isrc = (t.get("isrc") or "").strip()
             if not isrc:
                 out.append(_hallazgo("aviso", "isrc_falta", T("val.isrc_falta"), nombre, titulo))
             elif not isrc_valido(isrc):
-                out.append(_hallazgo("error", "isrc_invalido",
-                                     T("val.isrc_invalido", isrc=isrc), nombre, titulo))
+                out.append(
+                    _hallazgo("error", "isrc_invalido", T("val.isrc_invalido", isrc=isrc), nombre, titulo)
+                )
 
             dur = int(t.get("duration_s") or 0)
             if dur <= 0:
                 out.append(_hallazgo("error", "duracion_falta", T("val.duracion_falta"), nombre, titulo))
             elif dur > DURACION_MAX_SOSPECHOSA:
-                out.append(_hallazgo("aviso", "duracion_larga",
-                                     T("val.duracion_larga", minutos=dur // 60), nombre, titulo))
+                out.append(
+                    _hallazgo(
+                        "aviso", "duracion_larga", T("val.duracion_larga", minutos=dur // 60), nombre, titulo
+                    )
+                )
 
             if RE_RUIDO_TITULO.search(titulo):
-                out.append(_hallazgo("aviso", "titulo_con_ruido",
-                                     T("val.titulo_con_ruido"), nombre, titulo))
+                out.append(_hallazgo("aviso", "titulo_con_ruido", T("val.titulo_con_ruido"), nombre, titulo))
 
     out.extend(_duplicados(productos))
 
@@ -278,10 +303,15 @@ def _duplicados(productos):
                 continue
             donde = f"{p.get('title', '')} / {t.get('track', '')}"
             if isrc in vistos_isrc:
-                out.append(_hallazgo(
-                    "error", "isrc_duplicado",
-                    T("val.isrc_duplicado", isrc=isrc, uno=vistos_isrc[isrc], otro=donde),
-                    p.get("title", ""), t.get("track", "")))
+                out.append(
+                    _hallazgo(
+                        "error",
+                        "isrc_duplicado",
+                        T("val.isrc_duplicado", isrc=isrc, uno=vistos_isrc[isrc], otro=donde),
+                        p.get("title", ""),
+                        t.get("track", ""),
+                    )
+                )
             else:
                 vistos_isrc[isrc] = donde
 
@@ -291,10 +321,14 @@ def _duplicados(productos):
         if not upc:
             continue
         if upc in vistos_upc:
-            out.append(_hallazgo(
-                "error", "upc_duplicado",
-                T("val.upc_duplicado", upc=upc, uno=vistos_upc[upc], otro=p.get("title", "")),
-                p.get("title", "")))
+            out.append(
+                _hallazgo(
+                    "error",
+                    "upc_duplicado",
+                    T("val.upc_duplicado", upc=upc, uno=vistos_upc[upc], otro=p.get("title", "")),
+                    p.get("title", ""),
+                )
+            )
         else:
             vistos_upc[upc] = p.get("title", "")
 
@@ -305,15 +339,19 @@ def _duplicados(productos):
 # Reporte
 # ============================================================
 
+
 def _sin_acentos(s):
     return unicodedata.normalize("NFD", s or "").encode("ascii", "ignore").decode("ascii")
 
 
 def reporte_validacion(res, artista=""):
     """Reporte de texto de la validación, para incluir en el ZIP."""
-    L = [T("val.rep_titulo", artista=artista),
-         T("val.rep_generado", fecha=date.today().isoformat()),
-         "=" * 68, ""]
+    L = [
+        T("val.rep_titulo", artista=artista),
+        T("val.rep_generado", fecha=date.today().isoformat()),
+        "=" * 68,
+        "",
+    ]
     r = res["resumen"]
     # Los rótulos se alinean con ljust y no con espacios a mano: en inglés miden
     # otra cosa y las dos columnas quedaban torcidas.
