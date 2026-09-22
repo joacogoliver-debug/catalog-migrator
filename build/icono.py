@@ -3,7 +3,12 @@ Genera el icono de la app a partir del logo de marca.
 
     python build/icono.py
 
-Escribe app/web/assets/icono.png (512) y app/web/assets/icono.ico (multi-tamaño).
+Escribe tres archivos en app/web/assets/, uno por sistema:
+
+    icono.png    512x512, lo que usa la interfaz
+    icono.ico    multi-tamaño, lo que pide Windows
+    icono.icns   multi-tamaño, lo que pide el .app de macOS
+
 Está acá y no como imagen suelta para que el icono sea reproducible desde el
 código, igual que las capturas.
 
@@ -65,6 +70,49 @@ def dibujar(lado):
     return img.resize((lado, lado), Image.Resampling.LANCZOS)
 
 
+# Los tipos de icono que entiende macOS, con el lado que le corresponde a cada
+# uno. Son los que pide un .app moderno: sin el de 1024 el icono se ve borroso en
+# el Finder con vista de iconos grandes, y sin los @2x se ve borroso en Retina,
+# que es toda Mac desde hace diez años.
+TIPOS_ICNS = [
+    (b"icp4", 16),
+    (b"icp5", 32),
+    (b"icp6", 64),
+    (b"ic07", 128),
+    (b"ic08", 256),
+    (b"ic09", 512),
+    (b"ic10", 1024),  # 512@2x
+    (b"ic11", 32),  # 16@2x
+    (b"ic12", 64),  # 32@2x
+    (b"ic13", 256),  # 128@2x
+    (b"ic14", 512),  # 256@2x
+]
+
+
+def escribir_icns(ruta):
+    """Arma el .icns a mano, con PNG adentro.
+
+    Pillow lee .icns en cualquier sistema pero sólo los escribe en macOS, porque
+    delega en `iconutil`. Como el icono se genera en el CI y en la máquina de
+    quien desarrolle, que puede ser Windows o Linux, se escribe el contenedor
+    acá: es una cabecera de ocho bytes y después un bloque por tamaño, cada uno
+    con su tipo, su largo y un PNG entero adentro.
+    """
+    import io as _io
+    import struct
+
+    bloques = []
+    for tipo, lado in TIPOS_ICNS:
+        buf = _io.BytesIO()
+        dibujar(lado).save(buf, format="PNG")
+        datos = buf.getvalue()
+        bloques.append(tipo + struct.pack(">I", len(datos) + 8) + datos)
+
+    cuerpo = b"".join(bloques)
+    with open(ruta, "wb") as f:
+        f.write(b"icns" + struct.pack(">I", len(cuerpo) + 8) + cuerpo)
+
+
 def main():
     os.makedirs(DESTINO, exist_ok=True)
 
@@ -78,7 +126,10 @@ def main():
     ico = os.path.join(DESTINO, "icono.ico")
     capas[0].save(ico, format="ICO", sizes=[(n, n) for n in tamanos], append_images=capas[1:])
 
-    for ruta in (png, ico):
+    icns = os.path.join(DESTINO, "icono.icns")
+    escribir_icns(icns)
+
+    for ruta in (png, ico, icns):
         print(f"    {os.path.relpath(ruta, RAIZ)}  {os.path.getsize(ruta) / 1024:.1f} KB")
     return 0
 

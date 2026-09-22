@@ -29,14 +29,26 @@ la variante, así el spec no tiene que saber nada de cómo se publica.
 """
 
 import os
+import re
+import sys
 
 RAIZ = os.path.abspath(os.getcwd())
 APP = os.path.join(RAIZ, "app")
 SRC = os.path.join(RAIZ, "src")
 
-# Si por algo faltara el .ico, se compila sin icono en vez de abortar el build.
-_ico = os.path.join(APP, "web", "assets", "icono.ico")
+# La versión, del único lugar donde está escrita. Se lee con una expresión
+# regular y no importando el módulo: el spec corre adentro de PyInstaller, con
+# un sys.path que no es el del proyecto.
+with open(os.path.join(SRC, "migrador", "version.py"), encoding="utf-8") as _f:
+    VERSION = re.search(r'^VERSION\s*=\s*"([^"]+)"', _f.read(), re.M).group(1)
+
+# Cada sistema pide su formato. Si por algo faltara el archivo, se compila sin
+# icono en vez de abortar el build: un binario sin icono sirve igual.
+_assets = os.path.join(APP, "web", "assets")
+_ico = os.path.join(_assets, "icono.ico")
+_icns = os.path.join(_assets, "icono.icns")
 ICONO = _ico if os.path.exists(_ico) else None
+ICONO_MAC = _icns if os.path.exists(_icns) else ICONO
 
 # Build CON el módulo de audio adentro: `python build/build.py --con-audio`.
 # Suma unos 14 MB y mete un descargador de audio dentro del ejecutable. Igual
@@ -185,3 +197,39 @@ exe = EXE(
     # en el CI, que no lo tiene). El .ico está commiteado para no depender de eso.
     icon=ICONO,
 )
+
+
+# ============================================================
+# macOS: envolver el ejecutable en un .app
+# ============================================================
+#
+# Hasta acá en macOS se publicaba un ejecutable suelto. Eso significa que doble
+# clic en el Finder no hace lo que uno espera, que no aparece en el Launchpad, y
+# que abrirlo son cuatro comandos de Terminal. Un .app sin firmar sigue pidiendo
+# el clic derecho la primera vez, pero al menos se ve y se abre como una
+# aplicación.
+#
+# `BUNDLE` sólo existe en macOS y sólo tiene sentido ahí, así que va detrás de
+# la condición: en Windows y en Linux el spec termina en el EXE de arriba.
+if sys.platform == "darwin":
+    app = BUNDLE(  # noqa: F821  (PyInstaller lo inyecta al ejecutar el spec)
+        exe,
+        name="Migrador de Catalogos.app",
+        icon=ICONO_MAC,
+        # Identificador del bundle. No está registrado en ningún lado y no hace
+        # falta que lo esté: macOS lo usa para separar las preferencias de una
+        # app de las de otra.
+        bundle_identifier="ar.com.joacogarciaoliver.migradorcatalogos",
+        info_plist={
+            "CFBundleDisplayName": "Migrador de Catalogos",
+            "CFBundleShortVersionString": VERSION,
+            "CFBundleVersion": VERSION,
+            # Sin esto macOS abre la ventana en modo compatibilidad y todo se ve
+            # borroso en una pantalla Retina, que son todas desde hace años.
+            "NSHighResolutionCapable": True,
+            # No es una app de línea de comandos: no tiene que aparecer un icono
+            # de Terminal en el Dock al lado del suyo.
+            "LSBackgroundOnly": False,
+            "NSHumanReadableCopyright": "MIT. Ver LICENSE.",
+        },
+    )

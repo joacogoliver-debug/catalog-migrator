@@ -75,11 +75,22 @@ jobs:
           python build/icono.py
           python - <<'PY'
           from PIL import Image
+
           tam = sorted(Image.open("app/web/assets/icono.ico").ico.sizes())
           assert (256, 256) in tam and (16, 16) in tam, tam
+
           png = Image.open("app/web/assets/icono.png")
           assert png.size == (512, 512), png.size
-          print("icono ok:", tam)
+
+          # El .icns es el del .app de macOS. Se escribe a mano, porque Pillow
+          # sólo lo sabe guardar en macOS, así que conviene verificar que salga
+          # legible: sin los @2x el icono se ve borroso en cualquier Retina.
+          icns = Image.open("app/web/assets/icono.icns")
+          medidas = set(icns.info["sizes"])
+          assert (512, 512, 2) in medidas, medidas
+          assert (16, 16, 2) in medidas, medidas
+
+          print("iconos ok:", tam, sorted(medidas))
           PY
 
       - name: No quedan claves en el repositorio

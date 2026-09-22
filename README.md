@@ -51,9 +51,21 @@ Terminal responde `bad CPU type in executable`, que no explica nada.
 Hay una [guía paso a paso para macOS](docs/INSTALAR-MAC.md) pensada para alguien
 que no usa la Terminal todos los días.
 
-Lo que se publica es **un ejecutable suelto, no un `.app`**. No hay instalador,
-no aparece en el Launchpad y doble clic en el Finder no hace lo que esperás.
-Se corre desde la Terminal, una vez por descarga:
+De cada arquitectura se publican dos archivos:
+
+| Archivo | Qué es |
+|---|---|
+| `...-app.zip` | **La recomendada.** Un `.app` de verdad: lo arrastrás a Aplicaciones y queda en el Launchpad, con su icono. |
+| sin extensión | El ejecutable suelto, para la Terminal o un pendrive. |
+
+Con el `.app`, la primera vez hay que abrirlo con **clic derecho → Abrir**, y
+confirmar. Después se abre con doble clic como cualquier otro programa. El clic
+derecho hace falta porque el binario está **sin firmar y sin notarizar**, y si no
+Gatekeeper lo bloquea sin ofrecer alternativa. Notarizar requiere la cuenta de
+desarrollador de Apple, que es paga, y esta herramienta es gratis.
+
+Si preferís el ejecutable suelto, se corre desde la Terminal, una vez por
+descarga:
 
 ```bash
 cd ~/Downloads
@@ -63,28 +75,36 @@ xattr -c Migrador-de-Catalogos-macos-apple-silicon-completa
 ```
 
 La línea del `xattr` saca la marca de cuarentena que macOS le pone a todo lo que
-se baja de internet. Hace falta porque el binario está **sin firmar y sin
-notarizar**, y si no, Gatekeeper lo bloquea. Se usa `-c` y no `-d
-com.apple.quarantine` a propósito: `-d` falla con `No such xattr` cuando la marca
-no está, y ese error asusta sin motivo.
-
-Notarizar requiere la cuenta de desarrollador de Apple, que es paga, y esta
-herramienta es gratis. Empaquetarlo como `.app` sí está pendiente y no depende
-de plata.
+se baja de internet. Se usa `-c` y no `-d com.apple.quarantine` a propósito: `-d`
+falla con `No such xattr` cuando la marca no está, y ese error asusta sin motivo.
 
 ### Linux
 
-También es un ejecutable suelto, no un `.deb`. La ventana nativa necesita GTK y
-WebKit instalados; si no están, la app se abre en tu navegador por defecto y
-funciona igual.
+Se publican dos archivos:
+
+| Archivo | Qué es |
+|---|---|
+| `migrador-catalogos_...deb` | **La recomendada** en Debian y Ubuntu. Queda en el menú de aplicaciones, con icono, y se desinstala como cualquier paquete. |
+| `Migrador-de-Catalogos-linux-...` | El ejecutable suelto, para cualquier otra distribución. |
+
+```bash
+sudo apt install ./migrador-catalogos_1.0.2-completa_amd64.deb
+```
+
+Y para desinstalarlo, `sudo apt remove migrador-catalogos`.
+
+El ejecutable suelto funciona igual en cualquier distribución:
 
 ```bash
 chmod +x Migrador-de-Catalogos-linux-completa
 ./Migrador-de-Catalogos-linux-completa
 ```
 
-Si nada de esto te cierra, en macOS y Linux conviene correrla desde el código
-(ver más abajo): son dos comandos y te evitás todo lo anterior.
+En los dos casos, la ventana nativa necesita GTK y WebKit instalados. Si no
+están, la app se abre en tu navegador por defecto y funciona igual.
+
+Si nada de esto te cierra, en macOS y Linux también se puede correr desde el
+código (ver más abajo): son dos comandos.
 
 ### Las dos variantes
 

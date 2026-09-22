@@ -22,6 +22,12 @@ What changed in every published version. The numbers follow
   suite before packaging. If pytest collects nothing, the build aborts.
 
 ### Added
+- **macOS gets an `.app` and Linux a `.deb`.** Until now both were published as
+  a bare executable, which on macOS means four Terminal commands and on Linux
+  shows up in no menu at all. The `.app` is dragged to Applications and lands in
+  Launchpad; the `.deb` installs with `apt`, lands in the menu with its icon, and
+  uninstalls like any package. Both are still unsigned, which is a different
+  thing and costs money.
 - **The engine is a package, `migrador`, and lives in `src/`.** The ten modules
   were loose in the root and every file set up `sys.path` by hand. Now `app/`
   consumes the package and that arrow points one way, so the core is tested

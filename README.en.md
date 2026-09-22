@@ -52,9 +52,21 @@ nothing.
 There is a [step-by-step macOS guide](docs/INSTALAR-MAC.en.md) written for
 someone who does not use the Terminal every day.
 
-What gets published is **a bare executable, not an `.app`**. There is no
-installer, it does not show up in Launchpad, and double clicking it in Finder
-does not do what you expect. You run it from the Terminal, once per download:
+Two files are published for each architecture:
+
+| File | What it is |
+|---|---|
+| `...-app.zip` | **The recommended one.** A real `.app`: drag it to Applications and it lands in Launchpad, with its icon. |
+| no extension | The bare executable, for the Terminal or a USB stick. |
+
+With the `.app`, the first time you have to open it with **right click → Open**,
+and confirm. After that it opens with a double click like any other program. The
+right click is needed because the binary is **unsigned and not notarized**, and
+without it Gatekeeper blocks it with no way out. Notarizing requires an Apple
+developer account, which costs money, and this tool is free.
+
+If you prefer the bare executable, you run it from the Terminal, once per
+download:
 
 ```bash
 cd ~/Downloads
@@ -64,27 +76,37 @@ xattr -c Migrador-de-Catalogos-macos-apple-silicon-completa
 ```
 
 The `xattr` line removes the quarantine flag macOS puts on everything downloaded
-from the internet. It is needed because the binary is **unsigned and not
-notarized**, and without it Gatekeeper blocks it. It uses `-c` rather than `-d
-com.apple.quarantine` on purpose: `-d` fails with `No such xattr` when the flag
-is not there, and that error worries people for no reason.
-
-Notarizing requires an Apple developer account, which costs money, and this tool
-is free. Packaging it as an `.app` is pending and does not depend on money.
+from the internet. It uses `-c` rather than `-d com.apple.quarantine` on purpose:
+`-d` fails with `No such xattr` when the flag is not there, and that error
+worries people for no reason.
 
 ### Linux
 
-Also a bare executable, not a `.deb`. The native window needs GTK and WebKit
-installed; if they are not there, the app opens in your default browser and works
-just the same.
+Two files are published:
+
+| File | What it is |
+|---|---|
+| `migrador-catalogos_...deb` | **The recommended one** on Debian and Ubuntu. It lands in the applications menu, with an icon, and uninstalls like any package. |
+| `Migrador-de-Catalogos-linux-...` | The bare executable, for any other distribution. |
+
+```bash
+sudo apt install ./migrador-catalogos_1.0.2-completa_amd64.deb
+```
+
+And to uninstall it, `sudo apt remove migrador-catalogos`.
+
+The bare executable works the same on any distribution:
 
 ```bash
 chmod +x Migrador-de-Catalogos-linux-completa
 ./Migrador-de-Catalogos-linux-completa
 ```
 
-If none of this appeals to you, on macOS and Linux it is easier to run it from
-source (see below): two commands and you skip all of the above.
+In both cases the native window needs GTK and WebKit installed. If they are not
+there, the app opens in your default browser and works just the same.
+
+If none of this appeals to you, on macOS and Linux you can also run it from
+source (see below): two commands.
 
 ### The two variants
 

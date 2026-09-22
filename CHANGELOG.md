@@ -22,6 +22,12 @@ Lo que cambió en cada versión publicada. Los números siguen
   misma suite antes de empaquetar. Si pytest no colecta nada, el build aborta.
 
 ### Agregado
+- **macOS tiene un `.app` y Linux un `.deb`.** Hasta ahora los dos se
+  publicaban como un ejecutable suelto, que en macOS son cuatro comandos de
+  Terminal y en Linux no aparece en ningún menú. El `.app` se arrastra a
+  Aplicaciones y queda en el Launchpad; el `.deb` se instala con `apt`, queda en
+  el menú con su icono y se desinstala como cualquier paquete. Los dos siguen sin
+  firmar, que es otra cosa y cuesta plata.
 - **El motor es un paquete, `migrador`, y vive en `src/`.** Los diez módulos
   estaban sueltos en la raíz y cada archivo se armaba el `sys.path` a mano. Ahora
   `app/` consume el paquete y esa flecha va en un solo sentido, así que el núcleo

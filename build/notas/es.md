@@ -7,8 +7,15 @@ permisos de administrador. El instalador pregunta el idioma en la
 primera pantalla, y la app —incluido lo que descarga— queda en el
 que hayas elegido.
 
-Si preferís no instalar nada, el portable es el `.exe` sin
-`-instalador`. En Linux hay un único archivo, sin instalador.
+Si preferís no instalar nada, el portable es el `.exe` sin `-instalador`.
+
+**En Linux**, el `.deb` (`migrador-catalogos_...deb`) se instala con
+`sudo apt install ./archivo.deb` y queda en el menú de aplicaciones. El
+ejecutable suelto sigue estando, para cualquier otra distribución.
+
+**En macOS**, el `...-app.zip` trae un `.app` de verdad: lo arrastrás a
+Aplicaciones y queda en el Launchpad. La primera vez hay que abrirlo con clic
+derecho → Abrir.
 
 **En macOS hay dos, y no son intercambiables**: uno para las Mac con
 chip Apple (`-macos-apple-silicon-`) y otro para las Mac Intel

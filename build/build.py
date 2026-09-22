@@ -224,14 +224,43 @@ def terminos_txt():
     return salidas
 
 
-def instalador(variante):
-    """Arma el instalador de Windows con Inno Setup.
+def instalable(variante):
+    """El formato instalable que corresponda a este sistema.
 
-    Es lo que convierte "bajá un .exe suelto" en un programa de verdad: queda en
-    el menú Inicio, aparece en "Agregar o quitar programas" y se desinstala como
-    cualquier otro. El portable se sigue publicando al lado para quien lo
-    prefiera.
+    `--instalador` significa lo mismo en los tres, aunque el archivo sea
+    distinto: convertir "bajá un ejecutable suelto" en un programa de verdad,
+    que queda en el menú, tiene icono y se desinstala. El portable se sigue
+    publicando al lado para quien lo prefiera.
+
+        Windows   un .exe instalador, con Inno Setup
+        Linux     un .deb, armado con la biblioteca estándar
+        macOS     nada acá: el .app lo arma el propio spec de PyInstaller
     """
+    if sys.platform == "linux":
+        return paquete_linux(variante)
+    if sys.platform == "darwin":
+        print("    en macOS el .app lo arma el spec, no hace falta un paso aparte")
+        return
+    return instalador(variante)
+
+
+def paquete_linux(variante):
+    """Arma el .deb con el ejecutable recién compilado."""
+    paso("Armando el paquete .deb")
+    from paquete_deb import ARQUITECTURA, PAQUETE, armar
+
+    binario = os.path.join(DIST, "Migrador de Catalogos")
+    if not os.path.exists(binario):
+        print(f"    no encontré {binario}, no armo el .deb")
+        return
+    v = version()
+    salida = os.path.join(DIST, f"{PAQUETE}_{v}-{variante}_{ARQUITECTURA}.deb")
+    armar(binario, salida, v)
+    print(f"    {os.path.basename(salida)}  ({os.path.getsize(salida) / 1e6:.1f} MB)")
+
+
+def instalador(variante):
+    """Arma el instalador de Windows con Inno Setup."""
     if os.name != "nt":
         print("    el instalador es sólo para Windows, lo salteo")
         return
@@ -342,5 +371,5 @@ if __name__ == "__main__":
     limpiar()
     empaquetar()
     if con_instalador:
-        instalador("completa" if con_audio else "esencial")
+        instalable("completa" if con_audio else "esencial")
     resumen()

@@ -119,12 +119,29 @@ jobs:
           echo "flags: $FLAGS"
           python build/build.py $FLAGS
 
+      - name: Empaquetar el .app de macOS
+        if: runner.os == 'macOS'
+        # El .app es una CARPETA, y un artefacto de GitHub la subiría archivo
+        # por archivo, perdiendo los permisos de ejecución por el camino. Se
+        # comprime en un .zip, que es además como Apple espera que se
+        # distribuya una app sin instalador.
+        shell: bash
+        run: |
+          cd dist
+          if [ -d "Migrador de Catalogos.app" ]; then
+            ditto -c -k --keepParent "Migrador de Catalogos.app"               "Migrador-de-Catalogos-${{ matrix.nombre }}-${{ matrix.variante }}-app.zip"
+            rm -rf "Migrador de Catalogos.app"
+          else
+            echo "::warning::no se genero el .app"
+          fi
+
       - name: Renombrar con la plataforma y la variante
         shell: bash
         run: |
           cd dist
           rm -f *.sha256
-          # Sólo el portable: el instalador ya sale con su nombre definitivo.
+          # Sólo el portable: el instalador, el .deb y el .app ya salen con su
+          # nombre definitivo.
           if [ -f "Migrador de Catalogos.exe" ]; then
             mv "Migrador de Catalogos.exe" "Migrador-de-Catalogos-${{ matrix.nombre }}-${{ matrix.variante }}.exe"
           elif [ -f "Migrador de Catalogos" ]; then
@@ -143,7 +160,7 @@ jobs:
         shell: bash
         run: |
           cd dist
-          BIN=$(ls | grep '^Migrador-de-Catalogos-' | grep -v '\.sha256$' | grep -v instalador | head -1)
+          BIN=$(ls | grep '^Migrador-de-Catalogos-'             | grep -vE '\.(sha256|deb|zip)$' | grep -v instalador | head -1)
           echo "probando: $BIN"
           chmod +x "$BIN" || true
           ./"$BIN" --puerto 8931 --no-abrir &
@@ -164,7 +181,8 @@ jobs:
         shell: bash
         run: |
           cd dist
-          for f in Migrador-de-Catalogos-*; do
+          for f in Migrador-de-Catalogos-* migrador-catalogos_*; do
+            [ -e "$f" ] || continue
             case "$f" in *.sha256) continue;; esac
             if command -v sha256sum >/dev/null; then sha256sum "$f" | tee "$f.sha256";
             else shasum -a 256 "$f" | tee "$f.sha256"; fi
@@ -181,7 +199,9 @@ jobs:
         continue-on-error: true
         uses: actions/attest-build-provenance@v2
         with:
-          subject-path: dist/Migrador-de-Catalogos-*
+          subject-path: |
+            dist/Migrador-de-Catalogos-*
+            dist/migrador-catalogos_*.deb
 
       - uses: actions/upload-artifact@v4
         with:

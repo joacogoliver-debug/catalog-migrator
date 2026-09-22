@@ -7,9 +7,16 @@ does not ask for administrator rights. The installer asks for the
 language on its first screen, and the app —including what it
 downloads— stays in whichever one you pick.
 
-If you would rather not install anything, the portable one is the
-`.exe` without `-instalador`. On Linux there is a single file and
-no installer.
+If you would rather not install anything, the portable one is the `.exe`
+without `-instalador`.
+
+**On Linux**, the `.deb` (`migrador-catalogos_...deb`) installs with
+`sudo apt install ./file.deb` and lands in the applications menu. The bare
+executable is still there, for any other distribution.
+
+**On macOS**, the `...-app.zip` carries a real `.app`: drag it to Applications
+and it lands in Launchpad. The first time you have to open it with right click
+→ Open.
 
 **On macOS there are two, and they are not interchangeable**: one for
 Macs with an Apple chip (`-macos-apple-silicon-`) and one for Intel
