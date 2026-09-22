@@ -22,6 +22,10 @@ Lo que cambió en cada versión publicada. Los números siguen
   misma suite antes de empaquetar. Si pytest no colecta nada, el build aborta.
 
 ### Agregado
+- `CONTRIBUTING.md` y plantillas de issue, en los dos idiomas. Las seis reglas
+  que no se negocian (las tres defensas, sin frameworks, no inventar metadata, la
+  clave fuera del repositorio, todo el texto traducido y un README honesto)
+  estaban en la cabeza de quien mantiene y ahora están escritas.
 - **El contrato entre módulos está escrito, en `contratos.py`.** Lo que
   devuelve el relevamiento y lo que consumen los productos, la validación, las
   portadas y el empaquetado dejó de vivir en los docstrings. Son TypedDict, así
@@ -46,6 +50,11 @@ Lo que cambió en cada versión publicada. Los números siguen
   backlog que sale de él.
 
 ### Corregido
+- El README tenía una imagen sin línea en blanco delante, que partía en dos la
+  lista de «Cómo está hecha». La versión en inglés estaba bien.
+- El docstring de `build/capturas.py` decía que las capturas del README salen en
+  tema claro, y el código las genera en oscuro desde que ése es el tema con el que
+  la app se abre.
 - Al relevar un canal que no es Topic, la app cambia al Topic del artista. Si
   YouTube devolvía la lista de subidas pero no el título del canal, el cambio se
   hacía igual y el catálogo entero quedaba a nombre de nadie. Ahora se exigen los

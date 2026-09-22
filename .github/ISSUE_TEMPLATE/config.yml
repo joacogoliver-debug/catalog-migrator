@@ -1,0 +1,16 @@
+# Un issue en blanco no sirve a nadie: quien lo abre no sabe qué hace falta y
+# quien lo lee termina pidiendo la versión y el sistema operativo en el primer
+# mensaje. Las plantillas preguntan eso de entrada.
+blank_issues_enabled: false
+
+contact_links:
+  - name: Reportar un problema de seguridad (en privado)
+    url: https://github.com/joacogoliver-debug/catalog-migrator/security/advisories/new
+    about: >
+      Security issues go here, privately, never as a public issue.
+      Los problemas de seguridad van por acá, en privado.
+
+  - name: Cómo contribuir / How to contribute
+    url: https://github.com/joacogoliver-debug/catalog-migrator/blob/main/CONTRIBUTING.md
+    about: >
+      Antes de mandar un pull request. Before sending a pull request.

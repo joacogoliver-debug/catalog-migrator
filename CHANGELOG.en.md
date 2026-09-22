@@ -22,6 +22,10 @@ What changed in every published version. The numbers follow
   suite before packaging. If pytest collects nothing, the build aborts.
 
 ### Added
+- `CONTRIBUTING` and issue templates, in both languages. The six rules that are
+  not up for negotiation (the three defenses, no frameworks, never invent
+  metadata, the key stays out of the repository, every string translated and an
+  honest README) lived in the maintainer's head and are now written down.
 - **The contract between modules is written down, in `contratos.py`.** What
   the survey returns and what products, validation, artwork and packaging consume
   no longer lives in the docstrings. They are TypedDicts, so they do not exist at
@@ -45,6 +49,11 @@ What changed in every published version. The numbers follow
   backlog that comes out of it.
 
 ### Fixed
+- The README had an image with no blank line before it, which split the "How it's
+  built" list in two. The English version was fine.
+- The docstring in `build/capturas.py` said the README screenshots come out in the
+  light theme, while the code has been generating them in dark since that became
+  the theme the app opens in.
 - When surveying a channel that is not a Topic, the app switches to the
   artist's Topic. If YouTube returned the uploads playlist but not the channel
   title, the switch happened anyway and the whole catalog ended up credited to

@@ -347,6 +347,7 @@ Sin frameworks ni build step, para que empaquetar sea copiar archivos:
   usuario, así que no hacen falta ASGI ni workers, y a cambio el ejecutable no
   depende de los imports dinámicos de uvicorn, que son la causa habitual de que
   un binario ande en desarrollo y falle empaquetado.
+
 ![El avance de un trabajo largo, con el paso actual escrito](docs/capturas/16-progreso.png)
 
 - **Frontend**: JavaScript vanilla y CSS sobre los tokens de `app/web/tokens/`,
@@ -466,6 +467,17 @@ La configuración de los tres está en [pyproject.toml](pyproject.toml).
   golpe sobre un código sin anotaciones deja cientos de errores que nadie lee.
   Corre en su propio job del CI, con las dependencias opcionales instaladas, para
   no reportar como faltante un `tiddl` que en la máquina de un usuario existe.
+
+## Contribuir
+
+[CONTRIBUTING.md](CONTRIBUTING.md) dice cómo arrancar, qué correr antes de
+mandar un pull request, y las seis reglas que no se negocian: las tres
+defensas del servidor, nada de frameworks, no inventar metadata, la clave
+fuera del repositorio, todo el texto en los dos idiomas, y un README que no
+promete lo que no está hecho.
+
+Los problemas de seguridad van en privado, por el formulario que indica
+[SECURITY.md](SECURITY.md), nunca como issue público.
 
 ## Créditos
 

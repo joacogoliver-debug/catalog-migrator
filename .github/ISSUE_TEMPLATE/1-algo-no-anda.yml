@@ -1,0 +1,93 @@
+name: Algo no anda / Something is broken
+description: La app no abre, tira un error, o devuelve algo que no corresponde.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Podés escribir en castellano o en inglés, como te quede cómodo.
+        Feel free to write in Spanish or English, whichever suits you.
+
+        **Si es un problema de seguridad, no lo cuentes acá.** Va en privado,
+        por el formulario de [Report a vulnerability](https://github.com/joacogoliver-debug/catalog-migrator/security/advisories/new).
+
+  - type: textarea
+    id: que-paso
+    attributes:
+      label: Qué pasó / What happened
+      description: Contá lo que viste, y lo que esperabas ver en su lugar.
+      placeholder: |
+        Pegué el link del canal y, después de relevar, la columna de sello quedó
+        vacía en todos los productos. En la app anterior salía el sello.
+    validations:
+      required: true
+
+  - type: textarea
+    id: pasos
+    attributes:
+      label: Cómo repetirlo / How to reproduce it
+      description: >
+        Los pasos, en orden. Si podés, incluí el link del canal, o el nombre de
+        un artista con el mismo problema: sin algo con qué probar, un defecto de
+        relevamiento no se puede buscar.
+      placeholder: |
+        1. Abrir la app
+        2. Pegar https://www.youtube.com/@...
+        3. Relevar
+        4. Mirar la columna Sello
+    validations:
+      required: true
+
+  - type: dropdown
+    id: sistema
+    attributes:
+      label: Sistema operativo / Operating system
+      options:
+        - Windows
+        - macOS con chip Apple (M1, M2, M3, M4...)
+        - macOS con procesador Intel
+        - Linux
+        - Corriendo desde el código / Running from source
+    validations:
+      required: true
+
+  - type: dropdown
+    id: variante
+    attributes:
+      label: Qué archivo bajaste / Which file you downloaded
+      description: El nombre del archivo lo dice.
+      options:
+        - completa (con instalador)
+        - completa (portable)
+        - esencial
+        - Ninguno, corro desde el código / None, I run from source
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Versión / Version
+      description: >
+        Está abajo a la derecha en la ventana de la app, y también en el reporte
+        de `--diagnostico`.
+      placeholder: "1.0.2"
+    validations:
+      required: true
+
+  - type: textarea
+    id: diagnostico
+    attributes:
+      label: El reporte de --diagnostico
+      description: >
+        Si la app no abre, esto es lo que más ayuda: es lo único que muestra qué
+        puede hacer la app en tu máquina, porque el ejecutable se compila sin
+        consola. Se corre desde la Terminal o el símbolo del sistema, con
+        `--diagnostico`, y deja el archivo en tu carpeta personal.
+
+        No trae ningún dato tuyo más que el sistema operativo y qué programas
+        encontró. **Si cargaste tu propia clave de la API, el reporte no la
+        incluye**, sólo dice si hay una configurada.
+      render: text
+    validations:
+      required: false

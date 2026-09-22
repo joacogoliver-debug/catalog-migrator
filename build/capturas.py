@@ -2,7 +2,7 @@
 """
 Genera las capturas de pantalla de la app.
 
-    python build/capturas.py                 las del README (claro, 1600x900)
+    python build/capturas.py                 las del README (oscuro, 1600x900)
     python build/capturas.py --todo          todas, claro y oscuro, 3200x1800
     python build/capturas.py --todo --salida "C:\\donde\\quieras"
 

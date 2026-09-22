@@ -1,0 +1,51 @@
+name: Una idea / An idea
+description: Algo que la app podría hacer y no hace, o algo que hace y podría hacer mejor.
+labels: ["idea"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Podés escribir en castellano o en inglés.
+        Feel free to write in Spanish or English.
+
+        Antes de escribir, dos cosas que la app **no hace a propósito** y que
+        están explicadas en el README, para no gastar tu tiempo:
+
+        - **No genera DDEX ERN.** Emitir ERN válido requiere ser una parte
+          registrada de DDEX con identificador propio, así que un XML «casi
+          DDEX» se rechazaría igual dando la falsa sensación de estar listo.
+        - **No inventa metadata.** Lo que no sale de una fuente pública queda
+          marcado `<<COMPLETAR>>`, no rellenado a ojo.
+
+  - type: textarea
+    id: problema
+    attributes:
+      label: Qué problema te resolvería / What problem it would solve
+      description: >
+        Contá el problema antes que la solución. Es lo que permite encontrar una
+        salida mejor que la que tenías en mente, o darte cuenta de que ya hay
+        una.
+      placeholder: |
+        Cuando migro un catálogo grande tengo que revisar producto por producto
+        cuáles quedaron sin ISRC, y la tabla no me deja filtrar por eso.
+    validations:
+      required: true
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: Cómo te lo imaginás / How you picture it
+      description: Si tenés una idea concreta, va acá. Si no, dejalo vacío.
+    validations:
+      required: false
+
+  - type: textarea
+    id: contexto
+    attributes:
+      label: Algo más / Anything else
+      description: >
+        Si viene de un caso real, contalo: qué distribuidora, qué te pidieron,
+        qué te rechazaron. Un ejemplo concreto vale más que la descripción de la
+        función.
+    validations:
+      required: false

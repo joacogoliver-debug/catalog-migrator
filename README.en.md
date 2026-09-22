@@ -472,6 +472,17 @@ The configuration for all three is in [pyproject.toml](pyproject.toml).
   runs in its own CI job, with the optional dependencies installed, so that it
   does not report as missing a `tiddl` that exists on a user's machine.
 
+## Contributing
+
+[CONTRIBUTING.en.md](CONTRIBUTING.en.md) says how to get started, what to run
+before sending a pull request, and the six rules that are not up for
+negotiation: the three server defenses, no frameworks, never invent metadata,
+the key stays out of the repository, every string in both languages, and a
+README that does not promise what is not done.
+
+Security problems go privately, through the form pointed to by
+[SECURITY.md](SECURITY.md), never as a public issue.
+
 ## Credits
 
 - The technique for requesting high-resolution artwork from Apple's CDN comes
