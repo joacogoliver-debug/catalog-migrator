@@ -22,6 +22,9 @@ What changed in every published version. The numbers follow
   suite before packaging. If pytest collects nothing, the build aborts.
 
 ### Added
+- `texto.py`, with a single implementation of text normalization and safe file
+  names. They were written six times across five modules, nearly identical but
+  not quite.
 - `CONTRIBUTING` and issue templates, in both languages. The six rules that are
   not up for negotiation (the three defenses, no frameworks, never invent
   metadata, the key stays out of the repository, every string translated and an
@@ -49,6 +52,13 @@ What changed in every published version. The numbers follow
   backlog that comes out of it.
 
 ### Fixed
+- **An artist spelled with an accent did not find the same one spelled without
+  it on Tidal.** The normalization the audio module used did not strip accents,
+  unlike the other two, and with no exact match the search fell back to whatever
+  Tidal returned first.
+- A product's folder name could end in a dot when the title was long and the
+  truncation landed there. Windows does not accept that name, and the error only
+  showed up when unzipping, on somebody else's machine.
 - The README had an image with no blank line before it, which split the "How it's
   built" list in two. The English version was fine.
 - The docstring in `build/capturas.py` said the README screenshots come out in the

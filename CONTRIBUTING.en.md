@@ -161,6 +161,7 @@ you touched: the diff already says that.
 | `app/jobs.py` | Background jobs with progress and cancellation |
 | `app/web/` | The interface |
 | `contratos.py` | The shape of the data that travels between modules |
+| `texto.py` | Text normalization and safe file names |
 | `relevar_core.py` | YouTube survey plus ISRC and UPC from Deezer |
 | `productos.py` | Groups tracks into products and filters the selection |
 | `validar.py` | Pre-delivery validation |

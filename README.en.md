@@ -371,6 +371,7 @@ No frameworks and no build step, so that packaging is copying files:
 | `i18n.py`, `app/web/i18n.js` | The two translation catalogs, one per process |
 | `docs/marca/` | The logotype and its rules of use |
 | `contratos.py` | The shape of the data that travels between modules |
+| `texto.py` | Text normalization and safe file names |
 | `migrar_core.py` | Orchestrates the 4 steps |
 | `relevar_core.py` | YouTube survey + ISRC/UPC via Deezer |
 | `productos.py` | Groups tracks into products and filters the selection |
@@ -426,6 +427,7 @@ pytest -q --cov
 | `tests/test_i18n.py` | Both translation catalogs, complete and in agreement |
 | `tests/test_parse_description.py` | Parsing of YouTube descriptions |
 | `tests/test_productos.py` | Grouping into products and filters |
+| `tests/test_texto.py` | Text normalization, and that it stays deduplicated |
 | `tests/test_validar.py` | Validation of codes, artwork and duplicates |
 | `tests/test_portadas.py` | Real artwork resolution |
 | `tests/test_paquete.py` | ZIP structure and quality labeling |

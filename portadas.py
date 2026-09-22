@@ -14,7 +14,6 @@ cuadrada de 3000x3000 para ingesta, así que arrancamos por ahí.
 import json
 import re
 import time
-import unicodedata
 import urllib.parse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
@@ -22,6 +21,7 @@ from difflib import SequenceMatcher
 
 from contratos import Producto
 from i18n import T
+from texto import comparable as _norm
 
 ITUNES_SEARCH = "https://itunes.apple.com/search"
 ITUNES_LOOKUP = "https://itunes.apple.com/lookup"
@@ -39,14 +39,6 @@ COVER_MIN_INGESTA = 1400
 # Umbral de similitud título-a-título para aceptar un match. Por debajo de esto
 # preferimos no traer portada antes que traer la portada de otro disco.
 MIN_RATIO = 0.62
-
-
-def _norm(s):
-    if not s:
-        return ""
-    s = unicodedata.normalize("NFD", s).encode("ascii", "ignore").decode("ascii")
-    s = re.sub(r"[^\w\s]", " ", s.lower())
-    return re.sub(r"\s+", " ", s).strip()
 
 
 def _strip_ruido(titulo):

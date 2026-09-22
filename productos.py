@@ -14,11 +14,11 @@ hasta que lo complete el enriquecimiento por Deezer, y el reporte de migración
 avisa cuando un producto quedó sin orden confirmado.
 """
 
-import re
-import unicodedata
 from collections import Counter
 
 from contratos import Producto, ResumenSeleccion, TipoProducto, Track
+from texto import comparable as _norm
+from texto import nombre_seguro
 
 # Los dos centinelas que pone `relevar_core` cuando la descripcion de YouTube no
 # trae el dato. NO son texto para mostrar y por eso no se traducen: el filtrado y
@@ -40,15 +40,6 @@ MAX_TRACKS_SINGLE = 3
 MAX_TRACKS_EP = 6
 
 
-def _norm(s):
-    """Normaliza para comparar títulos: sin acentos, sin puntuación, minúsculas."""
-    if not s:
-        return ""
-    s = unicodedata.normalize("NFD", s).encode("ascii", "ignore").decode("ascii")
-    s = re.sub(r"[^\w\s]", " ", s.lower())
-    return re.sub(r"\s+", " ", s).strip()
-
-
 def _kind(n_tracks) -> TipoProducto:
     if n_tracks <= MAX_TRACKS_SINGLE:
         return "single"
@@ -67,12 +58,9 @@ def _mode(values):
 
 
 def _slug(s, maxlen=60):
-    """Nombre seguro para carpeta en Windows/macOS/Linux."""
-    s = unicodedata.normalize("NFD", s or "").encode("ascii", "ignore").decode("ascii")
-    s = re.sub(r'[<>:"/\\|?*]', "", s)  # prohibidos en Windows
-    s = re.sub(r"[\x00-\x1f]", "", s)  # control
-    s = re.sub(r"\s+", " ", s).strip(" .")  # Windows no admite terminar en " " ni "."
-    return s[:maxlen].strip() or "Sin titulo"
+    """Nombre de carpeta seguro. Sesenta caracteres, que es lo que entra sin
+    que la ruta completa dentro del ZIP se pase de los 260 de Windows."""
+    return nombre_seguro(s, maxlen, "Sin titulo")
 
 
 # ============================================================

@@ -70,6 +70,7 @@ import relevar_core as R  # noqa: E402
 import validar as V  # noqa: E402
 from contratos import Producto  # noqa: E402
 from i18n import T  # noqa: E402
+from texto import mmss as _mmss  # noqa: E402
 from jobs import Registry  # noqa: E402
 
 VERSION = "1.0.2"
@@ -440,11 +441,6 @@ JOBS = Registry(al_descartar=lambda job_id: ESTADO.olvidar_zip(job_id))
 # ============================================================
 # Serialización para el frontend
 # ============================================================
-
-
-def _mmss(seg):
-    seg = int(seg or 0)
-    return f"{seg // 60}:{seg % 60:02d}"
 
 
 def producto_json(p):

@@ -15,7 +15,6 @@ import json
 import os
 import re
 import sys
-import unicodedata
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -30,6 +29,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # no siempre se importa con la raíz del repo ya en el path.
 from contratos import DescripcionParseada, Relevamiento, Track  # noqa: E402
 from i18n import T  # noqa: E402
+from texto import plegado as _normalize  # noqa: E402
 from productos import SIN_ALBUM, SIN_DATOS  # noqa: E402
 
 API = "https://www.googleapis.com/youtube/v3"
@@ -299,10 +299,6 @@ def _anio_plausible(a):
     un lanzamiento futuro más allá del año que viene es un error de carga. Todo
     lo de afuera es basura que se coló del texto, no un dato."""
     return 1900 <= a <= date.today().year + 1
-
-
-def _normalize(s):
-    return unicodedata.normalize("NFD", s).encode("ascii", "ignore").decode("ascii").lower()
 
 
 def parse_description(desc) -> DescripcionParseada:

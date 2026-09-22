@@ -27,7 +27,6 @@ Dos decisiones de diseño que sostienen la honestidad de la herramienta:
 """
 
 import os
-import re
 import shutil
 import sys
 import subprocess
@@ -35,11 +34,13 @@ import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor
 
-from contratos import EntornoAudio, Producto
+# `FORMATOS_LOSSLESS` vive en contratos y no acá, aunque acá sea donde el
+# lector lo busca: es parte del contrato de lo que significa
+# `Track.audio_format`, y quien arma el entregable lo necesita sin tener que
+# importar este módulo, que es opcional y puede no estar instalado.
+from contratos import EntornoAudio, FORMATOS_LOSSLESS, Producto
 from i18n import T
-
-# Formatos que consideramos aptos para entrega (lossless real).
-FORMATOS_LOSSLESS = {".flac"}
+from texto import comparable as _norm
 
 # Estas tres NO se traducen: se guardan en `audio_label` de cada track y hoy
 # no se muestran en ningún lado. Si alguna vez se muestran, pasan al catálogo
@@ -338,10 +339,6 @@ class TidalSession:
 # ============================================================
 # Índice por ISRC, el corazón del matcheo exacto
 # ============================================================
-
-
-def _norm(s):
-    return re.sub(r"\s+", " ", re.sub(r"[^\w\s]", " ", (s or "").lower())).strip()
 
 
 class TidalAuthError(RuntimeError):

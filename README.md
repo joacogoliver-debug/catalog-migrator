@@ -368,6 +368,7 @@ Sin frameworks ni build step, para que empaquetar sea copiar archivos:
 | `i18n.py`, `app/web/i18n.js` | Los dos catálogos de traducción, uno por proceso |
 | `docs/marca/` | El logotipo y sus reglas de uso |
 | `contratos.py` | La forma de los datos que viajan entre los módulos |
+| `texto.py` | Normalización de texto y nombres de archivo |
 | `migrar_core.py` | Orquesta los 4 pasos |
 | `relevar_core.py` | Relevamiento de YouTube + ISRC/UPC por Deezer |
 | `productos.py` | Agrupa tracks en productos y filtra la selección |
@@ -423,6 +424,7 @@ pytest -q --cov
 | `tests/test_i18n.py` | Los dos catálogos de traducción, completos y de acuerdo |
 | `tests/test_parse_description.py` | Parseo de las descripciones de YouTube |
 | `tests/test_productos.py` | Agrupación en productos y filtros |
+| `tests/test_texto.py` | Normalización de texto, y que no se vuelva a duplicar |
 | `tests/test_validar.py` | Validación de códigos, portadas y duplicados |
 | `tests/test_portadas.py` | Resolución real de las portadas |
 | `tests/test_paquete.py` | Estructura del ZIP y etiquetado de calidad |

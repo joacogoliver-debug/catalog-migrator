@@ -28,6 +28,12 @@ importarlo sin arrastrar dependencias ni armar un ciclo.
 
 from typing import Literal, NotRequired, TypedDict
 
+# Los formatos aptos para entrega, o sea lossless de verdad. Vive acá y no en
+# `audio.py` porque es parte del contrato de lo que significa
+# `Track.audio_format`, y quien arma el entregable lo necesita sin importar
+# el módulo de audio, que es opcional y puede no estar instalado.
+FORMATOS_LOSSLESS = {".flac"}
+
 # El formato del release. Sale de la cantidad de tracks (1-3 / 4-6 / 7+), que es
 # la convención de las distribuidoras y sigue siendo una heurística, no un dato
 # declarado por YouTube. Ver `productos.MAX_TRACKS_SINGLE`.

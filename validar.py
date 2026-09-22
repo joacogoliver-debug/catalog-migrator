@@ -16,7 +16,6 @@ que la interfaz los agrupa y el test los busca.
 """
 
 import re
-import unicodedata
 from datetime import date
 
 from contratos import Hallazgo, NivelHallazgo, Producto, ResultadoValidacion
@@ -339,10 +338,6 @@ def _duplicados(productos):
 # ============================================================
 # Reporte
 # ============================================================
-
-
-def _sin_acentos(s):
-    return unicodedata.normalize("NFD", s or "").encode("ascii", "ignore").decode("ascii")
 
 
 def reporte_validacion(res, artista=""):

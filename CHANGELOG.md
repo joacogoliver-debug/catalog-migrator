@@ -22,6 +22,9 @@ Lo que cambió en cada versión publicada. Los números siguen
   misma suite antes de empaquetar. Si pytest no colecta nada, el build aborta.
 
 ### Agregado
+- `texto.py`, con una sola implementación de la normalización de texto y de los
+  nombres de archivo seguros. Estaban escritas seis veces en cinco módulos, casi
+  iguales pero no del todo.
 - `CONTRIBUTING.md` y plantillas de issue, en los dos idiomas. Las seis reglas
   que no se negocian (las tres defensas, sin frameworks, no inventar metadata, la
   clave fuera del repositorio, todo el texto traducido y un README honesto)
@@ -50,6 +53,13 @@ Lo que cambió en cada versión publicada. Los números siguen
   backlog que sale de él.
 
 ### Corregido
+- **Un artista escrito con tilde no encontraba en Tidal al mismo escrito sin
+  ella.** La normalización que usaba el módulo de audio no sacaba los acentos, a
+  diferencia de las otras dos, y sin coincidencia exacta la búsqueda caía al
+  primer resultado que devolviera Tidal, que puede ser cualquiera.
+- El nombre de la carpeta de un producto podía terminar en punto cuando el
+  título era largo y el recorte caía justo ahí. Windows no admite ese nombre, y
+  el error aparecía recién al descomprimir el ZIP, en la máquina de otro.
 - El README tenía una imagen sin línea en blanco delante, que partía en dos la
   lista de «Cómo está hecha». La versión en inglés estaba bien.
 - El docstring de `build/capturas.py` decía que las capturas del README salen en

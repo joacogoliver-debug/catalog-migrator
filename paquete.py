@@ -26,8 +26,6 @@ varios GB y no entra en RAM.
 """
 
 import os
-import re
-import unicodedata
 import zipfile
 from datetime import date
 
@@ -35,9 +33,13 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
-from audio import FORMATOS_LOSSLESS
-from contratos import Producto
+# De contratos y no de audio: armar el entregable es el núcleo, y el módulo
+# de audio es opcional. Atarlos significaba que un import mal puesto en
+# audio.py rompiera la variante esencial, que ni siquiera lo usa.
+from contratos import FORMATOS_LOSSLESS, Producto
 from i18n import T
+from texto import mmss as _mmss
+from texto import nombre_seguro
 
 NAVY = "1F3864"
 GRIS = "F2F2F2"
@@ -45,12 +47,9 @@ AMBAR = "FFF2CC"
 
 
 def _slug_archivo(s, maxlen=80):
-    """Nombre de archivo seguro en Windows/macOS/Linux."""
-    s = unicodedata.normalize("NFD", s or "").encode("ascii", "ignore").decode("ascii")
-    s = re.sub(r'[<>:"/\\|?*]', "", s)
-    s = re.sub(r"[\x00-\x1f]", "", s)
-    s = re.sub(r"\s+", " ", s).strip(" .")
-    return s[:maxlen].strip(" .") or "sin-titulo"
+    """Nombre de archivo seguro. Ochenta caracteres: va adentro de la carpeta
+    del producto, que ya se comió parte del largo máximo de la ruta."""
+    return nombre_seguro(s, maxlen, "sin-titulo")
 
 
 def _fuente_corta(t):
@@ -110,11 +109,6 @@ def _encabezado(ws, titulo, subtitulo=""):
         ws.column_dimensions[get_column_letter(i)].width = ancho
     ws.freeze_panes = f"A{fila + 1}"
     return fila + 1
-
-
-def _mmss(seg):
-    seg = int(seg or 0)
-    return f"{seg // 60}:{seg % 60:02d}"
 
 
 def _filas_producto(ws, fila, p, con_archivo=True):

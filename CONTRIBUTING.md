@@ -166,6 +166,7 @@ qué archivos tocaste: eso ya lo dice el diff.
 | `app/jobs.py` | Trabajos en segundo plano con progreso y cancelación |
 | `app/web/` | La interfaz |
 | `contratos.py` | La forma de los datos que viajan entre módulos |
+| `texto.py` | Normalización de texto y nombres de archivo seguros |
 | `relevar_core.py` | Relevamiento de YouTube más ISRC y UPC por Deezer |
 | `productos.py` | Agrupa tracks en productos y filtra la selección |
 | `validar.py` | Validación pre-entrega |
