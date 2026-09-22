@@ -57,10 +57,11 @@ skip-magic-trailing-comma = false
 # módulos es el que va a mover esta línea.
 typeCheckingMode = "basic"
 
-# Los módulos viven en la raíz y el backend en `app/`, y no hay paquete
-# instalable. Sin esto, pyright no resuelve `import server` ni `import jobs` y
-# reporta como error algo que en tiempo de ejecución funciona.
-extraPaths = [".", "app"]
+# Los módulos viven en la raíz, el backend en `app/` y las herramientas de
+# empaquetado en `build/`, y no hay paquete instalable. Sin esto, pyright no
+# resuelve `import server` ni `import notas_release` y reporta como error algo
+# que en tiempo de ejecución funciona.
+extraPaths = [".", "app", "build"]
 
 # La app apunta a la versión con la que se compila el binario, no a la que tenga
 # instalada quien desarrolla.

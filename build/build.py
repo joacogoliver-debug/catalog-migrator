@@ -24,6 +24,11 @@ import shutil
 import subprocess
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+# La version se lee en un solo lugar, el mismo que arma las notas del release.
+from notas_release import version  # noqa: E402
+
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SPEC = os.path.join(RAIZ, "build", "migrador.spec")
 ISS = os.path.join(RAIZ, "build", "instalador.iss")
@@ -159,23 +164,6 @@ def empaquetar():
     )
     if r.returncode != 0:
         sys.exit("PyInstaller falló.")
-
-
-def version():
-    """La version de la app, leida de app/server.py.
-
-    Es la unica fuente: el instalador, el release y lo que muestra la interfaz
-    tienen que decir lo mismo. Escribirla en dos lados garantiza que tarde o
-    temprano digan cosas distintas.
-    """
-    import re
-
-    ruta = os.path.join(RAIZ, "app", "server.py")
-    with open(ruta, encoding="utf-8") as f:
-        m = re.search(r'^VERSION\s*=\s*"([^"]+)"', f.read(), re.M)
-    if not m:
-        sys.exit("No encontre VERSION en app/server.py.")
-    return m.group(1)
 
 
 def _iscc():

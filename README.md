@@ -296,6 +296,11 @@ Para incluir una clave de YouTube en el binario, `--con-clave`. La clave sale de
 la variable `MIGRADOR_CLAVE_YT` o de tu config local, **nunca de un archivo del
 repositorio**. En el CI viene de un secreto de GitHub.
 
+Las notas del release salen del CHANGELOG, no se escriben a mano:
+`python build/notas_release.py` las arma en los dos idiomas y **aborta si el
+CHANGELOG no tiene una entrada para la versión que se está publicando**. El
+workflow las usa al empujar un tag.
+
 El icono se genera desde código con `python build/icono.py`, a partir del logo
 de `docs/marca`. Usa la **variante compacta** del símbolo y no el semitono
 completo: con 74 puntos el logo es muy bueno de 32 px para arriba y una mancha
@@ -426,6 +431,7 @@ pytest -q --cov
 | `tests/test_productos.py` | Agrupación en productos y filtros |
 | `tests/test_texto.py` | Normalización de texto, y que no se vuelva a duplicar |
 | `tests/test_contrato_apis.py` | Contrato con Deezer e iTunes, contra respuestas reales grabadas |
+| `tests/test_notas_release.py` | Las notas del release que salen del CHANGELOG |
 | `tests/test_validar.py` | Validación de códigos, portadas y duplicados |
 | `tests/test_portadas.py` | Resolución real de las portadas |
 | `tests/test_paquete.py` | Estructura del ZIP y etiquetado de calidad |

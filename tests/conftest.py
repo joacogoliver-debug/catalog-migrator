@@ -25,7 +25,10 @@ import sys
 os.environ.setdefault("MIGRADOR_IDIOMA", "es")
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-for _p in (RAIZ, os.path.join(RAIZ, "app")):
+# `build/` también, para poder probar las herramientas de empaquetado. Se
+# importan por su nombre propio (`notas_release`, `sin_claves`) y nunca como
+# `build`, que colisionaría con la carpeta del mismo nombre en la raíz.
+for _p in (RAIZ, os.path.join(RAIZ, "app"), os.path.join(RAIZ, "build")):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 

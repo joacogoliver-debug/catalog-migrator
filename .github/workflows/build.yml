@@ -195,137 +195,36 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      # El checkout hace falta para leer el CHANGELOG y la prosa de las notas.
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
       - uses: actions/download-artifact@v4
         with:
           path: artefactos
+
+      - name: Armar las notas desde el CHANGELOG
+        # Antes esto eran ciento veinticinco líneas de prosa escritas a mano
+        # acá adentro, en dos idiomas, y que no decían qué había cambiado: el
+        # CHANGELOG existía y nadie lo leía al publicar.
+        #
+        # El script además ABORTA si el CHANGELOG no tiene una entrada para la
+        # versión que se está tagueando. Sin ese control, taguear con el
+        # CHANGELOG todavía en "Sin publicar" produce un release que miente, y
+        # eso se descubre cuando ya está publicado.
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          python build/notas_release.py             --version "${GITHUB_REF_NAME#v}"             --salida notas-release.md
+          echo "----- notas -----"
+          cat notas-release.md
 
       - name: Adjuntar al release
         uses: softprops/action-gh-release@v2
         with:
           files: artefactos/**/*
           generate_release_notes: true
-          body: |
-            ## Cuál bajar
-
-            **Windows, la recomendada**:
-            `Migrador-de-Catalogos-windows-completa-instalador.exe`. Doble clic,
-            Siguiente, y queda en el menú Inicio con su desinstalador. No pide
-            permisos de administrador. El instalador pregunta el idioma en la
-            primera pantalla, y la app —incluido lo que descarga— queda en el
-            que hayas elegido.
-
-            Si preferís no instalar nada, el portable es el `.exe` sin
-            `-instalador`. En Linux hay un único archivo, sin instalador.
-
-            **En macOS hay dos, y no son intercambiables**: uno para las Mac con
-            chip Apple (`-macos-apple-silicon-`) y otro para las Mac Intel
-            (`-macos-intel-`). Para saber cuál te toca:  → "Acerca de esta Mac".
-            Si bajás el que no es, la Terminal responde `bad CPU type in
-            executable`. Hay una guía paso a paso en
-            [docs/INSTALAR-MAC.md](https://github.com/${{ github.repository }}/blob/main/docs/INSTALAR-MAC.md).
-
-            | Variante | Qué trae |
-            |---|---|
-            | **completa** | Todo, más el módulo de audio con ffmpeg adentro y una clave de YouTube ya configurada. Se abre y funciona. |
-            | **esencial** | Relevamiento, planilla, validación, hoja de ingesta y portadas. Más liviana, sin ffmpeg y sin clave incluida. |
-
-            Para bajar los audios en FLAC necesitás además tu propia cuenta paga
-            de Tidal. El módulo viene desactivado y es opcional.
-
-            La clave de YouTube que trae la variante completa es compartida, está
-            restringida a la YouTube Data API v3 y **cualquiera que baje el
-            binario la puede extraer**. Si preferís no depender de eso, usá la
-            variante `esencial` o cargá la tuya desde la app.
-
-            La versión completa incluye FFmpeg, software de terceros bajo
-            licencia GPLv3, que se distribuye sin modificaciones y como programa
-            separado.
-
-            ### El sistema va a avisar que el programa "no es reconocido"
-
-            Es esperable: el binario no está firmado porque firmar cuesta plata y
-            esto es gratis. El código es público y el ejecutable se compila acá
-            en GitHub Actions desde ese código.
-
-            - **Windows**: "Más información" → "Ejecutar de todas formas".
-            - **macOS**: clic derecho → "Abrir", o Configuración → Privacidad y
-              seguridad → "Abrir de todos modos".
-
-            ### Verificar que el binario es el de este repo
-
-            Compará el SHA256 con el `.sha256` publicado, o usá la atestación:
-
-            ```
-            gh attestation verify Migrador-de-Catalogos-windows-completa.exe --repo ${{ github.repository }}
-            ```
-
-            ### Términos de uso
-
-            Esta herramienta es para administración de catálogos. No avala ni
-            habilita la piratería. El detalle está en `TERMINOS.md`, y la app los
-            muestra la primera vez que se abre.
-
-            ---
-
-            # In English
-
-            ## Which one to download
-
-            **Windows, the recommended one**:
-            `Migrador-de-Catalogos-windows-completa-instalador.exe`. Double
-            click, Next, and it lands in the Start menu with its uninstaller. It
-            does not ask for administrator rights. The installer asks for the
-            language on its first screen, and the app —including what it
-            downloads— stays in whichever one you pick.
-
-            If you would rather not install anything, the portable one is the
-            `.exe` without `-instalador`. On Linux there is a single file and
-            no installer.
-
-            **On macOS there are two, and they are not interchangeable**: one for
-            Macs with an Apple chip (`-macos-apple-silicon-`) and one for Intel
-            Macs (`-macos-intel-`). To find out which one you need:  → "About
-            This Mac". Downloading the wrong one gets you `bad CPU type in
-            executable`. There is a step-by-step guide in
-            [docs/INSTALAR-MAC.en.md](https://github.com/${{ github.repository }}/blob/main/docs/INSTALAR-MAC.en.md).
-
-            | Variant | What it carries |
-            |---|---|
-            | **completa** (full) | Everything, plus the audio module with ffmpeg inside and a YouTube key already configured. You open it and it works. |
-            | **esencial** (essential) | Survey, spreadsheet, validation, ingestion sheet and artwork. Lighter, no ffmpeg and no bundled key. |
-
-            To download the audio in FLAC you also need your own paid Tidal
-            account. The module ships disabled and is optional.
-
-            The YouTube key the full variant carries is shared, restricted to
-            YouTube Data API v3, and **anyone who downloads the binary can
-            extract it**. If you would rather not depend on that, use the
-            `esencial` variant or load your own from the app.
-
-            The full version includes FFmpeg, third-party software under the
-            GPLv3 license, distributed unmodified and as a separate program.
-
-            ### Your system is going to say the program is "unrecognized"
-
-            That is expected: the binary is not signed because signing costs
-            money and this is free. The code is public and the executable is
-            compiled here in GitHub Actions from that code.
-
-            - **Windows**: "More info" → "Run anyway".
-            - **macOS**: right click → "Open", or Settings → Privacy & Security
-              → "Open Anyway".
-
-            ### Verifying that the binary is the one from this repo
-
-            Compare the SHA256 with the published `.sha256`, or use the
-            attestation:
-
-            ```
-            gh attestation verify Migrador-de-Catalogos-windows-completa.exe --repo ${{ github.repository }}
-            ```
-
-            ### Terms of use
-
-            This tool is for catalog administration. It neither endorses nor
-            enables piracy. The detail is in `TERMS.md`, and the app shows the
-            terms the first time it opens.
+          body_path: notas-release.md

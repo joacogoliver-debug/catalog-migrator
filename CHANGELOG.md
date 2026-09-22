@@ -22,6 +22,11 @@ Lo que cambió en cada versión publicada. Los números siguen
   misma suite antes de empaquetar. Si pytest no colecta nada, el build aborta.
 
 ### Agregado
+- **Las notas de cada release salen del CHANGELOG.** Antes eran 125 líneas
+  escritas a mano adentro del workflow, en dos idiomas, y no decían qué había
+  cambiado: el CHANGELOG existía y nadie lo leía al publicar. Ahora se arman con
+  `build/notas_release.py`, que además aborta si el CHANGELOG no tiene una
+  entrada para la versión que se está tagueando.
 - **Tests de contrato contra respuestas reales de Deezer y de iTunes.** Los
   dobles escritos a mano prueban que el código es consistente consigo mismo, no
   que entienda lo que las APIs devuelven. Ahora hay siete respuestas grabadas en

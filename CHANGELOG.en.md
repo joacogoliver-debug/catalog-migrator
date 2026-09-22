@@ -22,6 +22,11 @@ What changed in every published version. The numbers follow
   suite before packaging. If pytest collects nothing, the build aborts.
 
 ### Added
+- **Each release's notes come out of the CHANGELOG.** They used to be 125 lines
+  written by hand inside the workflow, in two languages, and they did not say
+  what had changed: the CHANGELOG existed and nobody read it when publishing.
+  They are now built by `build/notas_release.py`, which also aborts if the
+  CHANGELOG has no entry for the version being tagged.
 - **Contract tests against real Deezer and iTunes responses.** Hand-written
   doubles prove the code is consistent with itself, not that it understands what
   the APIs return. There are now seven recorded responses in `tests/fixtures/`,

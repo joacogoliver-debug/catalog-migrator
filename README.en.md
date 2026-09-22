@@ -297,6 +297,11 @@ To embed a YouTube key in the binary, `--con-clave`. The key comes from the
 `MIGRADOR_CLAVE_YT` variable or from your local config, **never from a file in
 the repository**. In CI it comes from a GitHub secret.
 
+The release notes come out of the CHANGELOG, they are not written by hand:
+`python build/notas_release.py` builds them in both languages and **aborts if
+the CHANGELOG has no entry for the version being published**. The workflow
+uses them when a tag is pushed.
+
 The icon is generated from code with `python build/icono.py`, out of the logo in
 `docs/marca`. It uses the **compact variant** of the symbol and not the full
 halftone: at 74 dots the logo is very good from 32 px up and a gray smudge below
@@ -429,6 +434,7 @@ pytest -q --cov
 | `tests/test_productos.py` | Grouping into products and filters |
 | `tests/test_texto.py` | Text normalization, and that it stays deduplicated |
 | `tests/test_contrato_apis.py` | Deezer and iTunes contract, against real recorded responses |
+| `tests/test_notas_release.py` | The release notes that come out of the CHANGELOG |
 | `tests/test_validar.py` | Validation of codes, artwork and duplicates |
 | `tests/test_portadas.py` | Real artwork resolution |
 | `tests/test_paquete.py` | ZIP structure and quality labeling |
