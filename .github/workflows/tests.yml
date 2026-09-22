@@ -50,12 +50,20 @@ jobs:
         # build si baja.
         run: pytest -q --cov --cov-report=term
 
-      - name: Los módulos importan sin los extras de audio
+      - name: El paquete importa sin los extras de audio
+        # Sin instalar nada: `src` al path y listo, que es como lo corre alguien
+        # que clona el repositorio. Si esto falla, es que el núcleo empezó a
+        # depender del módulo opcional.
+        env:
+          PYTHONPATH: src
         run: |
-          python -c "import productos, portadas, audio, paquete; \
-            e = audio.verificar_entorno(); \
-            assert e['puede_flac'] is False, 'sin tiddl/ffmpeg no debe habilitar FLAC'; \
-            print('degradacion correcta:', e)"
+          python - <<'PY'
+          from migrador import audio, paquete, portadas, productos  # noqa: F401
+
+          entorno = audio.verificar_entorno()
+          assert entorno["puede_flac"] is False, "sin tiddl/ffmpeg no debe habilitar FLAC"
+          print("degradacion correcta:", entorno)
+          PY
 
       - name: El icono se puede regenerar desde el código
         # No se comparan bytes contra el commiteado: dos versiones de Pillow
@@ -100,12 +108,14 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Instalar todas las dependencias, incluidas las opcionales
+      - name: Instalar el paquete con todos sus extras
+        # Se instala de verdad, con `-e .[...]`, y no desde los
+        # requirements-*.txt: así este job verifica de paso que la metadata de
+        # pyproject.toml sea válida y que los tres extras existan. Que pidan lo
+        # mismo que los requirements lo verifica tests/test_dependencias.py.
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements-app.txt
-          pip install -r requirements-audio.txt
-          pip install -r requirements-dev.txt
+          pip install -e ".[app,audio,dev]"
           pip install pillow
 
       - name: pyright

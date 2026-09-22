@@ -18,14 +18,22 @@ import subprocess
 import sys
 import threading
 
+# `app/` consume el paquete `migrador`, que vive en `src/`. Los dos caminos
+# tienen que andar: corriendo desde el repositorio sin instalar nada, y adentro
+# del ejecutable de PyInstaller, donde todo se extrae junto a `sys._MEIPASS`.
+#
+# `src` va PRIMERO en el path a propósito. Si en algún momento quedara una
+# carpeta llamada `migrador` en otro lado del path (el workpath de PyInstaller
+# se llamaba así hasta hace poco), Python la tomaría como paquete de espacio de
+# nombres y se importaría eso en vez de esto, con un error incomprensible.
 _AQUI = os.path.dirname(os.path.abspath(__file__))
 _RAIZ = os.path.dirname(_AQUI)
-for _p in (_RAIZ, _AQUI):
+for _p in (_AQUI, os.path.join(_RAIZ, "src"), _RAIZ):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
 import server as backend  # noqa: E402
-from i18n import T  # noqa: E402
+from migrador.i18n import T  # noqa: E402
 
 # El idioma se resuelve antes que nada: la primera linea que imprime el launcher
 # ya tiene que salir en el idioma que corresponde.
@@ -153,7 +161,7 @@ def _diagnostico(url):
         "",
         T("diag.entorno"),
     ]
-    import audio as audio_mod
+    from migrador import audio as audio_mod
 
     for k, v in audio_mod.verificar_entorno().items():
         lineas.append(f"  {k}: {v}")

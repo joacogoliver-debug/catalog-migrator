@@ -16,7 +16,7 @@ import time
 import traceback
 import uuid
 
-from i18n import T
+from migrador.i18n import T
 
 # Cuánto se conserva un trabajo terminado antes de descartarlo. Tiene que
 # alcanzar para que el usuario descargue el ZIP con calma.

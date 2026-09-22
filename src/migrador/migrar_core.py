@@ -19,13 +19,13 @@ import os
 import shutil
 import tempfile
 
-import audio as audio_mod
-import paquete
-import portadas as portadas_mod
-import productos as productos_mod
-import relevar_core
-from contratos import Diagnostico, Producto, Track
-from i18n import T
+from . import audio as audio_mod
+from . import paquete
+from . import portadas as portadas_mod
+from . import productos as productos_mod
+from . import relevar_core
+from .contratos import Diagnostico, Producto, Track
+from .i18n import T
 
 
 # ============================================================

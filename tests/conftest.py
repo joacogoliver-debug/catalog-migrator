@@ -25,18 +25,23 @@ import sys
 os.environ.setdefault("MIGRADOR_IDIOMA", "es")
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# `build/` también, para poder probar las herramientas de empaquetado. Se
-# importan por su nombre propio (`notas_release`, `sin_claves`) y nunca como
-# `build`, que colisionaría con la carpeta del mismo nombre en la raíz.
-for _p in (RAIZ, os.path.join(RAIZ, "app"), os.path.join(RAIZ, "build")):
+# Tres carpetas, y el orden importa. `src/` primero, que es donde vive el
+# paquete `migrador`. Después `app/`, que trae `server` y `jobs`. Y por último
+# `build/`, para poder probar las herramientas de empaquetado, que se importan
+# por su nombre propio (`notas_release`, `sin_claves`) y nunca como `build`.
+for _p in (os.path.join(RAIZ, "build"), os.path.join(RAIZ, "app"), os.path.join(RAIZ, "src")):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
+# La carpeta del paquete. Varios tests leen el código fuente en vez de
+# ejecutarlo, porque las rutas que les interesan necesitan red o credenciales.
+PAQUETE = os.path.join(RAIZ, "src", "migrador")
+
 import pytest
 
-import i18n
-import productos as P
-from contratos import Producto, TipoProducto, Track
+from migrador import i18n
+from migrador import productos as P
+from migrador.contratos import Producto, TipoProducto, Track
 
 
 # ============================================================
@@ -182,7 +187,7 @@ def productos_entregable(tmp_path):
     Uno sale entero y bien (portada, UPC, FLAC), el otro es el caso que importa
     revisar, sin UPC, sin portada, con un audio lossy y un track sin audio.
     """
-    import audio as audio_mod
+    from migrador import audio as audio_mod
 
     flac = tmp_path / "a.flac"
     m4a = tmp_path / "b.m4a"

@@ -36,10 +36,10 @@ from openpyxl.utils import get_column_letter
 # De contratos y no de audio: armar el entregable es el núcleo, y el módulo
 # de audio es opcional. Atarlos significaba que un import mal puesto en
 # audio.py rompiera la variante esencial, que ni siquiera lo usa.
-from contratos import FORMATOS_LOSSLESS, Producto
-from i18n import T
-from texto import mmss as _mmss
-from texto import nombre_seguro
+from .contratos import FORMATOS_LOSSLESS, Producto
+from .i18n import T
+from .texto import mmss as _mmss
+from .texto import nombre_seguro
 
 NAVY = "1F3864"
 GRIS = "F2F2F2"
@@ -460,7 +460,7 @@ def build_zip(
         )
 
         # La validación va siempre: es lo que evita que la entrega se rechace.
-        import validar as V
+        from . import validar as V
 
         res_val = V.validar(productos, artista)
         z.writestr(f"{raiz}/{F['validacion']}", V.reporte_validacion(res_val, artista).encode("utf-8-sig"))

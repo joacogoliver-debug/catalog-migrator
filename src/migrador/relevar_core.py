@@ -12,25 +12,19 @@ Función principal: relevar(url, yt_key, with_codes, progress) -> dict.
 """
 
 import json
-import os
 import re
-import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
-import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 from difflib import SequenceMatcher
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-# Va después del sys.path.insert de arriba: i18n vive al lado de este archivo y
-# no siempre se importa con la raíz del repo ya en el path.
-from contratos import DescripcionParseada, Relevamiento, Track  # noqa: E402
-from i18n import T  # noqa: E402
-from texto import plegado as _normalize  # noqa: E402
-from productos import SIN_ALBUM, SIN_DATOS  # noqa: E402
+from .contratos import DescripcionParseada, Relevamiento, Track
+from .i18n import T
+from .productos import SIN_ALBUM, SIN_DATOS
+from .texto import plegado as _normalize
 
 API = "https://www.googleapis.com/youtube/v3"
 

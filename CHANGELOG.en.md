@@ -22,6 +22,12 @@ What changed in every published version. The numbers follow
   suite before packaging. If pytest collects nothing, the build aborts.
 
 ### Added
+- **The engine is a package, `migrador`, and lives in `src/`.** The ten modules
+  were loose in the root and every file set up `sys.path` by hand. Now `app/`
+  consumes the package and that arrow points one way, so the core is tested
+  without starting a server. The launchers moved to `scripts/`, and
+  `pyproject.toml` declares the `[app]`, `[audio]` and `[dev]` extras, which a
+  test checks against the `requirements-*.txt` files so they cannot drift apart.
 - **Each release's notes come out of the CHANGELOG.** They used to be 125 lines
   written by hand inside the workflow, in two languages, and they did not say
   what had changed: the CHANGELOG existed and nobody read it when publishing.
@@ -62,6 +68,9 @@ What changed in every published version. The numbers follow
   backlog that comes out of it.
 
 ### Fixed
+- Coverage listed the modules by name, so moving one silently dropped it from
+  the measurement and the percentage went up without anyone writing a test. It is
+  now measured by folder.
 - **An artist spelled with an accent did not find the same one spelled without
   it on Tidal.** The normalization the audio module used did not strip accents,
   unlike the other two, and with no exact match the search fell back to whatever

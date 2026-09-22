@@ -55,25 +55,36 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import cast
 
-# El paquete corre tanto desde el repo como desde el binario de PyInstaller.
+# `app/` consume el paquete `migrador`, que vive en `src/`. Los dos caminos
+# tienen que andar: corriendo desde el repositorio sin instalar nada, y adentro
+# del ejecutable de PyInstaller, donde todo se extrae junto a `sys._MEIPASS`.
+#
+# `src` va PRIMERO en el path a propósito. Si en algún momento quedara una
+# carpeta llamada `migrador` en otro lado del path (el workpath de PyInstaller
+# se llamaba así hasta hace poco), Python la tomaría como paquete de espacio de
+# nombres y se importaría eso en vez de esto, con un error incomprensible.
 _AQUI = os.path.dirname(os.path.abspath(__file__))
 _RAIZ = os.path.dirname(_AQUI)
-for _p in (_RAIZ, _AQUI):
+for _p in (_AQUI, os.path.join(_RAIZ, "src"), _RAIZ):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-import audio as audio_mod  # noqa: E402
-import i18n  # noqa: E402
-import migrar_core as M  # noqa: E402
-import productos as P  # noqa: E402
-import relevar_core as R  # noqa: E402
-import validar as V  # noqa: E402
-from contratos import Producto  # noqa: E402
-from i18n import T  # noqa: E402
-from texto import mmss as _mmss  # noqa: E402
 from jobs import Registry  # noqa: E402
+from migrador import audio as audio_mod  # noqa: E402
+from migrador import i18n  # noqa: E402
+from migrador import migrar_core as M  # noqa: E402
+from migrador import productos as P  # noqa: E402
+from migrador import relevar_core as R  # noqa: E402
+from migrador import validar as V  # noqa: E402
+from migrador.contratos import Producto  # noqa: E402
+from migrador.i18n import T  # noqa: E402
+from migrador.texto import mmss as _mmss  # noqa: E402
+from migrador.version import VERSION  # noqa: E402
 
-VERSION = "1.0.2"
+# `VERSION` se reexporta acá porque medio código la busca en el servidor, pero
+# vive en `migrador/version.py`, que es el único lugar donde está escrita.
+__all__ = ["VERSION"]
+
 # El nombre se pide a i18n en el momento de usarlo y no se guarda en una
 # constante: el idioma se elige en caliente.
 

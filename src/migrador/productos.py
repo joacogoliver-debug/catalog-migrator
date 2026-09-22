@@ -16,9 +16,9 @@ avisa cuando un producto quedó sin orden confirmado.
 
 from collections import Counter
 
-from contratos import Producto, ResumenSeleccion, TipoProducto, Track
-from texto import comparable as _norm
-from texto import nombre_seguro
+from .contratos import Producto, ResumenSeleccion, TipoProducto, Track
+from .texto import comparable as _norm
+from .texto import nombre_seguro
 
 # Los dos centinelas que pone `relevar_core` cuando la descripcion de YouTube no
 # trae el dato. NO son texto para mostrar y por eso no se traducen: el filtrado y

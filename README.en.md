@@ -269,8 +269,17 @@ pip install -r requirements-app.txt
 python app/launcher.py
 ```
 
-On Windows you can use `abrir_app.bat`; on macOS/Linux, `./abrir_app.sh`. Both
-install the dependencies the first time.
+Nothing from the project needs installing for that. If you would rather have it
+installed, you can, and the extras say what each one brings:
+
+```bash
+pip install -e ".[app]"           # the app
+pip install -e ".[app,audio]"     # and the audio module
+pip install -e ".[app,dev]"       # and the developer tooling
+```
+
+On Windows you can use `scripts/abrir_app.bat`; on macOS and Linux,
+`./scripts/abrir_app.sh`. Both install the dependencies the first time.
 
 The app opens in **its own window**, not in the browser: it uses `pywebview` over
 the system web engine (WebView2 on Windows, WebKit on macOS). If for some reason
@@ -365,6 +374,10 @@ No frameworks and no build step, so that packaging is copying files:
 - **Long jobs** (surveying, packaging) run in threads with progress and
   cancellation; the frontend polls their state every 400 ms.
 
+The engine is the `migrador` package, which lives in `src/` and knows nothing
+about HTTP or windows. `app/` is the desktop app and consumes it. The arrow
+points one way, which is why the core can be tested without a server.
+
 | File | What it does |
 |---|---|
 | `app/launcher.py` | Entry point: free port, server, window or browser |
@@ -373,17 +386,18 @@ No frameworks and no build step, so that packaging is copying files:
 | `app/web/` | The interface (html, css, js) |
 | `app/web/tokens/` | Palette, typography, spacing and shape |
 | `app/web/fonts/` | Public Sans and DM Mono, hosted locally |
-| `i18n.py`, `app/web/i18n.js` | The two translation catalogs, one per process |
+| `src/migrador/i18n.py`, `app/web/i18n.js` | The two translation catalogs, one per process |
 | `docs/marca/` | The logotype and its rules of use |
-| `contratos.py` | The shape of the data that travels between modules |
-| `texto.py` | Text normalization and safe file names |
-| `migrar_core.py` | Orchestrates the 4 steps |
-| `relevar_core.py` | YouTube survey + ISRC/UPC via Deezer |
-| `productos.py` | Groups tracks into products and filters the selection |
-| `validar.py` | Pre-delivery validation |
-| `portadas.py` | Artwork via the iTunes Search API |
-| `paquete.py` | Spreadsheets, ingestion sheet, reports and ZIP |
-| `audio.py` | Optional audio module |
+| `src/migrador/version.py` | The version, written in a single place |
+| `src/migrador/contratos.py` | The shape of the data that travels between modules |
+| `src/migrador/texto.py` | Text normalization and safe file names |
+| `src/migrador/migrar_core.py` | Orchestrates the 4 steps |
+| `src/migrador/relevar_core.py` | YouTube survey + ISRC/UPC via Deezer |
+| `src/migrador/productos.py` | Groups tracks into products and filters the selection |
+| `src/migrador/validar.py` | Pre-delivery validation |
+| `src/migrador/portadas.py` | Artwork via the iTunes Search API |
+| `src/migrador/paquete.py` | Spreadsheets, ingestion sheet, reports and ZIP |
+| `src/migrador/audio.py` | Optional audio module |
 | `build/` | Packaging, installer, icon and screenshots |
 | `tests/` | The pytest suite, no network and no keys |
 | `docs/` | The product and design decisions |
@@ -434,6 +448,7 @@ pytest -q --cov
 | `tests/test_productos.py` | Grouping into products and filters |
 | `tests/test_texto.py` | Text normalization, and that it stays deduplicated |
 | `tests/test_contrato_apis.py` | Deezer and iTunes contract, against real recorded responses |
+| `tests/test_dependencias.py` | That the extras and the requirements ask for the same |
 | `tests/test_notas_release.py` | The release notes that come out of the CHANGELOG |
 | `tests/test_validar.py` | Validation of codes, artwork and duplicates |
 | `tests/test_portadas.py` | Real artwork resolution |

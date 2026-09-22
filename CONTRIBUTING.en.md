@@ -12,11 +12,15 @@ an issue first and let's talk: it is cheaper than writing it twice.
 ## Getting started
 
 ```bash
-pip install -r requirements-app.txt
-pip install -r requirements-dev.txt
+pip install -e ".[app,dev]"
 pre-commit install
 python app/launcher.py
 ```
+
+You do not need to install the package to run the app or the tests: `app/` and
+`tests/` set up `sys.path` themselves. Installing it with `-e` is for keeping
+imports independent of which folder you run from, and for getting the three
+tools in one go.
 
 That gets you the app running and the checks hooked into your commits.
 
@@ -105,7 +109,7 @@ are two catalogs because there are two processes.
 
 | Where | What for |
 |---|---|
-| `i18n.py` | What Python builds: the log, the errors, the files in the ZIP |
+| `src/migrador/i18n.py` | What Python builds: the log, the errors, the files in the ZIP |
 | `app/web/i18n.js` | The interface |
 
 `tests/test_i18n.py` checks that no key is half-translated, that the interface
@@ -114,7 +118,7 @@ on file names. If you add text and do not translate it, the test tells you befor
 a user does.
 
 Two exceptions, both deliberate. The `SIN_ALBUM` and `SIN_DATOS` sentinels in
-`productos.py` are not translated, because filtering and grouping compare them by
+`src/migrador/productos.py` are not translated, because filtering and grouping compare them by
 equality. Neither are the ingestion sheet columns, because those are field names
 the distributor expects, not text to read.
 
@@ -160,15 +164,18 @@ you touched: the diff already says that.
 | `app/server.py` | JSON API, static files and the three defenses |
 | `app/jobs.py` | Background jobs with progress and cancellation |
 | `app/web/` | The interface |
-| `contratos.py` | The shape of the data that travels between modules |
-| `texto.py` | Text normalization and safe file names |
-| `relevar_core.py` | YouTube survey plus ISRC and UPC from Deezer |
-| `productos.py` | Groups tracks into products and filters the selection |
-| `validar.py` | Pre-delivery validation |
-| `portadas.py` | Artwork via the iTunes Search API |
-| `paquete.py` | Spreadsheets, ingestion sheet, reports and ZIP |
-| `audio.py` | Optional audio module |
-| `migrar_core.py` | Orchestrates the four steps |
+| `src/migrador/` | The engine, which knows nothing of HTTP or windows |
+| `src/migrador/version.py` | The version, written in a single place |
+| `scripts/` | The launchers that open the app from source |
+| `src/migrador/contratos.py` | The shape of the data that travels between modules |
+| `src/migrador/texto.py` | Text normalization and safe file names |
+| `src/migrador/relevar_core.py` | YouTube survey plus ISRC and UPC from Deezer |
+| `src/migrador/productos.py` | Groups tracks into products and filters the selection |
+| `src/migrador/validar.py` | Pre-delivery validation |
+| `src/migrador/portadas.py` | Artwork via the iTunes Search API |
+| `src/migrador/paquete.py` | Spreadsheets, ingestion sheet, reports and ZIP |
+| `src/migrador/audio.py` | Optional audio module |
+| `src/migrador/migrar_core.py` | Orchestrates the four steps |
 | `build/` | Packaging, installer, icon, screenshots, key check and fixtures |
 | `tests/fixtures/` | Real Deezer and iTunes responses, recorded once |
 | `docs/` | Product and design decisions |

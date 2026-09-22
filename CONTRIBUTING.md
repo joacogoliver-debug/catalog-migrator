@@ -12,11 +12,15 @@ issue antes y charlemos: es más barato que escribirlo dos veces.
 ## Arrancar
 
 ```bash
-pip install -r requirements-app.txt
-pip install -r requirements-dev.txt
+pip install -e ".[app,dev]"
 pre-commit install
 python app/launcher.py
 ```
+
+No hace falta instalar el paquete para correr la app ni los tests: `app/` y
+`tests/` se arman el `sys.path` solos. Instalarlo con `-e` sirve para que los
+imports no dependan de desde qué carpeta ejecutes, y para tener las tres
+herramientas de una.
 
 Con eso ya tenés la app corriendo y los controles enganchados al commit.
 
@@ -105,7 +109,7 @@ catálogos porque son dos procesos.
 
 | Dónde | Para qué |
 |---|---|
-| `i18n.py` | Lo que arma Python: el log, los errores, los archivos del ZIP |
+| `src/migrador/i18n.py` | Lo que arma Python: el log, los errores, los archivos del ZIP |
 | `app/web/i18n.js` | La interfaz |
 
 `tests/test_i18n.py` verifica que no quede ninguna clave a medio traducir, que la
@@ -114,7 +118,7 @@ catálogos coincidan en los nombres de archivo. Si agregás texto y no lo traduc
 el test te avisa antes que un usuario.
 
 Dos excepciones, las dos deliberadas. Los centinelas `SIN_ALBUM` y `SIN_DATOS` de
-`productos.py` no se traducen, porque el filtrado y la agrupación los comparan por
+`src/migrador/productos.py` no se traducen, porque el filtrado y la agrupación los comparan por
 igualdad. Y las columnas de la hoja de ingesta tampoco, porque son nombres de
 campo que espera la distribuidora, no texto para leer.
 
@@ -165,15 +169,18 @@ qué archivos tocaste: eso ya lo dice el diff.
 | `app/server.py` | API JSON, estáticos y las tres defensas |
 | `app/jobs.py` | Trabajos en segundo plano con progreso y cancelación |
 | `app/web/` | La interfaz |
-| `contratos.py` | La forma de los datos que viajan entre módulos |
-| `texto.py` | Normalización de texto y nombres de archivo seguros |
-| `relevar_core.py` | Relevamiento de YouTube más ISRC y UPC por Deezer |
-| `productos.py` | Agrupa tracks en productos y filtra la selección |
-| `validar.py` | Validación pre-entrega |
-| `portadas.py` | Portadas por iTunes Search API |
-| `paquete.py` | Planillas, hoja de ingesta, reportes y ZIP |
-| `audio.py` | Módulo de audio opcional |
-| `migrar_core.py` | Orquesta los cuatro pasos |
+| `src/migrador/` | El motor, que no sabe nada de HTTP ni de ventanas |
+| `src/migrador/version.py` | La versión, escrita en un solo lugar |
+| `scripts/` | Los lanzadores para abrir la app desde el código |
+| `src/migrador/contratos.py` | La forma de los datos que viajan entre módulos |
+| `src/migrador/texto.py` | Normalización de texto y nombres de archivo seguros |
+| `src/migrador/relevar_core.py` | Relevamiento de YouTube más ISRC y UPC por Deezer |
+| `src/migrador/productos.py` | Agrupa tracks en productos y filtra la selección |
+| `src/migrador/validar.py` | Validación pre-entrega |
+| `src/migrador/portadas.py` | Portadas por iTunes Search API |
+| `src/migrador/paquete.py` | Planillas, hoja de ingesta, reportes y ZIP |
+| `src/migrador/audio.py` | Módulo de audio opcional |
+| `src/migrador/migrar_core.py` | Orquesta los cuatro pasos |
 | `build/` | Empaquetado, instalador, icono, capturas, claves y fixtures |
 | `tests/fixtures/` | Respuestas reales de Deezer e iTunes, grabadas una vez |
 | `docs/` | Decisiones de producto y de diseño |

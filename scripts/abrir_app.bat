@@ -6,7 +6,8 @@ REM Los mensajes van en los dos idiomas. Este script corre ANTES que la app, y
 REM por lo tanto antes de que exista i18n: no hay de donde sacar el idioma
 REM elegido, asi que se dicen las dos cosas en vez de suponer una.
 
-cd /d "%~dp0"
+REM scripts\ esta un nivel debajo de la raiz, que es desde donde corre todo.
+cd /d "%~dp0.."
 
 where python >nul 2>nul
 if errorlevel 1 (

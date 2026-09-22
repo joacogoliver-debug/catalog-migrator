@@ -268,8 +268,17 @@ pip install -r requirements-app.txt
 python app/launcher.py
 ```
 
-En Windows podés usar `abrir_app.bat`; en macOS/Linux, `./abrir_app.sh`. Los dos
-instalan las dependencias la primera vez.
+No hace falta instalar nada del proyecto para eso. Si preferís tenerlo instalado,
+también se puede, y ahí los extras dicen qué trae cada cosa:
+
+```bash
+pip install -e ".[app]"           # la app
+pip install -e ".[app,audio]"     # y el módulo de audio
+pip install -e ".[app,dev]"       # y las herramientas de desarrollo
+```
+
+En Windows podés usar `scripts/abrir_app.bat`; en macOS y Linux,
+`./scripts/abrir_app.sh`. Los dos instalan las dependencias la primera vez.
 
 La app abre en **su propia ventana**, no en el navegador: usa `pywebview` sobre
 el motor web del sistema (WebView2 en Windows, WebKit en macOS). Si por algo no
@@ -362,6 +371,10 @@ Sin frameworks ni build step, para que empaquetar sea copiar archivos:
 - **Trabajos largos** (relevar, empaquetar) corren en hilos con progreso y
   cancelación; el frontend consulta el estado cada 400 ms.
 
+El motor es el paquete `migrador`, que vive en `src/` y no sabe nada de HTTP
+ni de ventanas. `app/` es la app de escritorio y lo consume. La flecha va en
+un solo sentido, y por eso el núcleo se puede probar sin levantar un servidor.
+
 | Archivo | Qué hace |
 |---|---|
 | `app/launcher.py` | Punto de entrada: puerto libre, servidor, ventana o navegador |
@@ -370,17 +383,18 @@ Sin frameworks ni build step, para que empaquetar sea copiar archivos:
 | `app/web/` | La interfaz (html, css, js) |
 | `app/web/tokens/` | Paleta, tipografía, espaciado y forma |
 | `app/web/fonts/` | Public Sans y DM Mono, hospedadas localmente |
-| `i18n.py`, `app/web/i18n.js` | Los dos catálogos de traducción, uno por proceso |
+| `src/migrador/i18n.py`, `app/web/i18n.js` | Los dos catálogos de traducción, uno por proceso |
 | `docs/marca/` | El logotipo y sus reglas de uso |
-| `contratos.py` | La forma de los datos que viajan entre los módulos |
-| `texto.py` | Normalización de texto y nombres de archivo |
-| `migrar_core.py` | Orquesta los 4 pasos |
-| `relevar_core.py` | Relevamiento de YouTube + ISRC/UPC por Deezer |
-| `productos.py` | Agrupa tracks en productos y filtra la selección |
-| `validar.py` | Validación pre-entrega |
-| `portadas.py` | Portadas vía iTunes Search API |
-| `paquete.py` | Planillas, hoja de ingesta, reportes y ZIP |
-| `audio.py` | Módulo de audio opcional |
+| `src/migrador/version.py` | La versión, escrita en un solo lugar |
+| `src/migrador/contratos.py` | La forma de los datos que viajan entre los módulos |
+| `src/migrador/texto.py` | Normalización de texto y nombres de archivo |
+| `src/migrador/migrar_core.py` | Orquesta los 4 pasos |
+| `src/migrador/relevar_core.py` | Relevamiento de YouTube + ISRC/UPC por Deezer |
+| `src/migrador/productos.py` | Agrupa tracks en productos y filtra la selección |
+| `src/migrador/validar.py` | Validación pre-entrega |
+| `src/migrador/portadas.py` | Portadas vía iTunes Search API |
+| `src/migrador/paquete.py` | Planillas, hoja de ingesta, reportes y ZIP |
+| `src/migrador/audio.py` | Módulo de audio opcional |
 | `build/` | Empaquetado, instalador, icono y capturas |
 | `tests/` | La suite de pytest, sin red y sin claves |
 | `docs/` | Las decisiones de producto y de diseño |
@@ -431,6 +445,7 @@ pytest -q --cov
 | `tests/test_productos.py` | Agrupación en productos y filtros |
 | `tests/test_texto.py` | Normalización de texto, y que no se vuelva a duplicar |
 | `tests/test_contrato_apis.py` | Contrato con Deezer e iTunes, contra respuestas reales grabadas |
+| `tests/test_dependencias.py` | Que los extras y los requirements pidan lo mismo |
 | `tests/test_notas_release.py` | Las notas del release que salen del CHANGELOG |
 | `tests/test_validar.py` | Validación de códigos, portadas y duplicados |
 | `tests/test_portadas.py` | Resolución real de las portadas |

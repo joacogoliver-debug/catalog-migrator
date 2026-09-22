@@ -11,7 +11,9 @@ htmlcov/
 
 # Resultado del empaquetado (se publica en los releases, no en el repo)
 dist/
-build/migrador/
+build/_pyinstaller/
+# Metadata que deja `pip install -e .`
+*.egg-info/
 build/TERMINOS.txt
 build/TERMS.txt
 *.spec.bak

@@ -14,7 +14,7 @@ from datetime import date
 
 import pytest
 
-import validar as V
+from migrador import validar as V
 from conftest import _producto as _prod
 
 

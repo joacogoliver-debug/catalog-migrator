@@ -45,8 +45,11 @@ RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WEB = os.path.join(RAIZ, "app", "web")
 PAGINA = os.path.join(WEB, "_capturas.html")
 
+# `src` primero, igual que en app/launcher.py y en el spec: el paquete
+# `migrador` tiene que resolverse ahí y no en cualquier carpeta homónima.
 sys.path.insert(0, RAIZ)
 sys.path.insert(0, os.path.join(RAIZ, "app"))
+sys.path.insert(0, os.path.join(RAIZ, "src"))
 
 # 16:9. El contenedor de la app llega a 1440, así que a 1600 quedan márgenes
 # naturales a los costados en vez de texto pegado al borde.
@@ -353,7 +356,7 @@ LOG_PORTADAS = {
 
 def idioma():
     """El idioma de las capturas, el mismo que va a usar la app."""
-    import i18n
+    from migrador import i18n
 
     return i18n.idioma()
 

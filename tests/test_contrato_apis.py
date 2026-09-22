@@ -17,8 +17,8 @@ arreglar acá.
 
 import pytest
 
-import portadas
-import relevar_core as R
+from migrador import portadas
+from migrador import relevar_core as R
 from conftest import _respuesta_grabada
 
 # Los datos reales de la grabación. Están escritos acá, a la vista, para que se
@@ -179,13 +179,13 @@ def test_el_upc_real_pasa_el_validador():
     """Cierra el círculo: el código que Deezer devuelve de verdad tiene que ser
     válido según nuestras propias reglas de dígito verificador. Si no lo fuera,
     estaríamos marcando como error algo que la distribuidora acepta."""
-    import validar
+    from migrador import validar
 
     assert validar.upc_valido(UPC_REAL)[0] is True
 
 
 def test_el_isrc_real_pasa_el_validador():
-    import validar
+    from migrador import validar
 
     assert validar.isrc_valido(ISRC_REAL) is True
 

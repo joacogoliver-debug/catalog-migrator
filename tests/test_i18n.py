@@ -21,8 +21,8 @@ import re
 
 import pytest
 
-import i18n
-from conftest import RAIZ
+from migrador import i18n
+from conftest import PAQUETE, RAIZ
 
 
 def _leer(*partes):
@@ -101,7 +101,7 @@ def test_ninguna_clave_definida_dos_veces_en_python():
     texto sigue saliendo en el idioma correcto y la única señal es que cambió
     una palabra. Por eso se lee el archivo y no el diccionario ya construido, en
     el que la duplicada ya no existe."""
-    fuente = _leer("i18n.py")
+    fuente = io.open(os.path.join(PAQUETE, "i18n.py"), encoding="utf-8").read()
     cuerpo = fuente[fuente.index("TEXTOS = {") :]
     literales = re.findall(r'^    "([a-z0-9_.]+)":', cuerpo, re.M)
     repetidas = sorted({k for k in literales if literales.count(k) > 1})

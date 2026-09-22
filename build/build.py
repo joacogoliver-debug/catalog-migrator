@@ -79,9 +79,10 @@ def revisar_entorno():
             "app/web/index.html",
             "app/web/app.js",
             "app/web/app.css",
-            "relevar_core.py",
-            "validar.py",
-            "paquete.py",
+            "src/migrador/__init__.py",
+            "src/migrador/relevar_core.py",
+            "src/migrador/validar.py",
+            "src/migrador/paquete.py",
         )
         if not os.path.exists(os.path.join(RAIZ, f))
     ]
@@ -139,7 +140,7 @@ def probar_tests():
 
 def limpiar():
     paso("Limpiando builds anteriores")
-    for d in (DIST, os.path.join(RAIZ, "build", "migrador")):
+    for d in (DIST, os.path.join(RAIZ, "build", "_pyinstaller")):
         if os.path.isdir(d):
             shutil.rmtree(d, ignore_errors=True)
             print(f"    borré {os.path.relpath(d, RAIZ)}")
@@ -158,7 +159,7 @@ def empaquetar():
             "--distpath",
             DIST,
             "--workpath",
-            os.path.join(RAIZ, "build", "migrador"),
+            os.path.join(RAIZ, "build", "_pyinstaller"),
         ],
         cwd=RAIZ,
     )

@@ -42,18 +42,23 @@ IDIOMAS = [
 REPO_POR_DEFECTO = "joacogoliver-debug/catalog-migrator"
 
 
-def version():
-    """La versión de la app, leída de `app/server.py`.
+VERSION_PY = os.path.join(RAIZ, "src", "migrador", "version.py")
 
-    Es la única fuente: el instalador, el release y lo que muestra la interfaz
+
+def version():
+    """La versión de la app, leída de `src/migrador/version.py`.
+
+    Es la única fuente: el instalador, el release, la interfaz y el paquete
     tienen que decir lo mismo. Escribirla en dos lados garantiza que tarde o
     temprano digan cosas distintas.
+
+    Se lee con una expresión regular en vez de importar el módulo, para que esto
+    funcione sin tener el paquete instalado ni el `sys.path` armado.
     """
-    ruta = os.path.join(RAIZ, "app", "server.py")
-    with open(ruta, encoding="utf-8") as f:
+    with open(VERSION_PY, encoding="utf-8") as f:
         m = re.search(r'^VERSION\s*=\s*"([^"]+)"', f.read(), re.M)
     if not m:
-        sys.exit("No encontre VERSION en app/server.py.")
+        sys.exit(f"No encontre VERSION en {VERSION_PY}.")
     return m.group(1)
 
 

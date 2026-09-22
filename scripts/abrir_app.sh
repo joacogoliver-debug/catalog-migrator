@@ -6,7 +6,8 @@
 # lo tanto antes de que exista i18n, así que no hay de dónde sacar el idioma
 # elegido. Se dicen las dos cosas en vez de suponer una.
 set -euo pipefail
-cd "$(dirname "$0")"
+# scripts/ está un nivel debajo de la raíz, que es desde donde corre todo.
+cd "$(dirname "$0")/.."
 
 PY=$(command -v python3 || command -v python || true)
 if [ -z "$PY" ]; then

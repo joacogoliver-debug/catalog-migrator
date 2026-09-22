@@ -16,9 +16,9 @@ import os
 
 import pytest
 
-import migrar_core as M
-import relevar_core
-from contratos import Diagnostico, Relevamiento
+from migrador import migrar_core as M
+from migrador import relevar_core
+from migrador.contratos import Diagnostico, Relevamiento
 
 # Las claves que `relevar()` tiene que devolver salen del contrato, no de una
 # lista escrita a mano acá. Antes eran catorce cadenas copiadas, que es la forma

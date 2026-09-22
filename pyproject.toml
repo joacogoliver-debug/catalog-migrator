@@ -1,14 +1,52 @@
-# Configuración del proyecto y del linter.
+# Configuración del proyecto, del linter, del verificador de tipos y de los tests.
 #
-# No declara un paquete instalable a propósito: esto es una app de escritorio
-# que se corre con `python app/launcher.py` y se distribuye como ejecutable, no
-# una librería que alguien vaya a instalar con pip. Las dependencias viven en
-# requirements-app.txt y requirements-audio.txt, que están comentados y son lo
-# que lee quien quiere entender qué necesita la app.
+# El motor es el paquete `migrador`, en `src/`. La app de escritorio vive en
+# `app/` y lo consume. Lo que se distribuye sigue siendo un ejecutable, no un
+# paquete de PyPI, pero declararlo instalable tiene dos ventajas concretas: los
+# imports dejan de depender de desde qué carpeta se ejecute, y las dependencias
+# quedan escritas en un solo lugar con su nombre.
 #
-# Lo que sí define es el estilo, para que sea el mismo en la máquina de quien
-# escribe y en el CI, y para que no dependa de la versión de ruff que cada uno
-# tenga instalada.
+# Los archivos requirements-*.txt siguen existiendo y son la fuente. Los extras
+# de acá los espejan, y `tests/test_dependencias.py` verifica que digan lo
+# mismo: dos listas de dependencias que se separan es la forma clásica de que un
+# build ande en una máquina y no en otra.
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "migrador-catalogos"
+description = "Releva el catálogo de un artista y prepara su migración a otra distribuidora"
+readme = "README.md"
+requires-python = ">=3.13"
+license = "MIT"
+authors = [{ name = "Joaquín García Oliver" }]
+# La versión vive en app/server.py, que es lo que leen el instalador, el release
+# y la interfaz. Se lee de ahí para no tener dos números que discrepen.
+dynamic = ["version"]
+# El núcleo no necesita nada: relevar, agrupar y validar se hacen con la
+# biblioteca estándar. Lo que hace falta para cada cosa está en los extras.
+dependencies = []
+
+[project.optional-dependencies]
+# La app de escritorio. Es lo que instala quien quiere usarla desde el código.
+app = ["openpyxl>=3.1", "pywebview>=5.0"]
+# El módulo de audio, opcional y apagado por defecto. Necesita además ffmpeg en
+# el PATH, que no es un paquete de pip.
+audio = ["tiddl>=3.4.1", "yt-dlp>=2024.1.0", "imageio-ffmpeg>=0.6"]
+# Las herramientas de quien desarrolla.
+dev = ["pytest>=8.0", "pytest-cov>=5.0", "ruff==0.16.8", "pyright>=1.1.400", "pre-commit>=4.0"]
+
+[project.urls]
+Repositorio = "https://github.com/joacogoliver-debug/catalog-migrator"
+Novedades = "https://github.com/joacogoliver-debug/catalog-migrator/blob/main/CHANGELOG.md"
+
+[tool.setuptools.dynamic]
+version = { attr = "migrador.version.VERSION" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.ruff]
 line-length = 110
@@ -61,14 +99,14 @@ typeCheckingMode = "basic"
 # empaquetado en `build/`, y no hay paquete instalable. Sin esto, pyright no
 # resuelve `import server` ni `import notas_release` y reporta como error algo
 # que en tiempo de ejecución funciona.
-extraPaths = [".", "app", "build"]
+extraPaths = ["src", "app", "build"]
 
 # La app apunta a la versión con la que se compila el binario, no a la que tenga
 # instalada quien desarrolla.
 pythonVersion = "3.13"
 
-include = ["app", "build", "tests", "*.py"]
-exclude = ["**/__pycache__", "build/migrador", "dist", ".venv"]
+include = ["app", "build", "src", "tests"]
+exclude = ["**/__pycache__", "build/_pyinstaller", "dist", ".venv"]
 
 # Dependencias opcionales del módulo de audio. No están instaladas en el CI a
 # propósito, y no tener sus stubs no es un error del código.
@@ -90,8 +128,10 @@ addopts = "--strict-markers"
 [tool.coverage.run]
 # Se mide la app, no los tests. La cobertura de un test siempre da 100 y sólo
 # sirve para inflar el número.
-source = ["app", "audio", "i18n", "migrar_core", "paquete", "portadas",
-          "productos", "relevar_core", "validar"]
+# Por carpeta y no por nombre de módulo: con nombres sueltos, mover un archivo
+# lo saca de la medición en silencio y la cobertura "sube" sin que nadie haya
+# escrito un test. Pasó exactamente eso al mover el motor a src/.
+source = ["app", "src/migrador"]
 
 [tool.coverage.report]
 # El umbral no está puesto donde nos gustaría, está puesto donde estamos. Subirlo
@@ -103,7 +143,9 @@ source = ["app", "audio", "i18n", "migrar_core", "paquete", "portadas",
 # está cubierto de ellos es el parseo y las decisiones, que es donde viven los
 # errores. `app/launcher.py` queda en cero porque abre ventanas del sistema y no
 # hay forma honesta de probar eso sin escritorio.
-fail_under = 55
+# Sube cuando sube la cobertura, nunca baja. Se verificó además sin `tiddl`
+# instalado, que es como corre el CI, y da lo mismo.
+fail_under = 58
 show_missing = true
 skip_covered = true
 exclude_lines = [

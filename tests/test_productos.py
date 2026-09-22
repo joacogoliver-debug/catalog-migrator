@@ -13,7 +13,7 @@ Cubre las reglas que sostienen la selección de la migración.
 
 import pytest
 
-import productos as pr
+from migrador import productos as pr
 
 
 # ============================================================

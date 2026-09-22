@@ -22,6 +22,12 @@ Lo que cambió en cada versión publicada. Los números siguen
   misma suite antes de empaquetar. Si pytest no colecta nada, el build aborta.
 
 ### Agregado
+- **El motor es un paquete, `migrador`, y vive en `src/`.** Los diez módulos
+  estaban sueltos en la raíz y cada archivo se armaba el `sys.path` a mano. Ahora
+  `app/` consume el paquete y esa flecha va en un solo sentido, así que el núcleo
+  se prueba sin levantar un servidor. Los lanzadores pasaron a `scripts/`, y
+  `pyproject.toml` declara los extras `[app]`, `[audio]` y `[dev]`, que un test
+  verifica contra los `requirements-*.txt` para que no se separen.
 - **Las notas de cada release salen del CHANGELOG.** Antes eran 125 líneas
   escritas a mano adentro del workflow, en dos idiomas, y no decían qué había
   cambiado: el CHANGELOG existía y nadie lo leía al publicar. Ahora se arman con
@@ -63,6 +69,9 @@ Lo que cambió en cada versión publicada. Los números siguen
   backlog que sale de él.
 
 ### Corregido
+- La cobertura enumeraba los módulos por nombre, así que mover uno lo sacaba de
+  la medición en silencio y el porcentaje subía sin que nadie hubiera escrito un
+  test. Ahora se mide por carpeta.
 - **Un artista escrito con tilde no encontraba en Tidal al mismo escrito sin
   ella.** La normalización que usaba el módulo de audio no sacaba los acentos, a
   diferencia de las otras dos, y sin coincidencia exacta la búsqueda caía al

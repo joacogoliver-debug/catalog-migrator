@@ -11,7 +11,7 @@ Cubre las reglas frágiles de `relevar_core.parse_description`.
 
 import pytest
 
-from relevar_core import parse_description as parse
+from migrador.relevar_core import parse_description as parse
 
 
 def test_phono_con_anio_y_sin_sello():

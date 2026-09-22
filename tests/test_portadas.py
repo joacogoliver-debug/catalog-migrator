@@ -10,7 +10,7 @@ cumple el mínimo de ingesta cuando en realidad la van a rechazar.
 
 import pytest
 
-import portadas as PT
+from migrador import portadas as PT
 from conftest import _producto
 
 

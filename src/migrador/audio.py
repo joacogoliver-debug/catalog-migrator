@@ -38,9 +38,9 @@ from concurrent.futures import ThreadPoolExecutor
 # lector lo busca: es parte del contrato de lo que significa
 # `Track.audio_format`, y quien arma el entregable lo necesita sin tener que
 # importar este módulo, que es opcional y puede no estar instalado.
-from contratos import EntornoAudio, FORMATOS_LOSSLESS, Producto
-from i18n import T
-from texto import comparable as _norm
+from .contratos import EntornoAudio, FORMATOS_LOSSLESS, Producto
+from .i18n import T
+from .texto import comparable as _norm
 
 # Estas tres NO se traducen: se guardan en `audio_label` de cada track y hoy
 # no se muestran en ningún lado. Si alguna vez se muestran, pasan al catálogo

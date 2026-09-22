@@ -16,8 +16,10 @@ Notas de por qué está así:
   invisible, así que el launcher escribe el traceback en
   ~/.migrador-catalogos/error.log.
 
-- Los módulos del motor están en la raíz del repo, no dentro de app/, así que se
-  agrega la raíz a `pathex`.
+- El motor es el paquete `migrador`, que vive en `src/`, y la app de escritorio
+  está en `app/`. Las dos carpetas van a `pathex`, con `src` primero: si quedara
+  una carpeta llamada `migrador` en otro lado del path, Python la tomaría como
+  paquete de espacio de nombres y se empaquetaría eso en vez de esto.
 
 - `tiddl` y `yt_dlp` entran sólo en la variante completa. La esencial sale más
   liviana y sin un descargador de audio adentro.
@@ -30,6 +32,7 @@ import os
 
 RAIZ = os.path.abspath(os.getcwd())
 APP = os.path.join(RAIZ, "app")
+SRC = os.path.join(RAIZ, "src")
 
 # Si por algo faltara el .ico, se compila sin icono en vez de abortar el build.
 _ico = os.path.join(APP, "web", "assets", "icono.ico")
@@ -113,7 +116,7 @@ DEPS_AUDIO = [
 
 a = Analysis(
     [os.path.join(APP, "launcher.py")],
-    pathex=[RAIZ, APP],
+    pathex=[SRC, APP, RAIZ],
     binaries=[],
     datas=[
         # La interfaz completa (html, css, js, tokens, fuentes, assets).
@@ -125,8 +128,11 @@ a = Analysis(
     hiddenimports=[
         # Los importa el server por nombre y PyInstaller no siempre los ve.
         "server", "jobs",
-        "relevar_core", "productos", "portadas", "contratos", "texto",
-        "validar", "paquete", "migrar_core", "audio",
+        "migrador",
+        "migrador.relevar_core", "migrador.productos", "migrador.portadas",
+        "migrador.contratos", "migrador.texto", "migrador.validar",
+        "migrador.paquete", "migrador.migrar_core", "migrador.audio",
+        "migrador.i18n",
         # openpyxl carga sus writers de forma perezosa.
         "openpyxl.cell._writer",
         # Ventana nativa propia. Alcanza con nombrar "webview":

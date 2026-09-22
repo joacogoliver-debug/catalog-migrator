@@ -9,7 +9,7 @@ navegador y pedirle cada rótulo al servidor sería absurdo.
 
 Cómo se usa:
 
-    from i18n import T
+    from migrador.i18n import T
     log(T("portadas.buscando", n=3, total=10))
 
 Tres decisiones que el resto del código da por sentadas:

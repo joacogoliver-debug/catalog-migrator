@@ -20,7 +20,7 @@ import inspect
 
 import pytest
 
-import audio
+from migrador import audio
 
 pytest.importorskip("tiddl", reason="el módulo de audio es opcional")
 

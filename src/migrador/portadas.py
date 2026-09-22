@@ -19,9 +19,9 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from difflib import SequenceMatcher
 
-from contratos import Producto
-from i18n import T
-from texto import comparable as _norm
+from .contratos import Producto
+from .i18n import T
+from .texto import comparable as _norm
 
 ITUNES_SEARCH = "https://itunes.apple.com/search"
 ITUNES_LOOKUP = "https://itunes.apple.com/lookup"
@@ -136,7 +136,7 @@ def descargar_portada(url100):
     reportáramos el tamaño pedido, la planilla diría que la portada cumple el
     mínimo de ingesta cuando en realidad no lo cumple.
     """
-    from validar import medir_imagen
+    from .validar import medir_imagen
 
     for px in RESOLUCIONES:
         url = _upscale(url100, px)

@@ -8,11 +8,11 @@ este archivo es el que impide que vuelvan a bifurcarse.
 
 import pytest
 
-import audio
-import paquete
-import portadas
-import productos
-import texto
+from migrador import audio
+from migrador import paquete
+from migrador import portadas
+from migrador import productos
+from migrador import texto
 
 
 # ============================================================
@@ -155,9 +155,10 @@ def test_el_empaquetado_no_depende_del_modulo_de_audio():
     """
     import ast
     import os
-    from conftest import RAIZ
+    from conftest import PAQUETE
 
-    arbol = ast.parse(open(os.path.join(RAIZ, "paquete.py"), encoding="utf-8").read())
+    ruta = os.path.join(PAQUETE, "paquete.py")
+    arbol = ast.parse(open(ruta, encoding="utf-8").read())
     importados = set()
     for nodo in ast.walk(arbol):
         if isinstance(nodo, ast.ImportFrom) and nodo.module:

@@ -42,10 +42,11 @@ import urllib.request
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DESTINO = os.path.join(RAIZ, "tests", "fixtures")
 
-sys.path.insert(0, RAIZ)
+sys.path.insert(0, os.path.join(RAIZ, "src"))
 
-from portadas import USER_AGENT as UA_ITUNES  # noqa: E402
-from relevar_core import DEEZER_API, USER_AGENT as UA_DEEZER  # noqa: E402
+from migrador.portadas import USER_AGENT as UA_ITUNES  # noqa: E402
+from migrador.relevar_core import DEEZER_API  # noqa: E402
+from migrador.relevar_core import USER_AGENT as UA_DEEZER  # noqa: E402
 
 ITUNES = "https://itunes.apple.com"
 

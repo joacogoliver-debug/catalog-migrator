@@ -12,7 +12,7 @@ propia.
 
 import json
 
-import relevar_core as R
+from migrador import relevar_core as R
 
 
 def cuerpo(reason, message, code=403):

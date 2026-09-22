@@ -28,9 +28,9 @@ import zipfile
 
 import pytest
 
-import i18n
+from migrador import i18n
 import jobs as J
-import productos as P
+from migrador import productos as P
 import server as backend
 from conftest import _esperar, _track
 
@@ -225,7 +225,7 @@ def test_el_endpoint_de_idioma_valida_y_guarda(entorno_de_idioma):
 
 def test_el_cambio_de_idioma_alcanza_a_lo_que_se_descarga(entorno_de_idioma):
     """Los nombres de archivo del ZIP se arman de este lado."""
-    import paquete
+    from migrador import paquete
 
     entorno_de_idioma.config(None)
     backend.api_idioma({"idioma": "en"})

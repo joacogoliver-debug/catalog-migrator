@@ -10,7 +10,8 @@ REM
 REM Los mensajes van en los dos idiomas, por lo mismo que en abrir_app.bat:
 REM esto corre antes que la app y no sabe que idioma eligio quien la usa.
 
-cd /d "%~dp0"
+REM scripts\ esta un nivel debajo de la raiz, que es desde donde corre todo.
+cd /d "%~dp0.."
 set MIGRADOR_AUDIO=1
 
 where python >nul 2>nul

@@ -18,8 +18,8 @@ que la interfaz los agrupa y el test los busca.
 import re
 from datetime import date
 
-from contratos import Hallazgo, NivelHallazgo, Producto, ResultadoValidacion
-from i18n import T
+from .contratos import Hallazgo, NivelHallazgo, Producto, ResultadoValidacion
+from .i18n import T
 
 # ISRC: CC-XXX-YY-NNNNN (12 caracteres sin guiones).
 #   CC     país (2 letras; incluye códigos especiales como QM/QZ que usan varios

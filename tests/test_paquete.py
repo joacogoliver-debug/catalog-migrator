@@ -18,9 +18,9 @@ import zipfile
 
 import pytest
 
-import i18n
-import paquete as pq
-from conftest import RAIZ
+from migrador import i18n
+from migrador import paquete as pq
+from conftest import PAQUETE
 
 
 @pytest.fixture
@@ -288,8 +288,11 @@ def test_ningun_log_usa_caracteres_que_cp1252_no_puede_imprimir():
     Mira el código fuente en vez de ejecutar los logs, porque las rutas que los
     emiten necesitan red y credenciales.
     """
+    archivos = glob.glob(os.path.join(PAQUETE, "*.py"))
+    assert len(archivos) >= 8, f"esperaba recorrer el paquete y encontré {archivos}"
+
     problemas = []
-    for ruta in glob.glob(os.path.join(RAIZ, "*.py")):
+    for ruta in archivos:
         if os.path.basename(ruta).startswith("test_"):
             continue
         with open(ruta, encoding="utf-8") as f:
