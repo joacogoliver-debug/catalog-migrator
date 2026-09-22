@@ -345,7 +345,7 @@ def cliente(productos_servidor):
             req = urllib.request.Request(f"{c.base}/api/config", headers=c.cab())
             urllib.request.urlopen(req, timeout=2).read()
             return True
-        except Exception:
+        except Exception:  # noqa: BLE001 (el servidor todavia no levanto)
             return False
 
     assert _esperar(responde, 30, 0.05), "el servidor no respondió"

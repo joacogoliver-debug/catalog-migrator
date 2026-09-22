@@ -59,7 +59,7 @@ def _http_json(url, retries=3):
             req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
             with urllib.request.urlopen(req, timeout=20) as r:
                 return json.loads(r.read().decode("utf-8", "replace"))
-        except Exception:
+        except Exception:  # noqa: BLE001 (urllib levanta de todo; se reintenta o se devuelve None)
             if intento == retries - 1:
                 return None
             time.sleep(1.5 * (intento + 1))
@@ -146,7 +146,7 @@ def descargar_portada(url100):
             req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
             with urllib.request.urlopen(req, timeout=30) as r:
                 data = r.read()
-        except Exception:
+        except Exception:  # noqa: BLE001 (idem: sin portada es un aviso, no un error)
             continue
         if not data:
             continue

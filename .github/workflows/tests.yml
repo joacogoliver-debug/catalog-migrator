@@ -7,15 +7,23 @@ on:
 
 jobs:
   tests:
-    name: tests
+    # Dos versiones de Python, y las dos importan. 3.13 es con la que se compila
+    # el binario que la gente baja, así que es la que tiene que estar bien. 3.14
+    # es la que ya está instalada en las máquinas donde se escribe el código, y
+    # probar sólo la primera dejaba esa diferencia sin cubrir hasta que algo se
+    # rompía en el escritorio de alguien.
+    name: tests (py${{ matrix.python }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.13", "3.14"]
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
-          # Alineado con el workflow de build: tiddl 3.x pide >=3.13.
-          python-version: "3.13"
+          python-version: "${{ matrix.python }}"
 
       - name: Instalar dependencias
         run: |

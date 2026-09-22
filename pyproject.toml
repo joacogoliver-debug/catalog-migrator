@@ -58,7 +58,7 @@ target-version = "py313"
 # de opinión (estilo de comillas, orden de argumentos, reescrituras de sintaxis)
 # porque generan ruido sin encontrar defectos, y un linter que avisa de cosas
 # que nadie va a arreglar termina ignorado.
-select = ["E", "F", "W", "B"]
+select = ["E", "F", "W", "B", "BLE"]
 
 [tool.ruff.lint.per-file-ignores]
 # Los tests y el launcher arman sys.path antes de importar los módulos del

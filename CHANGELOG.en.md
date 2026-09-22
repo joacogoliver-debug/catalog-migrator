@@ -22,6 +22,11 @@ What changed in every published version. The numbers follow
   suite before packaging. If pytest collects nothing, the build aborts.
 
 ### Added
+- CI runs the tests on Python 3.13 and 3.14. The binary is built with 3.13 and
+  the code is written on 3.14, and nothing covered that gap.
+- `BLE` in ruff: every `except Exception` has to be justified. There were
+  thirty-four and only thirteen had a note, which silenced nothing anyway because
+  the rule was off.
 - **macOS gets an `.app` and Linux a `.deb`.** Until now both were published as
   a bare executable, which on macOS means four Terminal commands and on Linux
   shows up in no menu at all. The `.app` is dragged to Applications and lands in
@@ -74,6 +79,13 @@ What changed in every published version. The numbers follow
   backlog that comes out of it.
 
 ### Fixed
+- The version check in `build/build.py` asked for Python 3.9 while the project
+  declares 3.13. Building with 3.9 passed the check and failed afterwards, inside
+  the package. The floor is now read from `requires-python`, where it was written
+  correctly.
+- The YouTube Data API error parser caught any exception at all. It now names the
+  four that navigating a JSON can raise, so a bug of our own there stops being
+  swallowed.
 - Coverage listed the modules by name, so moving one silently dropped it from
   the measurement and the percentage went up without anyone writing a test. It is
   now measured by folder.

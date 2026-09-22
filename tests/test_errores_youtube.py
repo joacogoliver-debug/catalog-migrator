@@ -12,6 +12,8 @@ propia.
 
 import json
 
+import pytest
+
 from migrador import relevar_core as R
 
 
@@ -102,3 +104,28 @@ def test_un_relevar_error_comun_sigue_funcionando_sin_codigo():
     simple = R.RelevarError("algo salió mal")
     assert simple.codigo == ""
     assert str(simple) == "algo salió mal"
+
+
+@pytest.mark.parametrize(
+    "cuerpo_crudo",
+    [
+        "<html>502 Bad Gateway</html>",  # no es JSON
+        "",  # vacío
+        "[1, 2, 3]",  # JSON válido, pero una lista
+        '{"error": "un texto y no un objeto"}',  # `error` no es un diccionario
+        '{"error": {"errors": "tampoco es una lista"}}',
+        '{"error": {"errors": [42]}}',  # la lista trae algo que no es un dict
+        '{"sin_error": true}',  # falta la clave entera
+    ],
+)
+def test_ningun_cuerpo_raro_hace_reventar_el_parseo(cuerpo_crudo):
+    """El parseo del error de Google atrapa cuatro excepciones nombradas y no un
+    `except Exception`, así que vale la pena fijar las formas de romperlo.
+
+    Todas tienen que terminar en un RelevarError mostrable. Si alguna se
+    escapara, el usuario vería un traceback en vez del mensaje, y justo en el
+    momento en que algo ya salió mal.
+    """
+    e = R._error_de_youtube(500, cuerpo_crudo)
+    assert isinstance(e, R.RelevarError)
+    assert str(e)

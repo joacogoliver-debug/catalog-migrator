@@ -668,7 +668,7 @@ def main():
             c.request("GET", "/_capturas.html")
             if c.getresponse().status == 200:
                 break
-        except Exception:
+        except Exception:  # noqa: BLE001 (el servidor todavia no levanto, se reintenta)
             time.sleep(0.05)
     perfil = os.path.join(RAIZ, "build", "migrador", "perfil-capturas")
     crudo = os.path.join(RAIZ, "build", "migrador", "render.png")

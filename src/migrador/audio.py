@@ -82,7 +82,7 @@ def _ffmpeg_incluido():
 
         ruta = imageio_ffmpeg.get_ffmpeg_exe()
         return ruta if os.path.isfile(ruta) else None
-    except Exception:
+    except Exception:  # noqa: BLE001 (imageio-ffmpeg es opcional y falla de varias formas)
         return None
 
 
@@ -299,7 +299,7 @@ class TidalSession:
                 self._token = auth.access_token
                 self._expires_at = int(time.time()) + int(auth.expires_in)
                 self._api = None
-            except Exception:
+            except Exception:  # noqa: BLE001 (si el refresco falla, la sesion sigue con el token viejo)
                 pass
 
     @property
@@ -408,7 +408,7 @@ def construir_indice_isrc(session, artista, log=print):
                 pagina = session.api.get_artist_albums(
                     artist_id, limit=PAGINA_TIDAL, offset=offset, filter=filtro
                 )
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 (lo que devuelva Tidal se informa y se corta el listado)
                 log(T("aud.no_pude_listar", filtro=filtro, error=e))
                 break
             lote = getattr(pagina, "items", None) or []
@@ -430,7 +430,7 @@ def construir_indice_isrc(session, artista, log=print):
         while True:
             try:
                 pagina = session.api.get_album_items(album_id, limit=PAGINA_TIDAL, offset=offset)
-            except Exception:
+            except Exception:  # noqa: BLE001 (idem, sin album items no hay mas paginas)
                 break
             lote = getattr(pagina, "items", None) or []
             tracks.extend(lote)
@@ -529,12 +529,12 @@ def bajar_flac(session, track_id, dest_dir, calidad="LOSSLESS"):
     if getattr(stream, "audioQuality", "") in ("LOSSLESS", "HI_RES_LOSSLESS"):
         try:
             tmp = extract_flac(tmp)
-        except Exception:
+        except Exception:  # noqa: BLE001 (sin extraer, queda el contenedor original y se etiqueta lossy)
             pass  # nos quedamos con el contenedor original
 
     try:
         add_track_metadata(tmp, session.api.get_track(track_id))
-    except Exception:
+    except Exception:  # noqa: BLE001 (sin metadata embebida, pero el audio sirve)
         pass  # sin metadata embebida, pero el audio sirve
 
     formato = tmp.suffix.lower()
@@ -629,7 +629,7 @@ def fetch_audio(productos, session=None, usar_referencia=True, dest_dir=None, ca
         try:
             ruta, etiqueta, fmt = bajar_flac(session, t["tidal"]["track_id"], dest_dir, calidad)
             t["audio_path"], t["audio_label"], t["audio_format"] = str(ruta), etiqueta, fmt
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 (el motivo va al track y el resto del lote sigue)
             t["audio_error"] = str(e)[:160]
         return t
 

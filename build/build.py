@@ -39,10 +39,29 @@ def paso(texto):
     print(f"\n>>> {texto}")
 
 
+def version_minima():
+    """El Python más viejo que sirve, leído de `requires-python`.
+
+    Se lee de pyproject y no se escribe acá: estaban los dos y decían cosas
+    distintas. El chequeo pedía 3.9 mientras el proyecto declaraba 3.13, así que
+    compilar con 3.9 pasaba este control y después fallaba adentro del paquete,
+    que usa sintaxis de tipos que en 3.9 no existe.
+    """
+    import tomllib
+
+    with open(os.path.join(RAIZ, "pyproject.toml"), "rb") as f:
+        pedido = tomllib.load(f)["project"]["requires-python"]
+    numeros = re.search(r"(\d+)\.(\d+)", pedido)
+    if not numeros:
+        sys.exit(f"No pude leer requires-python de pyproject.toml: {pedido!r}")
+    return int(numeros.group(1)), int(numeros.group(2))
+
+
 def revisar_entorno():
     paso("Revisando el entorno")
-    if sys.version_info < (3, 9):
-        sys.exit("Hace falta Python 3.9 o más nuevo.")
+    minima = version_minima()
+    if sys.version_info[:2] < minima:
+        sys.exit(f"Hace falta Python {minima[0]}.{minima[1]} o más nuevo.")
     print(f"    Python {sys.version.split()[0]} en {sys.platform}")
 
     try:

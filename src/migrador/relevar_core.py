@@ -107,13 +107,19 @@ _MOTIVOS_YOUTUBE = {
 def _error_de_youtube(codigo_http, body):
     """Convierte un error de la API en algo que se pueda mostrar y accionar."""
     motivo, mensaje = "", ""
+    # Acotado y no `except Exception`, que es lo que había: acá no hay red ni
+    # una librería de por medio, sólo se navega un JSON, y las formas de que
+    # falle se pueden enumerar. Un cuerpo que no es JSON o un `error` que no es
+    # un diccionario dan ValueError, KeyError, TypeError o AttributeError; se
+    # sigue sin motivo y abajo se muestra el texto crudo, que es lo correcto.
+    # Cualquier otra excepción acá sería un error nuestro y tiene que verse.
     try:
         err = json.loads(body)["error"]
         mensaje = err.get("message") or ""
         errores = err.get("errors") or []
         if errores:
             motivo = errores[0].get("reason") or ""
-    except Exception:
+    except (ValueError, KeyError, TypeError, AttributeError):
         pass
 
     if motivo in _MOTIVOS_YOUTUBE:
@@ -211,7 +217,7 @@ def buscar_canal_topic(titulo_canal, key):
         data = api_get(
             "search", {"part": "snippet", "q": f"{artista} - Topic", "type": "channel", "maxResults": 10}, key
         )
-    except Exception:
+    except Exception:  # noqa: BLE001 (sin busqueda de Topic, se releva el canal pedido)
         return None
 
     mejor, mejor_score = None, 0.0
@@ -446,7 +452,7 @@ def _http_json(url, headers=None, retries=3):
                 time.sleep(int(e.headers.get("Retry-After", "1")) + 1)
                 continue
             return None
-        except Exception:
+        except Exception:  # noqa: BLE001 (idem que portadas: red)
             time.sleep(1)
             continue
     return None

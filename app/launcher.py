@@ -63,13 +63,13 @@ def _abrir_ventana_pywebview(url):
     """
     try:
         import webview
-    except Exception:
+    except Exception:  # noqa: BLE001 (pywebview falla de muchas formas al importar)
         return False
     try:
         webview.create_window(titulo(), url, width=1180, height=860, min_size=(900, 640))
         webview.start()
         return True
-    except Exception:
+    except Exception:  # noqa: BLE001 (si la ventana no abre, se cae al navegador)
         return False
 
 
@@ -134,7 +134,7 @@ def _navegador_app(url):
                 stderr=subprocess.DEVNULL,
             )
             return True
-        except Exception:
+        except Exception:  # noqa: BLE001 (si un navegador no arranca, se prueba el siguiente)
             continue
     return False
 
@@ -187,7 +187,7 @@ def _diagnostico(url):
                 estado["abrio"] = len(webview.windows) > 0
                 for w in list(webview.windows):
                     w.destroy()
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 (el diagnostico informa el fallo, no se cae con el)
                 estado["error"] = f"al cerrar: {e}"
 
         try:
@@ -198,13 +198,13 @@ def _diagnostico(url):
             lineas.append(T("diag.prueba_ventana", resultado=resultado))
             if estado["error"]:
                 lineas.append(T("diag.detalle", detalle=estado["error"]))
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 (idem: es un reporte de que anda y que no)
             import traceback
 
             lineas.append(T("diag.prueba_fallo", tipo=type(e).__name__, error=e))
             for _l in traceback.format_exc().splitlines():
                 lineas.append("    " + _l)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 (idem)
         lineas.append(T("diag.pywebview_no", error=e))
 
     ruta = os.path.join(backend.dir_datos(), "diagnostico.txt")
@@ -228,7 +228,7 @@ def _registrar_falla(e):
             f.write(f"\n===== {datetime.datetime.now().isoformat()} =====\n")
             f.write(traceback.format_exc())
         print(T("lau.detalle_en", ruta=ruta))
-    except Exception:
+    except Exception:  # noqa: BLE001 (escribir el log de error no puede romper el cierre)
         pass
 
 

@@ -512,9 +512,12 @@ pyright                # types
 
 The configuration for all three is in [pyproject.toml](pyproject.toml).
 
-- **ruff check** uses four rule families (`E`, `F`, `W`, `B`) and no more: the
-  opinion families find little and generate a lot of noise, and a linter that
-  warns about things nobody is going to fix ends up ignored.
+- **ruff check** uses five rule families (`E`, `F`, `W`, `B`, `BLE`) and no
+  more: the opinion families find little and generate a lot of noise, and a
+  linter that warns about things nobody is going to fix ends up ignored. `BLE` is
+  the one that forces every `except Exception` to be justified, and there are
+  thirty-four of them: all wrapping a third-party library, the network or the
+  operating system, each with the reason written next to it.
 - **ruff format** is Black style. It has a cost worth stating: it collapses
   right-aligned comments, and this codebase uses a fair few. In exchange,
   formatting stops depending on each person's habits.

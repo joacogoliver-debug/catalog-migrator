@@ -125,7 +125,7 @@ def idioma_del_sistema():
             return "en"
         if v.startswith("spanish"):
             return "es"
-    except Exception:
+    except Exception:  # noqa: BLE001 (el locale del sistema varia por plataforma)
         pass
     return POR_DEFECTO
 
