@@ -366,6 +366,7 @@ Sin frameworks ni build step, para que empaquetar sea copiar archivos:
 | `app/web/fonts/` | Public Sans y DM Mono, hospedadas localmente |
 | `i18n.py`, `app/web/i18n.js` | Los dos catálogos de traducción, uno por proceso |
 | `docs/marca/` | El logotipo y sus reglas de uso |
+| `contratos.py` | La forma de los datos que viajan entre los módulos |
 | `migrar_core.py` | Orquesta los 4 pasos |
 | `relevar_core.py` | Relevamiento de YouTube + ISRC/UPC por Deezer |
 | `productos.py` | Agrupa tracks en productos y filtra la selección |

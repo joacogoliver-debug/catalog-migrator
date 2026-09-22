@@ -34,10 +34,8 @@ CARPETAS_IGNORADAS = {".git", "__pycache__", "dist", "node_modules", ".ruff_cach
 
 def archivos_del_repo():
     """Todo lo versionado. Se le pregunta a git para no recorrer dist/ ni .git/."""
-    salida = subprocess.run(
-        ["git", "ls-files"], capture_output=True, text=True, check=False
-    )
-    return [l for l in salida.stdout.splitlines() if l.strip()]
+    salida = subprocess.run(["git", "ls-files"], capture_output=True, text=True, check=False)
+    return [linea for linea in salida.stdout.splitlines() if linea.strip()]
 
 
 def revisar(rutas):
@@ -68,8 +66,10 @@ def main(argv):
         print("No se puede commitear esto:")
         for p in problemas:
             print(f"  {p}")
-        print("\nLa clave va en la variable MIGRADOR_CLAVE_YT o en la config local "
-              "de la app, nunca en el repositorio.")
+        print(
+            "\nLa clave va en la variable MIGRADOR_CLAVE_YT o en la config local "
+            "de la app, nunca en el repositorio."
+        )
         return 1
     print(f"sin claves ({len(rutas)} archivos revisados)")
     return 0

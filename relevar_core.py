@@ -28,6 +28,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Va después del sys.path.insert de arriba: i18n vive al lado de este archivo y
 # no siempre se importa con la raíz del repo ya en el path.
+from contratos import DescripcionParseada, Relevamiento, Track  # noqa: E402
 from i18n import T  # noqa: E402
 from productos import SIN_ALBUM, SIN_DATOS  # noqa: E402
 
@@ -304,9 +305,9 @@ def _normalize(s):
     return unicodedata.normalize("NFD", s).encode("ascii", "ignore").decode("ascii").lower()
 
 
-def parse_description(desc) -> dict[str, "str | int | None"]:
+def parse_description(desc) -> DescripcionParseada:
     """Extrae distribuidor, álbum, año y sello de una descripción auto-generada."""
-    res: dict[str, "str | int | None"] = {
+    res: DescripcionParseada = {
         "distributor": None,
         "album": None,
         "release_year": None,
@@ -361,7 +362,7 @@ def parse_description(desc) -> dict[str, "str | int | None"]:
     return res
 
 
-def build_tracks(videos):
+def build_tracks(videos) -> list[Track]:
     tracks = []
     for v in videos:
         sn = v.get("snippet", {})
@@ -616,7 +617,7 @@ def slugify(name):
 # ============================================================
 
 
-def relevar(url, yt_key, with_codes=True, progress=None, use_musicbrainz=False):
+def relevar(url, yt_key, with_codes=True, progress=None, use_musicbrainz=False) -> Relevamiento:
     """Releva el catálogo completo de un canal.
 
     with_codes: buscar ISRC/UPC (Deezer; sin clave). use_musicbrainz: respaldo
@@ -647,7 +648,10 @@ def relevar(url, yt_key, with_codes=True, progress=None, use_musicbrainz=False):
         hallado = buscar_canal_topic(title, yt_key)
         if hallado:
             t_uploads, t_title = canal_uploads_por_id(hallado[0], yt_key)
-            if t_uploads:
+            # Se exigen los dos y no sólo la playlist: el título es de donde sale
+            # el nombre del artista, y cambiar de canal con el título vacío deja
+            # el catálogo entero a nombre de nadie.
+            if t_uploads and t_title:
                 uploads, title, via_topic = t_uploads, t_title, True
                 step(T("rel.uso_topic", canal=t_title), 0.12)
 

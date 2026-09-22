@@ -15,32 +15,7 @@ from datetime import date
 import pytest
 
 import validar as V
-
-
-def _prod(
-    title="Disco",
-    upc="",
-    year: "int | str" = 2020,
-    label="Sello",
-    tracks=None,
-    cover=None,
-    orden_ok=True,
-    cover_status="ok",
-):
-    return {
-        "product_id": "p001",
-        "title": title,
-        "kind": "album",
-        "upc": upc,
-        "release_year": year,
-        "label": label,
-        "distributor": "ONErpm",
-        "track_count": len(tracks or []),
-        "order_unconfirmed": not orden_ok,
-        "cover_bytes": cover,
-        "cover_status": cover_status,
-        "tracks": tracks or [],
-    }
+from conftest import _producto as _prod
 
 
 def _track(track="Tema", isrc="ARABC2000001", dur=200):

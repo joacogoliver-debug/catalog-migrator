@@ -370,6 +370,7 @@ No frameworks and no build step, so that packaging is copying files:
 | `app/web/fonts/` | Public Sans and DM Mono, hosted locally |
 | `i18n.py`, `app/web/i18n.js` | The two translation catalogs, one per process |
 | `docs/marca/` | The logotype and its rules of use |
+| `contratos.py` | The shape of the data that travels between modules |
 | `migrar_core.py` | Orchestrates the 4 steps |
 | `relevar_core.py` | YouTube survey + ISRC/UPC via Deezer |
 | `productos.py` | Groups tracks into products and filters the selection |

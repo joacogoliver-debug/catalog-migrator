@@ -22,6 +22,12 @@ What changed in every published version. The numbers follow
   suite before packaging. If pytest collects nothing, the build aborts.
 
 ### Added
+- **The contract between modules is written down, in `contratos.py`.** What
+  the survey returns and what products, validation, artwork and packaging consume
+  no longer lives in the docstrings. They are TypedDicts, so they do not exist at
+  runtime and the program runs the same, but pyright checks them. The
+  orchestrator contract test no longer repeats the keys by hand: it reads them
+  from there.
 - **The linter, the formatter and the type checker run on their own.**
   `pre-commit` runs ruff and an API-key check before every commit, and CI adds
   `ruff format --check` and `pyright`, which today runs at zero errors. The key
@@ -39,6 +45,10 @@ What changed in every published version. The numbers follow
   backlog that comes out of it.
 
 ### Fixed
+- When surveying a channel that is not a Topic, the app switches to the
+  artist's Topic. If YouTube returned the uploads playlist but not the channel
+  title, the switch happened anyway and the whole catalog ended up credited to
+  nobody. Both are now required.
 - `relevar_core.py` used `urllib.error` without ever importing it. It worked by
   accident, because `urllib.request` imports it internally, but any change to
   that standard-library detail would have broken YouTube error handling with no

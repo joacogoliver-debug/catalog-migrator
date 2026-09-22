@@ -20,6 +20,7 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from difflib import SequenceMatcher
 
+from contratos import Producto
 from i18n import T
 
 ITUNES_SEARCH = "https://itunes.apple.com/search"
@@ -165,7 +166,7 @@ def descargar_portada(url100):
     return None, 0
 
 
-def fetch_portadas(productos, artista, log=print, avance=None):
+def fetch_portadas(productos: list[Producto], artista, log=print, avance=None):
     """Busca y baja la portada de cada producto, en paralelo.
 
     No escribe archivos: deja los bytes en `p["cover_bytes"]` para que los

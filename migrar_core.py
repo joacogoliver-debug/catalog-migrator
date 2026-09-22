@@ -24,6 +24,7 @@ import paquete
 import portadas as portadas_mod
 import productos as productos_mod
 import relevar_core
+from contratos import Diagnostico, Producto, Track
 from i18n import T
 
 
@@ -32,7 +33,9 @@ from i18n import T
 # ============================================================
 
 
-def relevar_catalogo(url, yt_key, with_codes=True, progress=None, use_musicbrainz=False):
+def relevar_catalogo(
+    url, yt_key, with_codes=True, progress=None, use_musicbrainz=False
+) -> tuple[list[Producto], str, list[Track], Diagnostico]:
     """Releva el catálogo y lo devuelve ya agrupado en productos.
 
     Devuelve (productos, artista, tracks_planos, diagnostico_del_canal).
@@ -54,7 +57,7 @@ def relevar_catalogo(url, yt_key, with_codes=True, progress=None, use_musicbrain
 
     # Diagnóstico del canal: si no trae descripciones auto-generadas, el
     # catálogo sale sin álbumes ni códigos y hay que avisarlo.
-    diag = {
+    diag: Diagnostico = {
         "es_topic": res.get("es_topic", True),
         "cobertura_metadata": res.get("cobertura_metadata", 1.0),
         "topic_sugerido": res.get("topic_sugerido"),
@@ -89,7 +92,7 @@ def opciones_de_filtro(prods):
 
 
 def preparar(
-    seleccion,
+    seleccion: list[Producto],
     artista,
     quiere_planilla=True,
     quiere_audio=False,
@@ -145,7 +148,7 @@ def preparar(
 
 
 def empaquetar(
-    seleccion,
+    seleccion: list[Producto],
     artista,
     out_path=None,
     entorno=None,

@@ -125,7 +125,7 @@ a = Analysis(
     hiddenimports=[
         # Los importa el server por nombre y PyInstaller no siempre los ve.
         "server", "jobs",
-        "relevar_core", "productos", "portadas",
+        "relevar_core", "productos", "portadas", "contratos",
         "validar", "paquete", "migrar_core", "audio",
         # openpyxl carga sus writers de forma perezosa.
         "openpyxl.cell._writer",

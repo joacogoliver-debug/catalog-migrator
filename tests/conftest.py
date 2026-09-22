@@ -33,6 +33,7 @@ import pytest
 
 import i18n
 import productos as P
+from contratos import Producto, TipoProducto, Track
 
 
 # ============================================================
@@ -75,7 +76,7 @@ def _track(
     en diez lugares distintos.
     """
     anio = year or 2020
-    return {
+    t: Track = {
         "video_id": vid or f"v{abs(hash((track, album, year))) % 100000}",
         "track": track,
         "album": album or P.SIN_ALBUM,
@@ -93,6 +94,52 @@ def _track(
         "desc3": "",
         "url": f"https://youtu.be/{vid or 'x'}",
     }
+    return t
+
+
+def _producto(
+    title="Disco",
+    upc="",
+    year: "int | str" = 2020,
+    label="Sello",
+    tracks=None,
+    cover=None,
+    orden_ok=True,
+    cover_status="ok",
+    kind: TipoProducto = "album",
+) -> Producto:
+    """Un producto con TODAS las claves que declara el contrato.
+
+    Completo a propósito, aunque un test mire dos campos. Un doble a medio
+    armar deja pasar código que lee una clave que en producción existe y en
+    el test no, y ese es justamente el error que el contrato tipado evita.
+    """
+    ts: list[Track] = list(tracks or [])
+    p: Producto = {
+        "product_id": "p001",
+        "title": title,
+        "kind": kind,
+        "artist": "Artista Test",
+        "release_year": year,
+        "release_date": f"{year or 2020}-01-01",
+        "label": label,
+        "distributor": "ONErpm",
+        "upc": upc,
+        "tracks": ts,
+        "track_count": len(ts),
+        "total_views": sum(int(t.get("views") or 0) for t in ts),
+        "order_unconfirmed": not orden_ok,
+        "folder": f"{year or 's-f'} - {title}",
+        "cover_bytes": cover,
+        "cover_status": cover_status,
+    }
+    return p
+
+
+@pytest.fixture
+def hacer_producto():
+    """Fábrica de productos completos, para los tests que no relevan nada."""
+    return _producto
 
 
 @pytest.fixture

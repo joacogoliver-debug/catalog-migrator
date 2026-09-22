@@ -18,6 +18,8 @@ import re
 import unicodedata
 from collections import Counter
 
+from contratos import Producto, ResumenSeleccion, TipoProducto, Track
+
 # Los dos centinelas que pone `relevar_core` cuando la descripcion de YouTube no
 # trae el dato. NO son texto para mostrar y por eso no se traducen: el filtrado y
 # la agrupacion los comparan por igualdad, y traducirlos romperia las dos cosas
@@ -47,7 +49,7 @@ def _norm(s):
     return re.sub(r"\s+", " ", s).strip()
 
 
-def _kind(n_tracks):
+def _kind(n_tracks) -> TipoProducto:
     if n_tracks <= MAX_TRACKS_SINGLE:
         return "single"
     if n_tracks <= MAX_TRACKS_EP:
@@ -78,7 +80,7 @@ def _slug(s, maxlen=60):
 # ============================================================
 
 
-def group_products(tracks, artist=""):
+def group_products(tracks: list[Track], artist="") -> list[Producto]:
     """Agrupa una lista de tracks en productos.
 
     Criterio: los tracks que declaran un álbum real se agrupan por
@@ -151,8 +153,14 @@ def folder_name(p):
 
 
 def filter_products(
-    productos, ids=None, year_from=None, year_to=None, date_from=None, date_to=None, distributors=None
-):
+    productos: list[Producto],
+    ids=None,
+    year_from=None,
+    year_to=None,
+    date_from=None,
+    date_to=None,
+    distributors=None,
+) -> list[Producto]:
     """Filtra productos para la migración. Los filtros se combinan con AND.
 
     - ids:          selección manual por product_id (lista o set)
@@ -198,7 +206,7 @@ def year_range(productos):
     return (años[0], años[-1]) if años else (None, None)
 
 
-def summarize(productos):
+def summarize(productos: list[Producto]) -> ResumenSeleccion:
     """Resumen de una selección, para mostrar antes de descargar."""
     return {
         "products": len(productos),

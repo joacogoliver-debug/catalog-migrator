@@ -19,6 +19,7 @@ import re
 import unicodedata
 from datetime import date
 
+from contratos import Hallazgo, NivelHallazgo, Producto, ResultadoValidacion
 from i18n import T
 
 # ISRC: CC-XXX-YY-NNNNN (12 caracteres sin guiones).
@@ -46,7 +47,7 @@ DURACION_MAX_SOSPECHOSA = 15 * 60  # 15 min: puede ser un mix o un álbum entero
 ANIO_MIN = 1900
 
 
-def _hallazgo(nivel, codigo, mensaje, producto="", track=None):
+def _hallazgo(nivel: NivelHallazgo, codigo, mensaje, producto="", track=None) -> Hallazgo:
     return {"nivel": nivel, "codigo": codigo, "mensaje": mensaje, "producto": producto, "track": track}
 
 
@@ -197,7 +198,7 @@ def validar_portada(p):
 # ============================================================
 
 
-def validar(productos, artista=""):
+def validar(productos: list[Producto], artista="") -> ResultadoValidacion:
     """Valida una selección de productos. Devuelve dict con hallazgos y resumen."""
     out = []
     anio_actual = date.today().year

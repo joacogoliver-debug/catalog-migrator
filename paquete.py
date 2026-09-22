@@ -36,6 +36,7 @@ from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
 from audio import FORMATOS_LOSSLESS
+from contratos import Producto
 from i18n import T
 
 NAVY = "1F3864"
@@ -166,7 +167,7 @@ def _hoja(wb):
     return ws
 
 
-def planilla_maestra_bytes(productos, artista):
+def planilla_maestra_bytes(productos: list[Producto], artista):
     """Excel con todo el catálogo seleccionado."""
     from io import BytesIO
 
@@ -319,7 +320,7 @@ def planilla_producto_bytes(p, artista):
 # ============================================================
 
 
-def reporte_texto(productos, artista, entorno=None, con_tidal=False):
+def reporte_texto(productos: list[Producto], artista, entorno=None, con_tidal=False):
     """Reporte honesto de qué se pudo migrar y qué no. Es la pieza que evita
     sorpresas: dice producto por producto qué falta y por qué."""
     L = []
@@ -372,8 +373,9 @@ def reporte_texto(productos, artista, entorno=None, con_tidal=False):
             # El motivo concreto por track: sirve para saber si hay que buscar
             # otra fuente o si el video simplemente ya no está.
             for t in sin:
-                if t.get("audio_error"):
-                    faltas.append(f"     {t.get('track', '')[:40]}: {t['audio_error']}")
+                error = t.get("audio_error")
+                if error:
+                    faltas.append(f"     {t.get('track', '')[:40]}: {error}")
         lossy = [
             t
             for t in p["tracks"]
@@ -436,7 +438,7 @@ def leeme():
 
 
 def build_zip(
-    productos,
+    productos: list[Producto],
     artista,
     out_path,
     entorno=None,
@@ -478,8 +480,9 @@ def build_zip(
             carpeta = f"{raiz}/{p['folder']}"
             if incluir_planilla:
                 z.writestr(f"{carpeta}/{T('paq.f_datos')}", planilla_producto_bytes(p, artista))
-            if incluir_portadas and p.get("cover_bytes"):
-                z.writestr(f"{carpeta}/{T('paq.f_portada')}", p["cover_bytes"])
+            portada = p.get("cover_bytes")
+            if incluir_portadas and portada:
+                z.writestr(f"{carpeta}/{T('paq.f_portada')}", portada)
 
             if incluir_audio:
                 for t in p["tracks"]:

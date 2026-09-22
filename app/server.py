@@ -53,6 +53,7 @@ import time
 import urllib.parse
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from typing import cast
 
 # El paquete corre tanto desde el repo como desde el binario de PyInstaller.
 _AQUI = os.path.dirname(os.path.abspath(__file__))
@@ -67,6 +68,7 @@ import migrar_core as M  # noqa: E402
 import productos as P  # noqa: E402
 import relevar_core as R  # noqa: E402
 import validar as V  # noqa: E402
+from contratos import Producto  # noqa: E402
 from i18n import T  # noqa: E402
 from jobs import Registry  # noqa: E402
 
@@ -644,7 +646,10 @@ def api_preparar(body):
         # Sobre copias: preparar() agrega bytes de portada y rutas de audio a los
         # productos, y no queremos que el catálogo en memoria se llene de eso
         # después de cada descarga.
-        copias = [dict(p, tracks=[dict(t) for t in p["tracks"]]) for p in sel]
+        # `dict(p, ...)` devuelve un dict pelado y pierde el tipo del producto.
+        # La forma no cambia, sólo se copia, así que se le dice al verificador
+        # lo que ya sabemos en vez de aflojar la firma de `validar`.
+        copias = cast("list[Producto]", [dict(p, tracks=[dict(t) for t in p["tracks"]]) for p in sel])
 
         job.avance("Preparando", 0.05)
         dir_audio = None

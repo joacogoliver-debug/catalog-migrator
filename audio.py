@@ -35,6 +35,7 @@ import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor
 
+from contratos import EntornoAudio, Producto
 from i18n import T
 
 # Formatos que consideramos aptos para entrega (lossless real).
@@ -144,7 +145,7 @@ def _runtime_js():
     return None
 
 
-def verificar_entorno():
+def verificar_entorno() -> EntornoAudio:
     """Qué capacidades están disponibles en esta máquina.
 
     Se llama antes de ofrecer opciones en la UI: no tiene sentido ofrecer FLAC
@@ -462,7 +463,7 @@ def construir_indice_isrc(session, artista, log=print):
     return indice, artist_id
 
 
-def matchear_por_isrc(productos, indice, log=print):
+def matchear_por_isrc(productos: list[Producto], indice, log=print):
     """Cruza el catálogo relevado contra el índice de Tidal por ISRC.
 
     Como efecto secundario completa el número de track real desde Tidal, que
@@ -489,10 +490,14 @@ def matchear_por_isrc(productos, indice, log=print):
             else:
                 miss += 1
         # Si Tidal nos dio el orden real, dejamos de marcarlo como provisorio.
-        if encontrados == p["track_count"] and all(
-            t.get("tidal", {}) and t["tidal"].get("track_number") for t in p["tracks"]
-        ):
-            p["tracks"].sort(key=lambda t: (t["tidal"].get("volume_number") or 1, t["tidal"]["track_number"]))
+        cruces = [t.get("tidal") for t in p["tracks"]]
+        if encontrados == p["track_count"] and all(c and c.get("track_number") for c in cruces):
+
+            def _orden(t):
+                c = t.get("tidal") or {}
+                return (c.get("volume_number") or 1, c.get("track_number") or 0)
+
+            p["tracks"].sort(key=_orden)
             p["order_unconfirmed"] = False
         p["tidal_cobertura"] = f"{encontrados}/{p['track_count']}"
 

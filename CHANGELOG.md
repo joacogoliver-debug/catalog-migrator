@@ -22,6 +22,12 @@ Lo que cambió en cada versión publicada. Los números siguen
   misma suite antes de empaquetar. Si pytest no colecta nada, el build aborta.
 
 ### Agregado
+- **El contrato entre módulos está escrito, en `contratos.py`.** Lo que
+  devuelve el relevamiento y lo que consumen los productos, la validación, las
+  portadas y el empaquetado dejó de vivir en los docstrings. Son TypedDict, así
+  que en tiempo de ejecución no existen y el programa corre igual, pero pyright
+  los verifica. El test del contrato del orquestador ya no repite las claves a
+  mano: las lee de ahí.
 - **El linter, el formateador y el verificador de tipos corren solos.**
   `pre-commit` pasa ruff y un control de claves de API antes de cada commit, y el
   CI suma `ruff format --check` y `pyright`, que hoy corre en cero errores. El
@@ -40,6 +46,10 @@ Lo que cambió en cada versión publicada. Los números siguen
   backlog que sale de él.
 
 ### Corregido
+- Al relevar un canal que no es Topic, la app cambia al Topic del artista. Si
+  YouTube devolvía la lista de subidas pero no el título del canal, el cambio se
+  hacía igual y el catálogo entero quedaba a nombre de nadie. Ahora se exigen los
+  dos.
 - `relevar_core.py` usaba `urllib.error` sin haberlo importado nunca. Andaba de
   rebote, porque `urllib.request` lo importa por dentro, pero cualquier cambio en
   ese detalle de la biblioteca estándar habría roto el manejo de errores de

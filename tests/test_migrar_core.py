@@ -18,26 +18,13 @@ import pytest
 
 import migrar_core as M
 import relevar_core
+from contratos import Diagnostico, Relevamiento
 
-# Las claves que `relevar()` devuelve y que `migrar_core` consume. Si alguna
-# desaparece, este test se rompe y avisa, que es justamente el punto.
-CLAVES_REALES = {
-    "artist",
-    "channel_title",
-    "tracks",
-    "distribs",
-    "total_views",
-    "units",
-    "codes",
-    # Diagnóstico del canal. Sin esto la app no puede contar que cambió de canal
-    # ni que descartó videos.
-    "es_topic",
-    "cobertura_metadata",
-    "topic_sugerido",
-    "via_topic",
-    "canal_pedido",
-    "descartados",
-}
+# Las claves que `relevar()` tiene que devolver salen del contrato, no de una
+# lista escrita a mano acá. Antes eran catorce cadenas copiadas, que es la forma
+# más fácil de que el test y el código se separen sin que nadie se entere:
+# agregar una clave al contrato y olvidarla acá no rompía nada.
+CLAVES_REALES = set(Relevamiento.__annotations__)
 
 
 def _track(titulo, album, anio, isrc="", upc="", vid="v1"):
@@ -273,3 +260,17 @@ def test_un_filtro_que_no_deja_nada_es_un_error_mostrable(relevar_doble, tmp_pat
             log=lambda *_: None,
         )
     assert "filtros" in str(exc.value)
+
+
+def test_el_diagnostico_es_un_subconjunto_del_relevamiento(relevar_doble):
+    """`migrar_core` arma el diagnóstico a partir de lo que devuelve `relevar()`.
+
+    Todas sus claves menos `canal` salen de ahí con el mismo nombre. Si el
+    contrato de arriba perdiera una, esto se rompe acá en vez de dejar un campo
+    vacío en la pantalla.
+    """
+    propias = set(Diagnostico.__annotations__) - {"canal"}
+    assert propias <= set(Relevamiento.__annotations__)
+
+    _p, _a, _t, diag = M.relevar_catalogo("https://www.youtube.com/@Test", "clave-falsa")
+    assert set(diag) == set(Diagnostico.__annotations__)

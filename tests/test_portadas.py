@@ -11,6 +11,7 @@ cumple el mínimo de ingesta cuando en realidad la van a rechazar.
 import pytest
 
 import portadas as PT
+from conftest import _producto
 
 
 # ============================================================
@@ -94,7 +95,7 @@ def portada_de(monkeypatch, jpeg):
         monkeypatch.setattr(
             PT, "descargar_portada", lambda url100: (jpeg(px_real, alto, relleno=200), min(px_real, alto))
         )
-        p = {"title": "Disco", "upc": ""}
+        p = _producto(title="Disco", cover_status="")
         PT.fetch_portadas([p], "Artista", log=lambda *_: None)
         return p
 
@@ -104,28 +105,30 @@ def portada_de(monkeypatch, jpeg):
 def test_cuando_apple_tiene_3000_el_estado_dice_3000(portada_de):
     """Caso real de Radiohead."""
     p = portada_de(3000)
-    assert p["cover_status"].startswith("3000x3000")
-    assert p["cover_px"] == 3000
+    assert (p.get("cover_status") or "").startswith("3000x3000")
+    assert p.get("cover_px") == 3000
 
 
 def test_cuando_apple_tiene_menos_el_estado_no_miente(portada_de):
     """Caso real de Daft Punk. Pedimos 3000, Apple tiene 1500. Entra en ingesta
     pero el estado tiene que decir 1500."""
     p = portada_de(1500)
-    assert "1500x1500" in p["cover_status"]
-    assert "3000" not in p["cover_status"]
+    estado = p.get("cover_status") or ""
+    assert "1500x1500" in estado
+    assert "3000" not in estado
 
 
 def test_debajo_del_minimo_de_ingesta_se_avisa(portada_de):
     """Caso real de Cerati, 600x604. Debajo del mínimo y además no cuadrada."""
     p = portada_de(600, no_cuadrada=True)
-    assert "DEBAJO DEL MINIMO" in p["cover_status"]
-    assert "3000" not in p["cover_status"]
+    estado = p.get("cover_status") or ""
+    assert "DEBAJO DEL MINIMO" in estado
+    assert "3000" not in estado
 
 
 def test_el_minimo_exacto_no_dispara_el_aviso(portada_de):
     p = portada_de(PT.COVER_MIN_INGESTA)
-    assert "DEBAJO DEL MINIMO" not in p["cover_status"]
+    assert "DEBAJO DEL MINIMO" not in (p.get("cover_status") or "")
 
 
 def test_descarga_fallida(monkeypatch):
@@ -142,16 +145,16 @@ def test_descarga_fallida(monkeypatch):
     )
     monkeypatch.setattr(PT, "descargar_portada", lambda url100: (None, 0))
 
-    p = {"title": "Disco", "upc": ""}
+    p = _producto(title="Disco", cover_status="")
     PT.fetch_portadas([p], "Artista", log=lambda *_: None)
-    assert "falló la descarga" in p["cover_status"]
-    assert p["cover_bytes"] is None
+    assert "falló la descarga" in (p.get("cover_status") or "")
+    assert p.get("cover_bytes") is None
 
 
 def test_sin_match_en_itunes(monkeypatch):
     monkeypatch.setattr(PT, "buscar_portada", lambda artista, album, upc="": None)
 
-    p = {"title": "Disco Inexistente", "upc": ""}
+    p = _producto(title="Disco Inexistente", cover_status="")
     PT.fetch_portadas([p], "Artista", log=lambda *_: None)
-    assert "no está en Apple Music" in p["cover_status"]
-    assert p["cover_bytes"] is None
+    assert "no está en Apple Music" in (p.get("cover_status") or "")
+    assert p.get("cover_bytes") is None
