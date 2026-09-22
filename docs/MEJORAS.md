@@ -43,3 +43,33 @@ Si algún ítem futuro lo necesita de verdad, entra ahí y no como tarea propia.
 **P3 y P4**, la heurística de formato por cantidad de tracks y el módulo de
 audio apagado por defecto. Se revisaron y están bien declarados en el código y en
 el README. No son deuda, son decisiones.
+
+## Estado
+
+Los doce ítems están cerrados. El repositorio pasa, en este orden y sin saltear
+ninguno:
+
+```bash
+pytest -q --cov      # 391 tests, cobertura 59,78 % sobre un umbral de 58
+ruff check .
+ruff format --check .
+pyright              # 0 errores
+python build/build.py
+python build/capturas.py
+```
+
+Lo que queda para otro momento, escrito para que no se pierda:
+
+- **El umbral de cobertura está en 58 % y lo que falta no es azaroso.**
+  `relevar_core`, `portadas` y `audio` son casi sólo entrada y salida contra
+  YouTube, iTunes y Tidal. Las fixtures grabadas de M07 cubren Deezer e iTunes;
+  falta hacer lo mismo con la YouTube Data API, que es la que necesita clave y
+  por eso quedó afuera. `app/launcher.py` está en cero porque abre ventanas del
+  sistema.
+- **`.app` y `.deb` se verificaron por estructura, no corriéndolos.** La máquina
+  donde se hicieron es Windows. El CI los compila en su sistema y corre el
+  ejecutable antes de publicar, pero nadie abrió todavía el `.app` en una Mac ni
+  instaló el `.deb` en un Ubuntu.
+- **pyright está en `basic`.** El camino a `strict` está escrito en
+  `pyproject.toml` y ahora es posible, porque los contratos entre módulos están
+  tipados.

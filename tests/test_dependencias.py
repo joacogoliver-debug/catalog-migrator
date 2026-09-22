@@ -71,3 +71,44 @@ def test_el_nucleo_no_declara_dependencias(extras):
 
 def test_los_tres_extras_existen(extras):
     assert set(extras) == {"app", "audio", "dev"}
+
+
+# ============================================================
+# Que el README no se quede atrás
+# ============================================================
+
+
+@pytest.mark.parametrize("readme", ["README.md", "README.en.md"])
+def test_el_readme_nombra_todos_los_archivos_de_test(readme):
+    """La tabla del README es una promesa de qué cubre la suite.
+
+    Un archivo de test nuevo que no aparece ahí no es grave, pero la tabla deja
+    de servir para saber qué hay, que es su único propósito. Ya pasó dos veces.
+    """
+    import os
+    import re
+
+    with open(f"{RAIZ}/{readme}", encoding="utf-8") as f:
+        declarados = set(re.findall(r"`(tests/[\w.]+\.py)`", f.read()))
+    reales = {f"tests/{n}" for n in os.listdir(f"{RAIZ}/tests") if n.endswith(".py")}
+
+    assert sorted(reales - declarados) == []
+
+
+@pytest.mark.parametrize("readme", ["README.md", "README.en.md"])
+def test_el_readme_nombra_todos_los_modulos_del_paquete(readme):
+    import os
+    import re
+
+    with open(f"{RAIZ}/{readme}", encoding="utf-8") as f:
+        texto = f.read()
+    declarados = set(re.findall(r"`(src/migrador/[\w.]+\.py)`", texto))
+    reales = {
+        f"src/migrador/{n}"
+        for n in os.listdir(f"{RAIZ}/src/migrador")
+        if n.endswith(".py") and n != "__init__.py"
+    }
+
+    assert sorted(reales - declarados) == []
+    # Y al revés: la tabla no puede nombrar algo que ya no está.
+    assert sorted(declarados - reales) == []

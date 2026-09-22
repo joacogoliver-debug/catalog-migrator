@@ -467,6 +467,7 @@ pytest -q --cov
 | `tests/test_contrato_apis.py` | Contrato con Deezer e iTunes, contra respuestas reales grabadas |
 | `tests/test_dependencias.py` | Que los extras y los requirements pidan lo mismo |
 | `tests/test_notas_release.py` | Las notas del release que salen del CHANGELOG |
+| `tests/test_paquete_deb.py` | La estructura del `.deb` de Linux, sin `dpkg` |
 | `tests/test_validar.py` | Validación de códigos, portadas y duplicados |
 | `tests/test_portadas.py` | Resolución real de las portadas |
 | `tests/test_paquete.py` | Estructura del ZIP y etiquetado de calidad |
