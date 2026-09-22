@@ -425,6 +425,7 @@ pytest -q --cov
 | `tests/test_parse_description.py` | Parseo de las descripciones de YouTube |
 | `tests/test_productos.py` | Agrupación en productos y filtros |
 | `tests/test_texto.py` | Normalización de texto, y que no se vuelva a duplicar |
+| `tests/test_contrato_apis.py` | Contrato con Deezer e iTunes, contra respuestas reales grabadas |
 | `tests/test_validar.py` | Validación de códigos, portadas y duplicados |
 | `tests/test_portadas.py` | Resolución real de las portadas |
 | `tests/test_paquete.py` | Estructura del ZIP y etiquetado de calidad |
@@ -436,6 +437,13 @@ pytest -q --cov
 CI los corre en cada push, a propósito **sin** instalar `tiddl`/`yt-dlp`/`ffmpeg`,
 para verificar que el núcleo no dependa de ellos. `build/build.py` corre la misma
 suite antes de empaquetar y aborta si algo falla.
+
+Los tests de contrato contra Deezer e iTunes no inventan las respuestas: leen las que
+esas APIs dieron de verdad, guardadas en `tests/fixtures/` con la URL y la
+fecha de cuándo se grabaron. Se vuelven a tomar con
+`python build/grabar_fixtures.py`, que es **lo único del repositorio que toca
+la red**. Si después de regrabarlas un test se cae, la pregunta es qué cambió
+en la API, no cómo actualizar el archivo.
 
 ### Antes de commitear
 

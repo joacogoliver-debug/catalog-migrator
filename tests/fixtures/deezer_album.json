@@ -1,0 +1,523 @@
+{
+ "_grabado": {
+  "url": "https://api.deezer.com/album/6575789",
+  "fecha": "2026-09-21",
+  "como": "python build/grabar_fixtures.py"
+ },
+ "respuesta": {
+  "id": 6575789,
+  "title": "Random Access Memories",
+  "upc": "886443927087",
+  "link": "https://www.deezer.com/album/6575789",
+  "share": "https://www.deezer.com/album/6575789?utm_source=deezer&utm_content=album-6575789&utm_term=0_1790039744&utm_medium=web",
+  "cover": "https://api.deezer.com/album/6575789/image",
+  "cover_small": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/56x56-000000-80-0-0.jpg",
+  "cover_medium": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/250x250-000000-80-0-0.jpg",
+  "cover_big": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/500x500-000000-80-0-0.jpg",
+  "cover_xl": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/1000x1000-000000-80-0-0.jpg",
+  "md5_image": "311bba0fc112d15f72c8b5a65f0456c1",
+  "genre_id": 113,
+  "genres": {
+   "data": [
+    {
+     "id": 113,
+     "name": "Dance",
+     "picture": "https://api.deezer.com/genre/113/image",
+     "type": "genre"
+    },
+    {
+     "id": 132,
+     "name": "Pop",
+     "picture": "https://api.deezer.com/genre/132/image",
+     "type": "genre"
+    }
+   ]
+  },
+  "label": "Columbia",
+  "nb_tracks": 13,
+  "duration": 4464,
+  "fans": 884960,
+  "release_date": "2013-05-17",
+  "record_type": "album",
+  "available": true,
+  "tracklist": "https://api.deezer.com/album/6575789/tracks",
+  "explicit_lyrics": false,
+  "explicit_content_lyrics": 0,
+  "explicit_content_cover": 0,
+  "contributors": [
+   {
+    "id": 27,
+    "name": "Daft Punk",
+    "link": "https://www.deezer.com/artist/27",
+    "share": "https://www.deezer.com/artist/27?utm_source=deezer&utm_content=artist-27&utm_term=0_1790039744&utm_medium=web",
+    "picture": "https://api.deezer.com/artist/27/image",
+    "picture_small": "https://cdn-images.dzcdn.net/images/artist/638e69b9caaf9f9f3f8826febea7b543/56x56-000000-80-0-0.jpg",
+    "picture_medium": "https://cdn-images.dzcdn.net/images/artist/638e69b9caaf9f9f3f8826febea7b543/250x250-000000-80-0-0.jpg",
+    "picture_big": "https://cdn-images.dzcdn.net/images/artist/638e69b9caaf9f9f3f8826febea7b543/500x500-000000-80-0-0.jpg",
+    "picture_xl": "https://cdn-images.dzcdn.net/images/artist/638e69b9caaf9f9f3f8826febea7b543/1000x1000-000000-80-0-0.jpg",
+    "radio": true,
+    "tracklist": "https://api.deezer.com/artist/27/top?limit=50",
+    "type": "artist",
+    "role": "Main"
+   }
+  ],
+  "artist": {
+   "id": 27,
+   "name": "Daft Punk",
+   "picture": "https://api.deezer.com/artist/27/image",
+   "picture_small": "https://cdn-images.dzcdn.net/images/artist/638e69b9caaf9f9f3f8826febea7b543/56x56-000000-80-0-0.jpg",
+   "picture_medium": "https://cdn-images.dzcdn.net/images/artist/638e69b9caaf9f9f3f8826febea7b543/250x250-000000-80-0-0.jpg",
+   "picture_big": "https://cdn-images.dzcdn.net/images/artist/638e69b9caaf9f9f3f8826febea7b543/500x500-000000-80-0-0.jpg",
+   "picture_xl": "https://cdn-images.dzcdn.net/images/artist/638e69b9caaf9f9f3f8826febea7b543/1000x1000-000000-80-0-0.jpg",
+   "tracklist": "https://api.deezer.com/artist/27/top?limit=50",
+   "type": "artist"
+  },
+  "type": "album",
+  "tracks": {
+   "data": [
+    {
+     "id": 67238728,
+     "readable": true,
+     "title": "Give Life Back to Music",
+     "title_short": "Give Life Back to Music",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/67238728",
+     "duration": 274,
+     "rank": 715949,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "preview": "https://cdnt-preview.dzcdn.net/api/1/1/f/5/7/0/f57885aeb81258994e3d44d33867e85e.mp3?hdnea=exp=1790040644~acl=/api/1/1/f/5/7/0/f57885aeb81258994e3d44d33867e85e.mp3*~data=user_id=0,application_id=42~hmac=b56c86f4545aafcd9b50264549b02aea145a7123712818a067e552484bbddcc4",
+     "md5_image": "311bba0fc112d15f72c8b5a65f0456c1",
+     "artist": {
+      "id": 27,
+      "name": "Daft Punk",
+      "tracklist": "https://api.deezer.com/artist/27/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 6575789,
+      "title": "Random Access Memories",
+      "cover": "https://api.deezer.com/album/6575789/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/1000x1000-000000-80-0-0.jpg",
+      "md5_image": "311bba0fc112d15f72c8b5a65f0456c1",
+      "tracklist": "https://api.deezer.com/album/6575789/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 67238729,
+     "readable": true,
+     "title": "The Game of Love",
+     "title_short": "The Game of Love",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/67238729",
+     "duration": 321,
+     "rank": 672439,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "preview": "https://cdnt-preview.dzcdn.net/api/1/1/4/7/5/0/475fc61bd3272b9036d4ba0e3837451b.mp3?hdnea=exp=1790040644~acl=/api/1/1/4/7/5/0/475fc61bd3272b9036d4ba0e3837451b.mp3*~data=user_id=0,application_id=42~hmac=8068c2381492e034aff25b0471f8f88b8a33b2c6b87609757bdd461a10d56349",
+     "md5_image": "311bba0fc112d15f72c8b5a65f0456c1",
+     "artist": {
+      "id": 27,
+      "name": "Daft Punk",
+      "tracklist": "https://api.deezer.com/artist/27/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 6575789,
+      "title": "Random Access Memories",
+      "cover": "https://api.deezer.com/album/6575789/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/1000x1000-000000-80-0-0.jpg",
+      "md5_image": "311bba0fc112d15f72c8b5a65f0456c1",
+      "tracklist": "https://api.deezer.com/album/6575789/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 67238730,
+     "readable": true,
+     "title": "Giorgio by Moroder",
+     "title_short": "Giorgio by Moroder",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/67238730",
+     "duration": 544,
+     "rank": 793082,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "preview": "https://cdnt-preview.dzcdn.net/api/1/1/2/2/6/0/226a352b5354e78a964d5dad5875ded9.mp3?hdnea=exp=1790040644~acl=/api/1/1/2/2/6/0/226a352b5354e78a964d5dad5875ded9.mp3*~data=user_id=0,application_id=42~hmac=0333694044bc08d63ad55912e7e22119feb34b170d86d54cec37ddd2ba9dcb31",
+     "md5_image": "311bba0fc112d15f72c8b5a65f0456c1",
+     "artist": {
+      "id": 27,
+      "name": "Daft Punk",
+      "tracklist": "https://api.deezer.com/artist/27/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 6575789,
+      "title": "Random Access Memories",
+      "cover": "https://api.deezer.com/album/6575789/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/1000x1000-000000-80-0-0.jpg",
+      "md5_image": "311bba0fc112d15f72c8b5a65f0456c1",
+      "tracklist": "https://api.deezer.com/album/6575789/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 67238731,
+     "readable": true,
+     "title": "Within",
+     "title_short": "Within",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/67238731",
+     "duration": 228,
+     "rank": 722046,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "preview": "https://cdnt-preview.dzcdn.net/api/1/1/1/0/9/0/10972c895bf5b6303939096203323285.mp3?hdnea=exp=1790040644~acl=/api/1/1/1/0/9/0/10972c895bf5b6303939096203323285.mp3*~data=user_id=0,application_id=42~hmac=b9ba403c7041a3a77c1ba3e37fee2959cf0443e3c2644dd2f372f184567d4a53",
+     "md5_image": "311bba0fc112d15f72c8b5a65f0456c1",
+     "artist": {
+      "id": 27,
+      "name": "Daft Punk",
+      "tracklist": "https://api.deezer.com/artist/27/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 6575789,
+      "title": "Random Access Memories",
+      "cover": "https://api.deezer.com/album/6575789/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/1000x1000-000000-80-0-0.jpg",
+      "md5_image": "311bba0fc112d15f72c8b5a65f0456c1",
+      "tracklist": "https://api.deezer.com/album/6575789/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 67238732,
+     "readable": true,
+     "title": "Instant Crush (feat. Julian Casablancas)",
+     "title_short": "Instant Crush",
+     "title_version": "(feat. Julian Casablancas)",
+     "link": "https://www.deezer.com/track/67238732",
+     "duration": 337,
+     "rank": 942491,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "preview": "https://cdnt-preview.dzcdn.net/api/1/1/d/6/b/0/d6bc80aadfa1d7625d59a6620f229371.mp3?hdnea=exp=1790040644~acl=/api/1/1/d/6/b/0/d6bc80aadfa1d7625d59a6620f229371.mp3*~data=user_id=0,application_id=42~hmac=3092c96160077fe12e11809e50726d02ff12f8bfdc0cc6c27e679f36e3cd0e8e",
+     "md5_image": "311bba0fc112d15f72c8b5a65f0456c1",
+     "artist": {
+      "id": 27,
+      "name": "Daft Punk",
+      "tracklist": "https://api.deezer.com/artist/27/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 6575789,
+      "title": "Random Access Memories",
+      "cover": "https://api.deezer.com/album/6575789/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/1000x1000-000000-80-0-0.jpg",
+      "md5_image": "311bba0fc112d15f72c8b5a65f0456c1",
+      "tracklist": "https://api.deezer.com/album/6575789/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 67238733,
+     "readable": true,
+     "title": "Lose Yourself to Dance (feat. Pharrell Williams)",
+     "title_short": "Lose Yourself to Dance",
+     "title_version": "(feat. Pharrell Williams)",
+     "link": "https://www.deezer.com/track/67238733",
+     "duration": 353,
+     "rank": 809920,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "preview": "https://cdnt-preview.dzcdn.net/api/1/1/e/5/3/0/e53185570f71c51bf4903d1e78ed5348.mp3?hdnea=exp=1790040644~acl=/api/1/1/e/5/3/0/e53185570f71c51bf4903d1e78ed5348.mp3*~data=user_id=0,application_id=42~hmac=99807468e5d1a6dfa85174fad7741a515ef3f66bf58a5d2e18fceac0af616a5d",
+     "md5_image": "311bba0fc112d15f72c8b5a65f0456c1",
+     "artist": {
+      "id": 27,
+      "name": "Daft Punk",
+      "tracklist": "https://api.deezer.com/artist/27/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 6575789,
+      "title": "Random Access Memories",
+      "cover": "https://api.deezer.com/album/6575789/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/1000x1000-000000-80-0-0.jpg",
+      "md5_image": "311bba0fc112d15f72c8b5a65f0456c1",
+      "tracklist": "https://api.deezer.com/album/6575789/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 67238734,
+     "readable": true,
+     "title": "Touch (feat. Paul Williams)",
+     "title_short": "Touch",
+     "title_version": "(feat. Paul Williams)",
+     "link": "https://www.deezer.com/track/67238734",
+     "duration": 498,
+     "rank": 713948,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "preview": "https://cdnt-preview.dzcdn.net/api/1/1/9/0/4/0/904b68e3325517e6d8faf07852b9cf8c.mp3?hdnea=exp=1790040644~acl=/api/1/1/9/0/4/0/904b68e3325517e6d8faf07852b9cf8c.mp3*~data=user_id=0,application_id=42~hmac=77734c6193a4779eb9e7534817e53ab1b74a2b64ab4d76deeb410e13109208b8",
+     "md5_image": "311bba0fc112d15f72c8b5a65f0456c1",
+     "artist": {
+      "id": 27,
+      "name": "Daft Punk",
+      "tracklist": "https://api.deezer.com/artist/27/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 6575789,
+      "title": "Random Access Memories",
+      "cover": "https://api.deezer.com/album/6575789/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/1000x1000-000000-80-0-0.jpg",
+      "md5_image": "311bba0fc112d15f72c8b5a65f0456c1",
+      "tracklist": "https://api.deezer.com/album/6575789/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 67238735,
+     "readable": true,
+     "title": "Get Lucky (feat. Pharrell Williams and Nile Rodgers)",
+     "title_short": "Get Lucky",
+     "title_version": "(feat. Pharrell Williams and Nile Rodgers)",
+     "link": "https://www.deezer.com/track/67238735",
+     "duration": 367,
+     "rank": 877635,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "preview": "https://cdnt-preview.dzcdn.net/api/1/1/c/8/a/0/c8a61130657a2cf58e3ac751e7950617.mp3?hdnea=exp=1790040644~acl=/api/1/1/c/8/a/0/c8a61130657a2cf58e3ac751e7950617.mp3*~data=user_id=0,application_id=42~hmac=8238bfaf39387e0aee5004799d17599ac7282aaacc5a67d2aac68de142a334f2",
+     "md5_image": "311bba0fc112d15f72c8b5a65f0456c1",
+     "artist": {
+      "id": 27,
+      "name": "Daft Punk",
+      "tracklist": "https://api.deezer.com/artist/27/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 6575789,
+      "title": "Random Access Memories",
+      "cover": "https://api.deezer.com/album/6575789/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/1000x1000-000000-80-0-0.jpg",
+      "md5_image": "311bba0fc112d15f72c8b5a65f0456c1",
+      "tracklist": "https://api.deezer.com/album/6575789/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 67238736,
+     "readable": true,
+     "title": "Beyond",
+     "title_short": "Beyond",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/67238736",
+     "duration": 290,
+     "rank": 624783,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "preview": "https://cdnt-preview.dzcdn.net/api/1/1/8/8/5/0/885c72be5aa016fb7560aa01cd979850.mp3?hdnea=exp=1790040644~acl=/api/1/1/8/8/5/0/885c72be5aa016fb7560aa01cd979850.mp3*~data=user_id=0,application_id=42~hmac=04efaaf0c718cd6378086113edcc735a2d85ad5d4df0784cc5ba1c5c1f35f9a0",
+     "md5_image": "311bba0fc112d15f72c8b5a65f0456c1",
+     "artist": {
+      "id": 27,
+      "name": "Daft Punk",
+      "tracklist": "https://api.deezer.com/artist/27/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 6575789,
+      "title": "Random Access Memories",
+      "cover": "https://api.deezer.com/album/6575789/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/1000x1000-000000-80-0-0.jpg",
+      "md5_image": "311bba0fc112d15f72c8b5a65f0456c1",
+      "tracklist": "https://api.deezer.com/album/6575789/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 67238737,
+     "readable": true,
+     "title": "Motherboard",
+     "title_short": "Motherboard",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/67238737",
+     "duration": 341,
+     "rank": 589447,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "preview": "https://cdnt-preview.dzcdn.net/api/1/1/1/b/f/0/1bffd335a2958cbdace9fc6249a6b78e.mp3?hdnea=exp=1790040644~acl=/api/1/1/1/b/f/0/1bffd335a2958cbdace9fc6249a6b78e.mp3*~data=user_id=0,application_id=42~hmac=c52555028936235105acf30ad8fd6182bff5673e1b5b7934c3aa2e50df0607c9",
+     "md5_image": "311bba0fc112d15f72c8b5a65f0456c1",
+     "artist": {
+      "id": 27,
+      "name": "Daft Punk",
+      "tracklist": "https://api.deezer.com/artist/27/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 6575789,
+      "title": "Random Access Memories",
+      "cover": "https://api.deezer.com/album/6575789/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/1000x1000-000000-80-0-0.jpg",
+      "md5_image": "311bba0fc112d15f72c8b5a65f0456c1",
+      "tracklist": "https://api.deezer.com/album/6575789/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 67238738,
+     "readable": true,
+     "title": "Fragments of Time (feat. Todd Edwards)",
+     "title_short": "Fragments of Time",
+     "title_version": "(feat. Todd Edwards)",
+     "link": "https://www.deezer.com/track/67238738",
+     "duration": 279,
+     "rank": 679297,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "preview": "https://cdnt-preview.dzcdn.net/api/1/1/1/4/0/0/14035d6807f81fd20c5c6c4451be2af2.mp3?hdnea=exp=1790040644~acl=/api/1/1/1/4/0/0/14035d6807f81fd20c5c6c4451be2af2.mp3*~data=user_id=0,application_id=42~hmac=7a641bcbf7c1044c8f7b5cccbf591386654b09409ce6c8ceb75d5641fdf6697a",
+     "md5_image": "311bba0fc112d15f72c8b5a65f0456c1",
+     "artist": {
+      "id": 27,
+      "name": "Daft Punk",
+      "tracklist": "https://api.deezer.com/artist/27/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 6575789,
+      "title": "Random Access Memories",
+      "cover": "https://api.deezer.com/album/6575789/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/1000x1000-000000-80-0-0.jpg",
+      "md5_image": "311bba0fc112d15f72c8b5a65f0456c1",
+      "tracklist": "https://api.deezer.com/album/6575789/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 67238739,
+     "readable": true,
+     "title": "Doin' it Right (feat. Panda Bear)",
+     "title_short": "Doin' it Right",
+     "title_version": "(feat. Panda Bear)",
+     "link": "https://www.deezer.com/track/67238739",
+     "duration": 251,
+     "rank": 593715,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "preview": "https://cdnt-preview.dzcdn.net/api/1/1/6/0/a/0/60a2977a8361f6ea2298eccface4a8a6.mp3?hdnea=exp=1790040644~acl=/api/1/1/6/0/a/0/60a2977a8361f6ea2298eccface4a8a6.mp3*~data=user_id=0,application_id=42~hmac=291104444dbf53675979c90bb1398c3170646d74866d56ca03bba96122848ccc",
+     "md5_image": "311bba0fc112d15f72c8b5a65f0456c1",
+     "artist": {
+      "id": 27,
+      "name": "Daft Punk",
+      "tracklist": "https://api.deezer.com/artist/27/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 6575789,
+      "title": "Random Access Memories",
+      "cover": "https://api.deezer.com/album/6575789/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/1000x1000-000000-80-0-0.jpg",
+      "md5_image": "311bba0fc112d15f72c8b5a65f0456c1",
+      "tracklist": "https://api.deezer.com/album/6575789/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    },
+    {
+     "id": 67238740,
+     "readable": true,
+     "title": "Contact",
+     "title_short": "Contact",
+     "title_version": "",
+     "link": "https://www.deezer.com/track/67238740",
+     "duration": 381,
+     "rank": 619034,
+     "explicit_lyrics": false,
+     "explicit_content_lyrics": 0,
+     "explicit_content_cover": 0,
+     "preview": "https://cdnt-preview.dzcdn.net/api/1/1/a/b/3/0/ab34cff630d89acd2b5aacf98a6d79c5.mp3?hdnea=exp=1790040644~acl=/api/1/1/a/b/3/0/ab34cff630d89acd2b5aacf98a6d79c5.mp3*~data=user_id=0,application_id=42~hmac=4d4041897e29993cf0aab8985833ca991f2fc255a93c9f9fbd9575e07bc1cf73",
+     "md5_image": "311bba0fc112d15f72c8b5a65f0456c1",
+     "artist": {
+      "id": 27,
+      "name": "Daft Punk",
+      "tracklist": "https://api.deezer.com/artist/27/top?limit=50",
+      "type": "artist"
+     },
+     "album": {
+      "id": 6575789,
+      "title": "Random Access Memories",
+      "cover": "https://api.deezer.com/album/6575789/image",
+      "cover_small": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/56x56-000000-80-0-0.jpg",
+      "cover_medium": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/250x250-000000-80-0-0.jpg",
+      "cover_big": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/500x500-000000-80-0-0.jpg",
+      "cover_xl": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/1000x1000-000000-80-0-0.jpg",
+      "md5_image": "311bba0fc112d15f72c8b5a65f0456c1",
+      "tracklist": "https://api.deezer.com/album/6575789/tracks",
+      "type": "album"
+     },
+     "type": "track"
+    }
+   ]
+  }
+ }
+}

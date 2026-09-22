@@ -174,7 +174,8 @@ qué archivos tocaste: eso ya lo dice el diff.
 | `paquete.py` | Planillas, hoja de ingesta, reportes y ZIP |
 | `audio.py` | Módulo de audio opcional |
 | `migrar_core.py` | Orquesta los cuatro pasos |
-| `build/` | Empaquetado, instalador, icono, capturas y control de claves |
+| `build/` | Empaquetado, instalador, icono, capturas, claves y fixtures |
+| `tests/fixtures/` | Respuestas reales de Deezer e iTunes, grabadas una vez |
 | `docs/` | Decisiones de producto y de diseño |
 
 `docs/marca/` es el logotipo y sus reglas de uso. No se toca.

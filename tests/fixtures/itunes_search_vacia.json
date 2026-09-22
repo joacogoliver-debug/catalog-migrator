@@ -1,0 +1,11 @@
+{
+ "_grabado": {
+  "url": "https://itunes.apple.com/search?term=zzzz+qqqq+no+existe+este+disco+12345&entity=album&limit=25",
+  "fecha": "2026-09-21",
+  "como": "python build/grabar_fixtures.py"
+ },
+ "respuesta": {
+  "resultCount": 0,
+  "results": []
+ }
+}

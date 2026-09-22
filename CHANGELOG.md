@@ -22,6 +22,11 @@ Lo que cambió en cada versión publicada. Los números siguen
   misma suite antes de empaquetar. Si pytest no colecta nada, el build aborta.
 
 ### Agregado
+- **Tests de contrato contra respuestas reales de Deezer y de iTunes.** Los
+  dobles escritos a mano prueban que el código es consistente consigo mismo, no
+  que entienda lo que las APIs devuelven. Ahora hay siete respuestas grabadas en
+  `tests/fixtures/`, con su URL y su fecha, y los tests corren el cliente de
+  verdad contra ellas. Siguen sin tocar la red.
 - `texto.py`, con una sola implementación de la normalización de texto y de los
   nombres de archivo seguros. Estaban escritas seis veces en cinco módulos, casi
   iguales pero no del todo.

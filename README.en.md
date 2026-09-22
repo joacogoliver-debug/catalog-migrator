@@ -428,6 +428,7 @@ pytest -q --cov
 | `tests/test_parse_description.py` | Parsing of YouTube descriptions |
 | `tests/test_productos.py` | Grouping into products and filters |
 | `tests/test_texto.py` | Text normalization, and that it stays deduplicated |
+| `tests/test_contrato_apis.py` | Deezer and iTunes contract, against real recorded responses |
 | `tests/test_validar.py` | Validation of codes, artwork and duplicates |
 | `tests/test_portadas.py` | Real artwork resolution |
 | `tests/test_paquete.py` | ZIP structure and quality labeling |
@@ -440,6 +441,13 @@ CI runs them on every push, deliberately **without** installing
 `tiddl`/`yt-dlp`/`ffmpeg`, to verify that the core does not depend on them.
 `build/build.py` runs the same suite before packaging and aborts if anything
 fails.
+
+The Deezer and iTunes tests do not invent their responses: they read the ones
+those APIs actually returned, stored in `tests/fixtures/` along with the URL
+and the date they were recorded. They are re-taken with
+`python build/grabar_fixtures.py`, which is **the only thing in the repository
+that touches the network**. If a test fails after re-recording, the question is
+what changed in the API, not how to update the file.
 
 ### Before committing
 

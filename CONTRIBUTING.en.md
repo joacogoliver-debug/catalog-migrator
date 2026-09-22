@@ -169,7 +169,8 @@ you touched: the diff already says that.
 | `paquete.py` | Spreadsheets, ingestion sheet, reports and ZIP |
 | `audio.py` | Optional audio module |
 | `migrar_core.py` | Orchestrates the four steps |
-| `build/` | Packaging, installer, icon, screenshots and the key check |
+| `build/` | Packaging, installer, icon, screenshots, key check and fixtures |
+| `tests/fixtures/` | Real Deezer and iTunes responses, recorded once |
 | `docs/` | Product and design decisions |
 
 `docs/marca/` is the logo and its usage rules. It is not to be touched.

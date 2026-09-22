@@ -22,6 +22,11 @@ What changed in every published version. The numbers follow
   suite before packaging. If pytest collects nothing, the build aborts.
 
 ### Added
+- **Contract tests against real Deezer and iTunes responses.** Hand-written
+  doubles prove the code is consistent with itself, not that it understands what
+  the APIs return. There are now seven recorded responses in `tests/fixtures/`,
+  with their URL and date, and the tests run the real client against them. They
+  still touch no network.
 - `texto.py`, with a single implementation of text normalization and safe file
   names. They were written six times across five modules, nearly identical but
   not quite.

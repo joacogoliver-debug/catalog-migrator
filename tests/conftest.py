@@ -323,3 +323,27 @@ def _esperar(cond, segundos=30, paso=0.02):
 @pytest.fixture
 def esperar():
     return _esperar
+
+
+# ============================================================
+# Respuestas reales grabadas de Deezer e iTunes
+# ============================================================
+
+FIXTURES = os.path.join(RAIZ, "tests", "fixtures")
+
+
+def _respuesta_grabada(nombre):
+    """El cuerpo de una respuesta real, tal como la devolvió la API.
+
+    Las graba `build/grabar_fixtures.py`, que es lo único del repositorio que
+    toca la red. Los tests leen el archivo y no salen a ningún lado.
+    """
+    import json
+
+    with open(os.path.join(FIXTURES, nombre), encoding="utf-8") as f:
+        return json.load(f)["respuesta"]
+
+
+@pytest.fixture
+def respuesta_grabada():
+    return _respuesta_grabada

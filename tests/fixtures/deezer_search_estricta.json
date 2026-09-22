@@ -1,0 +1,11 @@
+{
+ "_grabado": {
+  "url": "https://api.deezer.com/search?q=track%3A%22Get%20Lucky%22%20artist%3A%22Daft%20Punk%22&limit=5",
+  "fecha": "2026-09-21",
+  "como": "python build/grabar_fixtures.py"
+ },
+ "respuesta": {
+  "data": [],
+  "total": 0
+ }
+}
