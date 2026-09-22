@@ -22,6 +22,11 @@ What changed in every published version. The numbers follow
   suite before packaging. If pytest collects nothing, the build aborts.
 
 ### Added
+- **The CSP has a test.** Of the three local-server defenses it was the only one
+  without one, and it is a loose string inside a method, so loosening it broke
+  nothing. It now checks that the header is intact, that no directive opens an
+  external origin, that inline scripts stay forbidden, and that the page itself
+  does not break its own policy.
 - **Coverage with a threshold.** `pytest -q --cov` measures the app and fails if
   it drops below the threshold in `pyproject.toml`. The threshold is set where
   we are, not where we would like to be.

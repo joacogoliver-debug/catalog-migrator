@@ -584,3 +584,113 @@ def test_el_cuerpo_se_consume_aunque_la_ruta_no_lo_use(cliente):
             assert r.status == 400
     finally:
         conn.close()
+
+
+# ============================================================
+# La tercera defensa, la CSP
+# ============================================================
+#
+# El token y el Host cortan a quien quiera *entrar* desde afuera. La CSP corta
+# lo contrario, que la propia página pida o ejecute algo de afuera. Importa
+# porque el contenido que la app muestra viene de YouTube, de Deezer y de Apple,
+# y un título con HTML adentro no tiene que poder traer un script ni llamar a
+# ningún lado.
+#
+# Es la defensa más fácil de romper sin darse cuenta, porque es un string suelto
+# adentro de un método, y hasta acá no la miraba ningún test.
+
+def _csp(cliente):
+    _cod, _cuerpo, hdr = cliente.get("/")
+    return hdr.get("Content-Security-Policy") or ""
+
+
+def test_la_pagina_declara_una_csp(cliente):
+    assert _csp(cliente)
+
+
+@pytest.mark.parametrize("directiva", [
+    "default-src 'self'",       # nada de afuera, salvo lo que se abra abajo
+    "img-src 'self' data:",     # data: lo necesitan las portadas ya descargadas
+    "font-src 'self'",          # las tipografías viajan adentro
+    "connect-src 'self'",       # la página no puede llamar a ningún lado
+    "form-action 'none'",       # ni mandar un formulario afuera
+    "base-uri 'none'",          # ni cambiar la base de las URLs relativas
+])
+def test_la_csp_declara_la_directiva(cliente, directiva):
+    assert directiva in _csp(cliente)
+
+
+def test_la_csp_no_habilita_ningun_origen_externo(cliente):
+    """Si alguna directiva dejara entrar un dominio, un CDN o un comodín, la app
+    dejaría de funcionar sin internet y además se abriría la puerta que esto
+    cierra."""
+    politica = _csp(cliente)
+    assert "http://" not in politica
+    assert "https://" not in politica
+    assert "*" not in politica
+
+
+def test_los_scripts_inline_siguen_prohibidos(cliente):
+    """`'unsafe-inline'` está sólo para los estilos, que la interfaz usa para
+    cosas como el ancho de la barra de progreso. Si apareciera en `default-src`
+    o en un `script-src`, un título de YouTube con un `<script>` adentro pasaría
+    a ejecutarse."""
+    directivas = {}
+    for parte in _csp(cliente).split(";"):
+        parte = parte.strip()
+        if parte:
+            nombre, _, valores = parte.partition(" ")
+            directivas[nombre] = valores
+
+    assert "'unsafe-inline'" not in directivas.get("default-src", "")
+    assert "'unsafe-inline'" not in directivas.get("script-src", "")
+    assert "'unsafe-inline'" in directivas.get("style-src", "")
+
+
+def test_la_csp_viaja_junto_al_token_y_no_en_lugar_de_el(cliente):
+    """Las tres defensas son tres, no una lista de la que se elige. Este test
+    existe para que sacar cualquiera de ellas se note acá."""
+    _cod, cuerpo, hdr = cliente.get("/")
+    assert hdr.get("Content-Security-Policy")
+    assert backend.TOKEN.encode() in cuerpo
+    assert cliente.crudo("GET", "/api/config", {"Host": "evil.example.com"}) == 403
+
+
+def test_la_pagina_cumple_su_propia_csp():
+    """Una CSP que la página incumple es una CSP que alguien va a aflojar.
+
+    Se mira el archivo y no la respuesta: lo que importa es que nadie agregue un
+    `<script>` inline o un recurso por CDN, que en el navegador fallarían en
+    silencio para quien no tenga la consola abierta.
+    """
+    import re
+    from conftest import RAIZ
+
+    html = open(os.path.join(RAIZ, "app", "web", "index.html"), encoding="utf-8").read()
+
+    # Ningún <script> con código adentro. Los tres que hay son archivos.
+    inline = [m for m in re.findall(r"<script\b[^>]*>(.*?)</script>", html, re.S)
+              if m.strip()]
+    assert inline == []
+
+    # Ningún recurso de afuera. Los enlaces de navegación (un <a href>) no
+    # cuentan: la CSP no los bloquea y no cargan nada.
+    externos = [u for u in re.findall(r'\bsrc="([^"]+)"', html) if "//" in u]
+    externos += [u for u in re.findall(r'<link[^>]+href="([^"]+)"', html) if "//" in u]
+    assert externos == []
+
+
+def test_las_tipografias_no_vienen_de_ningun_cdn():
+    """`font-src 'self'` sería mentira si el CSS pidiera una fuente afuera, y la
+    app dejaría de verse igual sin internet."""
+    import glob
+    import re
+    from conftest import RAIZ
+
+    urls = []
+    for ruta in (glob.glob(os.path.join(RAIZ, "app", "web", "*.css"))
+                 + glob.glob(os.path.join(RAIZ, "app", "web", "tokens", "*.css"))):
+        with open(ruta, encoding="utf-8") as f:
+            urls += [u for u in re.findall(r"url\(['\"]?([^'\")]+)", f.read())
+                     if "//" in u]
+    assert urls == []

@@ -384,17 +384,24 @@ No frameworks and no build step, so that packaging is copying files:
 ### On the local server's security
 
 Listening only on `127.0.0.1` is not enough: any page open in that same machine's
-browser can send requests to localhost. That is why there are two further
-defenses, both cheap and both with a test of their own:
+browser can send requests to localhost. That is why there are three further
+defenses, all three cheap and all three with a test of their own:
 
 1. **Session token.** A new one is generated at every startup, injected into
    `index.html`, and every `/api/` route demands it. An external page cannot read
    it, because the origin is a different one.
 2. **`Host` check.** Only `127.0.0.1` or `localhost` are accepted, which cuts off
    DNS rebinding, the classic way around the previous defense.
+3. **CSP.** The page cannot request or execute anything from outside. The first
+   two cut off whoever wants to get in; this one cuts off the opposite, because
+   the content the app displays comes from YouTube, Deezer and Apple, and a title
+   with HTML inside it must not be able to pull in a script or call anywhere.
+   Inline scripts are forbidden, which is why even the one that picks the theme
+   lives in its own file.
 
-On top of that, the page declares a CSP that does not let it request anything
-outside, which is consistent with an app that works with no internet.
+It is also consistent with an app that works with no internet: the typefaces and
+everything else come from this same server, and the test checks both things, that
+the header is intact and that the page does not break it.
 
 ## Tests
 
@@ -421,7 +428,7 @@ pytest -q --cov
 | `tests/test_validar.py` | Validation of codes, artwork and duplicates |
 | `tests/test_portadas.py` | Real artwork resolution |
 | `tests/test_paquete.py` | ZIP structure and quality labeling |
-| `tests/test_app.py` | Backend, jobs, HTTP, token and Host |
+| `tests/test_app.py` | Backend, jobs, HTTP, and the three defenses |
 | `tests/test_migrar_core.py` | Orchestrator contract |
 | `tests/test_errores_youtube.py` | Translation of YouTube Data API errors |
 | `tests/test_audio_tidal.py` | tiddl contract, skipped when it is not installed |

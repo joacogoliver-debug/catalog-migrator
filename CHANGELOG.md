@@ -22,6 +22,11 @@ Lo que cambió en cada versión publicada. Los números siguen
   misma suite antes de empaquetar. Si pytest no colecta nada, el build aborta.
 
 ### Agregado
+- **La CSP tiene test.** De las tres defensas del servidor local era la única
+  sin uno, y es un string suelto adentro de un método, así que aflojarla no
+  rompía nada. Ahora se verifica que esté entera, que ninguna directiva abra un
+  origen externo, que los scripts inline sigan prohibidos, y que la propia
+  página no incumpla su política.
 - **Cobertura con umbral.** `pytest -q --cov` mide la app y falla si baja del
   umbral de `pyproject.toml`. El umbral está puesto donde estamos, no donde nos
   gustaría.

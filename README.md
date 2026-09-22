@@ -380,17 +380,24 @@ Sin frameworks ni build step, para que empaquetar sea copiar archivos:
 ### Sobre la seguridad del servidor local
 
 Escuchar sólo en `127.0.0.1` no alcanza: cualquier página abierta en el navegador
-de esa misma máquina puede mandarle pedidos a localhost. Por eso hay dos
-defensas más, las dos baratas y las dos con test propio:
+de esa misma máquina puede mandarle pedidos a localhost. Por eso hay tres
+defensas más, las tres baratas y las tres con test propio:
 
 1. **Token de sesión.** Se genera uno nuevo en cada arranque, se inyecta en
    `index.html` y toda ruta `/api/` lo exige. Una página externa no lo puede
    leer, porque el origen es distinto.
 2. **Control de `Host`.** Se acepta sólo `127.0.0.1` o `localhost`, lo que corta
    el rebinding de DNS, que es la vuelta clásica para saltear lo anterior.
+3. **CSP.** La página no puede pedir ni ejecutar nada de afuera. Las dos
+   primeras cortan a quien quiera entrar; ésta corta lo contrario, porque el
+   contenido que la app muestra viene de YouTube, de Deezer y de Apple, y un
+   título con HTML adentro no tiene que poder traer un script ni llamar a ningún
+   lado. Los scripts inline quedan prohibidos, y por eso hasta el que elige el
+   tema vive en su propio archivo.
 
-Además la página declara una CSP que no le permite pedir nada afuera, lo cual es
-consistente con una app que funciona sin internet.
+Es además consistente con una app que funciona sin internet: las tipografías y
+todo lo demás salen de este mismo servidor, y el test verifica las dos cosas, que
+la cabecera esté entera y que la página no la incumpla.
 
 ## Tests
 
@@ -417,7 +424,7 @@ pytest -q --cov
 | `tests/test_validar.py` | Validación de códigos, portadas y duplicados |
 | `tests/test_portadas.py` | Resolución real de las portadas |
 | `tests/test_paquete.py` | Estructura del ZIP y etiquetado de calidad |
-| `tests/test_app.py` | Backend, trabajos, HTTP, token y Host |
+| `tests/test_app.py` | Backend, trabajos, HTTP, y las tres defensas |
 | `tests/test_migrar_core.py` | Contrato del orquestador |
 | `tests/test_errores_youtube.py` | Traducción de los errores de la YouTube Data API |
 | `tests/test_audio_tidal.py` | Contrato con tiddl, se saltea si no está instalado |
