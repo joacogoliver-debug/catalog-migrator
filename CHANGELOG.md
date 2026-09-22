@@ -6,7 +6,7 @@ Lo que cambió en cada versión publicada. Los números siguen
 [SemVer](https://semver.org/lang/es/), y las descargas están en
 [Releases](https://github.com/joacogoliver-debug/catalog-migrator/releases).
 
-## [Sin publicar]
+## [1.1.0] — 2026-09-22
 
 ### Cambiado
 - **La suite de tests corre con pytest.** Los diez archivos eran scripts con un
@@ -184,6 +184,7 @@ Primera versión pública.
 - Ejecutables para Windows, macOS y Linux compilados en GitHub Actions, con
   SHA256 y atestación de procedencia.
 
+[1.1.0]: https://github.com/joacogoliver-debug/catalog-migrator/releases/tag/v1.1.0
 [1.0.2]: https://github.com/joacogoliver-debug/catalog-migrator/releases/tag/v1.0.2
 [1.0.1]: https://github.com/joacogoliver-debug/catalog-migrator/releases/tag/v1.0.1
 [1.0.0]: https://github.com/joacogoliver-debug/catalog-migrator/releases/tag/v1.0.0
