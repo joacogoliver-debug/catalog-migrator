@@ -346,7 +346,7 @@ _RE_PHONO_LINE = re.compile(r"^\s*℗\s*(.+)$", re.MULTILINE)
 # que importa: sin él, "℗ 5358533 Records DK" ,el sello placeholder que pone
 # DistroKid cuando el artista no cargó ninguno, se leía como el año 5358.
 _RE_ANIO_SELLO = re.compile(r"^(\d{4})(?!\d)\s*(.*)$")
-_RE_RELEASED = re.compile(r"Released on:\s*(\d{4})-\d{2}-\d{2}")
+_RE_RELEASED = re.compile(r"Released on:\s*(\d{4})-(\d{2})-(\d{2})")
 _RE_SELLO_RELLENO = re.compile(r"^\d{5,}\s+Records DK$", re.IGNORECASE)
 
 
@@ -365,6 +365,7 @@ def parse_description(desc) -> DescripcionParseada:
         "distributor": None,
         "album": None,
         "release_year": None,
+        "release_date": None,
         "label": None,
     }
     if not desc:
@@ -407,11 +408,17 @@ def parse_description(desc) -> DescripcionParseada:
         if res["label"] and _RE_SELLO_RELLENO.match(res["label"]):
             res["label"] = None
 
-    # "Released on:" es la fecha real del lanzamiento y es la fuente preferida
-    # cuando la línea ℗ no trae año, que es el caso de todo DistroKid.
-    if not res["release_year"]:
-        rm = _RE_RELEASED.search(desc)
-        if rm and _anio_plausible(int(rm.group(1))):
+    # "Released on:" es la fecha real del lanzamiento. Se guarda entera: es la
+    # fecha que la hoja de ingesta necesita, y antes se leía sólo el año y la
+    # hoja ponía en su lugar la fecha de subida a YouTube. Y es la fuente del año
+    # cuando la línea ℗ no lo trae, que es el caso de todo DistroKid.
+    rm = _RE_RELEASED.search(desc)
+    if rm and _anio_plausible(int(rm.group(1))):
+        try:
+            res["release_date"] = date(int(rm.group(1)), int(rm.group(2)), int(rm.group(3))).isoformat()
+        except ValueError:
+            pass  # una fecha imposible (mes 13) no es un dato
+        if not res["release_year"]:
             res["release_year"] = int(rm.group(1))
     return res
 
@@ -448,6 +455,7 @@ def build_tracks(videos) -> list[Track]:
                 "likes": int(st.get("likeCount", 0) or 0),
                 "comments": int(st.get("commentCount", 0) or 0),
                 "upload_date": pub,
+                "release_date": meta["release_date"] or "",
                 "desc3": desc3,
                 "url": f"https://youtu.be/{v.get('id')}",
             }

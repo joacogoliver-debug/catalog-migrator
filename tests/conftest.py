@@ -77,6 +77,7 @@ def _track(
     date=None,
     vid=None,
     dur=200,
+    released="",
 ):
     """Un track con la forma exacta que devuelve `relevar_core.build_tracks`.
 
@@ -99,6 +100,7 @@ def _track(
         "likes": 1,
         "comments": 0,
         "upload_date": date or f"{anio}-01-01",
+        "release_date": released or "",
         "desc3": "",
         "url": f"https://youtu.be/{vid or 'x'}",
     }
@@ -130,6 +132,7 @@ def _producto(
         "artist": "Artista Test",
         "release_year": year,
         "release_date": f"{year or 2020}-01-01",
+        "upload_date": f"{year or 2020}-01-01",
         "label": label,
         "distributor": "ONErpm",
         "upc": upc,

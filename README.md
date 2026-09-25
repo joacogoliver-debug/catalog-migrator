@@ -482,6 +482,7 @@ pytest -q --cov
 | `tests/test_app.py` | Backend, trabajos, HTTP, y las tres defensas |
 | `tests/test_capturas.py` | Que el material de ejemplo de las capturas diga lo mismo que la app |
 | `tests/test_entrada_hostil.py` | Que nada de lo que entra de afuera se ejecute: yt-dlp, fórmulas, portadas |
+| `tests/test_fechas.py` | La fecha de lanzamiento real, separada de la de subida a YouTube |
 | `tests/test_urls_youtube.py` | Qué se puede pegar en el campo del link, sin confundir un canal con otro |
 | `tests/test_versiones.py` | Que un vivo, un remix o un remaster no se queden con el código ni la portada de otra versión |
 | `tests/test_nombres_zip.py` | Nombres adentro del ZIP: únicos, cortos y sin salirse de la raíz |

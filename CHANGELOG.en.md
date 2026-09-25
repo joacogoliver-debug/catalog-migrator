@@ -9,6 +9,10 @@ What changed in every published version. The numbers follow
 ## [Unreleased]
 
 ### Added
+- The ingestion sheet has an `Original Release Date` column, with the same
+  real date as `Release Date`, because each distributor asks for it in one of
+  the two. The READ ME explains which one to use if the new distributor asks
+  for a different go-live date.
 - The link field also takes a bare `UC…` ID, `/user/` and `/c/` links, and
   the link of any of the artist's songs (`watch?v=`, `youtu.be`, `/shorts/`,
   YouTube Music): the app looks up the channel that uploaded it, for one unit of
@@ -20,6 +24,12 @@ What changed in every published version. The numbers follow
   on its own, following the rubric in `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Fixed
+- **The release date in the ingestion sheet was the YouTube upload date.**
+  For back catalog that can be decades off: in real data, a 2001 song shows as
+  uploaded in 2024, and the migrated release went out with that date. When it
+  was missing, a January 1st was also built from the year, which is making the
+  value up. The date YouTube publishes for every song, in "Released on:", is
+  used now, and if it is not there the field stays as `<<COMPLETAR>>`.
 - **An `@handle` with an accent or an ñ could survey another artist's
   catalog.** The browser copies `youtube.com/@pe%C3%B1a`, encoded, and the app
   stopped at the `%`: it asked for `@pe`, and if that channel existed it surveyed

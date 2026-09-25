@@ -234,7 +234,12 @@ COLUMNAS_INGESTA = [
     "Release Title",
     "Release Artist",
     "Release Type",
+    # Las dos fechas llevan lo mismo, la fecha real del lanzamiento. En una
+    # migración el release conserva su fecha, y cada distribuidora la pide en
+    # una de las dos columnas (en DDEX, OriginalReleaseDate). Si la nueva quiere
+    # otra fecha de salida, es una decisión, y va en «Release Date».
     "Release Date",
+    "Original Release Date",
     "Label",
     "P Line",
     "C Line",
@@ -290,7 +295,11 @@ def hoja_ingesta_csv(productos, artista):
                         p.get("title", ""),
                         artista,
                         p.get("kind", ""),
-                        p.get("release_date") or (f"{anio}-01-01" if anio else MARCA_COMPLETAR),
+                        # Nunca la fecha de subida a YouTube ni un 1 de enero
+                        # armado con el año: las dos cosas entraban antes, y
+                        # un disco de 2001 salía fechado en 2024.
+                        p.get("release_date") or MARCA_COMPLETAR,
+                        p.get("release_date") or MARCA_COMPLETAR,
                         sello,
                         p_line,
                         MARCA_COMPLETAR,  # C Line: no sale de YouTube

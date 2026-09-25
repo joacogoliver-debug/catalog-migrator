@@ -9,6 +9,10 @@ Lo que cambió en cada versión publicada. Los números siguen
 ## [Sin publicar]
 
 ### Agregado
+- La hoja de ingesta tiene la columna `Original Release Date`, con la misma
+  fecha real que `Release Date`, porque cada distribuidora la pide en una de
+  las dos. El LEEME explica cuál usar si la distribuidora nueva pide otra
+  fecha de salida.
 - El campo del link acepta también el ID `UC…` suelto, los links `/user/` y
   `/c/`, y el link de cualquier tema del artista (`watch?v=`, `youtu.be`,
   `/shorts/`, YouTube Music): la app busca el canal que lo subió, por una unidad
@@ -20,6 +24,12 @@ Lo que cambió en cada versión publicada. Los números siguen
   `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Corregido
+- **La fecha de lanzamiento de la hoja de ingesta era la fecha de subida a
+  YouTube.** Para el catálogo viejo pueden ser décadas de diferencia: en los
+  datos reales, un tema de 2001 figura subido en 2024, y el release migrado
+  salía con esa fecha. Cuando faltaba, además, se armaba un 1 de enero con el
+  año, que es inventar el dato. Ahora se usa la fecha que publica YouTube en
+  cada tema, en «Released on:», y si no está queda en `<<COMPLETAR>>`.
 - **Un `@handle` con ñ o con tilde podía relevar el catálogo de otro
   artista.** El navegador copia `youtube.com/@pe%C3%B1a`, codificado, y la app
   se cortaba en el `%`: pedía `@pe`, y si ese canal existía lo relevaba sin

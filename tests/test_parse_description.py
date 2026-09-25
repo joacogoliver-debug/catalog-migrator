@@ -108,4 +108,10 @@ def test_solo_pasan_los_anios_plausibles(linea, anio, sello):
 
 
 def test_descripcion_vacia():
-    assert parse("") == {"distributor": None, "album": None, "release_year": None, "label": None}
+    assert parse("") == {
+        "distributor": None,
+        "album": None,
+        "release_year": None,
+        "release_date": None,
+        "label": None,
+    }

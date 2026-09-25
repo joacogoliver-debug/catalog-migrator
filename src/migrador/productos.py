@@ -98,7 +98,8 @@ def group_products(tracks: list[Track], artist="") -> list[Producto]:
         titulo = ts[0].get("track", "") if es_single else (ts[0].get("album") or "").strip()
 
         años = [t.get("release_year") for t in ts if t.get("release_year")]
-        fechas = [t.get("upload_date") for t in ts if t.get("upload_date")]
+        lanzamientos = [t.get("release_date") for t in ts if t.get("release_date")]
+        subidas = [t.get("upload_date") for t in ts if t.get("upload_date")]
 
         for i, t in enumerate(ts, 1):
             # Orden provisorio por fecha de subida; se marca como no confirmado.
@@ -111,7 +112,8 @@ def group_products(tracks: list[Track], artist="") -> list[Producto]:
                 "kind": _kind(len(ts)),
                 "artist": artist or "",
                 "release_year": min(años) if años else "",
-                "release_date": min(fechas) if fechas else "",
+                "release_date": min(lanzamientos) if lanzamientos else "",
+                "upload_date": min(subidas) if subidas else "",
                 "label": _mode(t.get("label") for t in ts),
                 "distributor": _mode(t.get("distributor") for t in ts),
                 "upc": _mode(t.get("upc") for t in ts),
@@ -124,7 +126,10 @@ def group_products(tracks: list[Track], artist="") -> list[Producto]:
         )
 
     # Más nuevo primero: es el orden en que la gente revisa su catálogo.
-    productos.sort(key=lambda p: (str(p["release_year"] or ""), p["release_date"] or ""), reverse=True)
+    productos.sort(
+        key=lambda p: (str(p["release_year"] or ""), p["release_date"] or p["upload_date"] or ""),
+        reverse=True,
+    )
     for i, p in enumerate(productos, 1):
         p["product_id"] = f"p{i:03d}"
     asignar_carpetas(productos)
@@ -183,7 +188,7 @@ def filter_products(
 
     - ids:          selección manual por product_id (lista o set)
     - year_from/to: rango por año de lanzamiento (℗), inclusive
-    - date_from/to: rango por fecha de publicación 'YYYY-MM-DD', inclusive
+    - date_from/to: rango por fecha de subida a YouTube 'YYYY-MM-DD', inclusive
     - distributors: nombres de distribuidora (match parcial, sin acentos)
 
     Un producto sin año declarado queda fuera si se filtra por año: preferimos
@@ -201,9 +206,9 @@ def filter_products(
         sel = [p for p in sel if p["release_year"] and int(p["release_year"]) <= int(year_to)]
 
     if date_from is not None:
-        sel = [p for p in sel if p["release_date"] and p["release_date"] >= date_from]
+        sel = [p for p in sel if p["upload_date"] and p["upload_date"] >= date_from]
     if date_to is not None:
-        sel = [p for p in sel if p["release_date"] and p["release_date"] <= date_to]
+        sel = [p for p in sel if p["upload_date"] and p["upload_date"] <= date_to]
 
     if distributors:
         buscados = [_norm(d) for d in distributors if _norm(d)]

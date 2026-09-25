@@ -59,6 +59,9 @@ class DescripcionParseada(TypedDict):
     distributor: str | None
     album: str | None
     release_year: int | None
+    # La fecha completa de «Released on:», AAAA-MM-DD, cuando la trae. Es la
+    # fecha del lanzamiento, no la de subida del video.
+    release_date: str | None
     label: str | None
 
 
@@ -99,7 +102,10 @@ class Track(TypedDict):
     views: int
     likes: int
     comments: int
-    upload_date: str  # AAAA-MM-DD
+    upload_date: str  # AAAA-MM-DD, cuándo se subió el video a YouTube
+    # AAAA-MM-DD, de «Released on:» en la descripción, o "" si no la trae. No
+    # confundir con `upload_date`: un disco de 2001 puede estar subido en 2024.
+    release_date: str
     desc3: str
     url: str
 
@@ -133,7 +139,13 @@ class Producto(TypedDict):
     kind: TipoProducto
     artist: str
     release_year: Anio
+    # La fecha de lanzamiento real, de «Released on:», o "" si ningún track la
+    # trae. Antes era la primera fecha de subida a YouTube, que para catálogo
+    # viejo puede ser décadas posterior, y entraba así a la hoja de ingesta.
     release_date: str
+    # Cuándo se subió a YouTube el primero de sus videos. Ordena y filtra, y
+    # nunca va a la hoja como fecha del release.
+    upload_date: str
     label: str
     distributor: str
     upc: str

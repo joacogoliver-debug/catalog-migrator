@@ -921,6 +921,12 @@ fuentes públicas está marcado con <<COMPLETAR>>:
 Esos campos los tiene que llenar el dueño del catálogo, están marcados en vez
 de vacíos o inventados justamente para que no pasen desapercibidos.
 
+Las dos fechas, "Release Date" y "Original Release Date", traen la fecha real
+del lanzamiento, que YouTube publica en cada tema. En una migración el release
+conserva su fecha; si la distribuidora nueva te pide otra fecha de salida, esa
+va en "Release Date". Cuando YouTube no la trae, quedan en <<COMPLETAR>>: la
+fecha de subida del video no es la del lanzamiento.
+
 SOBRE LA CALIDAD DEL AUDIO: LEER ANTES DE ENTREGAR
 ---------------------------------------------------
 La columna "Fuente / Calidad" de las planillas dice, track por track, de dónde
@@ -993,6 +999,12 @@ sources is marked <<COMPLETAR>>:
 
 Those fields have to be filled in by the catalog owner. They are marked rather
 than left empty or made up precisely so they do not slip through.
+
+Both dates, "Release Date" and "Original Release Date", carry the real release
+date, which YouTube publishes for every song. In a migration the release keeps
+its date; if the new distributor asks you for a different go-live date, that one
+goes in "Release Date". When YouTube does not have it, they stay as
+<<COMPLETAR>>: the video's upload date is not the release date.
 
 ABOUT AUDIO QUALITY: READ BEFORE DELIVERING
 -------------------------------------------
