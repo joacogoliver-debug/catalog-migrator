@@ -1,0 +1,299 @@
+{
+ "_grabado": {
+  "url": "https://www.googleapis.com/youtube/v3/search?part=snippet&q=Daft+Punk+-+Topic&type=channel&maxResults=10",
+  "fecha": "2026-09-25",
+  "como": "python build/grabar_fixtures.py"
+ },
+ "respuesta": {
+  "kind": "youtube#searchListResponse",
+  "etag": "r8FJhHWmJScW6Uai06BOPaRY4YE",
+  "nextPageToken": "CAoQAA",
+  "regionCode": "AR",
+  "pageInfo": {
+   "totalResults": 12483,
+   "resultsPerPage": 10
+  },
+  "items": [
+   {
+    "kind": "youtube#searchResult",
+    "etag": "0RRutix9nlGMZE-IlRX8lAl8DF4",
+    "id": {
+     "kind": "youtube#channel",
+     "channelId": "UCRr1xG_2WIDs18a6cIiCxeA"
+    },
+    "snippet": {
+     "publishedAt": "2013-06-19T04:08:33Z",
+     "channelId": "UCRr1xG_2WIDs18a6cIiCxeA",
+     "title": "Daft Punk - Topic",
+     "description": "Random Access Memories - Drumless Edition, out now.",
+     "thumbnails": {
+      "default": {
+       "url": "https://yt3.ggpht.com/n6O2knhK-rj6cV6or8qgbY6pz4uJ4dxSxN4ofD6dGOZ--trq9dtNWftcXNArIHwnB7S1IS28=s88-c-k-c0xffffffff-no-rj-mo"
+      },
+      "medium": {
+       "url": "https://yt3.ggpht.com/n6O2knhK-rj6cV6or8qgbY6pz4uJ4dxSxN4ofD6dGOZ--trq9dtNWftcXNArIHwnB7S1IS28=s240-c-k-c0xffffffff-no-rj-mo"
+      },
+      "high": {
+       "url": "https://yt3.ggpht.com/n6O2knhK-rj6cV6or8qgbY6pz4uJ4dxSxN4ofD6dGOZ--trq9dtNWftcXNArIHwnB7S1IS28=s800-c-k-c0xffffffff-no-rj-mo"
+      }
+     },
+     "channelTitle": "Daft Punk - Topic",
+     "liveBroadcastContent": "none",
+     "publishTime": "2013-06-19T04:08:33Z"
+    }
+   },
+   {
+    "kind": "youtube#searchResult",
+    "etag": "-x1JY-YmYQ1tE2guRxL7NASpAyI",
+    "id": {
+     "kind": "youtube#channel",
+     "channelId": "UC_kRDKYrUlrbtrSiyu5Tflg"
+    },
+    "snippet": {
+     "publishedAt": "2007-09-10T13:16:35Z",
+     "channelId": "UC_kRDKYrUlrbtrSiyu5Tflg",
+     "title": "Daft Punk",
+     "description": "Daft Punk (1993 - 2021) - Official YouTube Channel.",
+     "thumbnails": {
+      "default": {
+       "url": "https://yt3.ggpht.com/XPIjND5mm2nuSIJ6uQyIWLCawnIYSVm6QS0GEN_UNuPLRD5EFa6yCkYrcyLpl3TFuBo6AZynsA=s88-c-k-c0xffffffff-no-rj-mo"
+      },
+      "medium": {
+       "url": "https://yt3.ggpht.com/XPIjND5mm2nuSIJ6uQyIWLCawnIYSVm6QS0GEN_UNuPLRD5EFa6yCkYrcyLpl3TFuBo6AZynsA=s240-c-k-c0xffffffff-no-rj-mo"
+      },
+      "high": {
+       "url": "https://yt3.ggpht.com/XPIjND5mm2nuSIJ6uQyIWLCawnIYSVm6QS0GEN_UNuPLRD5EFa6yCkYrcyLpl3TFuBo6AZynsA=s800-c-k-c0xffffffff-no-rj-mo"
+      }
+     },
+     "channelTitle": "Daft Punk",
+     "liveBroadcastContent": "none",
+     "publishTime": "2007-09-10T13:16:35Z"
+    }
+   },
+   {
+    "kind": "youtube#searchResult",
+    "etag": "SbLel_vQzRpzX1259ZDA15dyFus",
+    "id": {
+     "kind": "youtube#channel",
+     "channelId": "UCok7u2HZ8FEfYL_ENdMV4oQ"
+    },
+    "snippet": {
+     "publishedAt": "2015-03-09T23:52:24Z",
+     "channelId": "UCok7u2HZ8FEfYL_ENdMV4oQ",
+     "title": "Discovery - Daft Punk Show",
+     "description": "Discovery is Australia's tribute show to the music and image of Daft Punk. Hailing from Melbourne, duo Damian Andres and Matt ...",
+     "thumbnails": {
+      "default": {
+       "url": "https://yt3.ggpht.com/YXsA6NivgwHboSA1dwmx5pT5Qowy35REBClC9HUEcSbo59xcYoGNSrGUKwZiSP9Du1PpLvjtjg=s88-c-k-c0xffffffff-no-rj-mo"
+      },
+      "medium": {
+       "url": "https://yt3.ggpht.com/YXsA6NivgwHboSA1dwmx5pT5Qowy35REBClC9HUEcSbo59xcYoGNSrGUKwZiSP9Du1PpLvjtjg=s240-c-k-c0xffffffff-no-rj-mo"
+      },
+      "high": {
+       "url": "https://yt3.ggpht.com/YXsA6NivgwHboSA1dwmx5pT5Qowy35REBClC9HUEcSbo59xcYoGNSrGUKwZiSP9Du1PpLvjtjg=s800-c-k-c0xffffffff-no-rj-mo"
+      }
+     },
+     "channelTitle": "Discovery - Daft Punk Show",
+     "liveBroadcastContent": "none",
+     "publishTime": "2015-03-09T23:52:24Z"
+    }
+   },
+   {
+    "kind": "youtube#searchResult",
+    "etag": "0D0Vay7QkqW8P7SuHzZtDanB-r4",
+    "id": {
+     "kind": "youtube#channel",
+     "channelId": "UCdsmJG8eFcr6Lxgau8E7afg"
+    },
+    "snippet": {
+     "publishedAt": "2013-05-21T20:11:14Z",
+     "channelId": "UCdsmJG8eFcr6Lxgau8E7afg",
+     "title": "LCD Soundsystem - Topic",
+     "description": "",
+     "thumbnails": {
+      "default": {
+       "url": "https://yt3.ggpht.com/t-jfUJDhKXq9l03NbTjAj1CPky78b7ZqD1OsHs6GIAjvfM8ldzJSTieVm2-Zc3M6hvSGBFOhUw=s88-c-k-c0xffffffff-no-rj-mo"
+      },
+      "medium": {
+       "url": "https://yt3.ggpht.com/t-jfUJDhKXq9l03NbTjAj1CPky78b7ZqD1OsHs6GIAjvfM8ldzJSTieVm2-Zc3M6hvSGBFOhUw=s240-c-k-c0xffffffff-no-rj-mo"
+      },
+      "high": {
+       "url": "https://yt3.ggpht.com/t-jfUJDhKXq9l03NbTjAj1CPky78b7ZqD1OsHs6GIAjvfM8ldzJSTieVm2-Zc3M6hvSGBFOhUw=s800-c-k-c0xffffffff-no-rj-mo"
+      }
+     },
+     "channelTitle": "LCD Soundsystem - Topic",
+     "liveBroadcastContent": "none",
+     "publishTime": "2013-05-21T20:11:14Z"
+    }
+   },
+   {
+    "kind": "youtube#searchResult",
+    "etag": "yGW6cvt9kwOBGLliVzu9bhclJFU",
+    "id": {
+     "kind": "youtube#channel",
+     "channelId": "UCjuD2g8i12Kwl-7NUOthFgw"
+    },
+    "snippet": {
+     "publishedAt": "2023-01-13T14:45:48Z",
+     "channelId": "UCjuD2g8i12Kwl-7NUOthFgw",
+     "title": "Stardust - Topic",
+     "description": "",
+     "thumbnails": {
+      "default": {
+       "url": "https://yt3.ggpht.com/6Upto5Huq1lEEPXXDBZ7M0b7kn4TVrs8LicLOMlEOLdfStuiG1jyRh5ddlNjorNEejBJsgSS=s88-c-k-c0xffffffff-no-rj-mo"
+      },
+      "medium": {
+       "url": "https://yt3.ggpht.com/6Upto5Huq1lEEPXXDBZ7M0b7kn4TVrs8LicLOMlEOLdfStuiG1jyRh5ddlNjorNEejBJsgSS=s240-c-k-c0xffffffff-no-rj-mo"
+      },
+      "high": {
+       "url": "https://yt3.ggpht.com/6Upto5Huq1lEEPXXDBZ7M0b7kn4TVrs8LicLOMlEOLdfStuiG1jyRh5ddlNjorNEejBJsgSS=s800-c-k-c0xffffffff-no-rj-mo"
+      }
+     },
+     "channelTitle": "Stardust - Topic",
+     "liveBroadcastContent": "none",
+     "publishTime": "2023-01-13T14:45:48Z"
+    }
+   },
+   {
+    "kind": "youtube#searchResult",
+    "etag": "noCYlejTCZUHuAKSs3DyJRUaWmM",
+    "id": {
+     "kind": "youtube#channel",
+     "channelId": "UCThde8ccpEr6sP8dIHZ-ceQ"
+    },
+    "snippet": {
+     "publishedAt": "2013-09-17T09:06:18Z",
+     "channelId": "UCThde8ccpEr6sP8dIHZ-ceQ",
+     "title": "Nile Rodgers - Topic",
+     "description": "",
+     "thumbnails": {
+      "default": {
+       "url": "https://yt3.ggpht.com/SIXS3UhQE_ie6Je5Fyo_LGNlKOM4BMSsQe6exNu22MyZuZx9aVuMIRXrU1YPJ6y2lHWaqB0blg=s88-c-k-c0xffffffff-no-rj-mo"
+      },
+      "medium": {
+       "url": "https://yt3.ggpht.com/SIXS3UhQE_ie6Je5Fyo_LGNlKOM4BMSsQe6exNu22MyZuZx9aVuMIRXrU1YPJ6y2lHWaqB0blg=s240-c-k-c0xffffffff-no-rj-mo"
+      },
+      "high": {
+       "url": "https://yt3.ggpht.com/SIXS3UhQE_ie6Je5Fyo_LGNlKOM4BMSsQe6exNu22MyZuZx9aVuMIRXrU1YPJ6y2lHWaqB0blg=s800-c-k-c0xffffffff-no-rj-mo"
+      }
+     },
+     "channelTitle": "Nile Rodgers - Topic",
+     "liveBroadcastContent": "none",
+     "publishTime": "2013-09-17T09:06:18Z"
+    }
+   },
+   {
+    "kind": "youtube#searchResult",
+    "etag": "hUGDQ2DZR3Ro0wnhpfdBLOsHC2A",
+    "id": {
+     "kind": "youtube#channel",
+     "channelId": "UC_GbN-pF14COGV5kpKxpfdA"
+    },
+    "snippet": {
+     "publishedAt": "2021-05-29T00:51:09Z",
+     "channelId": "UC_GbN-pF14COGV5kpKxpfdA",
+     "title": "iDaft Jamming-Daft Punk Sounds - Topic",
+     "description": "iDaft Jamming is a tribute to some of Daft Punk's most iconic songs: “Harder Better Faster Stronger” \"Around The World\" ...",
+     "thumbnails": {
+      "default": {
+       "url": "https://yt3.ggpht.com/3XoQjaDhatREE3fy6Y-V5gew-4VDKR-y5YdtKmCuIkA_wj58FUKfwQGwTitB5YRtCMprRtDj=s88-c-k-c0xffffffff-no-rj-mo"
+      },
+      "medium": {
+       "url": "https://yt3.ggpht.com/3XoQjaDhatREE3fy6Y-V5gew-4VDKR-y5YdtKmCuIkA_wj58FUKfwQGwTitB5YRtCMprRtDj=s240-c-k-c0xffffffff-no-rj-mo"
+      },
+      "high": {
+       "url": "https://yt3.ggpht.com/3XoQjaDhatREE3fy6Y-V5gew-4VDKR-y5YdtKmCuIkA_wj58FUKfwQGwTitB5YRtCMprRtDj=s800-c-k-c0xffffffff-no-rj-mo"
+      }
+     },
+     "channelTitle": "iDaft Jamming-Daft Punk Sounds - Topic",
+     "liveBroadcastContent": "none",
+     "publishTime": "2021-05-29T00:51:09Z"
+    }
+   },
+   {
+    "kind": "youtube#searchResult",
+    "etag": "X53y7mzl0T7kCAHzsAuv-Qr6_PM",
+    "id": {
+     "kind": "youtube#channel",
+     "channelId": "UCZ2J4f4052BX-NcUh55AFgg"
+    },
+    "snippet": {
+     "publishedAt": "2024-12-06T12:36:37Z",
+     "channelId": "UCZ2J4f4052BX-NcUh55AFgg",
+     "title": "Daft Punk Experience - Topic",
+     "description": "",
+     "thumbnails": {
+      "default": {
+       "url": "https://yt3.ggpht.com/5jJlIhsf-FN29qWFNBnSt3iTwH1pOZKeD-TlJFcyHtDxM9aMKmXURRH2HXx7Tjcq5HIzd_Gkiw=s88-c-k-c0xffffffff-no-rj-mo"
+      },
+      "medium": {
+       "url": "https://yt3.ggpht.com/5jJlIhsf-FN29qWFNBnSt3iTwH1pOZKeD-TlJFcyHtDxM9aMKmXURRH2HXx7Tjcq5HIzd_Gkiw=s240-c-k-c0xffffffff-no-rj-mo"
+      },
+      "high": {
+       "url": "https://yt3.ggpht.com/5jJlIhsf-FN29qWFNBnSt3iTwH1pOZKeD-TlJFcyHtDxM9aMKmXURRH2HXx7Tjcq5HIzd_Gkiw=s800-c-k-c0xffffffff-no-rj-mo"
+      }
+     },
+     "channelTitle": "Daft Punk Experience - Topic",
+     "liveBroadcastContent": "none",
+     "publishTime": "2024-12-06T12:36:37Z"
+    }
+   },
+   {
+    "kind": "youtube#searchResult",
+    "etag": "hhiO3gSNzNWIg9LbdtD6kkqFwY8",
+    "id": {
+     "kind": "youtube#channel",
+     "channelId": "UCYwLnNHnVF6TRQ8O0Gg653g"
+    },
+    "snippet": {
+     "publishedAt": "2013-12-20T22:01:16Z",
+     "channelId": "UCYwLnNHnVF6TRQ8O0Gg653g",
+     "title": "Lifelike - Topic",
+     "description": "Pioneering nu-disco, Lifelike caught the attention of DJ Falcon and Daft Punk's Thomas Bangalter with his \"Black Chess\" single ...",
+     "thumbnails": {
+      "default": {
+       "url": "https://yt3.ggpht.com/q8ZCQUnEY7MUFACpwRaBQaEMf_lBVsaikxz2tK6quOFXJKoVrnbrhPIVbYS5Itb4lrdzRzdA6g=s88-c-k-c0xffffffff-no-rj-mo"
+      },
+      "medium": {
+       "url": "https://yt3.ggpht.com/q8ZCQUnEY7MUFACpwRaBQaEMf_lBVsaikxz2tK6quOFXJKoVrnbrhPIVbYS5Itb4lrdzRzdA6g=s240-c-k-c0xffffffff-no-rj-mo"
+      },
+      "high": {
+       "url": "https://yt3.ggpht.com/q8ZCQUnEY7MUFACpwRaBQaEMf_lBVsaikxz2tK6quOFXJKoVrnbrhPIVbYS5Itb4lrdzRzdA6g=s800-c-k-c0xffffffff-no-rj-mo"
+      }
+     },
+     "channelTitle": "Lifelike - Topic",
+     "liveBroadcastContent": "none",
+     "publishTime": "2013-12-20T22:01:16Z"
+    }
+   },
+   {
+    "kind": "youtube#searchResult",
+    "etag": "mMLtjZcDxfbXFlg-yjYfKUpIkCs",
+    "id": {
+     "kind": "youtube#channel",
+     "channelId": "UCZGAuXYRZtLrioeDTiYh_Fg"
+    },
+    "snippet": {
+     "publishedAt": "2013-06-20T16:26:40Z",
+     "channelId": "UCZGAuXYRZtLrioeDTiYh_Fg",
+     "title": "Romanthony - Topic",
+     "description": "",
+     "thumbnails": {
+      "default": {
+       "url": "https://yt3.ggpht.com/97h4H7Ip_V9DyZvD1Lyh3hxYWvrQ2DsKkgOPgtcGc_3Yutj5axOxmllbZn3oLolP23Pq0-QaHw=s88-c-k-c0xffffffff-no-rj-mo"
+      },
+      "medium": {
+       "url": "https://yt3.ggpht.com/97h4H7Ip_V9DyZvD1Lyh3hxYWvrQ2DsKkgOPgtcGc_3Yutj5axOxmllbZn3oLolP23Pq0-QaHw=s240-c-k-c0xffffffff-no-rj-mo"
+      },
+      "high": {
+       "url": "https://yt3.ggpht.com/97h4H7Ip_V9DyZvD1Lyh3hxYWvrQ2DsKkgOPgtcGc_3Yutj5axOxmllbZn3oLolP23Pq0-QaHw=s800-c-k-c0xffffffff-no-rj-mo"
+      }
+     },
+     "channelTitle": "Romanthony - Topic",
+     "liveBroadcastContent": "none",
+     "publishTime": "2013-06-20T16:26:40Z"
+    }
+   }
+  ]
+ }
+}

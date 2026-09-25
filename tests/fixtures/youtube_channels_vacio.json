@@ -1,0 +1,15 @@
+{
+ "_grabado": {
+  "url": "https://www.googleapis.com/youtube/v3/channels?part=snippet%2CcontentDetails&id=UC0000000000000000000000",
+  "fecha": "2026-09-25",
+  "como": "python build/grabar_fixtures.py"
+ },
+ "respuesta": {
+  "kind": "youtube#channelListResponse",
+  "etag": "RuuXzTIr0OoDqI4S0RU6n4FqKEM",
+  "pageInfo": {
+   "totalResults": 0,
+   "resultsPerPage": 5
+  }
+ }
+}

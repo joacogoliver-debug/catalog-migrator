@@ -137,15 +137,15 @@ source = ["app", "src/migrador"]
 # El umbral no está puesto donde nos gustaría, está puesto donde estamos. Subirlo
 # es trabajo; bajarlo, en cambio, tiene que romper el build.
 #
-# Por qué no es más alto. Tres módulos hacen casi sólo entrada y salida contra
-# servicios externos: `relevar_core` (YouTube), `portadas` (iTunes) y `audio`
-# (Tidal y YouTube), y probarlos de verdad pide red y credenciales. Lo que sí
-# está cubierto de ellos es el parseo y las decisiones, que es donde viven los
-# errores. `app/launcher.py` queda en cero porque abre ventanas del sistema y no
-# hay forma honesta de probar eso sin escritorio.
-# Sube cuando sube la cobertura, nunca baja. Se verificó además sin `tiddl`
-# instalado, que es como corre el CI, y da lo mismo.
-fail_under = 58
+# Por qué no es más alto. `audio` habla con Tidal y con yt-dlp, y probarlo de
+# verdad pide una cuenta paga; `app/launcher.py` abre ventanas del sistema y no
+# hay forma honesta de probar eso sin escritorio. Lo demás que es entrada y
+# salida (YouTube, Deezer, iTunes) se prueba contra respuestas reales grabadas
+# en `tests/fixtures/`, sin red.
+# Sube cuando sube la cobertura, nunca baja. Estaba en 58 con 59,8 % medido al
+# empezar el ciclo 2; con las respuestas grabadas de YouTube se midió 78 %, y
+# quedan unos puntos de margen porque el CI corre sin `tiddl`.
+fail_under = 75
 show_missing = true
 skip_covered = true
 exclude_lines = [

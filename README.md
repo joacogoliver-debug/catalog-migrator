@@ -496,6 +496,7 @@ pytest -q --cov
 | `tests/test_productos.py` | Agrupación en productos y filtros |
 | `tests/test_texto.py` | Normalización de texto, y que no se vuelva a duplicar |
 | `tests/test_contrato_apis.py` | Contrato con Deezer e iTunes, contra respuestas reales grabadas |
+| `tests/test_contrato_youtube.py` | Contrato con la YouTube Data API y `relevar()` de punta a punta, contra respuestas reales grabadas |
 | `tests/test_dependencias.py` | Que los extras y los requirements pidan lo mismo |
 | `tests/test_notas_release.py` | Las notas del release que salen del CHANGELOG |
 | `tests/test_paquete_deb.py` | La estructura del `.deb` de Linux, sin `dpkg` |
@@ -505,6 +506,7 @@ pytest -q --cov
 | `tests/test_app.py` | Backend, trabajos, HTTP, y las tres defensas |
 | `tests/test_capturas.py` | Que el material de ejemplo de las capturas diga lo mismo que la app |
 | `tests/test_entrada_hostil.py` | Que nada de lo que entra de afuera se ejecute: yt-dlp, fórmulas, portadas |
+| `tests/test_rutas.py` | Las rutas del servidor: relevar como trabajo, guardar la clave, Tidal apagado |
 | `tests/test_textos_fijos.py` | Que ningún texto para el usuario se escriba fuera de los catálogos de traducción |
 | `tests/test_concurrencia.py` | Un trabajo por vez de verdad, catálogo identificado y temporales que no quedan |
 | `tests/test_progreso.py` | Avance real, cancelación que responde y reintentos sólo donde sirven |
@@ -530,11 +532,12 @@ CI los corre en cada push, a propósito **sin** instalar `tiddl`/`yt-dlp`/`ffmpe
 para verificar que el núcleo no dependa de ellos. `build/build.py` corre la misma
 suite antes de empaquetar y aborta si algo falla.
 
-Los tests de contrato contra Deezer e iTunes no inventan las respuestas: leen las que
-esas APIs dieron de verdad, guardadas en `tests/fixtures/` con la URL y la
+Los tests de contrato contra Deezer, iTunes y YouTube no inventan las respuestas:
+leen las que esas APIs dieron de verdad, guardadas en `tests/fixtures/` con la URL y la
 fecha de cuándo se grabaron. Se vuelven a tomar con
-`python build/grabar_fixtures.py`, que es **lo único del repositorio que toca
-la red**. Si después de regrabarlas un test se cae, la pregunta es qué cambió
+`python build/grabar_fixtures.py` (y `--youtube` para YouTube, que pide una
+clave en el entorno y no la escribe en ningún lado), que es **lo único del
+repositorio que toca la red**. Si después de regrabarlas un test se cae, la pregunta es qué cambió
 en la API, no cómo actualizar el archivo.
 
 ### Antes de commitear

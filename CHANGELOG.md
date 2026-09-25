@@ -9,6 +9,14 @@ Lo que cambió en cada versión publicada. Los números siguen
 ## [Sin publicar]
 
 ### Agregado
+- **Tests contra respuestas reales de la YouTube Data API.** Hasta ahora sólo
+  Deezer e iTunes tenían respuestas grabadas; el relevamiento completo, la
+  paginación y la lectura de las descripciones no se probaban contra lo que
+  YouTube devuelve de verdad, y ahí estaban varios de los errores que este
+  ciclo encontró. `build/grabar_fixtures.py --youtube` las graba con la clave
+  en una cabecera y se niega a guardar si la encuentra en algún lado. Se suman
+  tests de las rutas del servidor que no tenían, y el umbral de cobertura sube
+  de 58 % a 75 %, con 78 % medido.
 - Si Deezer no respondió, el log lo dice. Antes se veía igual que «no hay
   códigos para este artista».
 - **La hoja de ingesta también viene en Excel**, `_Hoja de ingesta.xlsx`, con

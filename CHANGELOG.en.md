@@ -9,6 +9,14 @@ What changed in every published version. The numbers follow
 ## [Unreleased]
 
 ### Added
+- **Tests against real YouTube Data API responses.** Until now only Deezer
+  and iTunes had recorded responses; the full survey, pagination and
+  description parsing were not tested against what YouTube really returns, and
+  that is where several of the errors this cycle found lived.
+  `build/grabar_fixtures.py --youtube` records them with the key in a header and
+  refuses to save if it finds the key anywhere. Tests are added for the server
+  routes that had none, and the coverage threshold goes up from 58% to 75%,
+  with 78% measured.
 - If Deezer did not answer, the log says so. Before, it looked the same as "no
   codes for this artist".
 - **The ingestion sheet also comes in Excel**, `_Ingestion sheet.xlsx`, with

@@ -1,7 +1,9 @@
 """
-Graba respuestas reales de Deezer y de iTunes para los tests de contrato.
+Graba respuestas reales de Deezer, de iTunes y de la YouTube Data API para los
+tests de contrato.
 
-    python build/grabar_fixtures.py
+    python build/grabar_fixtures.py              Deezer e iTunes
+    python build/grabar_fixtures.py --youtube    la YouTube Data API
 
 Esto es lo ÚNICO del repositorio que toca la red. Los tests no: leen los
 archivos que este script deja en `tests/fixtures/` y no salen a ningún lado.
@@ -26,6 +28,12 @@ Son APIs públicas y sin clave, y lo que devuelven es metadata de catálogo
 publicada (título, artista, ISRC, UPC, duración). No hay nada personal ni nada
 de un catálogo privado: son discos conocidos, elegidos justamente para que
 cualquiera pueda verificar que los datos son los que dicen ser.
+
+YouTube necesita clave, y la clave NUNCA entra al repositorio. Se lee de la
+variable `MIGRADOR_CLAVE_YT` o `YOUTUBE_API_KEY`, viaja en una cabecera (no en
+la URL que queda escrita en cada fixture), y antes de guardar se verifica que
+no aparezca en ningún lado. Grabarlo cuesta unas 105 unidades de la cuota del
+día: la búsqueda del canal Topic cuesta 100.
 
 Si alguna respuesta cambia y un test se cae, la pregunta correcta no es «cómo
 actualizo la fixture» sino «qué cambió en la API y qué hay que arreglar en el
@@ -57,8 +65,16 @@ ALBUM = "Random Access Memories"
 TRACK = "Get Lucky"
 
 
-def pedir(url, user_agent):
-    req = urllib.request.Request(url, headers={"User-Agent": user_agent})
+# El canal Topic de Daft Punk: un catálogo conocido y público, el mismo artista
+# de las fixtures de Deezer. Con doce videos por página alcanza para ver la
+# paginación sin grabar quinientos.
+TOPIC = "UCRr1xG_2WIDs18a6cIiCxeA"
+POR_PAGINA = 12
+YOUTUBE = "https://www.googleapis.com/youtube/v3"
+
+
+def pedir(url, user_agent, cabeceras=None):
+    req = urllib.request.Request(url, headers={"User-Agent": user_agent, **(cabeceras or {})})
     with urllib.request.urlopen(req, timeout=30) as r:
         return json.loads(r.read().decode("utf-8"))
 
@@ -81,8 +97,59 @@ def guardar(nombre, url, datos):
     print(f"    {nombre:34} {os.path.getsize(ruta) / 1024:6.1f} KB")
 
 
+def grabar_youtube():
+    """Las respuestas de la YouTube Data API que usa el relevamiento."""
+    clave = (os.environ.get("MIGRADOR_CLAVE_YT") or os.environ.get("YOUTUBE_API_KEY") or "").strip()
+    if not clave:
+        sys.exit("Falta la clave: poné MIGRADOR_CLAVE_YT o YOUTUBE_API_KEY en el entorno.")
+
+    def yt(nombre, endpoint, **params):
+        url = f"{YOUTUBE}/{endpoint}?{urllib.parse.urlencode(params)}"
+        datos = pedir(url, UA_DEEZER, {"X-Goog-Api-Key": clave, "Accept": "application/json"})
+        # La última puerta: si la clave apareciera en la URL o en la respuesta,
+        # no se escribe nada. Una clave que llega a un commit ya está filtrada.
+        if clave in url or clave in json.dumps(datos):
+            sys.exit(f"La clave apareció en {nombre}: no lo guardo.")
+        guardar(nombre, url, datos)
+        return datos
+
+    canal = yt("youtube_channels.json", "channels", part="snippet,contentDetails", id=TOPIC)
+    subidas = canal["items"][0]["contentDetails"]["relatedPlaylists"]["uploads"]
+    pag1 = yt(
+        "youtube_playlist_1.json",
+        "playlistItems",
+        part="contentDetails",
+        maxResults=POR_PAGINA,
+        playlistId=subidas,
+    )
+    yt(
+        "youtube_playlist_2.json",
+        "playlistItems",
+        part="contentDetails",
+        maxResults=POR_PAGINA,
+        playlistId=subidas,
+        pageToken=pag1["nextPageToken"],
+    )
+    ids = ",".join(i["contentDetails"]["videoId"] for i in pag1["items"])
+    yt("youtube_videos.json", "videos", part="snippet,statistics,contentDetails", id=ids)
+    yt(
+        "youtube_search_topic.json",
+        "search",
+        part="snippet",
+        q="Daft Punk - Topic",
+        type="channel",
+        maxResults=10,
+    )
+    # Un canal que no existe: la API contesta 200 sin items, y es contrato.
+    yt("youtube_channels_vacio.json", "channels", part="snippet,contentDetails", id="UC" + "0" * 22)
+
+
 def main():
     print(f">>> Grabando fixtures en {os.path.relpath(DESTINO, RAIZ)}")
+    if "--youtube" in sys.argv:
+        grabar_youtube()
+        print("\n    Listo. Revisá el diff antes de commitear.")
+        return 0
 
     # --- Deezer -----------------------------------------------------------
     # 1. La búsqueda estricta, que es la que el código intenta primero.

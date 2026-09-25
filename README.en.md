@@ -501,6 +501,7 @@ pytest -q --cov
 | `tests/test_parse_description.py` | Parsing of YouTube descriptions |
 | `tests/test_productos.py` | Grouping into products and filters |
 | `tests/test_texto.py` | Text normalization, and that it stays deduplicated |
+| `tests/test_contrato_youtube.py` | Contract with the YouTube Data API and `relevar()` end to end, against real recorded responses |
 | `tests/test_contrato_apis.py` | Deezer and iTunes contract, against real recorded responses |
 | `tests/test_dependencias.py` | That the extras and the requirements ask for the same |
 | `tests/test_notas_release.py` | The release notes that come out of the CHANGELOG |
@@ -511,6 +512,7 @@ pytest -q --cov
 | `tests/test_app.py` | Backend, jobs, HTTP, and the three defenses |
 | `tests/test_capturas.py` | That the screenshots' sample material says the same as the app |
 | `tests/test_entrada_hostil.py` | That nothing coming from outside gets executed: yt-dlp, formulas, covers |
+| `tests/test_rutas.py` | Server routes: surveying as a job, saving the key, Tidal switched off |
 | `tests/test_textos_fijos.py` | That no user-facing text is written outside the translation catalogs |
 | `tests/test_concurrencia.py` | One job at a time for real, an identified catalog and no leftover temp files |
 | `tests/test_progreso.py` | Real progress, a cancel that responds and retries only where they help |
@@ -537,11 +539,12 @@ CI runs them on every push, deliberately **without** installing
 `build/build.py` runs the same suite before packaging and aborts if anything
 fails.
 
-The Deezer and iTunes tests do not invent their responses: they read the ones
-those APIs actually returned, stored in `tests/fixtures/` along with the URL
-and the date they were recorded. They are re-taken with
-`python build/grabar_fixtures.py`, which is **the only thing in the repository
-that touches the network**. If a test fails after re-recording, the question is
+The Deezer, iTunes and YouTube tests do not invent their responses: they read
+the ones those APIs actually returned, stored in `tests/fixtures/` along with
+the URL and the date they were recorded. They are re-taken with
+`python build/grabar_fixtures.py` (and `--youtube` for YouTube, which needs a
+key in the environment and never writes it anywhere), which is **the only thing
+in the repository that touches the network**. If a test fails after re-recording, the question is
 what changed in the API, not how to update the file.
 
 ### Before committing
