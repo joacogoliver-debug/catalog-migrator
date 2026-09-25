@@ -63,6 +63,17 @@
   /* Un píxel a baja opacidad en vez de un escalón de gris. */
   --borde:       rgba(245, 242, 237, .10);
   --borde-suave: rgba(245, 242, 237, .05);
+  /* El borde de un control, que no es decoración: es lo que dice «acá se
+     escribe» o «esto se marca». WCAG 1.4.11 le pide 3 a 1 contra lo que tiene
+     al lado, y el `--borde` de las tarjetas daba 1,3. El 500 da 3,6 sobre la
+     peor superficie (el panel alto) y 4,3 sobre el lienzo. */
+  --borde-control:       var(--neutral-500);
+  --borde-control-hover: var(--neutral-400);   /* 5,4 */
+
+  /* El botón principal es lo más claro de la pantalla. */
+  --primario:       var(--hueso);
+  --primario-hover: #FFFFFF;
+  --sobre-primario: var(--grafito);
 
   --texto:        var(--hueso);          /* 16.5 sobre la peor superficie */
   --texto-2:      var(--neutral-300);    /* 7.9 */
@@ -110,6 +121,16 @@
 
   --borde:       rgba(20, 20, 20, .12);
   --borde-suave: rgba(20, 20, 20, .06);
+  /* El mismo 500 sirve en claro: 3,7 sobre el lienzo y 4,2 sobre el panel. */
+  --borde-control:       var(--neutral-500);
+  --borde-control-hover: var(--neutral-600);   /* 5,4 */
+
+  /* En claro el principal se invierte: hueso sobre una tarjeta hueso daba 1 a
+     1, y el botón más importante de cada pantalla no se veía. Grafito es lo
+     más oscuro, que en claro es lo que se ve primero. */
+  --primario:       var(--grafito);
+  --primario-hover: var(--neutral-800);
+  --sobre-primario: var(--hueso);
 
   --texto:        var(--grafito);
   --texto-2:      var(--neutral-700);   /* 7.5 sobre la peor superficie */

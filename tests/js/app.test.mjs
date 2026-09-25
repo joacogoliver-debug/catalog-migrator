@@ -149,3 +149,29 @@ test('la clave se pega a la vista, y «Verificando» usa un indicador que existe
     assert.ok(css.includes('.' + clase), `la clase .${clase} no existe en app.css`);
   }
 });
+
+test('un error se anuncia, y una alerta informativa no', () => {
+  assert.ok(ev(`alerta('danger', 'error', 'x')`).includes('role="alert"'));
+  assert.ok(!ev(`alerta('', 'info', 'x')`).includes('role='));
+  assert.ok(ev(`alerta('', 'info', 'x', 'status')`).includes('role="status"'));
+});
+
+test('el foco no se pierde en el chevron ni en el stepper', () => {
+  const attrs = ev('ATRIBUTOS_FOCO');
+  assert.ok(attrs.includes('data-expandir'));
+  assert.ok(attrs.includes('data-ir-paso'));
+});
+
+test('en un cambio de vista el foco va al título nuevo', () => {
+  const titulo = { atributos: {}, enfocado: false,
+    setAttribute(k, v) { this.atributos[k] = v; }, focus() { this.enfocado = true; } };
+  const antes = pantalla.querySelector;
+  pantalla.querySelector = (s) => (s === 'h1' ? titulo : null);
+  ev(`S.config = ${JSON.stringify(CONFIG)}; S.catalogo = null; S.paso = 1; S.vista = null; S.entrando = true; render();`);
+  assert.ok(titulo.enfocado, 'el título tenía que recibir el foco');
+  assert.equal(titulo.atributos.tabindex, '-1');
+  titulo.enfocado = false;
+  ev('render()');
+  assert.ok(!titulo.enfocado, 'un redibujado sin cambio de vista no mueve el foco');
+  pantalla.querySelector = antes;
+});

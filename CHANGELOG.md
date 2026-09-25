@@ -64,6 +64,17 @@ Lo que cambió en cada versión publicada. Los números siguen
   `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Corregido
+- **En tema claro, el botón principal no se veía**: era hueso sobre una
+  tarjeta hueso, 1 a 1. Ahora en claro es grafito, que es lo que más contrasta.
+- **Los bordes de los campos y de las casillas se ven.** Daban 1,3 a 1 contra
+  su fondo, y con baja visión el campo del link y las casillas de la tabla no
+  se distinguían. Ahora dan de 3,6 a 4,7, por encima del 3 a 1 que pide WCAG, y
+  un test lo mide sobre los colores reales en los dos temas.
+- **El foco no se pierde.** Al abrir el detalle de un producto o al volver a
+  un paso con el teclado, el foco se iba al principio de la página; ahora se
+  queda en el control, y en cada cambio de pantalla va al título nuevo.
+- **Los errores se anuncian** con lector de pantalla, y los botones ES y EN
+  tienen nombre («Español», «English») en vez de leerse como sílabas.
 - **El link pegado ya no se borra.** Cada vez que la pantalla se redibujaba, el
   campo volvía vacío: si el relevamiento fallaba, el error quedaba debajo de un
   campo en blanco y no se veía qué se había pegado. Lo mismo con la casilla de

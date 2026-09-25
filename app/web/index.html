@@ -29,8 +29,12 @@
       <div class="header-right">
         <div class="segmented segmented-mini" id="selector-idioma"
              role="group" data-t-aria="cabecera.idioma">
-          <button type="button" data-accion="cambiar-idioma" data-idioma="es">ES</button>
-          <button type="button" data-accion="cambiar-idioma" data-idioma="en">EN</button>
+          <!-- Cada idioma se nombra en su idioma, que es como se lo busca, y con
+               su `lang` para que el lector no lea «es» como una palabra. -->
+          <button type="button" data-accion="cambiar-idioma" data-idioma="es"
+                  lang="es" aria-label="Español">ES</button>
+          <button type="button" data-accion="cambiar-idioma" data-idioma="en"
+                  lang="en" aria-label="English">EN</button>
         </div>
         <button type="button" class="btn-icono" id="btn-tema"
                 data-accion="cambiar-tema" data-t-title="cabecera.tema">

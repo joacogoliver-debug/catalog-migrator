@@ -67,6 +67,10 @@ body {
 ::-webkit-scrollbar-corner { background: transparent; }
 
 :focus-visible { outline: 2px solid var(--foco); outline-offset: 2px; }
+/* El título de cada vista recibe el foco al cambiar de pantalla, para que el
+   teclado y el lector arranquen ahí. No es un control, y un anillo alrededor
+   de un título parecería que se puede apretar. */
+h1[tabindex="-1"]:focus, h1[tabindex="-1"]:focus-visible { outline: none; }
 
 h1, h2, h3, h4 { margin: 0; font-weight: var(--p-medio); }
 
@@ -342,10 +346,11 @@ button.step.activo:hover .step-num { background: var(--acento-fuerte); border-co
 /* Apagado, no desaparecido: conserva forma y color a media opacidad. */
 .btn:disabled { opacity: .45; cursor: not-allowed; }
 
-/* El primario es hueso pleno. Es lo más claro de la pantalla y por eso es lo
-   que se ve primero, sin necesidad de color. */
-.btn-primary { background: var(--hueso); color: var(--grafito); border-color: var(--hueso); }
-.btn-primary:hover:not(:disabled) { background: #FFFFFF; border-color: #FFFFFF; }
+/* El primario es el extremo de la pantalla: hueso pleno en oscuro, grafito en
+   claro. Es lo que más contrasta y por eso se ve primero, sin necesidad de
+   color. Los valores viven en colors.css, uno por tema. */
+.btn-primary { background: var(--primario); color: var(--sobre-primario); border-color: var(--primario); }
+.btn-primary:hover:not(:disabled) { background: var(--primario-hover); border-color: var(--primario-hover); }
 
 .btn-secondary { background: transparent; color: var(--texto); border-color: var(--borde); }
 .btn-secondary:hover:not(:disabled) {
@@ -381,12 +386,12 @@ button.step.activo:hover .step-num { background: var(--acento-fuerte); border-co
   font-family: var(--sans); font-size: var(--t-ui);
   color: var(--texto);
   background: var(--panel);
-  border: 1px solid var(--borde);
+  border: 1px solid var(--borde-control);
   border-radius: var(--r-control);
   padding: 0 var(--e-4);
   transition: border-color var(--m-rapido), background var(--m-rapido);
 }
-.input:hover { border-color: var(--linea-fuerte); }
+.input:hover { border-color: var(--borde-control-hover); }
 .input:focus {
   outline: none;
   border-color: var(--acento);
@@ -407,13 +412,13 @@ button.step.activo:hover .step-num { background: var(--acento-fuerte); border-co
 .check input[type="checkbox"] {
   appearance: none; -webkit-appearance: none;
   width: 16px; height: 16px; flex: 0 0 16px; margin: 2px 0 0;
-  border: 1px solid var(--linea-fuerte);
+  border: 1px solid var(--borde-control);
   border-radius: var(--r-marca);
   background: transparent;
   cursor: pointer; position: relative;
   transition: background var(--m-rapido), border-color var(--m-rapido), transform var(--m-rapido);
 }
-.check input[type="checkbox"]:hover { border-color: var(--texto-3); }
+.check input[type="checkbox"]:hover { border-color: var(--borde-control-hover); }
 .check input[type="checkbox"]:active { transform: scale(.92); }
 .check input[type="checkbox"]:checked,
 .check input[type="checkbox"]:indeterminate {

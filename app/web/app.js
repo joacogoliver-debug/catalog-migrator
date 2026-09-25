@@ -319,7 +319,9 @@ function seleccionados() {
    Sin esto, alguien que navegue con teclado pierde su lugar cada vez que tilda
    un filtro. Guardamos cómo identificar al elemento enfocado y lo recuperamos. */
 
-const ATRIBUTOS_FOCO = ['data-distrib', 'data-prod', 'data-opcion-check', 'data-modo', 'data-accion'];
+const ATRIBUTOS_FOCO = [
+  'data-distrib', 'data-prod', 'data-opcion-check', 'data-modo', 'data-expandir', 'data-ir-paso', 'data-accion',
+];
 
 function tomarFoco() {
   const el = document.activeElement;
@@ -360,6 +362,7 @@ function devolverFoco(marca) {
 
 function render() {
   const foco = tomarFoco();
+  const cambioDeVista = S.entrando;
   try {
     dibujar();
   } catch (e) {
@@ -367,7 +370,18 @@ function render() {
     mostrarFatal(e);
     return;
   }
-  devolverFoco(foco);
+  if (cambioDeVista) enfocarTitulo();
+  else devolverFoco(foco);
+}
+
+/** En un cambio de pantalla el foco va al título nuevo. Si no, queda en el
+ *  botón que ya no existe, el navegador lo manda al principio de la página, y
+ *  con teclado o lector hay que recorrer toda la cabecera para llegar. */
+function enfocarTitulo() {
+  const h = pantalla().querySelector('h1');
+  if (!h) return;
+  h.setAttribute('tabindex', '-1');
+  try { h.focus({ preventScroll: true }); } catch (_) { /* sin foco no se rompe nada */ }
 }
 
 /* El area que scrollea es main, no la ventana. */
@@ -447,9 +461,13 @@ function vistaEsqueleto() {
   </div>`;
 }
 
-function alerta(tipo, icono, html) {
+/** Un error se anuncia apenas aparece (`role="alert"`); el resto de las alertas
+ *  son parte de la pantalla y se leen con ella, salvo que quien la llama pida
+ *  `status` para un aviso que aparece por algo que acaba de pasar. */
+function alerta(tipo, icono, html, rol = tipo === 'danger' ? 'alert' : '') {
   const clase = tipo ? ` alerta-${tipo}` : '';
-  return `<div class="alerta${clase}"><span class="alerta-icono">${ico(icono)}</span><div>${html}</div></div>`;
+  const r = rol ? ` role="${rol}"` : '';
+  return `<div class="alerta${clase}"${r}><span class="alerta-icono">${ico(icono)}</span><div>${html}</div></div>`;
 }
 
 /* ------------------------------------------------------------ términos */
@@ -877,7 +895,7 @@ function vistaPaso3() {
           tracks: cuenta('comun.n_tracks', sel.reduce((a, p) => a + p.tracks, 0)),
         }))}</p>
       </div>
-      ${S.aviso ? alerta('', 'info', esc(S.aviso)) : ''}
+      ${S.aviso ? alerta('', 'info', esc(S.aviso), 'status') : ''}
     </div>
 
     <div class="seccion">

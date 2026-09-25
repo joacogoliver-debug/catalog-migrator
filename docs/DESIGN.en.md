@@ -72,9 +72,11 @@ Three rules of use.
 Its most visible place is the circle of the active step in the header, which is
 what you see on every screen.
 
-**The primary is not colored.** The main button is solid bone over graphite. It
-is the lightest thing on the screen and that is why it is the first thing seen,
-with no need to paint it.
+**The primary is not colored.** The main button is the extreme of the screen:
+solid bone over graphite in dark, solid graphite over bone in light. It is what
+contrasts most and that is why it is the first thing seen, with no need to
+paint it. In light it cannot be bone: over a bone card it is 1 to 1 and
+disappears.
 
 **States are tinted fill, not border.** A badge is the semantic color itself
 mixed at 13% into the surface, with saturated text of the same tone on top.
@@ -140,6 +142,12 @@ for what really floats, which today is nothing.
 | Title band, hover | `#1E1D1C` | `#EDEAE3` |
 | Border | bone at 10% | graphite at 12% |
 | Soft border | bone at 5% | graphite at 6% |
+| Control border | neutral 500 | neutral 500 |
+
+The border of a field or a checkbox is not decoration: it is what says "type
+here" or "tick this", and WCAG 1.4.11 asks for 3 to 1 against its surroundings.
+The card border is 1.3, so controls get their own: neutral 500 is 3.6 over the
+worst surface in dark and 3.7 in light.
 
 ## 7. Motion
 

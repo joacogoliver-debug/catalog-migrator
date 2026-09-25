@@ -512,6 +512,7 @@ pytest -q --cov
 | `tests/test_app.py` | Backend, jobs, HTTP, and the three defenses |
 | `tests/test_capturas.py` | That the screenshots' sample material says the same as the app |
 | `tests/test_entrada_hostil.py` | That nothing coming from outside gets executed: yt-dlp, formulas, covers |
+| `tests/test_contraste.py` | Token contrast, read from `colors.css` in both themes: text at 4.5, controls and the main button at 3 |
 | `tests/test_interfaz_js.py` | The interface tests (`tests/js/`, with `node --test`): external text arrives escaped, figures, plurals |
 | `tests/test_rutas.py` | Server routes: surveying as a job, saving the key, Tidal switched off |
 | `tests/test_textos_fijos.py` | That no user-facing text is written outside the translation catalogs |

@@ -72,9 +72,11 @@ Tres reglas de uso.
 lugar más visible es el círculo del paso activo en la cabecera, que es lo que se
 ve en toda pantalla.
 
-**El primario no es de color.** El botón principal es hueso pleno sobre
-grafito. Es lo más claro de la pantalla y por eso es lo primero que se ve, sin
-necesidad de pintarlo.
+**El primario no es de color.** El botón principal es el extremo de la
+pantalla: hueso pleno sobre grafito en oscuro, grafito pleno sobre hueso en
+claro. Es lo que más contrasta y por eso es lo primero que se ve, sin necesidad
+de pintarlo. En claro no puede ser hueso: sobre una tarjeta hueso da 1 a 1 y
+desaparece.
 
 **Los estados son relleno teñido, no borde.** Un badge es el propio semántico
 mezclado al 13% en la superficie, con el texto saturado del mismo tono encima.
@@ -141,6 +143,12 @@ su texto.
 | Banda de título, hover | `#1E1D1C` | `#EDEAE3` |
 | Borde | hueso al 10% | grafito al 12% |
 | Borde suave | hueso al 5% | grafito al 6% |
+| Borde de control | neutral 500 | neutral 500 |
+
+El borde de un campo o de una casilla no es decoración: es lo que dice «acá se
+escribe» o «esto se marca», y WCAG 1.4.11 le pide 3 a 1 contra lo que tiene al
+lado. El borde de las tarjetas da 1,3, así que los controles tienen el suyo: el
+neutral 500 da 3,6 sobre la peor superficie en oscuro y 3,7 en claro.
 
 ## 7. Movimiento
 

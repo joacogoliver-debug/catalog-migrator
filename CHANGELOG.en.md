@@ -65,6 +65,17 @@ What changed in every published version. The numbers follow
   on its own, following the rubric in `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Fixed
+- **In the light theme, the main button could not be seen**: it was bone on a
+  bone card, 1 to 1. In light it is now graphite, which is what contrasts most.
+- **Field and checkbox borders are visible.** They were 1.3 to 1 against their
+  background, and with low vision the link field and the table checkboxes could
+  not be told apart. They are now 3.6 to 4.7, above the 3 to 1 WCAG asks for,
+  and a test measures it on the real colors in both themes.
+- **Focus is not lost.** Opening a product's detail or going back to a step
+  with the keyboard sent focus to the top of the page; now it stays on the
+  control, and on every screen change it goes to the new heading.
+- **Errors are announced** to screen readers, and the ES and EN buttons have a
+  name ("Español", "English") instead of being read as syllables.
 - **The pasted link no longer disappears.** Every time the screen was redrawn
   the field came back empty: if the survey failed, the error sat under a blank
   field and you could not see what you had pasted. Same with the codes
