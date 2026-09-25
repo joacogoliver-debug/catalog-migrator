@@ -142,19 +142,21 @@ def test_portada_ilegible_o_ausente():
 # ============================================================
 
 
-def test_isrc_y_upc_duplicados_son_error():
+def test_un_isrc_en_dos_grabaciones_distintas_y_un_upc_repetido_son_error():
+    """Dos títulos distintos con el mismo ISRC no son la misma grabación: uno de
+    los dos códigos viene de un match equivocado."""
     res = V.validar(
         [
             _prod(title="A", upc="036000291452", tracks=[_track("T1", "ARABC2000001")]),
             _prod(title="B", upc="036000291452", tracks=[_track("T2", "ARABC2000001")]),
         ]
     )
-    assert "isrc_duplicado" in codigos(res, "error")
+    assert "isrc_match_dudoso" in codigos(res, "error")
     assert "upc_duplicado" in codigos(res, "error")
     assert res["apto"] is False
 
     # El mensaje tiene que decir DÓNDE está el duplicado, para poder arreglarlo.
-    msj = [h["mensaje"] for h in res["hallazgos"] if h["codigo"] == "isrc_duplicado"][0]
+    msj = [h["mensaje"] for h in res["hallazgos"] if h["codigo"] == "isrc_match_dudoso"][0]
     assert "T1" in msj and "T2" in msj
 
 
@@ -165,7 +167,69 @@ def test_el_duplicado_se_detecta_con_guiones_o_minusculas():
             _prod(title="B", tracks=[_track("T2", "arabc2000001")]),
         ]
     )
+    assert "isrc_match_dudoso" in codigos(res, "error")
+
+
+def test_el_single_que_despues_entro_en_el_album_no_es_un_error():
+    """Falso positivo grave de antes: la misma grabación en el single y en el
+    álbum, con el mismo ISRC, salía como error y el paquete dejaba de ser apto.
+    La salida obvia era pedir un código nuevo, que parte el historial."""
+    res = V.validar(
+        [
+            _prod(
+                title="Tema", upc="036000291452", kind="single", tracks=[_track("Tema", "ARABC2000001", 201)]
+            ),
+            _prod(title="Disco", upc="4006381333931", tracks=[_track("Tema", "ARABC2000001", 200)]),
+        ]
+    )
+    assert codigos(res, "error") == []
+    assert res["apto"] is True
+    compartidos = [h for h in res["hallazgos"] if h["codigo"] == "isrc_compartido"]
+    assert [h["nivel"] for h in compartidos] == ["aviso"]
+    # Y el aviso dice que se conserve, no que se cambie.
+    assert "conservá" in compartidos[0]["mensaje"]
+
+
+def test_mismo_titulo_pero_otra_duracion_no_es_la_misma_grabacion():
+    """Un vivo o un remix que se quedó con el ISRC de la versión de estudio."""
+    res = V.validar(
+        [
+            _prod(title="Tema", tracks=[_track("Tema", "ARABC2000001", 200)]),
+            _prod(title="En vivo", tracks=[_track("Tema", "ARABC2000001", 262)]),
+        ]
+    )
+    assert "isrc_match_dudoso" in codigos(res, "error")
+
+
+def test_sin_duracion_se_decide_por_el_titulo():
+    res = V.validar(
+        [
+            _prod(title="Tema", tracks=[_track("Tema", "ARABC2000001", 200)]),
+            _prod(title="Disco", tracks=[_track("Tema", "ARABC2000001", 0)]),
+        ]
+    )
+    assert "isrc_compartido" in codigos(res, "aviso")
+    assert "isrc_match_dudoso" not in codigos(res)
+
+
+def test_repetido_adentro_de_un_mismo_producto_sigue_siendo_error():
+    res = V.validar(
+        [_prod(title="Disco", tracks=[_track("Tema", "ARABC2000001"), _track("Tema", "ARABC2000001")])]
+    )
     assert "isrc_duplicado" in codigos(res, "error")
+
+
+def test_el_duplicado_interno_nombra_su_propio_producto():
+    """Si el código aparece antes en otro producto, el mensaje del repetido
+    interno igual tiene que señalar las dos apariciones de ESTE producto."""
+    res = V.validar(
+        [
+            _prod(title="Single", tracks=[_track("Tema", "ARABC2000001")]),
+            _prod(title="Disco", tracks=[_track("Tema", "ARABC2000001"), _track("Tema", "ARABC2000001")]),
+        ]
+    )
+    msj = [h["mensaje"] for h in res["hallazgos"] if h["codigo"] == "isrc_duplicado"][0]
+    assert "Single" not in msj and msj.count("Disco") == 2
 
 
 def test_los_codigos_vacios_no_cuentan_como_duplicados():

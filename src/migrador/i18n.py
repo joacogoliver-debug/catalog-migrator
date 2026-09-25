@@ -691,8 +691,35 @@ TEXTOS = {
         "en": "The title carries YouTube text, such as (Official Video). Worth cleaning up.",
     },
     "val.isrc_duplicado": {
-        "es": "el ISRC {isrc} está repetido: aparece en '{uno}' y en '{otro}'",
-        "en": "ISRC {isrc} is repeated: it shows up in '{uno}' and in '{otro}'",
+        "es": "el ISRC {isrc} está repetido adentro del mismo producto: aparece en '{uno}' y en '{otro}'",
+        "en": "ISRC {isrc} is repeated within the same release: it shows up in '{uno}' and in '{otro}'",
+    },
+    # La misma grabación en dos releases, con el mismo código, es lo correcto:
+    # el mensaje tiene que decir que se conserve, porque la salida obvia de un
+    # «repetido» es pedir uno nuevo y eso parte el historial.
+    "val.isrc_compartido": {
+        "es": (
+            "La misma grabación está en '{uno}' y en '{otro}', con el mismo ISRC ({isrc}). "
+            "Es lo esperable si salió como single y después en el álbum: conservá el código, "
+            "que es lo que mantiene su historial."
+        ),
+        "en": (
+            "The same recording is in '{uno}' and in '{otro}', with the same ISRC ({isrc}). "
+            "That is expected if it came out as a single and later on the album: keep the "
+            "code, it is what preserves its history."
+        ),
+    },
+    "val.isrc_match_dudoso": {
+        "es": (
+            "El ISRC {isrc} aparece en '{uno}' y en '{otro}', que no parecen la misma grabación "
+            "(cambia el título o la duración). Lo más probable es que uno de los dos venga de una "
+            "coincidencia equivocada: verificalo antes de entregar."
+        ),
+        "en": (
+            "ISRC {isrc} shows up in '{uno}' and in '{otro}', which do not look like the same "
+            "recording (the title or the length differ). Most likely one of them comes from a "
+            "wrong match: check it before delivering."
+        ),
     },
     "val.upc_duplicado": {
         "es": "el UPC {upc} está repetido: lo usan '{uno}' y '{otro}'",

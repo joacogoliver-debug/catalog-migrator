@@ -20,7 +20,7 @@ from datetime import date
 
 from .contratos import Hallazgo, NivelHallazgo, Producto, ResultadoValidacion
 from .i18n import T
-from .texto import parece_formula
+from .texto import comparable, parece_formula
 
 # ISRC: CC-XXX-YY-NNNNN (12 caracteres sin guiones).
 #   CC     país (2 letras; incluye códigos especiales como QM/QZ que usan varios
@@ -299,34 +299,72 @@ def validar(productos: list[Producto], artista="") -> ResultadoValidacion:
     }
 
 
+# Cuánto pueden diferir dos duraciones de la misma grabación. Entre el single y
+# el álbum la diferencia suele ser de cero a un par de segundos (un silencio al
+# final, un fundido); una versión distinta difiere bastante más.
+TOLERANCIA_MISMA_GRABACION = 3
+
+
+def _misma_grabacion(a, b):
+    """True si dos tracks con el mismo ISRC parecen ser la misma grabación.
+
+    Mismo título, sin acentos ni puntuación, y la misma duración con tolerancia.
+    Si a alguno le falta la duración se decide por el título, que es lo que hay.
+    """
+    if comparable(a.get("track")) != comparable(b.get("track")):
+        return False
+    da, db = int(a.get("duration_s") or 0), int(b.get("duration_s") or 0)
+    return not (da and db) or abs(da - db) <= TOLERANCIA_MISMA_GRABACION
+
+
 def _duplicados(productos):
     """ISRC repetido entre tracks y UPC repetido entre productos.
 
-    Un código duplicado es error: identifica de forma única una grabación o un
-    release, así que repetirlo hace que la distribuidora rechace la ingesta o,
-    peor, que sobrescriba el release equivocado.
+    El ISRC identifica una GRABACIÓN, no un lugar en un release, y por eso la
+    regla no es la misma adentro de un producto que entre productos:
+
+      - Adentro de un producto, repetido es error: un release no puede traer dos
+        veces la misma grabación con el mismo código.
+      - Entre productos, la misma grabación con el mismo ISRC es lo correcto. Es
+        el single que después entró en el álbum, o el deluxe. Antes esto salía
+        como error y el paquete dejaba de ser apto, y la salida obvia para el
+        usuario era pedir un código nuevo, que parte el historial de la
+        grabación: justo lo que una migración tiene que evitar. Ahora es un
+        aviso que dice que se conserve.
+      - Entre productos pero con otro título u otra duración, no es la misma
+        grabación: el código casi seguro vino de un match equivocado en Deezer.
+        Eso sí es error, y es además la red que atrapa un vivo o un remix que se
+        quedó con el ISRC de la versión de estudio.
+
+    El UPC identifica un release, así que repetido entre productos es error: la
+    distribuidora rechaza la ingesta o, peor, sobrescribe el release equivocado.
     """
     out = []
 
-    vistos_isrc = {}
+    vistos_isrc = {}  # isrc -> (producto, track) de la primera aparición
     for p in productos:
+        en_este = {}  # isrc -> dónde apareció primero, adentro de este producto
         for t in p.get("tracks", []):
             isrc = re.sub(r"[\s\-]", "", (t.get("isrc") or "")).upper()
             if not isrc:
                 continue
             donde = f"{p.get('title', '')} / {t.get('track', '')}"
-            if isrc in vistos_isrc:
-                out.append(
-                    _hallazgo(
-                        "error",
-                        "isrc_duplicado",
-                        T("val.isrc_duplicado", isrc=isrc, uno=vistos_isrc[isrc], otro=donde),
-                        p.get("title", ""),
-                        t.get("track", ""),
-                    )
-                )
+            titulo, pista = p.get("title", ""), t.get("track", "")
+            if isrc in en_este:
+                texto = T("val.isrc_duplicado", isrc=isrc, uno=en_este[isrc], otro=donde)
+                out.append(_hallazgo("error", "isrc_duplicado", texto, titulo, pista))
+            elif isrc in vistos_isrc:
+                p0, t0 = vistos_isrc[isrc]
+                uno = f"{p0.get('title', '')} / {t0.get('track', '')}"
+                if _misma_grabacion(t0, t):
+                    texto = T("val.isrc_compartido", isrc=isrc, uno=uno, otro=donde)
+                    out.append(_hallazgo("aviso", "isrc_compartido", texto, titulo, pista))
+                else:
+                    texto = T("val.isrc_match_dudoso", isrc=isrc, uno=uno, otro=donde)
+                    out.append(_hallazgo("error", "isrc_match_dudoso", texto, titulo, pista))
             else:
-                vistos_isrc[isrc] = donde
+                vistos_isrc[isrc] = (p, t)
+            en_este.setdefault(isrc, donde)
 
     vistos_upc = {}
     for p in productos:

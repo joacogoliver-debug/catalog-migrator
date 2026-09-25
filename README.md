@@ -211,7 +211,9 @@ conviene revisar.
 **Errores** (la distribuidora los rechaza)
 - ISRC con formato inválido
 - UPC con dígito verificador incorrecto o largo equivocado
-- ISRC repetido entre tracks, o UPC repetido entre productos
+- ISRC repetido adentro de un producto, o el mismo ISRC en dos grabaciones
+  que no parecen la misma (otro título u otra duración)
+- UPC repetido entre productos
 - Portada no cuadrada, por debajo de 1400×1400, o en CMYK
 - Año de lanzamiento en el futuro o imposible
 - Track sin título o sin duración
@@ -223,6 +225,9 @@ conviene revisar.
 - El orden de los tracks es estimado y no está confirmado
 - Falta el sello (℗)
 - La portada entra pero está por debajo de los 3000×3000 recomendados
+- La misma grabación está en dos productos con el mismo ISRC, como el single
+  que después entró en el álbum. No es un error: es lo correcto, y el aviso
+  está para que nadie lo «arregle» pidiendo un código nuevo
 
 Los códigos se validan por sus reglas reales: formato ISRC de 12 caracteres y
 dígito verificador GTIN de UPC-A y EAN-13.

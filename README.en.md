@@ -213,7 +213,9 @@ from what merely deserves a look.
 **Errors** (the distributor rejects these)
 - ISRC with an invalid format
 - UPC with a wrong check digit or the wrong length
-- ISRC repeated across tracks, or UPC repeated across products
+- ISRC repeated within a release, or the same ISRC on two recordings that do
+  not look like the same one (another title or another length)
+- UPC repeated across products
 - Cover not square, below 1400×1400, or in CMYK
 - Release year in the future or impossible
 - Track with no title or no duration
@@ -225,6 +227,9 @@ from what merely deserves a look.
 - Track order is estimated and not confirmed
 - The label (℗) is missing
 - The cover passes but is below the recommended 3000×3000
+- The same recording is on two releases with the same ISRC, like the single
+  that later went on the album. It is not an error: it is the right thing,
+  and the warning is there so nobody "fixes" it by asking for a new code
 
 Codes are validated by their real rules: 12-character ISRC format and the GTIN
 check digit for UPC-A and EAN-13.

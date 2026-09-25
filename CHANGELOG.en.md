@@ -16,6 +16,14 @@ What changed in every published version. The numbers follow
   on its own, following the rubric in `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Fixed
+- **The validation asked to "fix" an ISRC that was right.** The same
+  recording on the single and on the album carries the same ISRC, as it should,
+  but the app flagged it as an error and the package stopped being fit. The
+  obvious way out was to ask for a new code, which splits the recording's
+  history. It is now a warning that says to keep it. It is still an error when
+  repeated within one release, and it becomes one on its own when the same code
+  shows up on two recordings that do not look like the same one, because it
+  almost certainly came from a wrong match.
 - **A release could overwrite another one's files when the ZIP was unpacked.**
   Two singles with the same title and year and no UPC, two titles that only
   differ after the sixtieth character, or titles in a non-Latin script, which all

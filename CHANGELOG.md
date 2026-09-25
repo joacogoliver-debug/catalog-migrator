@@ -16,6 +16,14 @@ Lo que cambió en cada versión publicada. Los números siguen
   `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Corregido
+- **La validación mandaba a «corregir» un ISRC que estaba bien.** La misma
+  grabación en el single y en el álbum lleva el mismo ISRC, y así tiene que ser,
+  pero la app lo marcaba como error y el paquete dejaba de ser apto. La salida
+  obvia era pedir un código nuevo, que parte el historial de la grabación. Ahora
+  es un aviso que dice que se conserve. Sigue siendo error si se repite adentro
+  de un mismo producto, y pasa a serlo con nombre propio cuando el mismo código
+  aparece en dos grabaciones que no parecen la misma, porque casi seguro vino de
+  una coincidencia equivocada.
 - **Un producto podía pisar los archivos de otro al descomprimir el ZIP.** Dos
   singles con el mismo título y el mismo año sin UPC, dos títulos que recién
   difieren después del carácter sesenta, o títulos en una escritura no latina,
