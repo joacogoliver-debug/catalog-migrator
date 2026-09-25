@@ -505,6 +505,7 @@ pytest -q --cov
 | `tests/test_app.py` | Backend, trabajos, HTTP, y las tres defensas |
 | `tests/test_capturas.py` | Que el material de ejemplo de las capturas diga lo mismo que la app |
 | `tests/test_entrada_hostil.py` | Que nada de lo que entra de afuera se ejecute: yt-dlp, fórmulas, portadas |
+| `tests/test_secretos.py` | Que la clave no salga de donde tiene que estar: cabecera, permisos, historia |
 | `tests/test_validacion_honesta.py` | Que la validación diga lo que mira y lo que no: ruido, códigos, color, avisos que faltaban |
 | `tests/test_hoja_xlsx.py` | La hoja de ingesta en Excel: las mismas filas que el CSV, todo como texto |
 | `tests/test_linea_p.py` | La línea ℗ entera en la P Line, y el titular sin la licencia como sello |

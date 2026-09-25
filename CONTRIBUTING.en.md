@@ -99,7 +99,8 @@ same commit.**
 Not in the code, not in a test, not in a fixture, not in a log. It lives as a CI
 secret and enters only at build time, from `MIGRADOR_CLAVE_YT`.
 
-`build/sin_claves.py` checks this on every commit and in CI. If it blocks you, do
+`build/sin_claves.py` checks this on every commit and in CI, which also goes
+through the whole history with `--historia`. If it blocks you, do
 not work around it: a key that made it into a commit is already considered
 leaked, because the object stays in the history and in every clone.
 

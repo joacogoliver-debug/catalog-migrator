@@ -61,12 +61,14 @@ def api_get(endpoint, params, key, intentos=3):
     despues de varios minutos de avance, y el usuario tenia que empezar de cero
     gastando la cuota otra vez.
     """
-    params = dict(params)
-    params["key"] = key
+    # La clave va en una cabecera y no en la URL. En la URL, cualquier error que
+    # la citara (una excepción de urllib, un traceback en el log del trabajo, un
+    # reporte) la llevaba con ella; hoy no hay ninguno que lo haga, y así no
+    # puede haberlo. Google acepta `X-Goog-Api-Key` igual que `?key=`.
     url = f"{API}/{endpoint}?{urllib.parse.urlencode(params)}"
     ultimo = None
     for intento in range(intentos):
-        req = urllib.request.Request(url, headers={"Accept": "application/json"})
+        req = urllib.request.Request(url, headers={"Accept": "application/json", "X-Goog-Api-Key": key})
         try:
             with urllib.request.urlopen(req, timeout=30) as resp:
                 return json.loads(resp.read().decode("utf-8"))

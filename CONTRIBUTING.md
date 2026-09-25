@@ -99,7 +99,8 @@ mismo commit.**
 Ni en el código, ni en un test, ni en una fixture, ni en un log. Vive como
 secreto del CI y entra recién al compilar, desde `MIGRADOR_CLAVE_YT`.
 
-`build/sin_claves.py` lo controla en cada commit y en el CI. Si te lo bloquea,
+`build/sin_claves.py` lo controla en cada commit y en el CI, que además revisa la
+historia entera con `--historia`. Si te lo bloquea,
 no lo saltees: una clave que llegó a un commit ya se considera filtrada, porque
 el objeto queda en la historia y en cada clon.
 

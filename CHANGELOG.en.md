@@ -173,6 +173,16 @@ What changed in every published version. The numbers follow
   threads before exiting.
 
 ### Changed
+- **The YouTube key travels in a header, not in the URL.** No error message
+  showed it today, but any that quoted the URL would have carried it along: now
+  it is not there. It was checked against the real API that Google accepts it
+  the same way and that a bad key still gives the same warning.
+- The config folder and file, where the key the user loads lives, are created
+  closed from the start. Before, the permission was closed afterwards, and on a
+  machine with several users there was a window in which others could read it.
+- The key check also goes through the whole git history, in CI: a key that went
+  into one commit and out in the next is no longer in any file, but it is still
+  in every clone.
 - **The local server adds four reinforcements, without touching the three
   defenses.** No other page can put the app in an iframe (`frame-ancestors`,
   `X-Frame-Options`, COOP and CORP). A request the browser marks as made by

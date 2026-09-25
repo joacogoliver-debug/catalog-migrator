@@ -20,6 +20,8 @@ jobs:
         python: ["3.13", "3.14"]
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # la historia entera, para el control de claves
 
       - uses: actions/setup-python@v5
         with:
@@ -107,6 +109,12 @@ jobs:
         # escritos por separado terminan discrepando, y el que falla primero es
         # el que nadie mira.
         run: python build/sin_claves.py --todo
+
+      - name: No quedan claves en la historia
+        # El árbol de hoy no alcanza: una clave que entró en un commit y salió en
+        # el siguiente sigue en la historia y en cada clon. Por eso este job hace
+        # el checkout con la historia entera.
+        run: python build/sin_claves.py --historia
 
   tipos:
     # pyright va en su propio job, y no como un paso más del de arriba, por una

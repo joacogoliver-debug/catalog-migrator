@@ -174,6 +174,17 @@ Lo que cambió en cada versión publicada. Los números siguen
   a sus hilos antes de salir.
 
 ### Cambiado
+- **La clave de YouTube viaja en una cabecera, no en la URL.** Hoy ningún
+  mensaje de error la mostraba, pero cualquiera que citara la URL la habría
+  llevado con él: ahora no está ahí. Se verificó contra la API real que Google
+  la acepta igual y que una clave mala sigue dando el mismo aviso.
+- La carpeta y el archivo de la config, donde vive la clave que carga el
+  usuario, se crean cerrados desde el primer momento. Antes el permiso se
+  cerraba después, y en un sistema con varios usuarios quedaba una ventana en
+  que los demás la podían leer.
+- El control de claves revisa también la historia entera de git, en el CI:
+  una clave que entró en un commit y salió en el siguiente ya no está en
+  ningún archivo, pero sigue en cada clon.
 - **El servidor local suma cuatro refuerzos, sin tocar las tres defensas.**
   Ninguna otra página puede meter la app en un iframe (`frame-ancestors`,
   `X-Frame-Options`, COOP y CORP). Un pedido que el navegador marca como hecho

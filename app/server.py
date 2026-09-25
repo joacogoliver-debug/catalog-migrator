@@ -145,9 +145,14 @@ MIN_LIBRE_AUDIO = 3 * 1024 * 1024 * 1024
 
 
 def dir_datos():
-    """Carpeta de la app en el home del usuario, para la clave y los temporales."""
+    """Carpeta de la app en el home del usuario, para la clave y los temporales.
+
+    Se crea cerrada, 0700, y no se abre después: ahí vive la clave de YouTube que
+    carga el usuario. En Windows el modo no hace nada y lo que protege es el ACL
+    del perfil, que ya es sólo de su dueño.
+    """
     base = os.path.join(os.path.expanduser("~"), ".migrador-catalogos")
-    os.makedirs(base, exist_ok=True)
+    os.makedirs(base, mode=0o700, exist_ok=True)
     return base
 
 
@@ -188,13 +193,17 @@ def guardar_config(cambios):
     datos.update(cambios)
     destino = _ruta_config()
     tmp = destino + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as f:
+    # El temporal nace con 0600. Antes se creaba con los permisos por defecto y
+    # el chmod llegaba después del replace, así que en un sistema con varios
+    # usuarios la clave quedaba legible por los demás durante esa ventana.
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
         json.dump(datos, f, indent=2, ensure_ascii=False)
         f.flush()
         os.fsync(f.fileno())
     os.replace(tmp, destino)
     try:
-        os.chmod(destino, 0o600)  # en Windows es no-op, en Unix protege el archivo
+        os.chmod(destino, 0o600)  # un config viejo, de antes de esto, también se cierra
     except OSError:
         pass
     return datos

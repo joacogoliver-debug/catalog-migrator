@@ -3,7 +3,8 @@
 Lo usan dos lugares, y es a propósito el mismo código en los dos.
 
   - el gancho de pre-commit, sobre los archivos que están por commitearse;
-  - el CI, sobre todo el árbol, con `--todo`.
+  - el CI, sobre todo el árbol, con `--todo`, y sobre toda la historia de git,
+    con `--historia`.
 
 La clave de YouTube vive como secreto de GitHub y entra recién al compilar. Que
 no se pueda commitear por accidente es mucho más barato de garantizar que de
@@ -38,6 +39,32 @@ def archivos_del_repo():
     return [linea for linea in salida.stdout.splitlines() if linea.strip()]
 
 
+def revisar_historia():
+    """Cada línea agregada en toda la historia, en todas las ramas.
+
+    Revisar sólo el árbol de hoy no alcanza: una clave que entró en un commit y
+    salió en el siguiente ya no está en ningún archivo, pero sigue en la
+    historia y en cada clon. Se informa el commit y el archivo, nunca la clave.
+    """
+    proc = subprocess.run(
+        ["git", "log", "--all", "-p", "--no-color", "-U0", "--format=commit %H"],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="ignore",
+        check=False,
+    )
+    problemas, commit, archivo = [], "", ""
+    for linea in proc.stdout.splitlines():
+        if linea.startswith("commit "):
+            commit = linea[7:19]
+        elif linea.startswith("+++ "):
+            archivo = linea[6:] if linea.startswith("+++ b/") else linea[4:]
+        elif linea.startswith("+") and RE_CLAVE_GOOGLE.search(linea):
+            problemas.append(f"{commit} {archivo}: parece haber una clave de API en la historia")
+    return problemas
+
+
 def revisar(rutas):
     problemas = []
     for ruta in rutas:
@@ -60,6 +87,16 @@ def revisar(rutas):
 
 
 def main(argv):
+    if "--historia" in argv:
+        problemas = revisar_historia()
+        if problemas:
+            print("Hay una clave en la historia de git:")
+            for p in problemas:
+                print(f"  {p}")
+            print("\nUna clave que llegó a un commit se considera filtrada: hay que revocarla.")
+            return 1
+        print("sin claves en la historia")
+        return 0
     rutas = archivos_del_repo() if ("--todo" in argv or not argv) else argv
     problemas = revisar([r for r in rutas if r != "--todo"])
     if problemas:
