@@ -42,7 +42,11 @@ def test_los_hallazgos_de_ejemplo_tienen_el_nivel_que_da_la_validacion():
 def test_el_resumen_de_ejemplo_cuenta_lo_que_muestra():
     v = capturas.resultado_demo()["validacion"]
     niveles = [h["nivel"] for h in v["hallazgos"]]
-    assert v["resumen"] == {"errores": niveles.count("error"), "avisos": niveles.count("aviso")}
+    assert v["resumen"]["errores"] == niveles.count("error")
+    assert v["resumen"]["avisos"] == niveles.count("aviso")
+    catalogo = capturas.catalogo_demo()["resumen"]
+    assert v["resumen"]["productos"] == catalogo["products"]
+    assert v["resumen"]["tracks"] == catalogo["tracks"]
 
 
 def test_los_textos_de_ejemplo_salen_del_catalogo_en_los_dos_idiomas():

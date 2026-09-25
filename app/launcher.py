@@ -196,7 +196,7 @@ def _diagnostico(url):
         # compilado sin consola.
         import threading as _th
 
-        estado = {"abrio": False, "error": None}
+        estado: dict[str, bool | str | None] = {"abrio": False, "error": None}
 
         def _cerrar():
             import time as _t

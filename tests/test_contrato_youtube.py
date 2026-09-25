@@ -20,7 +20,7 @@ import pytest
 from conftest import FIXTURES, _respuesta_grabada
 from migrador import productos as P
 from migrador import relevar_core as R
-from migrador.contratos import Relevamiento, Track
+from migrador.contratos import Relevamiento, ResumenDistribuidora, Track
 
 TOPIC = "UCRr1xG_2WIDs18a6cIiCxeA"
 
@@ -114,6 +114,8 @@ def test_relevar_de_punta_a_punta(youtube_grabado):
         progress=lambda m, f: avances.append(f),
     )
     assert set(res) == set(Relevamiento.__annotations__)
+    for d in res["distribs"].values():
+        assert set(d) == set(ResumenDistribuidora.__annotations__)
     assert res["artist"] == "Daft Punk"
     assert res["es_topic"] is True and res["via_topic"] is False
     assert len(res["tracks"]) == len(_respuesta_grabada("youtube_videos.json")["items"]), (

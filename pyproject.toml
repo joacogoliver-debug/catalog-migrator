@@ -87,18 +87,18 @@ skip-magic-trailing-comma = false
 
 [tool.pyright]
 # Estricto progresivo. El objetivo es `strict`, pero prenderlo de golpe sobre un
-# código sin una sola anotación deja cientos de errores que nadie va a leer, y un
+# código a medio anotar deja más de mil errores que nadie va a leer, y un
 # verificador que grita siempre es un verificador apagado.
 #
-# El camino es: `basic` limpio hoy, y cada regla de `strict` se prende cuando el
-# módulo que la rompe ya está tipado. El ítem que tipa los contratos entre
-# módulos es el que va a mover esta línea.
+# El camino es: `basic` limpio, y cada regla de `strict` se prende cuando el
+# código ya la cumple, para que desde ahí no se pueda romper sin que el CI lo
+# diga. Las de abajo son las que hoy dan cero.
 typeCheckingMode = "basic"
 
-# Los módulos viven en la raíz, el backend en `app/` y las herramientas de
-# empaquetado en `build/`, y no hay paquete instalable. Sin esto, pyright no
-# resuelve `import server` ni `import notas_release` y reporta como error algo
-# que en tiempo de ejecución funciona.
+# El paquete `migrador` vive en `src/`, el backend en `app/` y las herramientas
+# de empaquetado en `build/`, y los tests importan de los tres. Sin esto,
+# pyright no resuelve `import server` ni `import notas_release` y reporta como
+# error algo que en tiempo de ejecución funciona.
 extraPaths = ["src", "app", "build"]
 
 # La app apunta a la versión con la que se compila el binario, no a la que tenga
@@ -111,6 +111,55 @@ exclude = ["**/__pycache__", "build/_pyinstaller", "dist", ".venv"]
 # Dependencias opcionales del módulo de audio. No están instaladas en el CI a
 # propósito, y no tener sus stubs no es un error del código.
 reportMissingModuleSource = "none"
+
+# Las reglas de `strict` que el código ya cumple. Afuera, y por qué:
+#
+# - `strictDictionaryInference` se prendió después de darles contrato a las
+#   funciones que devolvían diccionarios sueltos (la portada, las opciones de
+#   filtro, el paquete listo): los errores que daba eran justamente esos.
+# - `reportUnusedImport` no: `import tiddl` o `import pytest` adentro de un
+#   `try` es la forma de preguntar si el módulo carga de verdad, y ruff ya los
+#   deja pasar con `noqa: F401`, que dice a propósito lo que se está haciendo.
+# - `reportUnknown*` y `reportMissingParameterType` dan más de mil: son las
+#   funciones sin anotar, y se prenden cuando se anoten, no antes.
+# - `reportImplicitStringConcatenation` choca con cómo `ruff format` parte las
+#   cadenas largas.
+# - `reportMissingTypeStubs`: `tiddl` y `yt_dlp` no publican stubs, y no es
+#   un error nuestro.
+strictListInference = true
+strictDictionaryInference = true
+strictSetInference = true
+strictParameterNoneValue = true
+deprecateTypingAliases = true
+reportConstantRedefinition = "error"
+reportDeprecated = "error"
+reportDuplicateImport = "error"
+reportImplicitOverride = "error"
+reportImportCycles = "error"
+reportIncompleteStub = "error"
+reportInconsistentConstructor = "error"
+reportInvalidStubStatement = "error"
+reportMatchNotExhaustive = "error"
+reportMissingTypeArgument = "error"
+reportPrivateImportUsage = "error"
+reportPropertyTypeMismatch = "error"
+reportSelfClsParameterName = "error"
+reportTypeCommentUsage = "error"
+reportUnnecessaryCast = "error"
+reportUnnecessaryComparison = "error"
+reportUnnecessaryContains = "error"
+reportUnnecessaryIsInstance = "error"
+reportUnnecessaryTypeIgnoreComment = "error"
+reportUntypedBaseClass = "error"
+reportUntypedClassDecorator = "error"
+reportUntypedFunctionDecorator = "error"
+reportUntypedNamedTuple = "error"
+reportUnusedClass = "error"
+reportUnusedExpression = "error"
+reportUnusedFunction = "error"
+reportUnusedVariable = "error"
+reportUninitializedInstanceVariable = "error"
+reportCallInDefaultInitializer = "error"
 
 
 # ============================================================

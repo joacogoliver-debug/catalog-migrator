@@ -31,6 +31,7 @@ import pytest
 from migrador import i18n
 import jobs as J
 from migrador import productos as P
+from migrador.contratos import PaqueteListo, ValidacionParaUI
 import server as backend
 from conftest import _esperar, _track
 
@@ -525,6 +526,14 @@ def paquete_listo(cliente, productos_servidor):
     assert _esperar(termino, 120, 0.05), "el trabajo no terminó"
     assert estado["estado"] == "listo", estado.get("error")
     return {"job_id": job_id, "resultado": estado["resultado"]}
+
+
+def test_el_paquete_listo_llega_con_la_forma_de_su_contrato(paquete_listo):
+    """Lo que dibuja el paso 4 tiene que ser lo que el contrato dice, y la
+    captura de ejemplo se arma con el mismo contrato."""
+    res = paquete_listo["resultado"]
+    assert set(res) == set(PaqueteListo.__annotations__)
+    assert set(res["validacion"]) == set(ValidacionParaUI.__annotations__)
 
 
 def test_el_paquete_se_arma(paquete_listo):

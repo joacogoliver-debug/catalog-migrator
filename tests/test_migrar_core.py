@@ -18,7 +18,7 @@ import pytest
 
 from migrador import migrar_core as M
 from migrador import relevar_core
-from migrador.contratos import Diagnostico, Relevamiento
+from migrador.contratos import Diagnostico, OpcionesFiltro, Relevamiento, ResultadoMigracion
 
 # Las claves que `relevar()` tiene que devolver salen del contrato, no de una
 # lista escrita a mano acá. Antes eran catorce cadenas copiadas, que es la forma
@@ -61,10 +61,10 @@ def _respuesta_topic():
         "artist": "Artista Doble",
         "channel_title": "Artista Doble - Topic",
         "tracks": TRACKS_FALSOS,
-        "distribs": {"ONErpm": {"videos": 3, "views": 300}},
+        "distribs": {"ONErpm": {"videos": 3, "views": 300, "top": 100, "top_title": "Tema A"}},
         "total_views": 300,
         "units": 3,
-        "codes": {"isrc": 3, "upc": 2, "matched": 3, "source": "Deezer"},
+        "codes": {"isrc": 3, "upc": 2, "matched": 3, "source": "Deezer", "fallas": 0},
         "es_topic": True,
         "cobertura_metadata": 1.0,
         "topic_sugerido": None,
@@ -224,6 +224,7 @@ def test_diagnostico_de_un_canal_comun(relevar_doble):
 def test_opciones_de_filtro_sobre_lo_relevado(relevar_doble):
     prods, _a, _t, _d = M.relevar_catalogo("https://www.youtube.com/@Test", "clave-falsa")
     op = M.opciones_de_filtro(prods)
+    assert set(op) == set(OpcionesFiltro.__annotations__)
     assert op["total"] == 2
     assert op["año_min"] == 2020
     assert op["año_max"] == 2021
@@ -242,6 +243,7 @@ def test_flujo_completo_sin_red_solo_planilla(relevar_doble, tmp_path):
         log=lambda *_: None,
     )
 
+    assert set(res) == set(ResultadoMigracion.__annotations__)
     assert res["artista"] == "Artista Doble"
     assert res["productos"] == 2
     assert os.path.exists(res["zip"])

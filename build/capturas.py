@@ -41,6 +41,7 @@ import sys
 import tempfile
 import threading
 import time
+from typing import Any
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WEB = os.path.join(RAIZ, "app", "web")
@@ -51,6 +52,10 @@ PAGINA = os.path.join(WEB, "_capturas.html")
 sys.path.insert(0, RAIZ)
 sys.path.insert(0, os.path.join(RAIZ, "app"))
 sys.path.insert(0, os.path.join(RAIZ, "src"))
+
+# Sólo el contrato, que no importa nada del proyecto: el resto se importa
+# adentro de cada función, cuando ya se eligió el idioma.
+from migrador.contratos import PaqueteListo  # noqa: E402
 
 # 16:9. El contenedor de la app llega a 1440, así que a 1600 quedan márgenes
 # naturales a los costados en vez de texto pegado al borde.
@@ -179,7 +184,10 @@ def navegador():
 # ============================================================
 
 
-def catalogo_demo():
+def catalogo_demo() -> dict[str, Any]:
+    # `Any` y no un TypedDict porque es el JSON de `catalogo_json()` del
+    # servidor, que tampoco tiene contrato todavía: lo que lo fija es que la
+    # pantalla lo dibuje, y eso lo prueban las capturas.
     def tracks(n, titulos, prefijo, con_isrc):
         return [
             {
@@ -357,7 +365,7 @@ def idioma():
     return i18n.idioma()
 
 
-def resultado_demo():
+def resultado_demo() -> PaqueteListo:
     msg = hallazgos_demo()
     sufijo = "migracion" if idioma() == "es" else "migration"
     return {
@@ -371,7 +379,10 @@ def resultado_demo():
             # Los niveles son los que emite validar.py: la falta de UPC es un
             # aviso, no un error, y una captura que dijera otra cosa mostraría
             # una validación que la app no hace.
-            "resumen": {"errores": 1, "avisos": 5},
+            # Con los productos y tracks del catálogo de ejemplo, como manda
+            # el backend: una captura con un resumen más flaco que el real
+            # probaría una pantalla que la app nunca recibe.
+            "resumen": {"productos": 4, "tracks": 27, "errores": 1, "avisos": 5},
             "hallazgos": [
                 # El `codigo` es lo que agrupa los hallazgos y lo que les pone
                 # titulo. Sin el, la app los mete a todos en la misma bolsa y la

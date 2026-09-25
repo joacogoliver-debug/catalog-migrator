@@ -65,6 +65,10 @@ What changed in every published version. The numbers follow
   on its own, following the rubric in `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Fixed
+- **The survey contract got two things wrong**: distributors were declared
+  as numbers when one field carries the title of the most viewed track, and
+  the code stats as "anything". The test doubles copied that incomplete shape
+  and now have the real one.
 - With the app in English, job progress and the audio module's log were still
   in Spanish ("Listo.", "Preparando", "productos encontrados", "tracks por
   YouTube"). They now come from the catalog, and a test that reads the code
@@ -221,6 +225,13 @@ What changed in every published version. The numbers follow
   threads before exiting.
 
 ### Changed
+- **pyright turns on 34 `strict` rules**, the ones the code already meets, so
+  that from now on they cannot be broken without CI saying so. Getting there
+  meant giving a contract to the functions that returned loose dictionaries
+  (the Apple cover, the filter options, the finished package, the result of
+  `migrar()`, the Deezer matching stats), and one test per function compares
+  what it really returns against its contract. `pyproject.toml` says which
+  rules are missing and why.
 - **CI grants write permission only to the step that publishes the
   release.** Before, the eight build jobs had it too, and they install
   packages from PyPI: a compromised one would have received a token able to

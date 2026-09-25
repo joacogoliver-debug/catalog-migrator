@@ -19,6 +19,7 @@ import pytest
 
 from migrador import portadas
 from migrador import relevar_core as R
+from migrador.contratos import EstadisticaCodigos, InfoPortada
 from conftest import _respuesta_grabada
 
 # Los datos reales de la grabación. Están escritos acá, a la vista, para que se
@@ -147,6 +148,13 @@ def test_deezer_match_saca_el_isrc_real(deezer_grabado):
     assert confianza in ("alta", "media")
 
 
+def test_el_cruce_con_deezer_cuenta_lo_que_dice_su_contrato(deezer_grabado):
+    t = _track_de_youtube()
+    stats = R.enrich_with_codes([t], "Daft Punk", log=lambda *_: None)
+    assert set(stats) == set(EstadisticaCodigos.__annotations__)
+    assert stats["isrc"] == 1 and t["isrc"] == ISRC_REAL
+
+
 def test_la_busqueda_estricta_no_encuentra_nada_y_por_eso_existe_el_respaldo(deezer_grabado):
     """Esto no es un caso de borde inventado: es lo que Deezer contesta hoy.
 
@@ -230,6 +238,7 @@ def test_con_upc_se_busca_por_lookup_y_el_match_es_exacto(itunes_grabado):
     info = portadas.buscar_portada("Daft Punk", "Random Access Memories", upc=UPC_REAL)
 
     assert info is not None
+    assert set(info) == set(InfoPortada.__annotations__)
     assert info["match"] == "upc"
     assert info["ratio"] == 1.0
     assert info["matched_album"] == "Random Access Memories"
@@ -244,6 +253,7 @@ def test_sin_upc_se_busca_por_texto(itunes_grabado):
     info = portadas.buscar_portada("Daft Punk", "Random Access Memories")
 
     assert info is not None
+    assert set(info) == set(InfoPortada.__annotations__)
     assert info["matched_album"] == "Random Access Memories"
     assert info["match"] == "alta"
     assert info["ratio"] >= portadas.MIN_RATIO

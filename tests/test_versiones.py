@@ -13,6 +13,8 @@ la portada del de estudio, con confianza alta. Cubre:
   - que iTunes no le dé a un disco en vivo la portada del de estudio
 """
 
+from typing import Any
+
 import pytest
 
 from migrador import portadas as PT
@@ -50,15 +52,22 @@ def test_marcas_de_version(titulo, marcas):
 # Deezer
 # ============================================================
 
-ESTUDIO = {"id": 1, "title": "Tema", "isrc": "ARAAA2000001", "artist": {"name": "Fulano"}, "duration": 200}
-VIVO = {
+# `Any` porque son respuestas de Deezer de mentira, que se completan abajo.
+ESTUDIO: dict[str, Any] = {
+    "id": 1,
+    "title": "Tema",
+    "isrc": "ARAAA2000001",
+    "artist": {"name": "Fulano"},
+    "duration": 200,
+}
+VIVO: dict[str, Any] = {
     "id": 2,
     "title": "Tema (En Vivo)",
     "isrc": "ARAAA2100002",
     "artist": {"name": "Fulano"},
     "duration": 245,
 }
-REMIX = {
+REMIX: dict[str, Any] = {
     "id": 3,
     "title": "Tema (Oliver Remix)",
     "isrc": "ARAAA2200003",

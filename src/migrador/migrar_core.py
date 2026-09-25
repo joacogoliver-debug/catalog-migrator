@@ -24,7 +24,7 @@ from . import paquete
 from . import portadas as portadas_mod
 from . import productos as productos_mod
 from . import relevar_core
-from .contratos import Diagnostico, Producto, Track
+from .contratos import Diagnostico, OpcionesFiltro, Producto, ResultadoMigracion, Track
 from .i18n import T
 
 
@@ -76,7 +76,7 @@ def relevar_catalogo(
     return prods, artista, tracks, diag
 
 
-def opciones_de_filtro(prods):
+def opciones_de_filtro(prods) -> OpcionesFiltro:
     """Todo lo que la UI necesita para armar los filtros del paso 2."""
     desde, hasta = productos_mod.year_range(prods)
     return {
@@ -209,7 +209,7 @@ def migrar(
     tidal_session=None,
     out_path=None,
     log=print,
-):
+) -> ResultadoMigracion:
     """Corre los 4 pasos de una. Devuelve dict con el resultado."""
     prods, artista, _, _diag = relevar_catalogo(url, yt_key, progress=log)
     seleccion = productos_mod.filter_products(

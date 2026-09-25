@@ -23,7 +23,14 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 from difflib import SequenceMatcher
 
-from .contratos import Creditos, DescripcionParseada, Relevamiento, Track
+from .contratos import (
+    Creditos,
+    DescripcionParseada,
+    EstadisticaCodigos,
+    Relevamiento,
+    ResumenDistribuidora,
+    Track,
+)
 from .i18n import T
 from .productos import SIN_ALBUM, SIN_DATOS
 from .texto import comparable, marcas_version, misma_version, sin_decorado
@@ -942,7 +949,7 @@ def musicbrainz_isrc(t, artist):
     return ""
 
 
-def enrich_with_codes(tracks, artist, log=print, use_musicbrainz=False, avance=None):
+def enrich_with_codes(tracks, artist, log=print, use_musicbrainz=False, avance=None) -> EstadisticaCodigos:
     """Completa isrc/upc/match en los tracks. Deezer principal + MB opcional.
 
     `avance(hechos, total)` se llama al terminar cada track. Es la fase más
@@ -1038,8 +1045,8 @@ def enrich_with_codes(tracks, artist, log=print, use_musicbrainz=False, avance=N
     return {"matched": matched, "isrc": isrc_n, "upc": upc_n, "source": "Deezer", "fallas": FALLAS_DEEZER.n}
 
 
-def _aggregate_distributors(tracks):
-    agg = {}
+def _aggregate_distributors(tracks) -> dict[str, ResumenDistribuidora]:
+    agg: dict[str, ResumenDistribuidora] = {}
     for t in tracks:
         d = agg.setdefault(t["distributor"], {"videos": 0, "views": 0, "top": 0, "top_title": ""})
         d["videos"] += 1
@@ -1137,7 +1144,7 @@ def relevar(
     cobertura = 1.0
     topic_sugerido = None
 
-    codes_stats = None
+    codes_stats: EstadisticaCodigos | None = None
     if with_codes:
         step(T("rel.buscando_codigos"), 0.55)
 

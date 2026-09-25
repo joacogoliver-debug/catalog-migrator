@@ -17,7 +17,7 @@ avisa cuando un producto quedó sin orden confirmado.
 import re
 from collections import Counter
 
-from .contratos import Producto, ResumenSeleccion, TipoProducto, Track
+from .contratos import OpcionDistribuidora, Producto, ResumenSeleccion, TipoProducto, Track
 from .texto import comparable as _norm
 from .texto import nombre_seguro
 
@@ -318,7 +318,7 @@ def filter_products(
     return sel
 
 
-def distributor_options(productos):
+def distributor_options(productos) -> list[OpcionDistribuidora]:
     """Distribuidoras presentes, con su conteo, para armar el filtro en la UI."""
     c = Counter(p["distributor"] for p in productos if p.get("distributor"))
     return [{"name": n, "count": k} for n, k in c.most_common()]

@@ -19,7 +19,7 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from difflib import SequenceMatcher
 
-from .contratos import Producto
+from .contratos import InfoPortada, Producto
 from .i18n import T
 from .texto import comparable as _norm
 from .texto import misma_version
@@ -96,7 +96,7 @@ def _upscale(url, px):
     return re.sub(r"/\d+x\d+bb\.(jpg|png)$", f"/{px}x{px}bb.jpg", url or "")
 
 
-def buscar_portada(artista, album, upc=""):
+def buscar_portada(artista, album, upc="") -> InfoPortada | None:
     """Busca la portada de un producto. Devuelve dict con url y datos del match,
     o None si no hubo coincidencia confiable.
 

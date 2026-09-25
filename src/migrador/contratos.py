@@ -268,6 +268,29 @@ class TopicSugerido(TypedDict):
     url: str
 
 
+class ResumenDistribuidora(TypedDict):
+    """Lo que el relevamiento cuenta de cada distribuidora del canal."""
+
+    videos: int
+    views: int
+    top: int  # las vistas del track más visto
+    top_title: str
+
+
+class EstadisticaCodigos(TypedDict):
+    """Cuántos tracks consiguieron código en el cruce con Deezer.
+
+    `fallas` son las consultas que no contestaron aun después de reintentar:
+    no es lo mismo «Deezer no tiene el ISRC» que «Deezer no respondió».
+    """
+
+    matched: int
+    isrc: int
+    upc: int
+    source: str
+    fallas: int
+
+
 class Relevamiento(TypedDict):
     """Lo que devuelve `relevar_core.relevar`.
 
@@ -279,10 +302,10 @@ class Relevamiento(TypedDict):
     artist: str
     channel_title: str
     tracks: list[Track]
-    distribs: dict[str, dict[str, int]]
+    distribs: dict[str, ResumenDistribuidora]
     total_views: int
     units: int
-    codes: dict[str, object] | None
+    codes: EstadisticaCodigos | None
 
     # Diagnóstico del canal. Sin esto la app no puede contar que cambió de canal
     # ni que descartó videos, y el cambio ocurriría a espaldas del usuario.
@@ -304,6 +327,63 @@ class Diagnostico(TypedDict):
     via_topic: bool
     canal_pedido: str
     descartados: int
+
+
+class InfoPortada(TypedDict):
+    """El match de una portada en Apple, antes de bajarla.
+
+    `match` es "upc" cuando se encontró por código, que es exacto, y "alta" o
+    "media" cuando fue por texto; `ratio` es el parecido del título, de 0 a 1.
+    """
+
+    url100: str
+    matched_album: str
+    matched_artist: str
+    match: str
+    ratio: float
+
+
+class OpcionDistribuidora(TypedDict):
+    name: str
+    count: int
+
+
+class OpcionesFiltro(TypedDict):
+    """Lo que el paso 2 necesita para armar los filtros."""
+
+    distribuidoras: list[OpcionDistribuidora]
+    año_min: int | None
+    año_max: int | None
+    total: int
+
+
+class ValidacionParaUI(TypedDict):
+    """La validación tal como viaja al frontend: sin las listas partidas."""
+
+    apto: bool
+    resumen: ResumenValidacion
+    hallazgos: list[Hallazgo]
+
+
+class PaqueteListo(TypedDict):
+    """El resultado del paso 3 que muestra el paso 4."""
+
+    archivo: str
+    bytes: int
+    descarga: str
+    validacion: ValidacionParaUI
+    portadas: int
+    productos: int
+
+
+class ResultadoMigracion(TypedDict):
+    """Lo que devuelve `migrar()`, el flujo completo para scripts."""
+
+    artista: str
+    zip: str
+    bytes: int
+    productos: int
+    resumen: ResumenSeleccion
 
 
 class EntornoAudio(TypedDict):

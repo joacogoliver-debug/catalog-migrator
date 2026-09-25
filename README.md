@@ -570,10 +570,11 @@ La configuración de los tres está en [pyproject.toml](pyproject.toml).
 - **ruff format** es estilo Black. Tiene un costo que conviene decir, colapsa los
   comentarios alineados a la derecha, y acá se usan bastante. A cambio, el
   formato deja de depender de la costumbre de cada uno.
-- **pyright** va en estricto progresivo. Hoy corre en modo `basic` y el
-  repositorio pasa en cero errores. El objetivo es `strict`, y el camino es
-  prender cada regla cuando el módulo que la rompe ya está tipado; prenderlo de
-  golpe sobre un código sin anotaciones deja cientos de errores que nadie lee.
+- **pyright** va en estricto progresivo. Corre en modo `basic` con 34 reglas
+  de `strict` prendidas, las que el código ya cumple, y pasa en cero errores. El
+  objetivo es `strict` entero, y el camino es prender cada regla cuando el
+  código ya la cumple; prenderlo de golpe deja más de mil errores que nadie lee.
+  `pyproject.toml` dice cuáles faltan y por qué.
   Corre en su propio job del CI, con las dependencias opcionales instaladas, para
   no reportar como faltante un `tiddl` que en la máquina de un usuario existe.
 

@@ -64,6 +64,10 @@ Lo que cambió en cada versión publicada. Los números siguen
   `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Corregido
+- **El contrato del relevamiento decía mal dos cosas**: las distribuidoras
+  estaban declaradas como números cuando una trae el título del track más
+  visto, y las estadísticas de códigos como «cualquier cosa». Los dobles de
+  prueba copiaban esa forma incompleta y ahora tienen la real.
 - Con la app en inglés, el progreso de los trabajos y el log del módulo de
   audio seguían en castellano («Listo.», «Preparando», «productos encontrados»,
   «tracks por YouTube»). Ahora salen del catálogo, y un test que lee el código
@@ -222,6 +226,13 @@ Lo que cambió en cada versión publicada. Los números siguen
   a sus hilos antes de salir.
 
 ### Cambiado
+- **pyright prende 34 reglas de `strict`**, las que el código ya cumple, para
+  que desde ahora no se puedan romper sin que el CI lo diga. Para llegar hubo
+  que darles contrato a las funciones que devolvían diccionarios sueltos (la
+  portada de Apple, las opciones de filtro, el paquete listo, el resultado de
+  `migrar()`, las estadísticas del cruce con Deezer), y un test por cada una
+  compara lo que devuelve de verdad contra su contrato. `pyproject.toml` dice
+  qué reglas faltan y por qué.
 - **El CI da permiso de escritura sólo al paso que publica el release.**
   Antes lo tenían también los ocho jobs que compilan, que instalan paquetes de
   PyPI: uno comprometido habría recibido un token con permiso para escribir en

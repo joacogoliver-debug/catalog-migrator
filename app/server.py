@@ -55,7 +55,7 @@ import time
 import urllib.parse
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from typing import cast
+from typing import TypedDict, cast, override
 
 # `app/` consume el paquete `migrador`, que vive en `src/`. Los dos caminos
 # tienen que andar: corriendo desde el repositorio sin instalar nada, y adentro
@@ -78,7 +78,7 @@ from migrador import migrar_core as M  # noqa: E402
 from migrador import productos as P  # noqa: E402
 from migrador import relevar_core as R  # noqa: E402
 from migrador import validar as V  # noqa: E402
-from migrador.contratos import Producto  # noqa: E402
+from migrador.contratos import EntornoAudio, PaqueteListo, Producto, ValidacionParaUI  # noqa: E402
 from migrador.i18n import T  # noqa: E402
 from migrador.texto import mmss as _mmss  # noqa: E402
 from migrador.version import VERSION  # noqa: E402
@@ -322,7 +322,13 @@ def idioma_guardado():
 # Entorno de audio, cacheado
 # ============================================================
 
-_ENTORNO = {"valor": None, "cuando": 0.0}
+
+class _CacheEntorno(TypedDict):
+    valor: EntornoAudio | None
+    cuando: float
+
+
+_ENTORNO: _CacheEntorno = {"valor": None, "cuando": 0.0}
 _ENTORNO_LOCK = threading.Lock()
 _ENTORNO_TTL = 60.0
 
@@ -698,7 +704,7 @@ def _lanzar(tipo, trabajo):
         raise ValueError(T("srv.trabajo_en_curso")) from None
 
 
-def api_validar(body):
+def api_validar(body) -> ValidacionParaUI:
     _mismo_catalogo(body)
     sel = ESTADO.por_ids(body.get("ids"))
     if not sel:
@@ -828,7 +834,7 @@ def api_preparar(body):
 
         val = V.validar(copias, artista)
         job.avance(T("srv.paquete_listo"), 1.0)
-        return {
+        listo: PaqueteListo = {
             "archivo": os.path.basename(ruta),
             "bytes": tam,
             "descarga": f"/api/descargar/{job.id}",
@@ -836,6 +842,7 @@ def api_preparar(body):
             "portadas": sum(1 for p in copias if p.get("cover_bytes")),
             "productos": len(copias),
         }
+        return listo
 
     return {"job": _lanzar("preparar", trabajo).a_dict()}
 
@@ -1025,6 +1032,7 @@ class Handler(BaseHTTPRequestHandler):
                 return False
         return True
 
+    @override
     def log_message(self, formato, *args):
         # Silencio: el log de acceso de http.server ensucia la consola de la app.
         pass
@@ -1265,6 +1273,7 @@ class Servidor(ThreadingHTTPServer):
     saliendo entera, porque ahí sí hay algo nuestro que arreglar.
     """
 
+    @override
     def handle_error(self, request, client_address):
         if isinstance(sys.exc_info()[1], (ConnectionError, TimeoutError)):
             return

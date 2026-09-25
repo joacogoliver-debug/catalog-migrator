@@ -577,10 +577,11 @@ The configuration for all three is in [pyproject.toml](pyproject.toml).
 - **ruff format** is Black style. It has a cost worth stating: it collapses
   right-aligned comments, and this codebase uses a fair few. In exchange,
   formatting stops depending on each person's habits.
-- **pyright** runs in progressive strict mode. Today it runs in `basic` and the
-  repository passes with zero errors. The goal is `strict`, and the path is to
-  turn on each rule once the module that breaks it is typed; turning it all on at
-  once over code with no annotations leaves hundreds of errors nobody reads. It
+- **pyright** runs in progressive strict mode. It runs in `basic` with 34
+  `strict` rules turned on, the ones the code already meets, and passes with
+  zero errors. The goal is full `strict`, and the path is to turn on each rule
+  once the code meets it; turning it all on at once leaves over a thousand
+  errors nobody reads. `pyproject.toml` says which ones are missing and why. It
   runs in its own CI job, with the optional dependencies installed, so that it
   does not report as missing a `tiddl` that exists on a user's machine.
 
