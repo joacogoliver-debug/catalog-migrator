@@ -54,8 +54,10 @@ def test_upscale_de_la_url(url, px, esperado):
     "titulo, limpio",
     [
         ("Tema (Official Video)", "Tema"),
-        ("Album [Remastered 2011]", "Album"),
-        ("Disco (En Vivo)", "Disco"),
+        # La versión es parte del título del release. Antes se sacaba, y un
+        # álbum en vivo recibía la portada del de estudio con coincidencia alta.
+        ("Album [Remastered 2011]", "Album [Remastered 2011]"),
+        ("Disco (En Vivo)", "Disco (En Vivo)"),
         ("Bocanada", "Bocanada"),
         # No debe comerse paréntesis que son parte del título.
         ("Cosquillas (feat. Alguien)", "Cosquillas (feat. Alguien)"),

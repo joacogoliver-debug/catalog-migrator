@@ -486,6 +486,7 @@ pytest -q --cov
 | `tests/test_app.py` | Backend, jobs, HTTP, and the three defenses |
 | `tests/test_capturas.py` | That the screenshots' sample material says the same as the app |
 | `tests/test_entrada_hostil.py` | That nothing coming from outside gets executed: yt-dlp, formulas, covers |
+| `tests/test_versiones.py` | That a live, remix or remaster version does not take another version's code or cover |
 | `tests/test_nombres_zip.py` | Names inside the ZIP: unique, short and never outside the root |
 | `tests/test_migrar_core.py` | Orchestrator contract |
 | `tests/test_errores_youtube.py` | Translation of YouTube Data API errors |

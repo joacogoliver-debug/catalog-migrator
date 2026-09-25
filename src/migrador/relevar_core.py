@@ -24,6 +24,7 @@ from difflib import SequenceMatcher
 from .contratos import DescripcionParseada, Relevamiento, Track
 from .i18n import T
 from .productos import SIN_ALBUM, SIN_DATOS
+from .texto import marcas_version, misma_version, sin_decorado
 from .texto import plegado as _normalize
 
 API = "https://www.googleapis.com/youtube/v3"
@@ -428,10 +429,19 @@ def _deezer_json(path):
     return None
 
 
-# Sufijos de YouTube que ensucian el match (no están en el catálogo del DSP).
+# Sufijos de YouTube que ensucian el match y no están en el catálogo del DSP.
+#
+# Sólo lo que es de YouTube y nada más, y sólo cuando es TODO el paréntesis.
+# Esto borraba antes cualquier paréntesis que nombrara «live», «en vivo»,
+# «remaster» o «cover», y cualquier cosa entre corchetes: «Tema (En Vivo)»
+# quedaba como «Tema», coincidía al cien por ciento con la versión de estudio y
+# se quedaba con su ISRC, con confianza alta. Pero los tracks que llegan acá son
+# Art Tracks del canal Topic, cuyo título ES la metadata que cargó la
+# distribuidora: la versión es parte del dato, no ruido.
 _RE_TITLE_NOISE = re.compile(
-    r"\((?:[^)]*?(?:video|oficial|official|audio|en vivo|live|lyric|letra|"
-    r"visualizer|remaster|hd|4k|cover)[^)]*?)\)|\[[^\]]*\]",
+    r"\s*[(\[]\s*(?:official\s+(?:music\s+)?video|official\s+audio|video\s+oficial|"
+    r"audio(?:\s+oficial)?|lyrics?\s+video|video\s+(?:lyric|con\s+letra)|letra|lyrics?|"
+    r"visuali[sz]er|hd|4k)\s*[)\]]",
     re.IGNORECASE,
 )
 
@@ -460,8 +470,18 @@ def _http_json(url, headers=None, retries=3):
 
 def _match_score(yt_title, yt_artist, yt_dur, cand_title, cand_artist, cand_dur):
     ratio = SequenceMatcher(None, _normalize(_clean_title(yt_title)), _normalize(cand_title or "")).ratio()
+    # Si los dos dicen ser la misma versión (los candidatos de otra ya se
+    # descartaron antes), el decorado puede estar escrito distinto: «(2011
+    # Remaster)» contra « - Remastered 2011». Ahí se compara también sin él. Sólo
+    # cuando hay una marca: sin ella, «(Parte 1)» y «(Parte 2)» son dos temas.
+    marcas = marcas_version(yt_title)
+    if marcas and marcas == marcas_version(cand_title):
+        base = SequenceMatcher(None, _normalize(sin_decorado(yt_title)), _normalize(sin_decorado(cand_title)))
+        ratio = max(ratio, base.ratio())
     na, ns = _normalize(yt_artist), _normalize(cand_artist or "")
-    artist_ok = bool(na) and (na in ns or ns in na or SequenceMatcher(None, na, ns).ratio() >= 0.6)
+    # Los dos tienen que existir: con el artista del candidato vacío, `ns in na`
+    # daba verdadero y cualquier resultado sin artista contaba como del mismo.
+    artist_ok = bool(na and ns) and (na in ns or ns in na or SequenceMatcher(None, na, ns).ratio() >= 0.6)
     dur_close = None
     if yt_dur and cand_dur:
         dur_close = abs(yt_dur - cand_dur) <= 4
@@ -470,11 +490,23 @@ def _match_score(yt_title, yt_artist, yt_dur, cand_title, cand_artist, cand_dur)
 
 
 def _confidence(ratio, artist_ok, dur_close):
-    if ratio >= 0.87 and artist_ok and dur_close is not False:
+    # La duración, cuando se conoce de los dos lados, tiene que coincidir en los
+    # dos niveles. La confianza media no la miraba, y un vivo de 262 segundos
+    # entraba como «media» contra el de estudio de 215.
+    if dur_close is False:
+        return ""
+    if ratio >= 0.87 and artist_ok:
         return "alta"
     if ratio >= 0.72 and artist_ok:
         return "media"
     return ""
+
+
+def _misma_version(titulo_a, titulo_b):
+    """Si dos títulos pueden ser la misma grabación (ver `texto.misma_version`).
+    Un candidato que no lo es se descarta antes de puntuar: ante la duda, código
+    en blanco."""
+    return misma_version(titulo_a, titulo_b)
 
 
 # ---- Deezer (principal, sin clave) ----
@@ -490,6 +522,8 @@ def deezer_match(t, artist):
         return "", None, ""
     best, best_meta = None, None
     for c in items:
+        if not _misma_version(t["track"], c.get("title", "")):
+            continue
         sc = _match_score(
             t["track"],
             artist,
@@ -536,6 +570,8 @@ def musicbrainz_isrc(t, artist):
     for r in (data or {}).get("recordings", []) or []:
         ac = " ".join(a.get("name", "") for a in (r.get("artist-credit") or []) if isinstance(a, dict))
         dur = round((r.get("length") or 0) / 1000)
+        if not _misma_version(t["track"], r.get("title", "")):
+            continue
         sc = _match_score(t["track"], artist, t.get("duration_s", 0), r.get("title", ""), ac, dur)
         if _confidence(sc[1], sc[2], sc[3]):
             time.sleep(1.1)  # respetar el límite de MusicBrainz entre los 2 pedidos

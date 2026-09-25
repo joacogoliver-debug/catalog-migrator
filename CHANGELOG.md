@@ -16,6 +16,16 @@ Lo que cambió en cada versión publicada. Los números siguen
   `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Corregido
+- **Una versión en vivo, un remix o un remaster se quedaban con el ISRC de la
+  versión de estudio.** Antes de buscar en Deezer, la app le sacaba al título
+  justo lo que dice qué versión es: «Tema (En Vivo)» quedaba como «Tema»,
+  coincidía al cien por ciento con el de estudio y se quedaba con su código, con
+  confianza alta, aunque la versión en vivo estuviera entre los resultados. Ahora
+  sólo se limpia lo que es de YouTube, un candidato de otra versión se descarta,
+  y si no hay uno de la misma versión el código queda en blanco. Lo mismo con
+  las portadas: un álbum en vivo ya no recibe la del de estudio.
+- La confianza «media» de un código no miraba la duración, y un resultado de
+  Deezer sin artista contaba como del mismo artista.
 - **La validación mandaba a «corregir» un ISRC que estaba bien.** La misma
   grabación en el single y en el álbum lleva el mismo ISRC, y así tiene que ser,
   pero la app lo marcaba como error y el paquete dejaba de ser apto. La salida

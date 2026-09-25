@@ -16,6 +16,16 @@ What changed in every published version. The numbers follow
   on its own, following the rubric in `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Fixed
+- **A live version, a remix or a remaster took the studio version's ISRC.**
+  Before searching Deezer, the app stripped from the title exactly what says
+  which version it is: "Song (Live)" became "Song", matched the studio one one
+  hundred percent and took its code, with high confidence, even with the live
+  version among the results. Now only what comes from YouTube is cleaned, a
+  candidate of another version is dropped, and if there is none of the same
+  version the code stays blank. The same for covers: a live album no longer gets
+  the studio one's cover.
+- The "medium" confidence of a code did not look at the length, and a Deezer
+  result with no artist counted as the same artist.
 - **The validation asked to "fix" an ISRC that was right.** The same
   recording on the single and on the album carries the same ISRC, as it should,
   but the app flagged it as an error and the package stopped being fit. The

@@ -22,6 +22,7 @@ from difflib import SequenceMatcher
 from .contratos import Producto
 from .i18n import T
 from .texto import comparable as _norm
+from .texto import misma_version
 
 ITUNES_SEARCH = "https://itunes.apple.com/search"
 ITUNES_LOOKUP = "https://itunes.apple.com/lookup"
@@ -42,10 +43,15 @@ MIN_RATIO = 0.62
 
 
 def _strip_ruido(titulo):
-    """Saca sufijos que Apple no suele tener en el título del álbum."""
+    """Saca sufijos que Apple no suele tener en el título del álbum.
+
+    Sólo lo que es de YouTube o una marca de contenido explícito. Esto sacaba
+    también «En Vivo», «Live» y «Remaster», y un álbum en vivo recibía la
+    portada del de estudio con coincidencia alta: la versión es parte del
+    título del release.
+    """
     t = re.sub(
-        r"\s*[\(\[]\s*(official|video|audio|lyric[s]?|visualizer|hd|4k|remaster(ed)?|"
-        r"en vivo|live|explicit)\b[^\)\]]*[\)\]]",
+        r"\s*[\(\[]\s*(official|video|audio|lyric[s]?|visualizer|hd|4k|explicit)\b[^\)\]]*[\)\]]",
         "",
         titulo or "",
         flags=re.I,
@@ -124,6 +130,10 @@ def buscar_portada(artista, album, upc=""):
     obj_album, obj_art = _norm(album_limpio), _norm(artista)
     mejor, mejor_ratio = None, 0.0
     for c in candidatos:
+        # Otra versión del disco (el vivo del de estudio, el remaster del
+        # original) no es este disco, aunque el título se parezca.
+        if not misma_version(album_limpio, c.get("collectionName")):
+            continue
         ratio = SequenceMatcher(None, obj_album, _norm(c.get("collectionName"))).ratio()
         # El artista tiene que coincidir; si no, es otro disco con título parecido.
         art_ok = bool(obj_art) and (
