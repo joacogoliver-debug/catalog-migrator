@@ -24,6 +24,16 @@ Lo que cambió en cada versión publicada. Los números siguen
   `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Corregido
+- **Un release podía salir partido en dos productos, o dos releases fundidos
+  en uno.** Los temas se agrupaban por álbum y año ℗, y ese año es de cada
+  grabación: la edición aniversario de un disco, con temas originales de ℗ 2013
+  y nuevos de ℗ 2023 lanzados el mismo día, salía como dos productos con el
+  mismo UPC. Y el mismo álbum entregado por dos distribuidoras se fundía en uno
+  con los tracks duplicados. Ahora el release se arma por álbum, distribuidora y
+  fecha de lanzamiento, su año es el del lanzamiento, y si el mismo disco está
+  en dos distribuidoras se avisa, que es lo que pasa a mitad de una migración.
+  Sobre cincuenta temas reales, los quince productos de antes pasaron a once,
+  cada uno un release que existe.
 - **La hoja de ingesta nombraba archivos que no estaban en el ZIP.** La columna
   de audio llevaba el nombre del archivo temporal (`tidal_998877.flac`) cuando
   en el ZIP se llamaba `01 - Tema.flac`, y la de portada decía `portada.jpg`

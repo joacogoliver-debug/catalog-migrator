@@ -255,6 +255,13 @@ def validar(productos: list[Producto], artista="") -> ResultadoValidacion:
             if parece_formula(campo):
                 out.append(_hallazgo("aviso", "texto_como_formula", T("val.texto_como_formula"), nombre))
 
+        otras = p.get("tambien_en") or []
+        if otras:
+            texto = T(
+                "val.release_en_dos_distribuidoras", otras=", ".join(otras), esta=p.get("distributor", "")
+            )
+            out.append(_hallazgo("aviso", "release_en_dos_distribuidoras", texto, nombre))
+
         if p.get("order_unconfirmed"):
             out.append(_hallazgo("aviso", "orden_sin_confirmar", T("val.orden_sin_confirmar"), nombre))
 

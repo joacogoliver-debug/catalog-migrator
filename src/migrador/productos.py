@@ -72,29 +72,93 @@ def _slug(s, maxlen=60):
 # ============================================================
 
 
-def group_products(tracks: list[Track], artist="") -> list[Producto]:
-    """Agrupa una lista de tracks en productos.
+def _agrupar_por_release(tracks):
+    """Los grupos de tracks que forman cada release, antes de armar el producto.
 
-    Criterio: los tracks que declaran un álbum real se agrupan por
-    (álbum normalizado, año); los que vienen sin álbum quedan como singles
-    independientes. Separar por año es intencional: evita fusionar un álbum con
-    su reedición, que en una migración son dos productos con UPC distinto.
+    Un release se identifica por su álbum, su distribuidora y su fecha de
+    lanzamiento, que YouTube publica en cada tema («Released on:»). Antes se
+    agrupaba por álbum y año ℗, y ese año es de cada GRABACIÓN, no del release:
+    la edición aniversario de un disco, con temas originales de ℗ 2013 y otros
+    nuevos de ℗ 2023, salía partida en dos productos, cada uno con el mismo UPC.
+
+    La distribuidora va en la clave porque el mismo álbum entregado por dos
+    distribuidoras (en plena migración, o después de una baja que no se hizo)
+    son dos releases en vivo: fundirlos daba un álbum con los tracks duplicados.
+
+    Los tracks sin fecha se suman al release con fecha de su mismo álbum si hay
+    uno solo. Si no, se agrupan por año ℗ como antes, juntando años seguidos,
+    porque un disco de 1996 con un tema de ℗ 1997 es el mismo disco, y una
+    reedición casi nunca sale al año siguiente. Años más separados siguen siendo
+    releases distintos, que es lo que evita fusionar un álbum con su reedición.
     """
     grupos = {}
     for t in tracks:
         album = (t.get("album") or "").strip()
-        year = t.get("release_year") or ""
         if not album or album == SIN_ALBUM:
             # Single: clave única por video, nunca se fusiona con otro.
-            clave = ("__single__", t.get("video_id") or id(t))
-        else:
-            clave = (_norm(album), str(year))
+            grupos[("__single__", t.get("video_id") or str(id(t)), "")] = [t]
+            continue
+        clave = (_norm(album), t.get("distributor") or "", t.get("release_date") or "")
         grupos.setdefault(clave, []).append(t)
 
+    for album, dist, fecha in [k for k in grupos if k[0] != "__single__" and not k[2]]:
+        sin_fecha = grupos.pop((album, dist, fecha))
+        con_fecha = [k for k in grupos if k[0] == album and k[1] == dist and k[2]]
+        if len(con_fecha) == 1:
+            grupos[con_fecha[0]].extend(sin_fecha)
+            continue
+        for n, bloque in enumerate(_por_anios_seguidos(sin_fecha)):
+            grupos[(album, dist, f"sin-fecha-{n}")] = bloque
+    return list(grupos.values())
+
+
+def _por_anios_seguidos(tracks):
+    """Parte tracks sin fecha por año ℗, juntando los años consecutivos."""
+    por_anio = {}
+    for t in tracks:
+        por_anio.setdefault(str(t.get("release_year") or ""), []).append(t)
+    bloques, anterior = [], None
+    for anio in sorted(por_anio):
+        seguido = (
+            anterior is not None and anio.isdigit() and anterior.isdigit() and int(anio) - int(anterior) <= 1
+        )
+        if seguido:
+            bloques[-1].extend(por_anio[anio])
+        else:
+            bloques.append(list(por_anio[anio]))
+        anterior = anio
+    return bloques
+
+
+def _marcar_duplicados_entre_distribuidoras(productos):
+    """Anota en cada producto las otras distribuidoras que tienen el mismo release.
+
+    Es la señal más útil de una migración a medio hacer: el mismo disco en vivo
+    dos veces. Se anota en el producto, y no se calcula en la validación sobre
+    la selección, para que el aviso salga aunque se haya elegido uno solo.
+    """
+    por_release = {}
+    for p in productos:
+        if len(p["tracks"]) and (p["tracks"][0].get("album") or SIN_ALBUM) != SIN_ALBUM:
+            clave = (_norm(p["title"]), p["release_date"] or str(p["release_year"] or ""))
+            por_release.setdefault(clave, []).append(p)
+    for mismos in por_release.values():
+        distribuidoras = {p["distributor"] for p in mismos if p["distributor"]}
+        if len(distribuidoras) > 1:
+            for p in mismos:
+                p["tambien_en"] = sorted(distribuidoras - {p["distributor"]})
+
+
+def group_products(tracks: list[Track], artist="") -> list[Producto]:
+    """Agrupa una lista de tracks en productos (ver `_agrupar_por_release`).
+
+    Los tracks que vienen sin álbum quedan como singles independientes.
+    """
+
     productos = []
-    for clave, ts in grupos.items():
+    for ts in _agrupar_por_release(tracks):
         ts = sorted(ts, key=lambda x: (x.get("upload_date") or "", x.get("track") or ""))
-        es_single = clave[0] == "__single__"
+        es_single = (ts[0].get("album") or SIN_ALBUM) == SIN_ALBUM
         titulo = ts[0].get("track", "") if es_single else (ts[0].get("album") or "").strip()
 
         años = [t.get("release_year") for t in ts if t.get("release_year")]
@@ -111,7 +175,10 @@ def group_products(tracks: list[Track], artist="") -> list[Producto]:
                 "title": titulo,
                 "kind": _kind(len(ts)),
                 "artist": artist or "",
-                "release_year": min(años) if años else "",
+                # El año del release es el de su lanzamiento, cuando se sabe.
+                # El año ℗ es de cada grabación: una edición aniversario de 2023
+                # trae temas de ℗ 2013, y salía fechada en 2013.
+                "release_year": int(min(lanzamientos)[:4]) if lanzamientos else (min(años) if años else ""),
                 "release_date": min(lanzamientos) if lanzamientos else "",
                 "upload_date": min(subidas) if subidas else "",
                 "label": _mode(t.get("label") for t in ts),
@@ -124,6 +191,8 @@ def group_products(tracks: list[Track], artist="") -> list[Producto]:
                 "order_unconfirmed": len(ts) > 1,
             }
         )
+
+    _marcar_duplicados_entre_distribuidoras(productos)
 
     # Más nuevo primero: es el orden en que la gente revisa su catálogo.
     productos.sort(

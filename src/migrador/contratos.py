@@ -174,6 +174,10 @@ class Producto(TypedDict):
     # Lo pone `audio.matchear_por_isrc`, como "3/5".
     tidal_cobertura: NotRequired[str]
 
+    # Lo pone `group_products` cuando el mismo release está también en otra
+    # distribuidora: sus nombres. La validación lo convierte en aviso.
+    tambien_en: NotRequired[list[str]]
+
 
 class Hallazgo(TypedDict):
     """Un problema encontrado por la validación pre-entrega.

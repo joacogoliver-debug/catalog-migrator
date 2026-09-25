@@ -652,6 +652,18 @@ TEXTOS = {
             "Check which one is this release's before delivering."
         ),
     },
+    "val.release_en_dos_distribuidoras": {
+        "es": (
+            "Este release está en vivo en más de una distribuidora: {esta} y {otras}. Es lo normal a "
+            "mitad de una migración, pero no para siempre: dalo de baja en la vieja recién cuando el "
+            "nuevo esté publicado, y migrá uno solo de los dos."
+        ),
+        "en": (
+            "This release is live at more than one distributor: {esta} and {otras}. That is normal "
+            "halfway through a migration, but not forever: take it down at the old one only once the "
+            "new one is live, and migrate just one of the two."
+        ),
+    },
     "val.upc_falta": {
         "es": "Sin UPC. La distribuidora va a asignar uno nuevo y se pierde la continuidad del release.",
         "en": "No UPC. The distributor will assign a new one and the release loses its continuity.",

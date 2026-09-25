@@ -24,6 +24,16 @@ What changed in every published version. The numbers follow
   on its own, following the rubric in `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Fixed
+- **A release could come out split into two, or two releases merged into
+  one.** Songs were grouped by album and ℗ year, and that year belongs to each
+  recording: a record's anniversary edition, with original ℗ 2013 songs and new
+  ℗ 2023 ones released the same day, came out as two releases with the same UPC.
+  And the same album delivered by two distributors was merged into one with the
+  tracks duplicated. A release is now built by album, distributor and release
+  date, its year is the release year, and if the same record is at two
+  distributors there is a warning, which is what happens halfway through a
+  migration. On fifty real songs, the fifteen releases of before became eleven,
+  each one a release that exists.
 - **The ingestion sheet named files that were not in the ZIP.** The audio
   column carried the temporary file's name (`tidal_998877.flac`) while the ZIP
   called it `01 - Song.flac`, and the cover column said `portada.jpg` even when

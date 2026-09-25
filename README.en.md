@@ -270,6 +270,11 @@ minimum when in fact it is going to be rejected.
 - **It does not know the release format.** Single / EP / album is inferred from
   the track count (1-3 / 4-6 / 7+), which is the distributors' convention but is
   still a heuristic.
+- **It does not receive the releases assembled, it rebuilds them.** It groups
+  songs by album, distributor and release date, which YouTube publishes for
+  every song. When it does not, it uses the ℗ year and joins consecutive years,
+  because a 1996 record with a ℗ 1997 song is the same record. Compilations are
+  worth a check, and if the same release is at two distributors the app says so.
 
 ## Privacy
 
@@ -493,6 +498,7 @@ pytest -q --cov
 | `tests/test_app.py` | Backend, jobs, HTTP, and the three defenses |
 | `tests/test_capturas.py` | That the screenshots' sample material says the same as the app |
 | `tests/test_entrada_hostil.py` | That nothing coming from outside gets executed: yt-dlp, formulas, covers |
+| `tests/test_agrupacion.py` | Which tracks make up a release: release date, distributor and the no-date case |
 | `tests/test_hoja_y_zip.py` | That the ingestion sheet and the spreadsheets name the files the ZIP carries |
 | `tests/test_upc.py` | That each release's UPC is its own, not another release's with the same songs |
 | `tests/test_fechas.py` | The real release date, kept apart from the YouTube upload date |

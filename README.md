@@ -267,6 +267,11 @@ cuando en realidad la van a rechazar.
 - **No sabe el formato del release.** Single / EP / álbum se deduce de la cantidad
   de tracks (1-3 / 4-6 / 7+), que es la convención de las distribuidoras pero
   sigue siendo una heurística.
+- **No recibe los releases armados, los reconstruye.** Agrupa los temas por
+  álbum, distribuidora y fecha de lanzamiento, que YouTube publica en cada tema.
+  Si no la publica, usa el año ℗ y junta años seguidos, porque un disco de 1996
+  con un tema de ℗ 1997 es el mismo disco. Conviene revisar los compilados, y
+  si el mismo release está en dos distribuidoras la app lo avisa.
 
 ## Privacidad
 
@@ -488,6 +493,7 @@ pytest -q --cov
 | `tests/test_app.py` | Backend, trabajos, HTTP, y las tres defensas |
 | `tests/test_capturas.py` | Que el material de ejemplo de las capturas diga lo mismo que la app |
 | `tests/test_entrada_hostil.py` | Que nada de lo que entra de afuera se ejecute: yt-dlp, fórmulas, portadas |
+| `tests/test_agrupacion.py` | Qué tracks forman un release: fecha de lanzamiento, distribuidora y el caso sin fecha |
 | `tests/test_hoja_y_zip.py` | Que la hoja de ingesta y las planillas nombren los archivos que el ZIP trae |
 | `tests/test_upc.py` | Que el UPC de cada producto sea el suyo, y no el de otro release con los mismos temas |
 | `tests/test_fechas.py` | La fecha de lanzamiento real, separada de la de subida a YouTube |
