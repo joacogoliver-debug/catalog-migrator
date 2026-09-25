@@ -6,6 +6,15 @@ What changed in every published version. The numbers follow
 [SemVer](https://semver.org/), and the downloads are in
 [Releases](https://github.com/joacogoliver-debug/catalog-migrator/releases).
 
+## [Unreleased]
+
+### Added
+- `docs/AUDITORIA-2.md` and `docs/MEJORAS-2.md`, the diagnosis of the second
+  improvement cycle and the backlog that comes out of it. This time the
+  repository was looked at from six separate angles (music industry,
+  distribution and metadata, software, interface, security and outreach), each
+  on its own, following the rubric in `docs/BRIEF-AUTOMEJORA.md`.
+
 ## [1.1.0] — 2026-09-22
 
 ### Changed
