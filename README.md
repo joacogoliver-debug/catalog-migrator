@@ -427,7 +427,9 @@ defensas más, las tres baratas y las tres con test propio:
 
 1. **Token de sesión.** Se genera uno nuevo en cada arranque, se inyecta en
    `index.html` y toda ruta `/api/` lo exige. Una página externa no lo puede
-   leer, porque el origen es distinto.
+   leer, porque el origen es distinto. La descarga del ZIP es un enlace, que
+   no puede mandar esa cabecera, así que pasa por un ticket de un solo uso que
+   vence en un minuto y que sólo se obtiene con el token.
 2. **Control de `Host`.** Se acepta sólo `127.0.0.1` o `localhost`, lo que corta
    el rebinding de DNS, que es la vuelta clásica para saltear lo anterior.
 3. **CSP.** La página no puede pedir ni ejecutar nada de afuera. Las dos

@@ -432,7 +432,9 @@ defenses, all three cheap and all three with a test of their own:
 
 1. **Session token.** A new one is generated at every startup, injected into
    `index.html`, and every `/api/` route demands it. An external page cannot read
-   it, because the origin is a different one.
+   it, because the origin is a different one. Downloading the ZIP is a link,
+   which cannot send that header, so it goes through a single-use ticket that
+   expires in a minute and can only be obtained with the token.
 2. **`Host` check.** Only `127.0.0.1` or `localhost` are accepted, which cuts off
    DNS rebinding, the classic way around the previous defense.
 3. **CSP.** The page cannot request or execute anything from outside. The first

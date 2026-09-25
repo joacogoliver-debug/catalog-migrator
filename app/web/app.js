@@ -33,6 +33,7 @@ const S = {
   error: '',
   errorCodigo: '',
   errorCampo: '',           // error de validacion del link, va bajo el campo
+  errorDescarga: '',        // el ZIP ya no está (vence a la hora): aviso en la misma pantalla
   entrando: false,          // el proximo render es un cambio de vista: anima la entrada          // 'cuota' | 'clave' | '' : decide qué salida ofrecer
   tidal: null,
   ocupado: false,
@@ -979,14 +980,16 @@ function vistaPaso4() {
 
     ${panelValidacion(v)}
 
+    ${S.errorDescarga ? alerta('danger', 'error', esc(S.errorDescarga)) : ''}
+
     <div class="barra-accion">
       <div class="resumen">${esc(T('paso4.zip_disponible'))}</div>
       <div class="acciones">
         <button class="btn btn-ghost" data-accion="volver-1">${esc(T('paso2.otro_artista'))}</button>
         <button class="btn btn-secondary" data-accion="volver-2">${esc(T('paso4.otros_productos'))}</button>
-        <a class="btn btn-primary" href="${esc(r.descarga)}" download>
+        <button class="btn btn-primary" data-accion="descargar">
           ${ico('descargar')} ${esc(T('paso4.descargar', { peso: pesoLegible(r.bytes) }))}
-        </a>
+        </button>
       </div>
     </div>
   </div>`;
@@ -1158,6 +1161,32 @@ const ACCIONES = {
 
   recargar() { window.location.reload(); },
 
+  /** Bajar el ZIP. Antes era un `<a href download>` directo a /api/, y un enlace
+   *  no puede mandar la cabecera del token: el servidor contestaba 403 y el
+   *  paquete no se podía bajar desde la interfaz. Ahora se pide con el token un
+   *  ticket de un solo uso, y el enlace que se abre es el del ticket. */
+  async descargar() {
+    const r = S.resultado;
+    if (!r) return;
+    let url;
+    try {
+      ({ url } = await api(r.descarga, {}));
+    } catch (e) {
+      // El caso esperable es el ZIP vencido (vive una hora). No es un error
+      // fatal: el paquete se vuelve a armar desde el paso 3.
+      S.errorDescarga = e.message;
+      render();
+      return;
+    }
+    if (S.errorDescarga) { S.errorDescarga = ''; render(); }
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = r.archivo || '';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  },
+
   'ver-terminos'() { S.vista = 'terminos'; S.entrando = true; render(); arriba(); },
   'ver-clave'() { S.vista = 'clave'; render(); window.scrollTo(0, 0); },
   'cerrar-vista'() { S.vista = null; S.entrando = true; render(); arriba(); },
@@ -1292,7 +1321,7 @@ const ACCIONES = {
   async generar() {
     const ids = seleccionados().map((p) => p.id);
     if (!ids.length) { S.error = T('paso3.sin_seleccion'); render(); return; }
-    S.error = ''; S.errorCodigo = ''; S.resultado = null; S.ocupado = true; S.paso = 4; S.job = null; render();
+    S.error = ''; S.errorCodigo = ''; S.errorDescarga = ''; S.resultado = null; S.ocupado = true; S.paso = 4; S.job = null; render();
     try {
       const { job } = await api('/api/preparar', {
         ids,

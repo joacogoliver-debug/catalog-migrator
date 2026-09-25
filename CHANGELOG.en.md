@@ -16,6 +16,13 @@ What changed in every published version. The numbers follow
   on its own, following the rubric in `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Fixed
+- **The package could not be downloaded from the app.** The "Download" button
+  was a direct link to the API, and a link cannot send the header with the
+  session token, so the server turned it down. It had been like that since the
+  first public version, and the native window also had downloads switched off.
+  The button now asks first for a single-use ticket, which expires in a minute
+  and can only be obtained with the token, and the download works in the window
+  and in the browser without loosening any of the three defenses.
 - The README screenshots showed version 1.0.1 in the footer while the app was
   already 1.1.0. They were regenerated in both languages, and their sample text
   now comes from the same catalog the app uses: written by hand, it had drifted

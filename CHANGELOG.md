@@ -16,6 +16,13 @@ Lo que cambió en cada versión publicada. Los números siguen
   `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Corregido
+- **El paquete no se podía bajar desde la app.** El botón «Descargar» era un
+  enlace directo a la API, y un enlace no puede mandar la cabecera con el token
+  de la sesión, así que el servidor lo rechazaba. Pasaba desde la primera
+  versión pública, y además la ventana nativa tenía las descargas apagadas.
+  Ahora el botón pide primero un ticket de un solo uso, que vence en un minuto y
+  sólo se obtiene con el token, y la descarga anda en la ventana y en el
+  navegador sin aflojar ninguna de las tres defensas.
 - Las capturas del README mostraban la versión 1.0.1 en el pie, y la app ya era
   la 1.1.0. Se regeneraron en los dos idiomas, y sus textos de ejemplo salen
   ahora del mismo catálogo que usa la app: escritos a mano se habían desviado

@@ -561,6 +561,88 @@ def test_el_zip_descargado_esta_integro_y_trae_lo_pedido(cliente, paquete_listo)
     assert not any(n.endswith("portada.jpg") for n in nombres)
 
 
+# ---- la descarga desde el botón ----
+#
+# El botón era un `<a href="/api/descargar/...">`, y un enlace no puede mandar
+# la cabecera del token: desde la interfaz el ZIP daba 403 y no se podía bajar.
+# Los tests de arriba no lo veían porque su cliente manda siempre el token. Éstos
+# bajan el ZIP como lo hace el navegador: sin ninguna cabecera.
+
+
+def _sin_cabeceras(cliente, ruta, host=None):
+    """GET como lo hace un enlace: sin token. Devuelve (código, cuerpo)."""
+    conn = http.client.HTTPConnection("127.0.0.1", cliente.puerto, timeout=20)
+    try:
+        conn.putrequest("GET", ruta, skip_host=True)
+        conn.putheader("Host", host or f"127.0.0.1:{cliente.puerto}")
+        conn.endheaders()
+        r = conn.getresponse()
+        return r.status, r.read()
+    finally:
+        conn.close()
+
+
+def test_el_boton_baja_el_zip_con_un_ticket_y_sin_token(cliente, paquete_listo):
+    cod, res = cliente.post(paquete_listo["resultado"]["descarga"], {})
+    assert cod == 200
+    assert res["url"].startswith("/descargar/")
+    assert backend.TOKEN not in res["url"], "el ticket no puede ser el token de la sesión"
+
+    cod, cuerpo = _sin_cabeceras(cliente, res["url"])
+    assert cod == 200
+    assert zipfile.ZipFile(io.BytesIO(cuerpo)).testzip() is None
+
+
+def test_el_ticket_sirve_una_sola_vez(cliente, paquete_listo):
+    _cod, res = cliente.post(paquete_listo["resultado"]["descarga"], {})
+    assert _sin_cabeceras(cliente, res["url"])[0] == 200
+    assert _sin_cabeceras(cliente, res["url"])[0] == 404
+
+
+def test_pedir_el_ticket_exige_el_token(cliente, paquete_listo):
+    """Es lo que sostiene la primera defensa: sin token no hay ticket."""
+    assert cliente.crudo("POST", paquete_listo["resultado"]["descarga"], datos=b"{}") == 403
+
+
+def test_un_ticket_inventado_o_vencido_no_baja_nada(cliente, paquete_listo):
+    assert _sin_cabeceras(cliente, "/descargar/" + "a" * 32)[0] == 404
+    vencido = backend.ESTADO.emitir_ticket(paquete_listo["job_id"], ttl=-1)
+    assert _sin_cabeceras(cliente, f"/descargar/{vencido}")[0] == 404
+
+
+def test_el_ticket_no_saltea_el_control_de_host(cliente, paquete_listo):
+    _cod, res = cliente.post(paquete_listo["resultado"]["descarga"], {})
+    assert _sin_cabeceras(cliente, res["url"], host="evil.example")[0] == 403
+    # Y el rechazo no lo gastó: sigue sirviendo desde el Host de verdad.
+    assert _sin_cabeceras(cliente, res["url"])[0] == 200
+
+
+def test_sin_zip_no_se_emite_ticket(cliente):
+    assert cliente.post("/api/descargar/deadbeef", {})[0] == 404
+
+
+def test_la_interfaz_no_enlaza_la_descarga_a_la_api():
+    """El botón pide el ticket; un `href` a /api/ es exactamente el bug."""
+    with open(os.path.join(backend.WEB_DIR, "app.js"), encoding="utf-8") as f:
+        js = f.read()
+    assert 'href="${esc(r.descarga)}"' not in js
+    assert 'data-accion="descargar"' in js
+    assert "async descargar()" in js
+
+
+def test_la_ventana_nativa_habilita_las_descargas():
+    """pywebview trae `ALLOW_DOWNLOADS` apagado: sin prenderlo, el botón de la
+    ventana nativa no hace nada aunque el servidor entregue el ZIP."""
+    import types
+
+    import launcher
+
+    falso = types.SimpleNamespace(settings={"ALLOW_DOWNLOADS": False})
+    assert launcher.permitir_descargas(falso) is True
+    assert falso.settings["ALLOW_DOWNLOADS"] is True
+    assert launcher.permitir_descargas(types.SimpleNamespace()) is False
+
+
 def test_un_trabajo_largo_por_vez(cliente):
     """Dos relevamientos simultáneos gastan cuota de YouTube por duplicado y
     escriben sobre el mismo catálogo en memoria, así que gana el que termine

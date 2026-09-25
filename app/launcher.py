@@ -49,6 +49,20 @@ def titulo():
 # ============================================================
 
 
+def permitir_descargas(webview):
+    """Habilita las descargas en pywebview, si la versión instalada lo permite.
+
+    `settings` existe desde pywebview 5, que es el piso que piden los
+    requirements. Si igual falta, la ventana abre y el botón queda sin efecto,
+    que es mejor que no abrir.
+    """
+    ajustes = getattr(webview, "settings", None)
+    if isinstance(ajustes, dict):
+        ajustes["ALLOW_DOWNLOADS"] = True
+        return True
+    return False
+
+
 def _abrir_ventana_pywebview(url):
     """Ventana nativa propia. Es el camino por defecto: la app tiene que sentirse
     un programa, no una pestaña del navegador.
@@ -66,6 +80,11 @@ def _abrir_ventana_pywebview(url):
     except Exception:  # noqa: BLE001 (pywebview falla de muchas formas al importar)
         return False
     try:
+        # pywebview trae las descargas apagadas, y el paquete es un ZIP que se
+        # baja: sin esto, el botón «Descargar» de la ventana nativa no hacía
+        # nada. Se prende acá y no en un módulo aparte porque es la única
+        # ventana que baja archivos.
+        permitir_descargas(webview)
         webview.create_window(titulo(), url, width=1180, height=860, min_size=(900, 640))
         webview.start()
         return True

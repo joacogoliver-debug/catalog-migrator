@@ -35,7 +35,9 @@ Endpoints:
   POST /api/preparar          {ids, opciones} -> {job}        (asincrónico)
   GET  /api/job/<id>          estado del trabajo
   POST /api/job/<id>/cancelar
-  GET  /api/descargar/<id>    baja el ZIP (streaming)
+  POST /api/descargar/<id>    pide un ticket de un solo uso para bajar el ZIP
+  GET  /api/descargar/<id>    baja el ZIP (streaming), con la cabecera del token
+  GET  /descargar/<ticket>    baja el ZIP con el ticket: es lo que usa el botón
   POST /api/tidal/...         conexión opcional de Tidal
 """
 
@@ -130,6 +132,10 @@ def _base_recursos():
 WEB_DIR = os.path.join(_base_recursos(), "web")
 AUDIO_HABILITADO = _audio_habilitado()
 MAX_BODY = 8 * 1024 * 1024  # 8 MB: los payloads son listas de ids
+
+# Cuánto vale un ticket de descarga. Se pide en el momento del clic, así que un
+# minuto sobra; más largo sólo agranda la ventana en que una URL copiada sirve.
+TICKET_TTL = 60.0
 
 # Espacio libre mínimo antes de empezar a armar un paquete. Con audio un
 # catálogo entero puede pasar los 2 GB, y quedarse sin disco a mitad deja el ZIP
@@ -393,6 +399,7 @@ class Estado:
         # error de tipos. Se escribe suelto para no importar `audio` acá.
         self.tidal: "audio_mod.TidalSession | None" = None
         self.zips = {}  # job_id -> ruta del zip
+        self.tickets = {}  # ticket -> (job_id, vence), ver emitir_ticket
         self.temporales = []
         self.lock = threading.RLock()
 
@@ -421,6 +428,33 @@ class Estado:
         with self.lock:
             return self.zips.get(job_id)
 
+    def emitir_ticket(self, job_id, ttl=TICKET_TTL):
+        """Un ticket de un solo uso para bajar el ZIP de `job_id`.
+
+        Existe porque el botón de descarga es un enlace, y un enlace no puede
+        mandar la cabecera `X-App-Token`: el ZIP daba 403 desde la interfaz
+        desde la primera versión. Eximir la descarga del token habría abierto
+        la primera defensa. El ticket no la abre, porque sólo se consigue con un
+        POST que sí lleva el token, así que una página ajena no tiene cómo
+        obtenerlo. Vale una vez y por un minuto, y la ruta que lo canjea sigue
+        pasando por el control de Host.
+        """
+        ticket = secrets.token_urlsafe(24)
+        with self.lock:
+            ahora = time.monotonic()
+            self.tickets = {k: v for k, v in self.tickets.items() if v[1] > ahora}
+            self.tickets[ticket] = (job_id, ahora + ttl)
+        return ticket
+
+    def canjear_ticket(self, ticket):
+        """El job_id del ticket, o None si no existe, ya se usó o venció."""
+        with self.lock:
+            dato = self.tickets.pop(ticket, None)
+        if not dato:
+            return None
+        job_id, vence = dato
+        return job_id if time.monotonic() <= vence else None
+
     def olvidar_zip(self, job_id):
         """Se llama cuando el trabajo se descarta del registro. Sin esto, cada
         paquete generado deja su ZIP en el disco hasta que se cierra la app, y
@@ -433,7 +467,7 @@ class Estado:
     def limpiar(self):
         with self.lock:
             tidal, temporales, zips = self.tidal, self.temporales, self.zips
-            self.tidal, self.temporales, self.zips = None, [], {}
+            self.tidal, self.temporales, self.zips, self.tickets = None, [], {}, {}
         if tidal:
             try:
                 tidal.close()
@@ -924,6 +958,17 @@ class Handler(BaseHTTPRequestHandler):
 
             return self._error(T("srv.no_encontrado"), HTTPStatus.NOT_FOUND)
 
+        # Fuera de /api/ a propósito: toda ruta de /api/ exige la cabecera del
+        # token sin excepciones, y así la regla sigue siendo una sola. Ésta la
+        # reemplaza por un ticket que sólo se obtiene con el token (ver
+        # `Estado.emitir_ticket`).
+        m = re.fullmatch(r"/descargar/([A-Za-z0-9_\-]{16,64})", ruta)
+        if m:
+            job_id = ESTADO.canjear_ticket(m.group(1))
+            if not job_id:
+                return self._error(T("srv.zip_vencido"), HTTPStatus.NOT_FOUND)
+            return self._descargar(job_id)
+
         return self._estatico(ruta)
 
     def _descargar(self, job_id):
@@ -938,6 +983,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "application/zip")
         self.send_header("Content-Disposition", f'attachment; filename="{nombre}"')
         self.send_header("Content-Length", str(tam))
+        self.send_header("Cache-Control", "no-store")
         self._cabeceras_base()
         self.end_headers()
         # En bloques: un catálogo con audio puede pesar varios GB y no entra en RAM.
@@ -1039,6 +1085,13 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if ruta in RUTAS_POST_SIN_BODY:
                 return self._json(RUTAS_POST_SIN_BODY[ruta]())
+
+            m = re.fullmatch(r"/api/descargar/([0-9a-f]{6,32})", ruta)
+            if m:
+                ruta_zip = ESTADO.zip_de(m.group(1))
+                if not ruta_zip or not os.path.exists(ruta_zip):
+                    return self._error(T("srv.zip_vencido"), HTTPStatus.NOT_FOUND)
+                return self._json({"url": f"/descargar/{ESTADO.emitir_ticket(m.group(1))}"})
 
             m = re.fullmatch(r"/api/job/([0-9a-f]{6,32})/cancelar", ruta)
             if m:
