@@ -65,6 +65,20 @@ What changed in every published version. The numbers follow
   on its own, following the rubric in `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Fixed
+- **The pasted link no longer disappears.** Every time the screen was redrawn
+  the field came back empty: if the survey failed, the error sat under a blank
+  field and you could not see what you had pasted. Same with the codes
+  checkbox, which always came back ticked.
+- **Loading your own key clears the quota-exhausted banner**, which was
+  exactly what you were fixing, and the screen goes back to the top.
+- **Cancelling the package build is no longer shown as a failure.** It used to
+  appear in red, under "Could not build it"; now it goes back to step 3 with
+  your selection intact and a notice saying it was cancelled.
+- **The window footer clears when a job ends.** It kept saying "Cover 3 of 4"
+  about something that had already finished.
+- **The key is pasted in plain view**, so you can see whether all of it went
+  in, and "Checking" has its animated indicator: it used a class that did not
+  exist.
 - **The survey contract got two things wrong**: distributors were declared
   as numbers when one field carries the title of the most viewed track, and
   the code stats as "anything". The test doubles copied that incomplete shape

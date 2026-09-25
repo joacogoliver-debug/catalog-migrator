@@ -64,6 +64,19 @@ Lo que cambió en cada versión publicada. Los números siguen
   `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Corregido
+- **El link pegado ya no se borra.** Cada vez que la pantalla se redibujaba, el
+  campo volvía vacío: si el relevamiento fallaba, el error quedaba debajo de un
+  campo en blanco y no se veía qué se había pegado. Lo mismo con la casilla de
+  los códigos, que volvía siempre marcada.
+- **Cargar la clave propia saca el cartel de cupo agotado**, que era
+  justamente lo que se estaba resolviendo, y la pantalla vuelve arriba.
+- **Cancelar el armado del paquete ya no se muestra como una falla.** Antes
+  aparecía en rojo, bajo «No se pudo generar»; ahora vuelve al paso 3 con lo
+  elegido intacto y un aviso que dice que se canceló.
+- **El pie de la ventana se limpia al terminar un trabajo.** Quedaba diciendo
+  «Portada 3 de 4» de algo que ya había terminado.
+- **La clave se pega a la vista**, así se puede ver si entró entera, y
+  «Verificando» tiene su indicador animado: usaba una clase que no existía.
 - **El contrato del relevamiento decía mal dos cosas**: las distribuidoras
   estaban declaradas como números cuando una trae el título del track más
   visto, y las estadísticas de códigos como «cualquier cosa». Los dobles de

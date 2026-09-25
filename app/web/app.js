@@ -34,7 +34,13 @@ const S = {
   errorCodigo: '',
   errorCampo: '',           // error de validacion del link, va bajo el campo
   errorDescarga: '',        // el ZIP ya no está (vence a la hora): aviso en la misma pantalla
-  entrando: false,          // el proximo render es un cambio de vista: anima la entrada          // 'cuota' | 'clave' | '' : decide qué salida ofrecer
+  entrando: false,          // el proximo render es un cambio de vista: anima la entrada
+  // Lo que se escribió en el paso 1. Cada render() reemplaza el formulario
+  // entero, y un campo sin `value` volvía vacío: al fallar, el error quedaba
+  // debajo de un link que ya no se veía.
+  url: '',
+  conCodigos: true,
+  aviso: '',                // un aviso neutro, no un error: «cancelaste el armado»
   tidal: null,
   ocupado: false,
   // Pantallas que se superponen al flujo normal.
@@ -183,14 +189,22 @@ async function esperarJob(job, alAvanzar) {
     }
     S.job = j;
     if (alAvanzar) alAvanzar(j);
-    if (j.estado === 'listo') return j.resultado;
+    if (j.estado === 'listo') { limpiarPie(); return j.resultado; }
     if (j.estado === 'error') {
+      limpiarPie();
       const e = new Error(j.error || T('red.proceso_fallo'));
       e.codigo = j.codigo_error || '';
       throw e;
     }
-    if (j.estado === 'cancelado') throw new Error('CANCELADO');
+    if (j.estado === 'cancelado') { limpiarPie(); throw new Error('CANCELADO'); }
   }
+}
+
+/** El pie muestra el paso del trabajo en curso. Terminado, cancelado o fallado,
+ *  «Portada 3 de 4» ya no es el estado de nada. */
+function limpiarPie() {
+  const pie = $('#pie-estado');
+  if (pie) pie.textContent = '';
 }
 
 /* ------------------------------------------------------------ tema */
@@ -496,8 +510,11 @@ function vistaClave() {
 
     <div class="field mt-5 field-clave">
       <label for="clave">${esc(T('clave.rotulo'))}</label>
-      <input class="input mono" id="clave" type="password" placeholder="AIza…"
-             autocomplete="off" spellcheck="false" />
+      <!-- A la vista y no como contraseña: es una clave de API que se pega, no
+           se tipea, y lo que traba a quien la carga por primera vez es no poder
+           ver si pegó la clave entera o un pedazo. -->
+      <input class="input mono" id="clave" type="text" placeholder="AIza…"
+             autocomplete="off" autocapitalize="off" spellcheck="false" />
       <span class="hint">${esc(T('clave.ayuda'))}</span>
     </div>
 
@@ -550,7 +567,7 @@ function vistaPaso1() {
     <div class="field">
       <label for="url">${esc(T('paso1.rotulo_link'))}</label>
       <input class="input input-lg${S.errorCampo ? ' error' : ''}" id="url" type="url" spellcheck="false"
-             placeholder="https://www.youtube.com/channel/UC…"
+             placeholder="https://www.youtube.com/channel/UC…" value="${esc(S.url)}"
              ${S.errorCampo ? 'aria-invalid="true" aria-describedby="url-error"' : ''}
              ${corriendo ? 'disabled' : ''} />
       ${S.errorCampo
@@ -568,7 +585,7 @@ function vistaPaso1() {
       <p class="mt-2">${esc(T('paso1.topic_detalle'))}</p>`)}
 
     <label class="check mt-5">
-      <input type="checkbox" id="con-codigos" aria-labelledby="con-codigos-l" checked ${corriendo ? 'disabled' : ''} />
+      <input type="checkbox" id="con-codigos" aria-labelledby="con-codigos-l" ${S.conCodigos ? 'checked' : ''} ${corriendo ? 'disabled' : ''} />
       <span class="check-texto">
         <strong id="con-codigos-l">${esc(T('paso1.codigos_titulo'))}</strong>
         <span class="sub">${esc(T('paso1.codigos_detalle'))}</span>
@@ -860,6 +877,7 @@ function vistaPaso3() {
           tracks: cuenta('comun.n_tracks', sel.reduce((a, p) => a + p.tracks, 0)),
         }))}</p>
       </div>
+      ${S.aviso ? alerta('', 'info', esc(S.aviso)) : ''}
     </div>
 
     <div class="seccion">
@@ -1204,14 +1222,14 @@ const ACCIONES = {
   },
 
   'ver-terminos'() { S.vista = 'terminos'; S.entrando = true; render(); arriba(); },
-  'ver-clave'() { S.vista = 'clave'; render(); window.scrollTo(0, 0); },
+  'ver-clave'() { S.vista = 'clave'; S.entrando = true; render(); arriba(); },
   'cerrar-vista'() { S.vista = null; S.entrando = true; render(); arriba(); },
 
   async 'aceptar-terminos'() {
     await api('/api/terminos', { aceptar: true });
     S.config = await api('/api/config');
     render();
-    window.scrollTo(0, 0);
+    arriba();
   },
 
   'limpiar-filtro'() {
@@ -1228,12 +1246,18 @@ const ACCIONES = {
       caja.innerHTML = alerta('danger', 'error', esc(T('clave.pega_antes')));
       return;
     }
-    caja.innerHTML = `<div class="row mt-4"><span class="spinner"></span><span>${esc(T('clave.verificando'))}</span></div>`;
+    // `.latido` es el indicador de trabajo de toda la app; el `.spinner` que
+    // había acá no existía en el CSS, y «Verificando» quedaba quieto.
+    caja.innerHTML = `<div class="row mt-4" role="status"><span class="latido" aria-hidden="true"><i></i><i></i><i></i></span><span>${esc(T('clave.verificando'))}</span></div>`;
     try {
       await api('/api/clave', { clave }, 45000);
       S.config = await api('/api/config');
       S.vista = null;
-      render();
+      // El error de cupo o de clave era el motivo para venir acá, y la clave
+      // nueva lo resuelve: dejarlo a la vista decía que seguía el problema.
+      if (S.errorCodigo === 'cuota' || S.errorCodigo === 'clave') { S.error = ''; S.errorCodigo = ''; }
+      S.entrando = true;
+      render(); arriba();
     } catch (e) {
       caja.innerHTML = alerta('danger', 'error', `<strong>${esc(T('clave.no_se_guardo'))}</strong><br>${esc(e.message)}`);
     }
@@ -1242,15 +1266,17 @@ const ACCIONES = {
   async relevar() {
     const campo = $('#url');
     const url = campo ? campo.value.trim() : '';
+    S.url = url;
     if (!url) {
       S.errorCampo = T('paso1.falta_link'); render();
       const c = $('#url'); if (c) c.focus();
       return;
     }
+    const casilla = $('#con-codigos');
+    if (casilla) S.conCodigos = casilla.checked;
     S.error = ''; S.errorCodigo = ''; S.errorCampo = ''; S.ocupado = true; S.job = null; render();
     try {
-      const conCodigos = $('#con-codigos') ? $('#con-codigos').checked : true;
-      const { job } = await api('/api/relevar', { url, con_codigos: conCodigos });
+      const { job } = await api('/api/relevar', { url, con_codigos: S.conCodigos });
       const cat = await esperarJob(job, () => actualizarProgreso());
       await cierreDelTrabajo();
       adoptarCatalogo(cat);          // arranca con todo elegido
@@ -1281,6 +1307,7 @@ const ACCIONES = {
     if (!sug) return;
     // Relevamos el Topic con el mismo flujo del paso 1, sin que tenga que ir a
     // buscar el link a mano.
+    S.url = sug.url;
     S.paso = 1; S.error = ''; S.errorCodigo = ''; S.ocupado = true; S.job = null; render();
     try {
       const { job } = await api('/api/relevar', { url: sug.url, con_codigos: true });
@@ -1294,10 +1321,10 @@ const ACCIONES = {
     }
   },
 
-  'volver-1'() { S.paso = 1; S.error = ''; S.errorCodigo = ''; S.resultado = null; S.entrando = true; render(); arriba(); },
-  'volver-2'() { S.paso = 2; S.error = ''; S.errorCodigo = ''; S.entrando = true; render(); arriba(); },
-  'volver-3'() { S.paso = 3; S.error = ''; S.errorCodigo = ''; S.entrando = true; render(); arriba(); },
-  'ir-3'() { S.paso = 3; S.error = ''; S.errorCodigo = ''; S.entrando = true; render(); arriba(); },
+  'volver-1'() { S.paso = 1; S.aviso = ''; S.error = ''; S.errorCodigo = ''; S.resultado = null; S.entrando = true; render(); arriba(); },
+  'volver-2'() { S.paso = 2; S.aviso = ''; S.error = ''; S.errorCodigo = ''; S.entrando = true; render(); arriba(); },
+  'volver-3'() { S.paso = 3; S.aviso = ''; S.error = ''; S.errorCodigo = ''; S.entrando = true; render(); arriba(); },
+  'ir-3'() { S.paso = 3; S.aviso = ''; S.error = ''; S.errorCodigo = ''; S.entrando = true; render(); arriba(); },
 
   'sel-todo'() { productosFiltrados().forEach((p) => S.seleccion.add(p.id)); render(); },
   'sel-nada'() { productosFiltrados().forEach((p) => S.seleccion.delete(p.id)); render(); },
@@ -1337,7 +1364,7 @@ const ACCIONES = {
   async generar() {
     const ids = seleccionados().map((p) => p.id);
     if (!ids.length) { S.error = T('paso3.sin_seleccion'); render(); return; }
-    S.error = ''; S.errorCodigo = ''; S.errorDescarga = ''; S.resultado = null; S.ocupado = true; S.paso = 4; S.job = null; render();
+    S.error = ''; S.errorCodigo = ''; S.errorDescarga = ''; S.aviso = ''; S.resultado = null; S.ocupado = true; S.paso = 4; S.job = null; render();
     try {
       const { job } = await api('/api/preparar', {
         // Si en otra ventana se relevó otro artista, el servidor lo nota por
@@ -1353,8 +1380,14 @@ const ACCIONES = {
       S.ocupado = false; S.entrando = true; render(); arriba();
     } catch (e) {
       S.ocupado = false;
-      S.error = e.message === 'CANCELADO' ? T('comun.cancelado') : e.message;
-      S.errorCodigo = e.codigo || '';
+      if (e.message === 'CANCELADO') {
+        // Cancelar es algo que hizo la persona, no algo que falló: vuelve a
+        // donde estaba, con lo elegido intacto, y sin rojo.
+        S.paso = 3; S.aviso = T('paso3.cancelado'); S.entrando = true;
+      } else {
+        S.error = e.message;
+        S.errorCodigo = e.codigo || '';
+      }
       render();
     }
   },
@@ -1433,7 +1466,7 @@ document.addEventListener('click', (ev) => {
   const irPaso = ev.target.closest('[data-ir-paso]');
   if (irPaso) {
     const n = parseInt(irPaso.dataset.irPaso, 10);
-    if (pasoAlcanzable(n)) { S.paso = n; S.error = ''; S.entrando = true; seguro(render); arriba(); }
+    if (pasoAlcanzable(n)) { S.paso = n; S.error = ''; S.aviso = ''; S.entrando = true; seguro(render); arriba(); }
     return;
   }
 
@@ -1516,6 +1549,7 @@ document.addEventListener('change', (ev) => {
 });
 
 document.addEventListener('input', (ev) => {
+  if (ev.target.id === 'url') S.url = ev.target.value;
   if (ev.target.id === 'url' && S.errorCampo) {
     S.errorCampo = '';
     ev.target.classList.remove('error');

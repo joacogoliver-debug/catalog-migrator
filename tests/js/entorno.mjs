@@ -27,8 +27,16 @@ function nodo() {
 
 export function cargar({ idioma = 'es' } = {}) {
   const pantalla = nodo();
+  // Los nodos que existen fuera de lo que dibuja render(): el pie, y los que un
+  // test pone a mano para simular un campo lleno. Todo lo demás no existe.
+  const nodos = new Map([['#pantalla', pantalla], ['#pie-estado', nodo()]]);
+  const poner = (sel, props = {}) => {
+    const n = Object.assign(nodo(), props);
+    nodos.set(sel, n);
+    return n;
+  };
   const document = {
-    querySelector: (s) => (s === '#pantalla' ? pantalla : null),
+    querySelector: (s) => nodos.get(s) || null,
     querySelectorAll: () => [],
     addEventListener() {},
     documentElement: nodo(),
@@ -56,5 +64,13 @@ export function cargar({ idioma = 'es' } = {}) {
     vm.runInContext(fs.readFileSync(path.join(WEB, archivo), 'utf8'), ctx, { filename: archivo });
   }
   const ev = (codigo) => vm.runInContext(codigo, ctx);
-  return { ctx, ev, pantalla };
+  // Un backend de mentira: `rutas` va de la ruta pedida a lo que contesta.
+  const backend = (rutas) => {
+    ctx.fetch = async (ruta) => {
+      const r = rutas[ruta];
+      if (r === undefined) throw new Error(`ruta sin respuesta en el test: ${ruta}`);
+      return { ok: true, status: 200, json: async () => r };
+    };
+  };
+  return { ctx, ev, pantalla, poner, nodos, backend };
 }

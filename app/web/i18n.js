@@ -112,7 +112,6 @@ const TEXTOS = {
   /* ---------------------------------------------------------- comunes */
   'comun.volver': { es: 'Volver', en: 'Back' },
   'comun.cancelar': { es: 'Cancelar', en: 'Cancel' },
-  'comun.cancelado': { es: 'Cancelado.', en: 'Cancelled.' },
   'comun.continuar': { es: 'Continuar', en: 'Continue' },
   'comun.reintentar': { es: 'Reintentar', en: 'Try again' },
   'fatal.desconocido': { es: 'error desconocido', en: 'unknown error' },
@@ -595,6 +594,10 @@ const TEXTOS = {
   'paso4.armando_detalle': {
     es: 'Podés dejar la ventana abierta. Te avisamos cuando esté.',
     en: 'You can leave the window open. We will tell you when it is ready.',
+  },
+  'paso3.cancelado': {
+    es: 'Cancelaste el armado del paquete. Lo que elegiste sigue como estaba.',
+    en: 'You cancelled building the package. What you chose is still as it was.',
   },
   'paso4.error_titulo': { es: 'No se pudo generar', en: 'Could not build it' },
   'paso4.listo': { es: 'Tu paquete está listo', en: 'Your package is ready' },
