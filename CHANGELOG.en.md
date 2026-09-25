@@ -9,6 +9,14 @@ What changed in every published version. The numbers follow
 ## [Unreleased]
 
 ### Added
+- **Track and disc numbers are the real ones when Deezer has the album.** The
+  app already downloaded the tracklist and threw it away, and the sheet carried
+  the order estimated from the upload date with no mark at all. Now, if the
+  Deezer album was verified as the same release, each song takes its position
+  and disc. Otherwise the order is still estimated and the sheet's
+  `Track Order` column says so. On real data, a 22-song double album keeps its
+  two discs, and two songs Deezer places on the same record stop showing up as
+  two releases.
 - The ingestion sheet has an `Original Release Date` column, with the same
   real date as `Release Date`, because each distributor asks for it in one of
   the two. The READ ME explains which one to use if the new distributor asks
@@ -24,6 +32,13 @@ What changed in every published version. The numbers follow
   on its own, following the rubric in `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Fixed
+- `Territories` was fixed to `Worldwide` and `Disc Number` to 1. Both were
+  made up: a catalog licensed for one region was opened to the world, and a
+  double album came out entirely on the first disc. They are now to be filled
+  in when not known.
+- Two releases with the same title but released years apart (the original and
+  its anniversary edition) got crossed: the new edition's songs took the
+  original's UPC and tracklist. The date now has to match too.
 - **A release could come out split into two, or two releases merged into
   one.** Songs were grouped by album and ℗ year, and that year belongs to each
   recording: a record's anniversary edition, with original ℗ 2013 songs and new

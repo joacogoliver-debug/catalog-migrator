@@ -114,10 +114,18 @@ class Track(TypedDict):
     # queda en blanco en vez de ser el de otro producto.
     upc_descartado: NotRequired[str]
 
-    # Lo pone `productos.group_products`, estimado por fecha de subida. YouTube
-    # no expone el número de track, así que el producto queda marcado con
-    # `order_unconfirmed`.
+    # El número de track. Lo pone `relevar_core.enrich_with_codes` con el real,
+    # del tracklist de Deezer, cuando el álbum se verificó como este release; si
+    # no, `productos.group_products` lo estima por fecha de subida y el
+    # producto queda marcado con `order_unconfirmed`.
     track_number: NotRequired[int | None]
+    # El disco, junto con el número real. Sin él, el disco no se sabe.
+    disc_number: NotRequired[int]
+    # De dónde salió el número real: "deezer". Ausente, es un estimado.
+    orden_fuente: NotRequired[str]
+    # El álbum de Deezer en cuyo tracklist se ubicó. Sirve para juntar temas
+    # sin fecha que son del mismo release (ver `productos._agrupar_por_release`).
+    album_deezer_id: NotRequired[int]
 
     # Lo pone `audio.matchear_por_isrc`, cruzando el ISRC contra el índice de
     # la discografía en Tidal. `None` significa que se buscó y no apareció.

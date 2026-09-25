@@ -9,6 +9,14 @@ Lo que cambió en cada versión publicada. Los números siguen
 ## [Sin publicar]
 
 ### Agregado
+- **El número de track y de disco son los reales cuando Deezer tiene el
+  álbum.** La app ya bajaba el tracklist y lo tiraba, y la hoja llevaba el
+  orden estimado por fecha de subida sin ninguna marca. Ahora, si el álbum de
+  Deezer se verificó como el mismo release, cada tema toma su posición y su
+  disco. Si no, el orden sigue siendo estimado y la columna `Track Order` de la
+  hoja lo dice. Sobre los datos reales, un álbum doble de 22 temas queda con sus
+  dos discos, y dos temas que Deezer ubica en el mismo disco dejan de aparecer
+  como dos releases.
 - La hoja de ingesta tiene la columna `Original Release Date`, con la misma
   fecha real que `Release Date`, porque cada distribuidora la pide en una de
   las dos. El LEEME explica cuál usar si la distribuidora nueva pide otra
@@ -24,6 +32,14 @@ Lo que cambió en cada versión publicada. Los números siguen
   `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Corregido
+- `Territories` iba fijo en `Worldwide` y `Disc Number` en 1. Los dos eran
+  inventar: un catálogo licenciado para una región se abría al mundo, y un
+  álbum doble salía entero en el primer disco. Ahora van a completar cuando no
+  se saben.
+- Dos releases con el mismo título pero lanzados con años de diferencia (el
+  original y su edición aniversario) se cruzaban: los temas de la edición nueva
+  se quedaban con el UPC y el tracklist del original. Ahora la fecha también
+  tiene que coincidir.
 - **Un release podía salir partido en dos productos, o dos releases fundidos
   en uno.** Los temas se agrupaban por álbum y año ℗, y ese año es de cada
   grabación: la edición aniversario de un disco, con temas originales de ℗ 2013

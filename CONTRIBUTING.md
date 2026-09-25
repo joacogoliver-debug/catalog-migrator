@@ -88,9 +88,10 @@ que un binario ande en desarrollo y falle empaquetado.
 Lo que no sale de una fuente pública queda como `<<COMPLETAR>>` en la hoja de
 ingesta. No vacío, no rellenado a ojo.
 
-Las dos heurísticas que hay están documentadas y dichas en el README: el orden de
-tracks es estimado por fecha de subida, y el formato (single / EP / álbum) se
-deduce de la cantidad de tracks. **Si cambiás alguna, actualizá el README en el
+Las heurísticas que hay están documentadas y dichas en el README: el orden de
+tracks, que es estimado por fecha de subida cuando Deezer no tiene el tracklist
+verificado; el formato (single / EP / álbum), que se deduce de la cantidad de
+tracks; y la agrupación en releases cuando YouTube no publica la fecha. **Si cambiás alguna, actualizá el README en el
 mismo commit.**
 
 ### 4. La clave de YouTube nunca entra al repositorio

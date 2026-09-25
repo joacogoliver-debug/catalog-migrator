@@ -639,6 +639,50 @@ def deezer_albumes(album_ids):
     return out
 
 
+def tracklist_deezer(info):
+    """El tracklist real de un álbum de Deezer: [(título, posición, disco)].
+
+    La lista del álbum viene en orden, pero sin número de disco. Para saber si
+    hay más de uno alcanza con mirar el último track, que es un pedido; sólo si
+    es de un disco posterior al primero se piden todos, para tener cada
+    posición dentro de su disco, que es como la pide una distribuidora.
+    """
+    tracks = [t for t in info.get("tracks") or [] if t.get("id")]
+    if not tracks:
+        return []
+    ultimo = _deezer_json(f"track/{tracks[-1]['id']}") or {}
+    if int(ultimo.get("disk_number") or 1) <= 1:
+        return [(t.get("title", ""), i, 1) for i, t in enumerate(tracks, 1)]
+
+    def work(t):
+        d = _deezer_json(f"track/{t['id']}") or {}
+        return t.get("title", ""), int(d.get("track_position") or 0), int(d.get("disk_number") or 0)
+
+    with ThreadPoolExecutor(max_workers=min(CODES_WORKERS, len(tracks))) as ex:
+        lista = list(ex.map(work, tracks))
+    # Si alguno no trajo su posición, la lista no sirve entera: un orden a
+    # medias es peor que el estimado, porque parece confirmado.
+    return lista if all(pos and disco for _t, pos, disco in lista) else []
+
+
+def _posicion_en(lista, titulo):
+    """(posición, disco) del tema en el tracklist, o None si no se lo puede
+    ubicar sin dudas: tiene que haber un solo candidato."""
+    candidatos = [
+        (pos, disco)
+        for t, pos, disco in lista
+        if misma_version(t, titulo) and comparable(t) == comparable(titulo)
+    ]
+    if not candidatos:
+        candidatos = [
+            (pos, disco)
+            for t, pos, disco in lista
+            if misma_version(t, titulo)
+            and SequenceMatcher(None, comparable(t), comparable(titulo)).ratio() >= 0.9
+        ]
+    return candidatos[0] if len(candidatos) == 1 else None
+
+
 def deezer_album_upcs(album_ids):
     return {aid: info["upc"] for aid, info in deezer_albumes(album_ids).items()}
 
@@ -654,6 +698,13 @@ _RE_EDICION = re.compile(
     r"[(\[][^)\]]*\b(edition|edición|edicion|anniversary|aniversario)\b[^)\]]*[)\]]", re.I
 )
 _RE_OTRO_RELEASE = re.compile(r"deluxe|expanded|bonus|ampliad", re.I)
+
+
+def _fechas_cercanas(a, b, dias=7):
+    try:
+        return abs((date.fromisoformat(a[:10]) - date.fromisoformat(b[:10])).days) <= dias
+    except ValueError:
+        return True  # una fecha ilegible no es evidencia de que sean distintos
 
 
 def album_coincide(titulo_producto, titulo_deezer, fecha_producto="", fecha_deezer=""):
@@ -682,11 +733,18 @@ def album_coincide(titulo_producto, titulo_deezer, fecha_producto="", fecha_deez
     a, b = limpio(titulo_producto), limpio(titulo_deezer)
     if not (comparable(a) and comparable(b)):
         return False
+    # Con las dos fechas a la vista, un release que salió en otra fecha es otro,
+    # aunque el título sea idéntico: la edición aniversario se llama igual que el
+    # original de diez años antes, y sus temas se quedaban con el UPC y el
+    # tracklist del original. Una semana de margen, porque cada plataforma puede
+    # fechar la misma entrega con un día de diferencia.
+    if fecha_producto and fecha_deezer and not _fechas_cercanas(fecha_producto, fecha_deezer):
+        return False
     # La edición se mira primero: su «10th» traería un número que el título de
     # YouTube no tiene, y ahí lo que decide es la fecha, no los números.
     extra = b[len(a) :].strip() if b.lower().startswith(a.lower()) else ""
     if extra and _RE_EDICION.fullmatch(extra) and not _RE_OTRO_RELEASE.search(extra):
-        return bool(fecha_producto) and fecha_producto == fecha_deezer
+        return bool(fecha_producto and fecha_deezer)
     if not misma_version(a, b):
         return False
     if comparable(a) == comparable(b):
@@ -756,7 +814,37 @@ def enrich_with_codes(tracks, artist, log=print, use_musicbrainz=False):
                 # validación lo diga en vez de un «falta» sin explicación.
                 t["upc_descartado"] = info.get("title", "")
 
-    # 3) MusicBrainz: respaldo SÓLO para los que quedaron sin ISRC (secuencial, lento).
+    # 3) El orden real, del tracklist del álbum. Sólo para los tracks cuyo
+    # álbum se verificó como este release: el orden de otro release (el del
+    # álbum, para un single) no dice nada de éste.
+    listas = {}  # release de YouTube (álbum, fecha) -> tracklist verificado
+    for aid, ts in album_ids.items():
+        info = albumes.get(aid) or {}
+        verificados = [t for t in ts if info.get("upc") and t["upc"] == info["upc"]]
+        lista = tracklist_deezer(info) if verificados else []
+        for t in verificados:
+            if lista:
+                listas.setdefault((comparable(t["album"]), t.get("release_date") or ""), (aid, lista))
+            lugar = _posicion_en(lista, t["track"])
+            if lugar:
+                t["track_number"], t["disc_number"], t["orden_fuente"] = lugar[0], lugar[1], "deezer"
+                t["album_deezer_id"] = aid
+
+    # Segunda pasada. Un tema que Deezer no encontró, o que encontró en otro
+    # release (su propio single), igual es parte de este release en YouTube, y
+    # el tracklist verificado de sus compañeros sirve para ubicarlo. Con datos
+    # reales, sin esto un solo tema así dejaba el release entero como estimado.
+    for t in tracks:
+        clave = (comparable(t["album"]), t.get("release_date") or "")
+        if t.get("orden_fuente") or t["album"] == SIN_ALBUM or clave not in listas:
+            continue
+        aid, lista = listas[clave]
+        lugar = _posicion_en(lista, t["track"])
+        if lugar:
+            t["track_number"], t["disc_number"], t["orden_fuente"] = lugar[0], lugar[1], "deezer"
+            t["album_deezer_id"] = aid
+
+    # 4) MusicBrainz: respaldo SÓLO para los que quedaron sin ISRC (secuencial, lento).
     if use_musicbrainz:
         pendientes = [t for t in tracks if not t["isrc"]]
         if pendientes:

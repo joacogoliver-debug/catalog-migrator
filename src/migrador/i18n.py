@@ -950,7 +950,12 @@ propósito: son los nombres de campo que espera la distribuidora, no texto
 para leer. Lo que se pudo relevar viene completo. Lo que no puede salir de
 fuentes públicas está marcado con <<COMPLETAR>>:
 
-  Genre, Language, Explicit, Composer, Publisher, C Line
+  Genre, Language, Explicit, Composer, Publisher, C Line, Territories
+
+y "Disc Number" cuando el disco no se pudo confirmar. Territories va a
+completar porque los derechos del release original no salen de ningún lado
+público: ponerle "Worldwide" por defecto abriría al mundo un catálogo
+licenciado sólo para una región.
 
 Esos campos los tiene que llenar el dueño del catálogo, están marcados en vez
 de vacíos o inventados justamente para que no pasen desapercibidos.
@@ -985,9 +990,12 @@ son aproximaciones y conviene verificarlos:
                           4-6 EP, 7+ álbum). Un EP corto puede figurar como
                           single.
 
-  Orden de los tracks     Cuando se pudo cruzar con Tidal por ISRC, el número
+  Orden de los tracks     Cuando Deezer tiene el álbum y es el mismo release,
+                          o cuando se pudo cruzar con Tidal por ISRC, el número
                           de track es el real. Si no, es un estimado por fecha
-                          de subida y el reporte lo marca como "sin confirmar".
+                          de subida: la columna "Track Order" de la hoja de
+                          ingesta dice cuál es cuál, y el reporte lo marca como
+                          "sin confirmar".
 """,
         "en": """HOW THIS PACKAGE IS ORGANIZED
 =============================
@@ -1029,7 +1037,12 @@ purpose: they are the field names the distributor expects, not text to
 read. What could be surveyed comes filled in. What cannot come from public
 sources is marked <<COMPLETAR>>:
 
-  Genre, Language, Explicit, Composer, Publisher, C Line
+  Genre, Language, Explicit, Composer, Publisher, C Line, Territories
+
+and "Disc Number" when the disc could not be confirmed. Territories is to be
+filled in because the original release's rights do not come from anywhere
+public: defaulting to "Worldwide" would open to the whole world a catalog
+licensed for a single region.
 
 Those fields have to be filled in by the catalog owner. They are marked rather
 than left empty or made up precisely so they do not slip through.
@@ -1063,10 +1076,12 @@ approximations and are worth checking:
   Type (single/EP/album)  Worked out from the track count (1-3 single, 4-6 EP,
                           7+ album). A short EP can show up as a single.
 
-  Track order             Where it could be cross-checked against Tidal by
-                          ISRC, the track number is the real one. Otherwise it
-                          is estimated from the upload date, and the report
-                          marks it as "unconfirmed".
+  Track order             When Deezer has the album and it is the same
+                          release, or where it could be cross-checked against
+                          Tidal by ISRC, the track number is the real one.
+                          Otherwise it is estimated from the upload date: the
+                          "Track Order" column of the ingestion sheet says which
+                          is which, and the report marks it as "unconfirmed".
 """,
     },
 }

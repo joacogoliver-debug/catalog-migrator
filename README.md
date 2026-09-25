@@ -262,8 +262,10 @@ cuando en realidad la van a rechazar.
 - **No inventa metadata.** Lo que no puede salir de fuentes públicas (género,
   explicit, compositores, editoriales, línea ©) queda marcado `<<COMPLETAR>>` en
   la hoja de ingesta, no vacío ni rellenado a ojo.
-- **No adivina el número de track.** YouTube no lo expone: el orden se estima por
-  fecha de subida y se marca como no confirmado.
+- **No adivina el número de track.** YouTube no lo expone. Cuando Deezer tiene el
+  álbum y se verificó que es el mismo release, el número de track y de disco son
+  los de su tracklist. Si no, el orden se estima por fecha de subida, se marca como
+  no confirmado, y la hoja de ingesta lo dice en la columna `Track Order`.
 - **No sabe el formato del release.** Single / EP / álbum se deduce de la cantidad
   de tracks (1-3 / 4-6 / 7+), que es la convención de las distribuidoras pero
   sigue siendo una heurística.
@@ -493,6 +495,7 @@ pytest -q --cov
 | `tests/test_app.py` | Backend, trabajos, HTTP, y las tres defensas |
 | `tests/test_capturas.py` | Que el material de ejemplo de las capturas diga lo mismo que la app |
 | `tests/test_entrada_hostil.py` | Que nada de lo que entra de afuera se ejecute: yt-dlp, fórmulas, portadas |
+| `tests/test_orden.py` | El número de disco y de track: el real de Deezer, o marcado como estimado |
 | `tests/test_agrupacion.py` | Qué tracks forman un release: fecha de lanzamiento, distribuidora y el caso sin fecha |
 | `tests/test_hoja_y_zip.py` | Que la hoja de ingesta y las planillas nombren los archivos que el ZIP trae |
 | `tests/test_upc.py` | Que el UPC de cada producto sea el suyo, y no el de otro release con los mismos temas |

@@ -263,8 +263,38 @@ COLUMNAS_INGESTA = [
     "Audio File",
     "Cover File",
     "Source Quality",
+    # Si el número de track es el real o un estimado por fecha de subida. El
+    # estimado se deja en «Track Number» porque suele acertar y sacarlo obliga a
+    # tipear todo el orden; esta columna es la que dice que hay que mirarlo.
+    "Track Order",
     "YouTube URL",
 ]
+
+
+def orden_de(p, t):
+    """De dónde sale el número de track, para la columna «Track Order»."""
+    if t.get("tidal"):
+        return "confirmed (Tidal)"
+    if t.get("orden_fuente") == "deezer":
+        return "confirmed (Deezer)"
+    if len(p["tracks"]) == 1:
+        return "confirmed"
+    return "estimated" if p.get("order_unconfirmed") else "confirmed"
+
+
+def disco_de(p, t):
+    """El número de disco, o <<COMPLETAR>> si no se sabe.
+
+    Antes era 1 para todo lo que no venía de Tidal, y un álbum doble salía con
+    el segundo disco entero en el primero. Un release de un solo track tiene un
+    solo disco, eso sí se sabe.
+    """
+    tidal = t.get("tidal") or {}
+    if tidal.get("volume_number"):
+        return tidal["volume_number"]
+    if t.get("disc_number"):
+        return t["disc_number"]
+    return 1 if len(p["tracks"]) == 1 else MARCA_COMPLETAR
 
 
 def hoja_ingesta_csv(productos, artista, incluir_audio=True, incluir_portadas=True):
@@ -307,8 +337,11 @@ def hoja_ingesta_csv(productos, artista, incluir_audio=True, incluir_portadas=Tr
                         MARCA_COMPLETAR,  # C Line: no sale de YouTube
                         MARCA_COMPLETAR,  # Genre
                         MARCA_COMPLETAR,  # Language
-                        "Worldwide",
-                        t.get("tidal", {}).get("volume_number") if t.get("tidal") else 1,
+                        # Los territorios del release original no salen de ningún
+                        # lado público. Poner «Worldwide» era inventar derechos: un
+                        # catálogo licenciado sólo para una región se abría al mundo.
+                        MARCA_COMPLETAR,
+                        disco_de(p, t),
                         t.get("track_number") or "",
                         t.get("isrc") or MARCA_COMPLETAR,
                         t.get("track", ""),
@@ -326,6 +359,7 @@ def hoja_ingesta_csv(productos, artista, incluir_audio=True, incluir_portadas=Tr
                         archivo_audio(p, t, artista, incluir_audio),
                         archivo_portada(p, incluir_portadas),
                         _fuente_corta(t),
+                        orden_de(p, t),
                         t.get("url", ""),
                     ]
                 ]

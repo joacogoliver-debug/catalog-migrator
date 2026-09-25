@@ -90,6 +90,11 @@ def _agrupar_por_release(tracks):
     porque un disco de 1996 con un tema de ℗ 1997 es el mismo disco, y una
     reedición casi nunca sale al año siguiente. Años más separados siguen siendo
     releases distintos, que es lo que evita fusionar un álbum con su reedición.
+
+    Después, los grupos sin fecha cuyos temas Deezer ubicó en el MISMO tracklist
+    verificado se juntan: dos temas de ℗ 2001 y ℗ 2021 que en Deezer son los
+    tracks 1 y 2 del mismo disco son un disco. Esa señal sólo junta, nunca
+    separa: que un tema no se haya podido ubicar no dice que sea de otro release.
     """
     grupos = {}
     for t in tracks:
@@ -107,7 +112,7 @@ def _agrupar_por_release(tracks):
         if len(con_fecha) == 1:
             grupos[con_fecha[0]].extend(sin_fecha)
             continue
-        for n, bloque in enumerate(_por_anios_seguidos(sin_fecha)):
+        for n, bloque in enumerate(_unir_por_tracklist(_por_anios_seguidos(sin_fecha))):
             grupos[(album, dist, f"sin-fecha-{n}")] = bloque
     return list(grupos.values())
 
@@ -128,6 +133,20 @@ def _por_anios_seguidos(tracks):
             bloques.append(list(por_anio[anio]))
         anterior = anio
     return bloques
+
+
+def _unir_por_tracklist(bloques):
+    """Junta los bloques que tienen temas ubicados en el mismo álbum de Deezer."""
+    unidos = []  # [ids de álbum, tracks]
+    for bloque in bloques:
+        ids = {t.get("album_deezer_id") for t in bloque} - {None}
+        destino = next((u for u in unidos if u[0] & ids), None)
+        if destino:
+            destino[0] |= ids
+            destino[1].extend(bloque)
+        else:
+            unidos.append([set(ids), list(bloque)])
+    return [tracks for _ids, tracks in unidos]
 
 
 def _marcar_duplicados_entre_distribuidoras(productos):
@@ -157,7 +176,14 @@ def group_products(tracks: list[Track], artist="") -> list[Producto]:
 
     productos = []
     for ts in _agrupar_por_release(tracks):
-        ts = sorted(ts, key=lambda x: (x.get("upload_date") or "", x.get("track") or ""))
+        # El orden real sólo vale si está para TODOS los tracks del release:
+        # mezclar números reales con estimados daría repetidos, y un orden a
+        # medias parecería confirmado.
+        confirmado = all(t.get("orden_fuente") for t in ts)
+        if confirmado:
+            ts = sorted(ts, key=lambda x: (x.get("disc_number") or 1, x.get("track_number") or 0))
+        else:
+            ts = sorted(ts, key=lambda x: (x.get("upload_date") or "", x.get("track") or ""))
         es_single = (ts[0].get("album") or SIN_ALBUM) == SIN_ALBUM
         titulo = ts[0].get("track", "") if es_single else (ts[0].get("album") or "").strip()
 
@@ -165,9 +191,14 @@ def group_products(tracks: list[Track], artist="") -> list[Producto]:
         lanzamientos = [t.get("release_date") for t in ts if t.get("release_date")]
         subidas = [t.get("upload_date") for t in ts if t.get("upload_date")]
 
-        for i, t in enumerate(ts, 1):
-            # Orden provisorio por fecha de subida; se marca como no confirmado.
-            t["track_number"] = t.get("track_number") or i
+        if not confirmado:
+            for i, t in enumerate(ts, 1):
+                # Orden provisorio por fecha de subida; se marca como no confirmado.
+                # El disco de los que sí se ubicaron se descarta también: un
+                # release con unos temas en el disco 1 y otros sin disco no es
+                # un dato, es una mezcla.
+                t["track_number"] = i
+                t.pop("disc_number", None)
 
         productos.append(
             {
@@ -188,7 +219,7 @@ def group_products(tracks: list[Track], artist="") -> list[Producto]:
                 "track_count": len(ts),
                 "total_views": sum(int(t.get("views") or 0) for t in ts),
                 # True cuando el orden salió sólo de la fecha de subida (sin confirmar).
-                "order_unconfirmed": len(ts) > 1,
+                "order_unconfirmed": len(ts) > 1 and not confirmado,
             }
         )
 

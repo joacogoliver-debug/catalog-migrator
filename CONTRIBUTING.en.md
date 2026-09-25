@@ -88,9 +88,10 @@ binary works in development and fails once packaged.
 Anything that does not come from a public source stays as `<<COMPLETAR>>` in the
 ingestion sheet. Not empty, not filled in by eye.
 
-The two heuristics that exist are documented and stated in the README: track
-order is estimated from upload date, and the format (single / EP / album) is
-derived from the track count. **If you change either, update the README in the
+The heuristics that exist are documented and stated in the README: track
+order, which is estimated from upload date when Deezer has no verified
+tracklist; the format (single / EP / album), which is derived from the track
+count; and grouping into releases when YouTube does not publish the date. **If you change either, update the README in the
 same commit.**
 
 ### 4. The YouTube key never enters the repository

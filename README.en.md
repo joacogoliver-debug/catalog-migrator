@@ -265,8 +265,11 @@ minimum when in fact it is going to be rejected.
 - **It does not invent metadata.** Whatever cannot come from public sources
   (genre, explicit, composers, publishers, © line) is marked `<<COMPLETAR>>` in
   the ingestion sheet, not left blank and not filled in by eye.
-- **It does not guess the track number.** YouTube does not expose it: the order is
-  estimated from the upload date and flagged as unconfirmed.
+- **It does not guess the track number.** YouTube does not expose it. When Deezer
+  has the album and it was verified as the same release, the track and disc
+  numbers are those of its tracklist. Otherwise the order is estimated from the
+  upload date, flagged as unconfirmed, and the ingestion sheet says so in the
+  `Track Order` column.
 - **It does not know the release format.** Single / EP / album is inferred from
   the track count (1-3 / 4-6 / 7+), which is the distributors' convention but is
   still a heuristic.
@@ -498,6 +501,7 @@ pytest -q --cov
 | `tests/test_app.py` | Backend, jobs, HTTP, and the three defenses |
 | `tests/test_capturas.py` | That the screenshots' sample material says the same as the app |
 | `tests/test_entrada_hostil.py` | That nothing coming from outside gets executed: yt-dlp, formulas, covers |
+| `tests/test_orden.py` | Disc and track numbers: the real ones from Deezer, or flagged as estimated |
 | `tests/test_agrupacion.py` | Which tracks make up a release: release date, distributor and the no-date case |
 | `tests/test_hoja_y_zip.py` | That the ingestion sheet and the spreadsheets name the files the ZIP carries |
 | `tests/test_upc.py` | That each release's UPC is its own, not another release's with the same songs |
