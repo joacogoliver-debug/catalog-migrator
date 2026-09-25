@@ -687,6 +687,19 @@ function avisoCanal() {
     })));
   }
 
+  // Los códigos. Sin esto, «ISRC 0 de 27» parecía una falla de la app cuando
+  // podía ser que no se pidieron o que el artista no está en Deezer.
+  const cod = d.codigos;
+  if (cod && !cod.pedidos) {
+    partes.push(alerta('', 'info', esc(T('paso2.codigos_no_pedidos'))));
+  } else if (cod && cod.fallas) {
+    partes.push(alerta('warn', 'alerta', esc(T(cod.fallas === 1 ? 'paso2.deezer_no_respondio_uno' : 'paso2.deezer_no_respondio', { n: num(cod.fallas) }))));
+  } else if (cod && !cod.encontrados && S.catalogo.productos.length) {
+    partes.push(alerta('warn', 'alerta', `
+      <strong>${esc(T('paso2.no_esta_en_deezer_titulo', { artista: S.catalogo.artista }))}</strong>
+      ${esc(T('paso2.no_esta_en_deezer_cuerpo'))}`));
+  }
+
   // Sólo si algo salió raro: el canal es Topic pero igual falta metadata.
   if (d.cobertura_metadata !== undefined && d.cobertura_metadata < 0.3) {
     const sug = d.topic_sugerido;
@@ -992,7 +1005,12 @@ function opcion(clave, icono, elegida, deshabilitada, titulo, detalle) {
  *  el caso típico de alguien que abrió la app en una máquina nueva. */
 function faltaParaAudio() {
   const e = (S.config && S.config.entorno) || {};
-  if (!e.ffmpeg && (e.tiddl || e.yt_dlp)) return T('paso3.falta_ffmpeg');
+  if (!e.ffmpeg && (e.tiddl || e.yt_dlp)) {
+    const so = S.config && S.config.sistema;
+    if (so === 'mac') return T('paso3.falta_ffmpeg_mac');
+    if (so === 'linux') return T('paso3.falta_ffmpeg_linux');
+    return T('paso3.falta_ffmpeg_windows');
+  }
   if (!e.tiddl && !e.yt_dlp) return T('paso3.falta_modulo');
   return T('paso3.falta_generico');
 }
@@ -1072,6 +1090,8 @@ function vistaPaso4() {
 
     ${panelValidacion(v)}
 
+    ${queSigue()}
+
     ${S.errorDescarga ? alerta('danger', 'error', esc(S.errorDescarga)) : ''}
 
     <div class="barra-accion">
@@ -1085,6 +1105,22 @@ function vistaPaso4() {
       </div>
     </div>
   </div>`;
+}
+
+/** Lo que viene después del ZIP. El éxito terminaba en «Descargar» sin decir
+ *  qué hacer con lo descargado, y en una migración el orden importa: la baja
+ *  en la distribuidora vieja es lo último, no lo primero. */
+function queSigue() {
+  return `
+    <div class="seccion">
+      <div class="seccion-etiqueta"><h2>${esc(T('paso4.que_sigue'))}</h2></div>
+      <ol class="pasos-siguientes">
+        <li>${T('paso4.sigue_completar')}</li>
+        <li>${esc(T('paso4.sigue_pedir'))}</li>
+        <li>${esc(T('paso4.sigue_cargar'))}</li>
+        <li>${esc(T('paso4.sigue_baja'))}</li>
+      </ol>
+    </div>`;
 }
 
 /* Titulo corto por codigo de hallazgo, para la cabecera de cada grupo. El texto

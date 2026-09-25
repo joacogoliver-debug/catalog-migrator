@@ -263,6 +263,25 @@ that release and answers with it even when it is smaller. If we claimed 3000×30
 about a 600×600 cover, the spreadsheet would state that it meets the ingestion
 minimum when in fact it is going to be rejected.
 
+## If something does not work
+
+If the app does not open, or something you expected is missing (the audio
+option, say), the diagnostic report says what the app can do on your machine
+and what it lacks. You get it once from a terminal, and it is saved as
+`.migrador-catalogos/diagnostico.txt` inside your user folder:
+
+- **Windows, with the installer.** Open Terminal and paste
+  `& "$env:LOCALAPPDATA\Programs\Migrador de Catalogos\Migrador de Catalogos.exe" --diagnostico`
+- **Windows, with the standalone `.exe`.** In the folder you downloaded it to,
+  right click → "Open in Terminal", and `.\Migrador-de-Catalogos-windows-completa.exe --diagnostico`
+- **macOS.** In Terminal, `~/Downloads/Migrador-de-Catalogos-macos-apple-silicon-completa --diagnostico`
+  (or `-intel-completa`, depending on your Mac). With the `.app`, `"/Applications/Migrador de Catalogos.app/Contents/MacOS/Migrador de Catalogos" --diagnostico`.
+- **Linux.** `migrador-catalogos --diagnostico` if you installed the `.deb`,
+  or `./Migrador-de-Catalogos-linux-completa --diagnostico` with the standalone one.
+
+If you open an issue, paste that file: it says the version, the system and
+what it detected, and it does not include your key.
+
 ## What it does NOT do
 
 - **It does not generate DDEX ERN.** Emitting valid ERN requires being a
@@ -512,6 +531,7 @@ pytest -q --cov
 | `tests/test_app.py` | Backend, jobs, HTTP, and the three defenses |
 | `tests/test_capturas.py` | That the screenshots' sample material says the same as the app |
 | `tests/test_entrada_hostil.py` | That nothing coming from outside gets executed: yt-dlp, formulas, covers |
+| `tests/test_guia_migracion.py` | What the READ ME tells whoever migrates: keep the codes, take down last, and Tidal's copy is not the master |
 | `tests/test_contraste.py` | Token contrast, read from `colors.css` in both themes: text at 4.5, controls and the main button at 3 |
 | `tests/test_interfaz_js.py` | The interface tests (`tests/js/`, with `node --test`): external text arrives escaped, figures, plurals |
 | `tests/test_rutas.py` | Server routes: surveying as a job, saving the key, Tidal switched off |

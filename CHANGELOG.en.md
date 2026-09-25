@@ -9,6 +9,18 @@ What changed in every published version. The numbers follow
 ## [Unreleased]
 
 ### Added
+- **The app explains the number one rule of a migration**: keeping the ISRC,
+  the UPC and the original date is what joins each new release to the one
+  already in stores, with its plays and playlists, and taking the catalog down
+  at the old distributor comes only once the new one is live. The catalog
+  screen says it, so does a "What comes next" list on the final screen and a
+  new section of the ZIP's READ ME, with what to ask your current distributor
+  for.
+- **The catalog screen says why codes are missing**: whether they were not
+  requested, the artist is not on Deezer (in those words, as PRODUCT.md asks)
+  or Deezer did not answer. All three used to look like "ISRC 0 of 27".
+- **"If something does not work" in the README**, with the diagnostic command
+  for each system and each way of installing.
 - **"Only those with something to fill in" filter** on the step 2 table: it
   keeps releases with no UPC, missing ISRCs or an unconfirmed order. In a big
   catalog, "what am I missing?" used to be answered by scrolling.
@@ -68,6 +80,16 @@ What changed in every published version. The numbers follow
   on its own, following the rubric in `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Fixed
+- **Tidal's FLAC is no longer presented as "the master".** It is the
+  lossless copy the platform streams, fine for delivery when there is nothing
+  else, but it can have a lower resolution than the studio master.
+- **The instruction to install ffmpeg is the one for your system.** `winget`
+  in PowerShell was offered on Mac and Linux too.
+- **Less jargon and no unbacked promises**: gone are "origin token" and "DRM",
+  the instruction to open the app with `--diagnostico` (which cannot be
+  followed with a double click) and the "We will tell you when it is ready",
+  which had no notification behind it. ISRC and UPC are defined where they are
+  asked for.
 - **The table header and the "Continue" bar stay put.** The header stopped
   being sticky because of a horizontal scroll on its container, and with five
   hundred rows "Continue" sat at the very end.

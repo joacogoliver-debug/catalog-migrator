@@ -305,6 +305,9 @@ def catalogo_demo() -> dict[str, Any]:
             "canal": "Delta Serrano - Topic",
             "canal_pedido": "Delta Serrano",
             "descartados": 17,
+            # Como los manda el backend: con códigos pedidos y encontrados no
+            # hay aviso, que es el caso de las capturas.
+            "codigos": {"pedidos": True, "encontrados": 13, "fallas": 0},
         },
         "productos": productos,
         "resumen": {"products": 4, "tracks": 27, "with_upc": 3, "with_isrc": 13, "views": 1_428_516},

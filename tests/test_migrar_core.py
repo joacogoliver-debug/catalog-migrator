@@ -271,8 +271,20 @@ def test_el_diagnostico_es_un_subconjunto_del_relevamiento(relevar_doble):
     contrato de arriba perdiera una, esto se rompe acá en vez de dejar un campo
     vacío en la pantalla.
     """
-    propias = set(Diagnostico.__annotations__) - {"canal"}
+    # `canal` y `codigos` se arman en migrar_core: el primero es el título del
+    # canal y el segundo resume `codes`, que viene con otra forma.
+    propias = set(Diagnostico.__annotations__) - {"canal", "codigos"}
     assert propias <= set(Relevamiento.__annotations__)
 
     _p, _a, _t, diag = M.relevar_catalogo("https://www.youtube.com/@Test", "clave-falsa")
     assert set(diag) == set(Diagnostico.__annotations__)
+
+
+def test_el_diagnostico_distingue_codigos_no_pedidos_de_no_encontrados(relevar_doble):
+    """«ISRC 0 de 27» puede ser tres cosas; la interfaz necesita saber cuál."""
+    _p, _a, _t, diag = M.relevar_catalogo("https://www.youtube.com/@Test", "clave-falsa")
+    assert diag["codigos"] == {"pedidos": True, "encontrados": 3, "fallas": 0}
+
+    relevar_doble["escenario"] = "comun"
+    _p, _a, _t, diag = M.relevar_catalogo("https://www.youtube.com/@Test", "clave-falsa")
+    assert diag["codigos"] == {"pedidos": False, "encontrados": 0, "fallas": 0}

@@ -965,13 +965,13 @@ TEXTOS = {
     },
     "paq.rep_algunos_aac": {
         "es": (
-            "! Algunos tracks bajaron en AAC y no en FLAC: Tidal no tiene máster\n"
-            "  lossless para esas grabaciones. Están marcados como lossy y NO\n"
+            "! Algunos tracks bajaron en AAC y no en FLAC: Tidal no tiene versión\n"
+            "  lossless de esas grabaciones. Están marcados como lossy y NO\n"
             "  son aptos para entrega, hay que pedir el máster al sello/artista."
         ),
         "en": (
             "! Some tracks came down as AAC and not FLAC: Tidal has no lossless\n"
-            "  master for those recordings. They are marked as lossy and are NOT\n"
+            "  version of those recordings. They are marked as lossy and are NOT\n"
             "  fit for delivery; ask the label or artist for the master."
         ),
     },
@@ -1106,7 +1106,10 @@ SOBRE LA CALIDAD DEL AUDIO: LEER ANTES DE ENTREGAR
 La columna "Fuente / Calidad" de las planillas dice, track por track, de dónde
 salió el audio:
 
-  LOSSLESS (flac)  Máster lossless de Tidal. Apto para entregar.
+  LOSSLESS (flac)  La copia sin pérdida que sirve Tidal. Apta para entregar
+                si no tenés el archivo original, pero no siempre es el máster
+                de estudio: puede tener menos resolución. Si lo tenés,
+                entregá ese.
 
   LOSSY (m4a/opus/webm)  Audio ya comprimido. Sirve como referencia, inventario
                 o verificación, pero NO es apto para entregar a una
@@ -1115,6 +1118,22 @@ salió el audio:
 
 Si un track figura como LOSSY, hay que conseguir el máster original con el
 artista o el sello antes de la entrega. El reporte lista exactamente cuáles.
+
+ANTES DE DAR DE BAJA EN LA DISTRIBUIDORA ACTUAL
+-----------------------------------------------
+Conservar el ISRC de cada grabación, el UPC de cada release y la fecha
+original es lo que hace que el release nuevo se una al que ya está en las
+tiendas, con sus reproducciones, playlists y enlaces. Un código nuevo es un
+release nuevo que arranca de cero. El orden que conviene:
+
+  1. Pedile a la distribuidora actual lo que este paquete no pudo traer:
+     los ISRC y UPC que figuran como faltantes en "{reporte}", las fechas
+     originales, los másters en WAV o FLAC y el arte original.
+  2. Completá lo marcado <<COMPLETAR>> en "{ingesta_xlsx}".
+  3. Cargá el catálogo en la distribuidora nueva con esos mismos códigos y
+     fechas, y esperá a que esté en vivo en las tiendas.
+  4. Recién entonces hacé la baja en la distribuidora actual. Si la bajás
+     antes, los temas pueden quedar fuera de las tiendas mientras tanto.
 
 OTROS DATOS QUE SON ESTIMADOS
 -----------------------------
@@ -1219,7 +1238,10 @@ ABOUT AUDIO QUALITY: READ BEFORE DELIVERING
 The "Source / Quality" column of the spreadsheets says, track by track, where
 the audio came from:
 
-  LOSSLESS (flac)  Lossless master from Tidal. Fit for delivery.
+  LOSSLESS (flac)  The lossless copy Tidal streams. Fit for delivery if you
+                do not have the original file, but it is not always the
+                studio master: it can have a lower resolution. If you have
+                that, deliver it.
 
   LOSSY (m4a/opus/webm)  Already compressed audio. Useful as a reference, for
                 inventory or for checking, but NOT fit for delivering to a
@@ -1228,6 +1250,22 @@ the audio came from:
 
 If a track shows as LOSSY, get the original master from the artist or the label
 before delivering. The report lists exactly which ones.
+
+BEFORE TAKING THE CATALOG DOWN AT YOUR CURRENT DISTRIBUTOR
+----------------------------------------------------------
+Keeping each recording's ISRC, each release's UPC and the original date is
+what makes the new release join the one already in stores, with its plays,
+playlists and links. A new code is a new release that starts from zero. The
+order that works:
+
+  1. Ask your current distributor for what this package could not bring:
+     the ISRCs and UPCs listed as missing in "{reporte}", the original
+     dates, the masters as WAV or FLAC, and the original artwork.
+  2. Fill in whatever is marked <<COMPLETAR>> in "{ingesta_xlsx}".
+  3. Load the catalog into the new distributor with those same codes and
+     dates, and wait until it is live in stores.
+  4. Only then take it down at your current distributor. If you take it down
+     first, the songs can be missing from stores in the meantime.
 
 OTHER DATA THAT IS ESTIMATED
 ----------------------------

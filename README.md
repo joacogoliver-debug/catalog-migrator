@@ -261,6 +261,25 @@ ese release y responde igual aunque sea más chico. Si dijéramos 3000×3000 sob
 una portada de 600×600, la planilla afirmaría que cumple el mínimo de ingesta
 cuando en realidad la van a rechazar.
 
+## Si algo no anda
+
+Si la app no abre, o falta algo que esperabas ver (la opción de audio, por
+ejemplo), el diagnóstico dice qué puede hacer la app en tu máquina y qué le
+falta. Se saca una vez desde una terminal, y queda guardado en
+`.migrador-catalogos/diagnostico.txt`, adentro de tu carpeta de usuario:
+
+- **Windows, con el instalador.** Abrí la Terminal y pegá
+  `& "$env:LOCALAPPDATA\Programs\Migrador de Catalogos\Migrador de Catalogos.exe" --diagnostico`
+- **Windows, con el `.exe` suelto.** En la carpeta donde lo bajaste, clic
+  derecho → «Abrir en Terminal», y `.\Migrador-de-Catalogos-windows-completa.exe --diagnostico`
+- **macOS.** En la Terminal, `~/Downloads/Migrador-de-Catalogos-macos-apple-silicon-completa --diagnostico`
+  (o `-intel-completa`, según tu Mac). Con el `.app`, `"/Applications/Migrador de Catalogos.app/Contents/MacOS/Migrador de Catalogos" --diagnostico`.
+- **Linux.** `migrador-catalogos --diagnostico` si lo instalaste con el `.deb`,
+  o `./Migrador-de-Catalogos-linux-completa --diagnostico` con el suelto.
+
+Si abrís un issue, pegá ese archivo: dice la versión, el sistema y qué detectó,
+y no incluye tu clave.
+
 ## Qué NO hace
 
 - **No genera DDEX ERN.** Emitir ERN válido requiere ser una parte registrada de
@@ -506,6 +525,7 @@ pytest -q --cov
 | `tests/test_app.py` | Backend, trabajos, HTTP, y las tres defensas |
 | `tests/test_capturas.py` | Que el material de ejemplo de las capturas diga lo mismo que la app |
 | `tests/test_entrada_hostil.py` | Que nada de lo que entra de afuera se ejecute: yt-dlp, fórmulas, portadas |
+| `tests/test_guia_migracion.py` | Lo que el LEEME le dice a quien migra: conservar los códigos, la baja al final y que la copia de Tidal no es el máster |
 | `tests/test_contraste.py` | El contraste de los tokens, leído de `colors.css` en los dos temas: texto a 4,5, controles y botón principal a 3 |
 | `tests/test_interfaz_js.py` | Los tests de la interfaz (`tests/js/`, con `node --test`): que lo de afuera llegue escapado, cifras, plurales |
 | `tests/test_rutas.py` | Las rutas del servidor: relevar como trabajo, guardar la clave, Tidal apagado |

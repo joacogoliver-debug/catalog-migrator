@@ -68,6 +68,11 @@ def relevar_catalogo(
         "via_topic": bool(res.get("via_topic")),
         "canal_pedido": res.get("canal_pedido", ""),
         "descartados": int(res.get("descartados") or 0),
+        "codigos": {
+            "pedidos": res.get("codes") is not None,
+            "encontrados": int((res.get("codes") or {}).get("matched") or 0),
+            "fallas": int((res.get("codes") or {}).get("fallas") or 0),
+        },
     }
     if diag["via_topic"]:
         log(T("mig.via_topic", pedido=diag["canal_pedido"], topic=diag["canal"]))

@@ -572,6 +572,15 @@ def catalogo_json(productos, artista, diag=None):
 # ============================================================
 
 
+def sistema():
+    """'windows', 'mac' o 'linux', que es lo único que la interfaz necesita."""
+    if sys.platform.startswith("win"):
+        return "windows"
+    if sys.platform == "darwin":
+        return "mac"
+    return "linux"
+
+
 def api_config():
     # El frontend pasa por acá al abrir y después de cada operación larga: es el
     # mejor lugar para descartar trabajos vencidos y los ZIP que dejaron.
@@ -594,6 +603,9 @@ def api_config():
             and not (leer_config().get("youtube_api_key") or "").strip()
         ),
         "audio_habilitado": AUDIO_HABILITADO,
+        # Para dar la instrucción de instalación que corresponde: `winget` en una
+        # Mac es una instrucción que no se puede seguir.
+        "sistema": sistema(),
         "entorno": entorno_audio(),
         "tidal_conectada": bool(ESTADO.tidal and ESTADO.tidal.conectada),
         "catalogo_cargado": bool(ESTADO.productos),

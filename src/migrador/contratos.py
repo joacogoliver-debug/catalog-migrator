@@ -317,6 +317,19 @@ class Relevamiento(TypedDict):
     descartados: int
 
 
+class CodigosDelRelevamiento(TypedDict):
+    """Qué pasó con la búsqueda de códigos, para decirlo con palabras.
+
+    «ISRC 0 de 27» puede querer decir tres cosas muy distintas: que no se
+    pidieron, que el artista no está en Deezer, o que Deezer no contestó. Las
+    tres se ven igual en una tabla y cada una pide algo distinto.
+    """
+
+    pedidos: bool
+    encontrados: int
+    fallas: int
+
+
 class Diagnostico(TypedDict):
     """El subconjunto del relevamiento que `migrar_core` le pasa a la interfaz."""
 
@@ -327,6 +340,7 @@ class Diagnostico(TypedDict):
     via_topic: bool
     canal_pedido: str
     descartados: int
+    codigos: CodigosDelRelevamiento
 
 
 class InfoPortada(TypedDict):

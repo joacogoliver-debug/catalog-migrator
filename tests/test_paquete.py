@@ -158,7 +158,9 @@ def test_avisa_fuerte_cuando_no_hubo_cuenta_de_tidal(productos_entregable):
 
 
 def test_con_tidal_conectado_pero_con_lossy_avisa_lo_otro(zip_completo):
-    assert "no tiene máster" in zip_completo["reporte"]
+    # «versión lossless» y no «máster»: lo que Tidal no tiene es su copia sin
+    # pérdida, que no es lo mismo que el máster de estudio.
+    assert "no tiene versión\n  lossless" in zip_completo["reporte"]
 
 
 # ============================================================

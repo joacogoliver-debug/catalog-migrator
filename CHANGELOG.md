@@ -9,6 +9,18 @@ Lo que cambió en cada versión publicada. Los números siguen
 ## [Sin publicar]
 
 ### Agregado
+- **La app explica la regla número uno de una migración**: conservar el ISRC,
+  el UPC y la fecha original es lo que une cada release nuevo al que ya está en
+  las tiendas, con sus reproducciones y playlists, y la baja en la distribuidora
+  vieja va recién cuando el catálogo nuevo está en vivo. Lo dicen la pantalla
+  del catálogo, una lista de «Qué sigue» en la pantalla final y una sección
+  nueva del LEEME del ZIP, con qué pedirle a la distribuidora actual.
+- **La pantalla del catálogo dice por qué faltan los códigos**: si no se
+  pidieron, si el artista no está en Deezer (con esas palabras, como pide
+  PRODUCT.md) o si Deezer no respondió. Antes las tres se veían como «ISRC 0 de
+  27».
+- **«Si algo no anda» en el README**, con el comando del diagnóstico para cada
+  sistema y cada forma de instalación.
 - **Filtro «Sólo los que tienen algo que completar»** en la tabla del paso 2:
   deja los productos sin UPC, con ISRC faltantes o con el orden sin confirmar.
   En un catálogo grande, «¿qué me falta?» se contestaba scrolleando.
@@ -67,6 +79,15 @@ Lo que cambió en cada versión publicada. Los números siguen
   `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Corregido
+- **El FLAC de Tidal ya no se presenta como «máster».** Es la copia sin
+  pérdida que sirve la plataforma, que sirve para entregar cuando no hay otra
+  cosa, pero puede tener menos resolución que el máster de estudio.
+- **La instrucción para instalar ffmpeg es la de tu sistema.** Se ofrecía
+  `winget` en PowerShell también en Mac y Linux.
+- **Menos jerga y ninguna promesa sin respaldo**: se fueron «token de origen»
+  y «DRM», la indicación de abrir la app con `--diagnostico` (que no se puede
+  seguir con doble clic) y el «Te avisamos cuando esté», que no tenía ninguna
+  notificación detrás. El ISRC y el UPC se definen donde se piden.
 - **La cabecera de la tabla y la barra de «Continuar» quedan fijas.** La
   cabecera dejaba de serlo por un scroll horizontal del contenedor, y con
   quinientas filas «Continuar» quedaba al final de todo.

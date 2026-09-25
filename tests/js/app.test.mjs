@@ -238,3 +238,33 @@ test('cada texto nuevo del paso 2 está en los dos idiomas', () => {
   }
   ev(`ponerIdioma('es')`);
 });
+
+test('«ISRC 0 de 27» se explica: no se pidió, no está en Deezer, o Deezer no respondió', () => {
+  catalogoDeTres();
+  const aviso = (codigos) => { ev(`S.catalogo.diagnostico = { codigos: ${JSON.stringify(codigos)} }`); return ev('avisoCanal()'); };
+  assert.ok(aviso({ pedidos: false, encontrados: 0, fallas: 0 }).includes('No se buscaron los códigos'));
+  assert.ok(aviso({ pedidos: true, encontrados: 0, fallas: 0 }).includes('no está en Deezer'));
+  assert.ok(aviso({ pedidos: true, encontrados: 0, fallas: 4 }).includes('Deezer no respondió 4 consultas'));
+  assert.equal(aviso({ pedidos: true, encontrados: 3, fallas: 0 }), '', 'si salió bien no hay nada que decir');
+  ev('S.catalogo.diagnostico = {}');
+  assert.equal(ev('avisoCanal()'), '', 'un diagnóstico viejo, sin códigos, no rompe nada');
+});
+
+test('la pantalla final dice qué sigue, con la baja al final', () => {
+  const html = ev('queSigue()');
+  const pasos = html.split('<li>').slice(1);
+  assert.equal(pasos.length, 4);
+  assert.ok(pasos[0].includes('&lt;&lt;COMPLETAR&gt;&gt;'));
+  assert.ok(pasos[3].includes('baja'), 'dar de baja es lo último');
+});
+
+test('la instrucción para instalar ffmpeg es la del sistema de quien la lee', () => {
+  const para = (so) => {
+    ev(`S.config = { ...S.config, sistema: '${so}', entorno: { ffmpeg: false, tiddl: true } }`);
+    return ev('faltaParaAudio()');
+  };
+  assert.ok(para('windows').includes('winget'));
+  assert.ok(para('mac').includes('brew install ffmpeg'));
+  assert.ok(!para('mac').includes('winget'));
+  assert.ok(para('linux').includes('apt install ffmpeg'));
+});

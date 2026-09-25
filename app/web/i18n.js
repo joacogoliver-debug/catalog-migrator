@@ -382,8 +382,8 @@ const TEXTOS = {
   },
   'paso1.codigos_titulo': { es: 'Buscar códigos ISRC y UPC', en: 'Look up ISRC and UPC codes' },
   'paso1.codigos_detalle': {
-    es: 'Los busca en Deezer, sin clave ni costo. Tarda un poco más, pero son los códigos que la distribuidora nueva necesita.',
-    en: 'Looked up on Deezer, no key and no cost. It takes a little longer, but these are the codes the new distributor needs.',
+    es: 'El ISRC identifica cada grabación y el UPC cada lanzamiento. Los busca en Deezer, sin clave ni costo. Tarda un poco más, pero son los códigos que la distribuidora nueva necesita.',
+    en: 'The ISRC identifies each recording and the UPC each release. Looked up on Deezer, no key and no cost. It takes a little longer, but these are the codes the new distributor needs.',
   },
   'paso1.clave_incluida': {
     es: 'Esta copia trae una clave de YouTube compartida, con cupo para unos 500 catálogos por día entre todos.',
@@ -461,8 +461,8 @@ const TEXTOS = {
   'paso2.ver_todos': { es: 'Ver todos', en: 'Show all' },
   'paso2.limpiar_filtro': { es: 'Limpiar el filtro', en: 'Clear the filter' },
   'paso2.leyenda': {
-    es: 'Lo que falta se completa en la distribuidora nueva: la app no inventa códigos ni orden.',
-    en: 'What is missing gets filled in at the new distributor: the app makes up neither codes nor track order.',
+    es: 'Conservar el ISRC, el UPC y la fecha original es lo que hace que cada release nuevo se una al que ya está en las tiendas, con sus reproducciones y playlists. Lo que falta pedíselo primero a tu distribuidora actual: la app no inventa códigos ni orden.',
+    en: 'Keeping the ISRC, the UPC and the original date is what makes each new release join the one already in stores, with its plays and playlists. Ask your current distributor for what is missing first: the app makes up neither codes nor track order.',
   },
   'paso2.elegidos': {
     es: 'Elegidos: {n} de {total}, {tracks}',
@@ -486,6 +486,26 @@ const TEXTOS = {
   'paso2.descartados': {
     es: 'Dejé afuera {n} videos que no son lanzamientos, como videoclips, vivos y entrevistas. Sin la descripción auto-generada de YouTube no tienen álbum ni códigos, así que no sirven para una migración.',
     en: 'I left out {n} videos that are not releases, such as music videos, live sets and interviews. Without YouTube\'s auto-generated description they carry no album and no codes, so they are no use for a migration.',
+  },
+  'paso2.codigos_no_pedidos': {
+    es: 'No se buscaron los códigos, así que ISRC y UPC quedan vacíos. Para traerlos, relevá de nuevo con «Buscar códigos ISRC y UPC» marcado.',
+    en: 'Codes were not looked up, so ISRC and UPC are empty. To bring them in, survey again with "Look up ISRC and UPC codes" ticked.',
+  },
+  'paso2.no_esta_en_deezer_titulo': {
+    es: '{artista} no está en Deezer, o está con otro nombre.',
+    en: '{artista} is not on Deezer, or is there under another name.',
+  },
+  'paso2.no_esta_en_deezer_cuerpo': {
+    es: 'Por eso no hay ISRC ni UPC: no es una falla de la app, es que la fuente no los tiene. Pedíselos a tu distribuidora actual antes de aceptar códigos nuevos.',
+    en: 'That is why there is no ISRC or UPC: it is not the app failing, the source does not have them. Ask your current distributor for them before accepting new codes.',
+  },
+  'paso2.deezer_no_respondio': {
+    es: 'Deezer no respondió {n} consultas, aun después de reintentar. Algunos códigos pueden faltar por eso y no porque no existan: relevar de nuevo más tarde puede completarlos.',
+    en: 'Deezer did not answer {n} lookups, even after retrying. Some codes may be missing because of that and not because they do not exist: surveying again later may fill them in.',
+  },
+  'paso2.deezer_no_respondio_uno': {
+    es: 'Deezer no respondió una consulta, aun después de reintentar. Algún código puede faltar por eso y no porque no exista: relevar de nuevo más tarde puede completarlo.',
+    en: 'Deezer did not answer one lookup, even after retrying. A code may be missing because of that and not because it does not exist: surveying again later may fill it in.',
   },
   'paso2.sin_metadata_titulo': {
     es: 'Este canal no trae la metadata del catálogo.',
@@ -545,17 +565,27 @@ const TEXTOS = {
     es: 'FLAC lossless con tu propia cuenta de Tidal. La referencia de YouTube casi siempre falla, porque YouTube la bloquea.',
     en: 'Lossless FLAC with your own Tidal account. The YouTube reference almost always fails, because YouTube blocks it.',
   },
-  'paso3.falta_ffmpeg': {
-    es: 'Falta <strong>ffmpeg</strong> en esta computadora. Se instala una sola vez, abriendo PowerShell y pegando <code>winget install --id Gyan.FFmpeg -e</code>. Después cerrá y volvé a abrir la app.',
-    en: '<strong>ffmpeg</strong> is missing on this computer. You install it once, by opening PowerShell and pasting <code>winget install --id Gyan.FFmpeg -e</code>. Then close and reopen the app.',
+  // Una instrucción por sistema: `winget` en una Mac es una instrucción que no
+  // se puede seguir.
+  'paso3.falta_ffmpeg_windows': {
+    es: 'Falta <strong>ffmpeg</strong>, el programa que arma los archivos de audio. Se instala una sola vez: abrí la Terminal de Windows y pegá <code>winget install --id Gyan.FFmpeg -e</code>. Después cerrá y volvé a abrir la app.',
+    en: '<strong>ffmpeg</strong>, the program that puts the audio files together, is missing. You install it once: open Windows Terminal and paste <code>winget install --id Gyan.FFmpeg -e</code>. Then close and reopen the app.',
+  },
+  'paso3.falta_ffmpeg_mac': {
+    es: 'Falta <strong>ffmpeg</strong>, el programa que arma los archivos de audio. Se instala una sola vez con Homebrew: abrí la Terminal y pegá <code>brew install ffmpeg</code>. Después cerrá y volvé a abrir la app.',
+    en: '<strong>ffmpeg</strong>, the program that puts the audio files together, is missing. You install it once with Homebrew: open Terminal and paste <code>brew install ffmpeg</code>. Then close and reopen the app.',
+  },
+  'paso3.falta_ffmpeg_linux': {
+    es: 'Falta <strong>ffmpeg</strong>, el programa que arma los archivos de audio. Instalalo con el gestor de paquetes de tu sistema, por ejemplo <code>sudo apt install ffmpeg</code>, y volvé a abrir la app.',
+    en: '<strong>ffmpeg</strong>, the program that puts the audio files together, is missing. Install it with your system\'s package manager, for example <code>sudo apt install ffmpeg</code>, and reopen the app.',
   },
   'paso3.falta_modulo': {
     es: 'Esta versión de la app no incluye el módulo de audio. Necesitás la versión completa.',
     en: 'This build does not include the audio module. You need the full build.',
   },
   'paso3.falta_generico': {
-    es: 'No disponible en esta computadora. Abrí la app con <code>--diagnostico</code> para ver qué falta.',
-    en: 'Not available on this computer. Open the app with <code>--diagnostico</code> to see what is missing.',
+    es: 'No disponible en esta computadora. El README explica, en «Si algo no anda», cómo sacar el diagnóstico que dice qué falta.',
+    en: 'Not available on this computer. The README explains, under "If something does not work", how to get the diagnostic report that says what is missing.',
   },
   'paso3.resumen_zip': {
     es: 'Se va a generar un ZIP con una carpeta por producto.',
@@ -563,12 +593,16 @@ const TEXTOS = {
   },
   'paso3.generar': { es: 'Generar paquete', en: 'Build package' },
   'paso3.sin_seleccion': { es: 'No hay productos elegidos.', en: 'No releases picked.' },
+  'paso3.cancelado': {
+    es: 'Cancelaste el armado del paquete. Lo que elegiste sigue como estaba.',
+    en: 'You cancelled building the package. What you chose is still as it was.',
+  },
 
   /* ---------------------------------------------------------- Tidal */
   'tidal.conectada_titulo': { es: 'Cuenta de Tidal conectada.', en: 'Tidal account connected.' },
   'tidal.conectada_detalle': {
-    es: 'El audio va a bajar en FLAC lossless, apto para entrega.',
-    en: 'Audio will download as lossless FLAC, fit for delivery.',
+    es: 'El audio va a bajar en FLAC lossless: la copia sin pérdida que sirve Tidal. Sirve para entregar cuando no tenés el archivo original, pero no siempre es el máster de estudio; si lo tenés, entregá ese.',
+    en: 'Audio will download as lossless FLAC: the lossless copy Tidal streams. It works for delivery when you do not have the original file, but it is not always the studio master; if you have that, deliver it.',
   },
   'tidal.desconectar': { es: 'Desconectar', en: 'Disconnect' },
   'tidal.conecta_titulo': {
@@ -583,8 +617,8 @@ const TEXTOS = {
     en: 'Connect Tidal to be able to download audio.',
   },
   'tidal.sin_cuenta_detalle': {
-    es: 'Sin cuenta conectada sólo se puede intentar la referencia de YouTube, y hoy falla en la mayoría de los casos. YouTube pide un token de origen que sólo se obtiene desde un navegador con sesión, y buena parte del audio de música está protegido con DRM. Cuando falla, el reporte te dice el motivo track por track.',
-    en: 'With no account connected the only option is the YouTube reference, and today it fails most of the time. YouTube asks for an origin token that can only be obtained from a signed-in browser, and much of the music audio is DRM protected. When it fails, the report tells you why, track by track.',
+    es: 'Sin cuenta conectada sólo se puede intentar la referencia de YouTube, y hoy falla en la mayoría de los casos: YouTube sólo le entrega el audio a un navegador con la sesión iniciada, y buena parte de la música está protegida contra copia. Cuando falla, el reporte te dice el motivo track por track.',
+    en: 'With no account connected the only option is the YouTube reference, and today it fails most of the time: YouTube only hands the audio to a browser with a signed-in session, and much of the music is copy protected. When it fails, the report tells you why, track by track.',
   },
   'tidal.conectar': { es: 'Conectar mi cuenta de Tidal', en: 'Connect my Tidal account' },
   'tidal.password': {
@@ -621,12 +655,8 @@ const TEXTOS = {
   /* ---------------------------------------------------------- paso 4 */
   'paso4.armando': { es: 'Armando el paquete', en: 'Building the package' },
   'paso4.armando_detalle': {
-    es: 'Podés dejar la ventana abierta. Te avisamos cuando esté.',
-    en: 'You can leave the window open. We will tell you when it is ready.',
-  },
-  'paso3.cancelado': {
-    es: 'Cancelaste el armado del paquete. Lo que elegiste sigue como estaba.',
-    en: 'You cancelled building the package. What you chose is still as it was.',
+    es: 'Tarda según cuántos tracks elegiste y qué pediste. Podés seguir en otra cosa con la ventana abierta: el avance queda acá.',
+    en: 'It takes as long as the tracks you picked and what you asked for. You can do something else with the window open: the progress stays here.',
   },
   'paso4.error_titulo': { es: 'No se pudo generar', en: 'Could not build it' },
   'paso4.listo': { es: 'Tu paquete está listo', en: 'Your package is ready' },
@@ -637,6 +667,23 @@ const TEXTOS = {
   'paso4.zip_disponible': {
     es: 'El ZIP queda disponible mientras la app esté abierta.',
     en: 'The ZIP stays available while the app is open.',
+  },
+  'paso4.que_sigue': { es: 'Qué sigue', en: 'What comes next' },
+  'paso4.sigue_completar': {
+    es: 'Descomprimí el ZIP y abrí la hoja de ingesta en Excel. Lo que dice <code>&lt;&lt;COMPLETAR&gt;&gt;</code> hay que llenarlo antes de subir: es lo que no sale de ninguna fuente pública.',
+    en: 'Unzip it and open the ingestion sheet in Excel. Whatever says <code>&lt;&lt;COMPLETAR&gt;&gt;</code> has to be filled in before uploading: it is what no public source has.',
+  },
+  'paso4.sigue_pedir': {
+    es: 'Pedile a tu distribuidora actual lo que falte: los ISRC y UPC que no aparecieron, las fechas originales, los másters en WAV o FLAC y el arte original.',
+    en: 'Ask your current distributor for whatever is missing: the ISRCs and UPCs that did not turn up, the original dates, the masters as WAV or FLAC, and the original artwork.',
+  },
+  'paso4.sigue_cargar': {
+    es: 'Cargá el catálogo en la distribuidora nueva con los mismos ISRC, UPC y fecha original. Es lo que une cada release al que ya está en las tiendas.',
+    en: 'Load the catalog into the new distributor with the same ISRCs, UPCs and original dates. That is what joins each release to the one already in stores.',
+  },
+  'paso4.sigue_baja': {
+    es: 'Hacé la baja en la distribuidora vieja recién cuando el catálogo nuevo esté en vivo en las tiendas. Si la bajás antes, los temas pueden quedar afuera mientras tanto.',
+    en: 'Take the catalog down at the old distributor only once the new one is live in stores. If you take it down first, the songs can be missing in the meantime.',
   },
   'paso4.otros_productos': { es: 'Elegir otros productos', en: 'Pick other releases' },
   'paso4.descargar': { es: 'Descargar el paquete ({peso})', en: 'Download the package ({peso})' },
