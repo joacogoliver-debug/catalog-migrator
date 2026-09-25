@@ -61,6 +61,13 @@ What changed in every published version. The numbers follow
   quota.
 
 ### Fixed
+- **Closing the app in the browser really closes it.** Closing the tab told
+  nobody and the binary has no console, so a server kept running forever, one
+  more per double click. Now the page sends a heartbeat every 15 seconds and
+  the app ends on its own about three minutes after the last one, unless a job
+  is running, and without closing because the machine was suspended.
+- **Closing the window in the middle of a job asks first**, instead of losing
+  the survey or the package without warning.
 - **The package could not be downloaded from the app.** The "Download" button
   was a direct link to the API, and a link cannot send the header with the
   session token, so the server turned it down. It had been like that since the

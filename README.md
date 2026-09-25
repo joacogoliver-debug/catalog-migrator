@@ -411,7 +411,11 @@ En Windows podés usar `scripts/abrir_app.bat`; en macOS y Linux,
 La app abre en **su propia ventana**, no en el navegador: usa `pywebview` sobre
 el motor web del sistema (WebView2 en Windows, WebKit en macOS). Si por algo no
 puede, cae al motor del sistema en modo aplicación —ventana propia, sin barra de
-direcciones ni pestañas—, y si tampoco, al navegador. `--diagnostico` escribe un
+direcciones ni pestañas—, y si tampoco, al navegador. En esos dos casos cerrar
+la ventana no avisa nada, así que la página late cada 15 segundos y la app
+termina sola unos tres minutos después del último latido, salvo que haya un
+trabajo corriendo. En la ventana nativa, cerrar con un trabajo en curso pide
+confirmación. `--diagnostico` escribe un
 reporte de qué puede hacer la app en esa máquina, útil porque el ejecutable se
 compila sin consola.
 
@@ -588,6 +592,7 @@ pytest -q --cov
 | `tests/test_app.py` | Backend, trabajos, HTTP, y las tres defensas |
 | `tests/test_capturas.py` | Que el material de ejemplo de las capturas diga lo mismo que la app |
 | `tests/test_entrada_hostil.py` | Que nada de lo que entra de afuera se ejecute: yt-dlp, fórmulas, portadas |
+| `tests/test_cierre.py` | Cerrar la app de verdad: el vigía de latidos con un reloj de mentira (suspensión incluida) y la confirmación de la ventana nativa |
 | `tests/test_readme.py` | El README como entrada: que cada enlace de descarga exista en el release, lo de uso antes de lo técnico, sin cifras sin medir |
 | `tests/test_guia_migracion.py` | Lo que el LEEME le dice a quien migra: conservar los códigos, la baja al final y que la copia de Tidal no es el máster |
 | `tests/test_contraste.py` | El contraste de los tokens, leído de `colors.css` en los dos temas: texto a 4,5, controles y botón principal a 3 |

@@ -17,6 +17,7 @@ import shutil
 import subprocess
 import sys
 import threading
+import time
 
 # `app/` consume el paquete `migrador`, que vive en `src/`. Los dos caminos
 # tienen que andar: corriendo desde el repositorio sin instalar nada, y adentro
@@ -63,6 +64,84 @@ def permitir_descargas(webview):
     return False
 
 
+# ============================================================
+# Cuándo cerrar
+# ============================================================
+#
+# En el navegador, cerrar la pestaña no le avisa a nadie. La página late cada 15
+# segundos (`/api/latido`), y el launcher cierra el servidor cuando deja de
+# latir. Los números son holgados a propósito: una pestaña en segundo plano
+# puede quedar con sus relojes demorados hasta un minuto, y cerrar la app con
+# alguien adentro es peor que dejarla unos minutos de más.
+
+SILENCIO_MAXIMO = 180.0  # sin latidos durante esto, ya no hay ninguna ventana
+GRACIA_SIN_VENTANA = 300.0  # si la ventana nunca abrió, se espera esto y se cierra
+PASO_VIGIA = 5.0
+# Si entre dos vueltas pasó mucho más que PASO_VIGIA, la máquina estuvo
+# suspendida: los relojes de la página también, así que el silencio no cuenta.
+SALTO_DE_RELOJ = 30.0
+
+
+class Vigia:
+    """Decide cuándo no queda ninguna ventana abierta.
+
+    Mientras haya un trabajo corriendo no cierra nunca: cerrar a mitad de un
+    relevamiento lo pierde, y el trabajo va a terminar igual.
+    """
+
+    def __init__(self, ahora):
+        self.referencia = ahora
+        self.anterior = ahora
+        self.vio_una_ventana = False
+
+    def hay_que_cerrar(self, ahora, ultimo_latido, trabajando):
+        if ahora - self.anterior > SALTO_DE_RELOJ:
+            self.referencia = ahora
+        self.anterior = ahora
+        # Un latido de antes de que arrancara el vigía también cuenta: la página
+        # carga enseguida, a veces antes de la primera vuelta.
+        if ultimo_latido is not None:
+            self.vio_una_ventana = True
+            self.referencia = max(self.referencia, ultimo_latido)
+        if trabajando:
+            self.referencia = ahora
+            return False
+        limite = SILENCIO_MAXIMO if self.vio_una_ventana else GRACIA_SIN_VENTANA
+        return ahora - self.referencia > limite
+
+
+def esperar_ventanas(hilo, reloj=time.monotonic, dormir=time.sleep):
+    """Espera mientras el servidor corra y alguna ventana siga latiendo."""
+    vigia = Vigia(reloj())
+    while hilo.is_alive():
+        if vigia.hay_que_cerrar(reloj(), backend.ESTADO.ultimo_latido, bool(backend.JOBS.activos())):
+            print(T("lau.sin_ventanas"))
+            return
+        dormir(PASO_VIGIA)
+
+
+def al_cerrar(ventana):
+    """El manejador de `closing` de la ventana nativa.
+
+    Cerrar a mitad de un trabajo lo pierde entero, sin preguntar. Con un trabajo
+    corriendo se pide confirmación; sin trabajo, se cierra como siempre.
+    Devolver False es lo que le dice a pywebview que no cierre.
+    """
+
+    def cerrando():
+        if not backend.JOBS.activos():
+            return True
+        preguntar = getattr(ventana, "create_confirmation_dialog", None)
+        if preguntar is None:
+            return True
+        try:
+            return bool(preguntar(T("lau.cerrar_titulo"), T("lau.cerrar_con_trabajo")))
+        except Exception:  # noqa: BLE001 (si el diálogo no se puede mostrar, se cierra como antes)
+            return True
+
+    return cerrando
+
+
 def _abrir_ventana_pywebview(url):
     """Ventana nativa propia. Es el camino por defecto: la app tiene que sentirse
     un programa, no una pestaña del navegador.
@@ -85,7 +164,10 @@ def _abrir_ventana_pywebview(url):
         # nada. Se prende acá y no en un módulo aparte porque es la única
         # ventana que baja archivos.
         permitir_descargas(webview)
-        webview.create_window(titulo(), url, width=1180, height=860, min_size=(900, 640))
+        ventana = webview.create_window(titulo(), url, width=1180, height=860, min_size=(900, 640))
+        eventos = getattr(ventana, "events", None)
+        if eventos is not None:
+            eventos.closing += al_cerrar(ventana)
         webview.start()
         return True
     except Exception:  # noqa: BLE001 (si la ventana no abre, se cae al navegador)
@@ -318,7 +400,8 @@ def main(argv=None):
             import webbrowser
 
             webbrowser.open(url)
-            hilo.join()
+            print(T("lau.en_navegador"))
+            esperar_ventanas(hilo)
         elif not args.sin_nativa and _abrir_ventana_pywebview(url):
             # La ventana se cerró: la app termina con ella, como cualquier
             # programa de escritorio.
@@ -328,13 +411,13 @@ def main(argv=None):
             # como un programa de escritorio. Usa el motor web que ya está en la
             # máquina, así que no hay nada que empaquetar ni que pueda colgarse.
             print(T("lau.ventana_propia"))
-            hilo.join()
+            esperar_ventanas(hilo)
         else:
             import webbrowser
 
             webbrowser.open(url)
             print(T("lau.en_navegador"))
-            hilo.join()
+            esperar_ventanas(hilo)
     except KeyboardInterrupt:
         print("\n" + T("lau.cerrando"))
     finally:

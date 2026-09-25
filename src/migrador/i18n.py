@@ -609,12 +609,21 @@ TEXTOS = {
         "en": "First run: the app will ask you for the YouTube API key.",
     },
     "lau.ventana_propia": {
-        "es": "Abrí la app en su propia ventana. Cerrala para terminar.",
-        "en": "Opened the app in its own window. Close it to finish.",
+        "es": "Abrí la app en su propia ventana. Al cerrarla, la app termina unos minutos después.",
+        "en": "Opened the app in its own window. Once you close it, the app ends a few minutes later.",
     },
     "lau.en_navegador": {
-        "es": "Abrí la app en tu navegador. Ctrl+C acá para cerrarla.",
-        "en": "Opened the app in your browser. Ctrl+C here to close it.",
+        "es": "Abrí la app en tu navegador. Al cerrar la pestaña, la app termina unos minutos después.",
+        "en": "Opened the app in your browser. Once you close the tab, the app ends a few minutes later.",
+    },
+    "lau.sin_ventanas": {
+        "es": "No queda ninguna ventana de la app abierta: cierro.",
+        "en": "No app window is left open: closing.",
+    },
+    "lau.cerrar_titulo": {"es": "Hay un trabajo en curso", "en": "A job is running"},
+    "lau.cerrar_con_trabajo": {
+        "es": "Si cerrás ahora, se pierde lo que está haciendo. ¿Cerrar igual?",
+        "en": "If you close now, what it is doing is lost. Close anyway?",
     },
     "lau.no_arranco": {
         "es": "No se pudo iniciar la app: {error}",

@@ -9,7 +9,7 @@ import { test } from 'node:test';
 
 import { cargar } from './entorno.mjs';
 
-const { ev, pantalla, poner, nodos, backend } = cargar();
+const { ctx, ev, pantalla, poner, nodos, backend } = cargar();
 
 const CONFIG = { version: '0', terminos_aceptados: true, tiene_clave: true, idiomas: ['es', 'en'], entorno: {} };
 
@@ -267,4 +267,19 @@ test('la instrucción para instalar ffmpeg es la del sistema de quien la lee', (
   assert.ok(para('mac').includes('brew install ffmpeg'));
   assert.ok(!para('mac').includes('winget'));
   assert.ok(para('linux').includes('apt install ffmpeg'));
+});
+
+test('la página late contra /api/latido, con el token, y un latido que falla no rompe nada', async () => {
+  const pedidos = [];
+  ctx.fetch = async (ruta, opciones) => {
+    pedidos.push({ ruta, opciones });
+    return { ok: true, status: 200, json: async () => ({ ok: true }) };
+  };
+  await ev('latir()');
+  assert.equal(pedidos.length, 1);
+  assert.equal(pedidos[0].ruta, '/api/latido');
+  assert.equal(pedidos[0].opciones.method, 'POST');
+  assert.ok('X-App-Token' in pedidos[0].opciones.headers, 'sin token, el servidor lo rechaza');
+  ctx.fetch = async () => { throw new Error('sin red'); };
+  await ev('latir()');
 });

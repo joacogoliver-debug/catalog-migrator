@@ -412,8 +412,11 @@ On Windows you can use `scripts/abrir_app.bat`; on macOS and Linux,
 The app opens in **its own window**, not in the browser: it uses `pywebview` over
 the system web engine (WebView2 on Windows, WebKit on macOS). If for some reason
 it cannot, it falls back to the system engine in app mode —its own window, no
-address bar and no tabs— and if that fails too, to the browser. `--diagnostico`
-writes a report of what the app can do on that machine, useful because the
+address bar and no tabs— and if that fails too, to the browser. In those two
+cases closing the window tells nobody, so the page sends a heartbeat every 15
+seconds and the app ends on its own about three minutes after the last one,
+unless a job is running. In the native window, closing with a job in progress
+asks for confirmation. `--diagnostico` writes a report of what the app can do on that machine, useful because the
 executable is compiled without a console.
 
 ### Building
@@ -591,6 +594,7 @@ pytest -q --cov
 | `tests/test_app.py` | Backend, jobs, HTTP, and the three defenses |
 | `tests/test_capturas.py` | That the screenshots' sample material says the same as the app |
 | `tests/test_entrada_hostil.py` | That nothing coming from outside gets executed: yt-dlp, formulas, covers |
+| `tests/test_cierre.py` | Really closing the app: the heartbeat watcher with a fake clock (suspend included) and the native window's confirmation |
 | `tests/test_readme.py` | The README as a landing page: every download link exists in the release, usage before the technical part, no unmeasured figures |
 | `tests/test_guia_migracion.py` | What the READ ME tells whoever migrates: keep the codes, take down last, and Tidal's copy is not the master |
 | `tests/test_contraste.py` | Token contrast, read from `colors.css` in both themes: text at 4.5, controls and the main button at 3 |

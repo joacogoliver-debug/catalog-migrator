@@ -52,6 +52,9 @@ export function cargar({ idioma = 'es' } = {}) {
     fetch: async () => { throw new Error('sin red'); },
     setTimeout,
     clearTimeout,
+    // Un intervalo de verdad dejaría a `node --test` esperando para siempre.
+    setInterval: () => 0,
+    clearInterval() {},
     AbortController,
     console,
     Intl,

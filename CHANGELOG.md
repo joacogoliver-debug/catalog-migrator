@@ -61,6 +61,14 @@ Lo que cambió en cada versión publicada. Los números siguen
   de cuota.
 
 ### Corregido
+- **Cerrar la app en el navegador la cierra de verdad.** Cerrar la pestaña no
+  le avisaba a nadie y el binario no tiene consola, así que quedaba un servidor
+  corriendo para siempre, uno más por cada doble clic. Ahora la página late cada
+  15 segundos y la app termina sola unos tres minutos después del último latido,
+  salvo que haya un trabajo corriendo, y sin cerrarse por una suspensión de la
+  máquina.
+- **Cerrar la ventana a mitad de un trabajo pregunta antes**, en vez de perder
+  el relevamiento o el paquete sin aviso.
 - **El paquete no se podía bajar desde la app.** El botón «Descargar» era un
   enlace directo a la API, y un enlace no puede mandar la cabecera con el token
   de la sesión, así que el servidor lo rechazaba. Pasaba desde la primera

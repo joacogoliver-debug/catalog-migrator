@@ -399,6 +399,13 @@ def test_sin_token_no_se_toca_la_api(cliente):
     assert cliente.crudo("POST", "/api/validar", {"Content-Type": "application/json"}, b"{}") == 403
 
 
+def test_el_latido_exige_el_token(cliente):
+    """Otra página no puede mantener viva la app latiendo por su cuenta."""
+    assert cliente.crudo("POST", "/api/latido", datos=b"") == 403
+    cod, res = cliente.post("/api/latido", {})
+    assert cod == 200 and res == {"ok": True}
+
+
 def test_con_un_token_equivocado_tampoco(cliente):
     assert cliente.crudo("GET", "/api/config", {"X-App-Token": "no-es-el-token"}) == 403
 

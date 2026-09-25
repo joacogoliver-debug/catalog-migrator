@@ -431,6 +431,10 @@ class Estado:
         self.zips = {}  # job_id -> ruta del zip
         self.tickets = {}  # ticket -> (job_id, vence), ver emitir_ticket
         self.temporales = []
+        # Cuándo latió por última vez alguna ventana (`time.monotonic()`), o None
+        # si todavía no abrió ninguna. Lo mira el launcher para cerrar el
+        # servidor cuando la app corre en el navegador y ya no queda ninguna.
+        self.ultimo_latido: float | None = None
         self.lock = threading.RLock()
 
     def por_ids(self, ids):
@@ -909,6 +913,19 @@ def api_tidal_desconectar():
     return {"ok": True}
 
 
+def api_latido():
+    """La ventana avisa que sigue abierta.
+
+    En la ventana nativa, cerrarla termina el proceso. En el navegador no hay
+    forma de enterarse de que se cerró la pestaña, y el binario no tiene
+    consola: sin esto, cada doble clic dejaba un servidor más corriendo para
+    siempre. Pasa por el token como cualquier ruta, así que otra página no
+    puede mantener viva la app.
+    """
+    ESTADO.ultimo_latido = time.monotonic()
+    return {"ok": True}
+
+
 RUTAS_POST = {
     "/api/idioma": api_idioma,
     "/api/terminos": api_terminos,
@@ -919,6 +936,7 @@ RUTAS_POST = {
     "/api/tidal/confirmar": api_tidal_confirmar,
 }
 RUTAS_POST_SIN_BODY = {
+    "/api/latido": api_latido,
     "/api/tidal/iniciar": api_tidal_iniciar,
     "/api/tidal/desconectar": api_tidal_desconectar,
 }

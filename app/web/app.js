@@ -1702,6 +1702,13 @@ function aplicarIdioma(codigo) {
   aplicarTema(temaGuardado());     // el rótulo del botón de tema también cambia
 }
 
+/* Cada tanto la página avisa que sigue abierta. En el navegador, cerrar la
+   pestaña no le avisa a nadie y el binario no tiene consola: el launcher cierra
+   el servidor cuando ninguna ventana late. Un latido que falla no importa, el
+   siguiente lo compensa. */
+const LATIDO_MS = 15000;
+function latir() { return api('/api/latido', {}, 10000).catch(() => {}); }
+
 (async function iniciar() {
   aplicarTema(temaGuardado());
   // Antes de tener config no se sabe el idioma elegido, así que se arranca con
@@ -1716,6 +1723,8 @@ function aplicarIdioma(codigo) {
     return;
   }
   aplicarIdioma(S.config.idioma);
+  latir();
+  setInterval(latir, LATIDO_MS);
 
   if (S.config.catalogo_cargado) {
     try { adoptarCatalogo(await api('/api/catalogo')); } catch (_) { /* seguimos en el paso 1 */ }
