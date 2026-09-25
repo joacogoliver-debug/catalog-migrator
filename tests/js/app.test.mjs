@@ -175,3 +175,66 @@ test('en un cambio de vista el foco va al título nuevo', () => {
   assert.ok(!titulo.enfocado, 'un redibujado sin cambio de vista no mueve el foco');
   pantalla.querySelector = antes;
 });
+
+function catalogoDeTres() {
+  ev(`S.config = ${JSON.stringify(CONFIG)}; S.vista = null; S.paso = 2;
+      adoptarCatalogo({ catalogo_id: 'c', artista: 'A', diagnostico: {},
+        resumen: { products: 3, tracks: 4, views: 0, with_upc: 2, with_isrc: 3 },
+        filtros: { anio_min: 2020, anio_max: 2022, distribuidoras: [{ name: 'X', count: 2 }, { name: 'Y', count: 1 }] },
+        productos: [
+          { id: 'a', titulo: 'Completo', tipo: 'single', anio: 2020, upc: '1', distribuidora: 'X', tracks: 1, con_isrc: 1, detalle: [] },
+          { id: 'b', titulo: 'Sin UPC', tipo: 'single', anio: 2021, upc: '', distribuidora: 'X', tracks: 1, con_isrc: 1, detalle: [] },
+          { id: 'c', titulo: 'Sin ISRC', tipo: 'ep', anio: 2022, upc: '2', distribuidora: 'Y', tracks: 2, con_isrc: 1, detalle: [] },
+        ] });`);
+}
+
+test('destildar todas las distribuidoras no muestra nada, y lo dice', () => {
+  catalogoDeTres();
+  ev(`S.filtro.modo = 'distribuidora'; S.filtro.distribs = new Set();`);
+  assert.equal(ev('productosFiltrados().length'), 0);
+  assert.equal(ev('motivoVacio().motivo'), 'sin_distrib');
+  ev(`S.filtro.distribs = new Set(['Y'])`);
+  assert.deepEqual([...ev('productosFiltrados().map((p) => p.id)')], ['c']);
+});
+
+test('el filtro de faltantes deja sólo lo que tiene algo que completar', () => {
+  catalogoDeTres();
+  ev(`S.filtro.faltantes = true`);
+  assert.deepEqual([...ev('productosFiltrados().map((p) => p.id)')], ['b', 'c']);
+  // Si el único producto está completo, la tabla vacía es una buena noticia.
+  ev(`S.catalogo.productos = S.catalogo.productos.slice(0, 1)`);
+  assert.equal(ev('productosFiltrados().length'), 0);
+  assert.equal(ev('motivoVacio().motivo'), 'nada_falta');
+  // Con una búsqueda encima, ya no se sabe si falta o no: es el vacío común.
+  ev(`S.filtro.texto = 'zzz'`);
+  assert.equal(ev('motivoVacio().motivo'), 'filtro');
+  ev(`S.filtro.texto = ''; S.filtro.faltantes = false`);
+});
+
+test('lo elegido que el filtro esconde se avisa, porque no entra al paquete', () => {
+  catalogoDeTres();
+  assert.equal(ev('elegidosOcultos()'), 0);
+  ev(`S.filtro.texto = 'Completo'`);
+  assert.equal(ev('elegidosOcultos()'), 2);
+  const html = ev('resumenElegidos(seleccionados(), productosFiltrados())');
+  assert.ok(html.includes('2 elegidos quedan afuera'), html);
+  assert.ok(html.includes('data-accion="limpiar-filtro"'), 'tiene que ofrecer la salida');
+  ev(`ACCIONES['limpiar-filtro']()`);
+  assert.equal(ev('elegidosOcultos()'), 0);
+});
+
+test('cada texto nuevo del paso 2 está en los dos idiomas', () => {
+  for (const idioma of ['es', 'en']) {
+    ev(`ponerIdioma('${idioma}')`);
+    for (const f of ["{ modo: 'distribuidora', distribs: new Set(), faltantes: false, texto: '' }",
+      "{ modo: 'manual', distribs: new Set(), faltantes: true, texto: '' }",
+      "{ modo: 'manual', distribs: new Set(), faltantes: false, texto: 'x' }"]) {
+      ev(`S.filtro = ${f}`);
+      const m = ev('motivoVacio()');
+      for (const texto of [m.titulo, m.detalle]) {
+        assert.ok(!texto.startsWith('paso2.'), `${idioma}: falta el texto de ${texto}`);
+      }
+    }
+  }
+  ev(`ponerIdioma('es')`);
+});

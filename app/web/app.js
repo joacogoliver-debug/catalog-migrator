@@ -26,7 +26,7 @@ const S = {
   catalogo: null,
   seleccion: new Set(),
   expandidos: new Set(),
-  filtro: { modo: 'manual', anioDesde: null, anioHasta: null, distribs: new Set(), texto: '' },
+  filtro: { modo: 'manual', anioDesde: null, anioHasta: null, distribs: new Set(), texto: '', faltantes: false },
   opciones: { planilla: true, portadas: true, audio: false },
   job: null,
   resultado: null,
@@ -293,9 +293,13 @@ function productosFiltrados() {
 
   if (f.modo === 'fechas' && f.anioDesde !== null) {
     ps = ps.filter((p) => p.anio && p.anio >= f.anioDesde && p.anio <= f.anioHasta);
-  } else if (f.modo === 'distribuidora' && f.distribs.size) {
+  } else if (f.modo === 'distribuidora') {
+    // Sin ninguna marcada no se muestra nada. Antes, destildar la última
+    // mostraba todo: el filtro hacía lo contrario de lo que se le pedía.
     ps = ps.filter((p) => f.distribs.has(p.distribuidora));
   }
+
+  if (f.faltantes) ps = ps.filter(leFaltaAlgo);
 
   if (f.texto.trim()) {
     const q = f.texto.trim().toLowerCase();
@@ -307,6 +311,23 @@ function productosFiltrados() {
     );
   }
   return ps;
+}
+
+/** Lo mismo que la tabla marca con un badge: sin UPC, con ISRC faltantes o con
+ *  el orden sin confirmar. En un catálogo de quinientos productos, «¿qué me
+ *  falta?» no se puede contestar scrolleando. */
+function leFaltaAlgo(p) {
+  return !p.upc || p.con_isrc < p.tracks || !!p.orden_estimado;
+}
+
+/** Los elegidos que el filtro esconde. No entran al paquete, porque lo que
+ *  sale es lo elegido de lo que se ve, y eso hay que decirlo. */
+function elegidosOcultos() {
+  if (!S.catalogo) return 0;
+  const visibles = new Set(productosFiltrados().map((p) => p.id));
+  let n = 0;
+  for (const id of S.seleccion) if (!visibles.has(id)) n++;
+  return n;
 }
 
 function seleccionados() {
@@ -689,11 +710,15 @@ function avisoCanal() {
 /** «Elegidos: 3 de 12 productos, 27 tracks», para la barra del paso 2. */
 function resumenElegidos(sel, ps) {
   const tracks = sel.reduce((a, p) => a + p.tracks, 0);
-  return T('paso2.elegidos', {
+  const texto = T('paso2.elegidos', {
     n: `<strong>${num(sel.length)}</strong>`,
     total: cuenta('comun.n_productos', ps.length, `<strong>${num(ps.length)}</strong>`),
     tracks: cuenta('comun.n_tracks', tracks),
   });
+  const ocultos = elegidosOcultos();
+  if (!ocultos) return texto;
+  return `${texto}<span class="ocultos">${esc(T(ocultos === 1 ? 'paso2.ocultos_uno' : 'paso2.ocultos', { n: num(ocultos) }))}
+    <button type="button" class="link-inline" data-accion="limpiar-filtro">${esc(T('paso2.ver_todos'))}</button></span>`;
 }
 
 function vistaPaso2() {
@@ -741,14 +766,18 @@ function vistaPaso2() {
           <input class="input" id="buscar" type="search" placeholder="${esc(T('paso2.buscar_placeholder'))}"
                  aria-label="${esc(T('paso2.aria_buscar'))}" value="${esc(S.filtro.texto)}" />
         </div>
+        <label class="check check-faltantes">
+          <input type="checkbox" id="solo-faltantes" ${S.filtro.faltantes ? 'checked' : ''} />
+          <span class="check-texto">${esc(T('paso2.solo_faltantes'))}</span>
+        </label>
       </div>
 
       ${panelFiltro()}
 
       ${ps.length === 0 ? `
         <div class="vacio">
-          <h4>${esc(T('paso2.vacio_titulo'))}</h4>
-          <p>${esc(T('paso2.vacio_detalle'))}</p>
+          <h4>${esc(motivoVacio().titulo)}</h4>
+          <p>${esc(motivoVacio().detalle)}</p>
           <button class="btn btn-primary" data-accion="limpiar-filtro">${esc(T('paso2.limpiar_filtro'))}</button>
         </div>` : tablaProductos(ps) + `
         <p class="leyenda">${esc(T('paso2.leyenda'))}</p>`}
@@ -765,6 +794,21 @@ function vistaPaso2() {
       </div>
     </div>
   </div>`;
+}
+
+/** Por qué la tabla quedó vacía, para decir eso y no siempre lo de los años.
+ *  Cada `T()` va con su clave entera, así el test de i18n la encuentra. */
+function motivoVacio() {
+  const f = S.filtro;
+  if (f.modo === 'distribuidora' && !f.distribs.size) {
+    return { motivo: 'sin_distrib', titulo: T('paso2.vacio_sin_distrib_titulo'), detalle: T('paso2.vacio_sin_distrib_detalle') };
+  }
+  // Sólo el filtro de faltantes y nada más: es una buena noticia, no un filtro
+  // mal puesto.
+  if (f.faltantes && !f.texto.trim() && f.modo === 'manual') {
+    return { motivo: 'nada_falta', titulo: T('paso2.vacio_nada_falta_titulo'), detalle: T('paso2.vacio_nada_falta_detalle') };
+  }
+  return { motivo: 'filtro', titulo: T('paso2.vacio_titulo'), detalle: T('paso2.vacio_detalle') };
 }
 
 function panelFiltro() {
@@ -1253,6 +1297,7 @@ const ACCIONES = {
   'limpiar-filtro'() {
     S.filtro.texto = '';
     S.filtro.modo = 'manual';
+    S.filtro.faltantes = false;
     render();
   },
 
@@ -1543,6 +1588,12 @@ document.addEventListener('change', (ev) => {
     return;
   }
 
+  if (t.id === 'solo-faltantes') {
+    S.filtro.faltantes = t.checked;
+    seguro(render);
+    return;
+  }
+
   if (t.dataset.opcionCheck) {
     S.opciones[t.dataset.opcionCheck] = t.checked;
     seguro(render);
@@ -1637,6 +1688,7 @@ function adoptarCatalogo(cat) {
     anioHasta: cat.filtros.anio_max,
     distribs: new Set(cat.filtros.distribuidoras.map((d) => d.name)),
     texto: '',
+    faltantes: false,
   };
   S.paso = 2;
 }

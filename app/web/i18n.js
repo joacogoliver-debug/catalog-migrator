@@ -427,9 +427,38 @@ const TEXTOS = {
     en: 'No release matches the filter',
   },
   'paso2.vacio_detalle': {
-    es: 'Probá ampliar el rango de años o limpiar la búsqueda.',
-    en: 'Try widening the year range or clearing the search.',
+    es: 'Probá ampliar el filtro o limpiar la búsqueda.',
+    en: 'Try widening the filter or clearing the search.',
   },
+  'paso2.vacio_sin_distrib_titulo': {
+    es: 'No hay ninguna distribuidora marcada',
+    en: 'No distributor is ticked',
+  },
+  'paso2.vacio_sin_distrib_detalle': {
+    es: 'Marcá al menos una para ver sus productos.',
+    en: 'Tick at least one to see its releases.',
+  },
+  'paso2.vacio_nada_falta_titulo': {
+    es: 'A ningún producto le falta nada',
+    en: 'No release is missing anything',
+  },
+  'paso2.vacio_nada_falta_detalle': {
+    es: 'Todos tienen UPC, ISRC en cada track y el orden confirmado.',
+    en: 'All of them have a UPC, an ISRC on every track and a confirmed order.',
+  },
+  'paso2.solo_faltantes': {
+    es: 'Sólo los que tienen algo que completar',
+    en: 'Only those with something to fill in',
+  },
+  'paso2.ocultos': {
+    es: '{n} elegidos quedan afuera: el filtro los esconde y no entran al paquete.',
+    en: '{n} picked releases are left out: the filter hides them and they will not go into the package.',
+  },
+  'paso2.ocultos_uno': {
+    es: '1 elegido queda afuera: el filtro lo esconde y no entra al paquete.',
+    en: '1 picked release is left out: the filter hides it and it will not go into the package.',
+  },
+  'paso2.ver_todos': { es: 'Ver todos', en: 'Show all' },
   'paso2.limpiar_filtro': { es: 'Limpiar el filtro', en: 'Clear the filter' },
   'paso2.leyenda': {
     es: 'Lo que falta se completa en la distribuidora nueva: la app no inventa códigos ni orden.',

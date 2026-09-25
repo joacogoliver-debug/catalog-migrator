@@ -9,6 +9,9 @@ What changed in every published version. The numbers follow
 ## [Unreleased]
 
 ### Added
+- **"Only those with something to fill in" filter** on the step 2 table: it
+  keeps releases with no UPC, missing ISRCs or an unconfirmed order. In a big
+  catalog, "what am I missing?" used to be answered by scrolling.
 - **The interface has tests**, in `tests/js/`, which load the real `app.js`
   without a browser and check, among other things, that a YouTube title with
   HTML inside reaches the screen escaped. It is the only barrier between what
@@ -65,6 +68,14 @@ What changed in every published version. The numbers follow
   on its own, following the rubric in `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Fixed
+- **The table header and the "Continue" bar stay put.** The header stopped
+  being sticky because of a horizontal scroll on its container, and with five
+  hundred rows "Continue" sat at the very end.
+- **Picked releases the filter hides are pointed out.** They do not go into
+  the package, because what goes out is what is picked among what is shown,
+  and the bar now says so with a "Show all" next to it.
+- **Unticking every distributor no longer shows everything**: it shows
+  nothing, and the notice says none is ticked instead of talking about years.
 - **In the light theme, the main button could not be seen**: it was bone on a
   bone card, 1 to 1. In light it is now graphite, which is what contrasts most.
 - **Field and checkbox borders are visible.** They were 1.3 to 1 against their

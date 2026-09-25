@@ -147,6 +147,7 @@ code, .mono {
 .field-clave { max-width: var(--ancho-forma); }
 .buscador { min-width: 200px; max-width: 320px; }
 .check-suelto { margin-right: var(--e-5); margin-bottom: var(--e-3); }
+.check-faltantes { align-items: center; }
 .nota-al-pie { align-self: flex-end; padding-bottom: 10px; }
 
 /* ---------------------------------------------------------- iconos */
@@ -183,7 +184,8 @@ code, .mono {
 main {
   flex: 1; min-height: 0;
   overflow-y: auto; overflow-x: hidden;
-  padding-block: var(--e-8) var(--e-6);
+  padding-block: var(--pad-main-arriba) var(--e-6);
+  --pad-main-arriba: var(--e-8);
 }
 
 /* ---------------------------------------------------------- cabecera */
@@ -524,14 +526,21 @@ button.step.activo:hover .step-num { background: var(--acento-fuerte); border-co
    y todo lo demás se aparta. Sin fondo propio, sin cebrado: vive sobre la
    tarjeta y se separa con hairlines. */
 
-.tabla-wrap { background: transparent; overflow-x: auto; }
+/* Sin `overflow-x` en ancho normal: un contenedor que scrollea en horizontal
+   pasa a ser el ancestro de referencia del `sticky`, y como no scrollea en
+   vertical, la cabecera fija dejaba de serlo. Lo que scrollea es `main`. En
+   ventana angosta sí scrollea en horizontal, más abajo. */
+.tabla-wrap { background: transparent; }
 table.tabla {
   width: 100%; border-collapse: separate; border-spacing: 0;
   font-size: var(--t-ui);
   counter-reset: fila;
 }
+/* `top` negativo por el padding de `main`: el sticky se pega al borde del
+   área con padding, y con `top: 0` la cabecera quedaba 48 px más abajo del
+   borde, con las filas pasando por arriba de ella. */
 table.tabla thead th {
-  position: sticky; top: 0; z-index: 2;
+  position: sticky; top: calc(-1 * var(--pad-main-arriba)); z-index: 2;
   background: var(--panel);
   text-align: left; padding: var(--e-3);
   height: 40px;
@@ -704,12 +713,24 @@ table.sub td {
 
 /* ---------------------------------------------------------- barra de acción */
 
+/* Pegada al pie del área que scrollea: con quinientas filas, «Continuar» al
+   final de la tabla quedaba veintiséis mil píxeles más abajo. Lleva el fondo
+   del lienzo para que la tabla pase por debajo y no a través. */
 .barra-accion {
+  position: sticky; bottom: 0; z-index: 3;
   margin-top: var(--e-6);
-  padding-top: var(--e-4);
+  padding-block: var(--e-4);
+  background: var(--lienzo);
   border-top: 1px solid var(--borde-suave);
   display: flex; align-items: center; gap: var(--e-4);
   flex-wrap: wrap;
+}
+/* Es una oración, no una etiqueta: sin las versalitas mono del resumen. */
+.barra-accion .ocultos {
+  display: block; margin-top: var(--e-1);
+  font-family: var(--sans); font-size: var(--t-micro);
+  text-transform: none; letter-spacing: normal;
+  color: var(--atencion);
 }
 .barra-accion .resumen strong { color: var(--texto); font-weight: var(--p-regular); }
 .barra-accion .acciones { margin-left: auto; display: flex; gap: var(--e-2); align-items: center; }
@@ -809,6 +830,9 @@ details.acordeon > summary .cuenta.negativo { color: var(--negativo); }
   .header-right { order: 2; margin-left: auto; }
   .barra-accion { gap: var(--e-3); }
   .barra-accion .acciones { margin-left: 0; width: 100%; }
+  /* Acá la tabla no entra y scrollea en horizontal, como cualquier grilla; la
+     cabecera fija se pierde, que es el costo de no romper las columnas. */
+  .tabla-wrap { overflow-x: auto; }
   .card-head.row { display: block; }
   .card-head.row > .btn { margin-top: var(--e-3); }
   .lista-hallazgos { columns: 1; }

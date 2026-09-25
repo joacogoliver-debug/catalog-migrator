@@ -9,6 +9,9 @@ Lo que cambió en cada versión publicada. Los números siguen
 ## [Sin publicar]
 
 ### Agregado
+- **Filtro «Sólo los que tienen algo que completar»** en la tabla del paso 2:
+  deja los productos sin UPC, con ISRC faltantes o con el orden sin confirmar.
+  En un catálogo grande, «¿qué me falta?» se contestaba scrolleando.
 - **La interfaz tiene tests**, en `tests/js/`, que cargan el `app.js` real sin
   navegador y comprueban, entre otras cosas, que un título de YouTube con HTML
   adentro llegue escapado a la pantalla. Es la única barrera entre lo que viene
@@ -64,6 +67,14 @@ Lo que cambió en cada versión publicada. Los números siguen
   `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Corregido
+- **La cabecera de la tabla y la barra de «Continuar» quedan fijas.** La
+  cabecera dejaba de serlo por un scroll horizontal del contenedor, y con
+  quinientas filas «Continuar» quedaba al final de todo.
+- **Lo elegido que el filtro esconde se avisa.** No entra al paquete, porque
+  sale lo elegido de lo que se ve, y ahora la barra lo dice con un «Ver todos»
+  al lado.
+- **Destildar todas las distribuidoras ya no muestra todo**: muestra nada, y el
+  cartel dice que no hay ninguna marcada en vez de hablar de años.
 - **En tema claro, el botón principal no se veía**: era hueso sobre una
   tarjeta hueso, 1 a 1. Ahora en claro es grafito, que es lo que más contrasta.
 - **Los bordes de los campos y de las casillas se ven.** Daban 1,3 a 1 contra
