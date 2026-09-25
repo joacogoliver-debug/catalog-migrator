@@ -9,6 +9,11 @@ Lo que cambió en cada versión publicada. Los números siguen
 ## [Sin publicar]
 
 ### Agregado
+- **La interfaz tiene tests**, en `tests/js/`, que cargan el `app.js` real sin
+  navegador y comprueban, entre otras cosas, que un título de YouTube con HTML
+  adentro llegue escapado a la pantalla. Es la única barrera entre lo que viene
+  de afuera y lo que se dibuja, y hasta ahora no la probaba nada. Corren con
+  `node --test`, y `pytest` los lanza solo si Node está instalado.
 - **Tests contra respuestas reales de la YouTube Data API.** Hasta ahora sólo
   Deezer e iTunes tenían respuestas grabadas; el relevamiento completo, la
   paginación y la lectura de las descripciones no se probaban contra lo que

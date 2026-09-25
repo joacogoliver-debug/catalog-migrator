@@ -506,6 +506,7 @@ pytest -q --cov
 | `tests/test_app.py` | Backend, trabajos, HTTP, y las tres defensas |
 | `tests/test_capturas.py` | Que el material de ejemplo de las capturas diga lo mismo que la app |
 | `tests/test_entrada_hostil.py` | Que nada de lo que entra de afuera se ejecute: yt-dlp, fórmulas, portadas |
+| `tests/test_interfaz_js.py` | Los tests de la interfaz (`tests/js/`, con `node --test`): que lo de afuera llegue escapado, cifras, plurales |
 | `tests/test_rutas.py` | Las rutas del servidor: relevar como trabajo, guardar la clave, Tidal apagado |
 | `tests/test_textos_fijos.py` | Que ningún texto para el usuario se escriba fuera de los catálogos de traducción |
 | `tests/test_concurrencia.py` | Un trabajo por vez de verdad, catálogo identificado y temporales que no quedan |

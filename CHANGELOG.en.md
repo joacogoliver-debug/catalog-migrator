@@ -9,6 +9,12 @@ What changed in every published version. The numbers follow
 ## [Unreleased]
 
 ### Added
+- **The interface has tests**, in `tests/js/`, which load the real `app.js`
+  without a browser and check, among other things, that a YouTube title with
+  HTML inside reaches the screen escaped. It is the only barrier between what
+  comes from outside and what gets drawn, and nothing tested it until now. They
+  run with `node --test`, and `pytest` launches them by itself if Node is
+  installed.
 - **Tests against real YouTube Data API responses.** Until now only Deezer
   and iTunes had recorded responses; the full survey, pagination and
   description parsing were not tested against what YouTube really returns, and
