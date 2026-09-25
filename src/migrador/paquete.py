@@ -26,6 +26,7 @@ varios GB y no entra en RAM.
 """
 
 import os
+import re
 import zipfile
 from datetime import date
 
@@ -355,7 +356,8 @@ def filas_ingesta(productos, artista, incluir_audio=True, incluir_portadas=True)
                     MARCA_COMPLETAR,
                     disco_de(p, t),
                     t.get("track_number") or "",
-                    t.get("isrc") or MARCA_COMPLETAR,
+                    # En mayúsculas y sin guiones, que es como lo pide la ingesta.
+                    re.sub(r"[\s\-]", "", t.get("isrc") or "").upper() or MARCA_COMPLETAR,
                     t.get("track", ""),
                     *artistas_de(t, artista),
                     _mmss(t.get("duration_s")),

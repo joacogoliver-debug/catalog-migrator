@@ -207,15 +207,17 @@ subir, y el UPC en el nombre evita confundir un álbum con su reedición.
 
 ## La validación pre-entrega
 
-Es la parte que más tiempo ahorra. Separa lo que causa rechazo de lo que sólo
-conviene revisar.
+Separa lo que suele causar rechazo de lo que sólo conviene revisar. Es una ayuda
+y no un certificado: no garantiza que la distribuidora acepte la entrega, y el
+informe dice siempre qué no mira.
 
-**Errores** (la distribuidora los rechaza)
+**Errores** (suelen causar rechazo)
 - ISRC con formato inválido
 - UPC con dígito verificador incorrecto o largo equivocado
 - ISRC repetido adentro de un producto, o el mismo ISRC en dos grabaciones
   que no parecen la misma (otro título u otra duración)
 - UPC repetido entre productos
+- UPC de todos ceros
 - Portada no cuadrada, por debajo de 1400×1400, o en CMYK
 - Año de lanzamiento en el futuro o imposible
 - Track sin título o sin duración
@@ -230,6 +232,11 @@ conviene revisar.
 - La misma grabación está en dos productos con el mismo ISRC, como el single
   que después entró en el álbum. No es un error: es lo correcto, y el aviso
   está para que nadie lo «arregle» pidiendo un código nuevo
+- Un ISRC que salió de una coincidencia parecida pero no idéntica
+- La portada está en escala de grises, en colores indexados o con transparencia
+- El paquete trae audio que es sólo de referencia
+- Los campos que ninguna fuente pública trae (género, idioma, explicit, línea C,
+  territorios) y que la distribuidora suele pedir
 
 Los códigos se validan por sus reglas reales: formato ISRC de 12 caracteres y
 dígito verificador GTIN de UPC-A y EAN-13.
@@ -498,6 +505,7 @@ pytest -q --cov
 | `tests/test_app.py` | Backend, trabajos, HTTP, y las tres defensas |
 | `tests/test_capturas.py` | Que el material de ejemplo de las capturas diga lo mismo que la app |
 | `tests/test_entrada_hostil.py` | Que nada de lo que entra de afuera se ejecute: yt-dlp, fórmulas, portadas |
+| `tests/test_validacion_honesta.py` | Que la validación diga lo que mira y lo que no: ruido, códigos, color, avisos que faltaban |
 | `tests/test_hoja_xlsx.py` | La hoja de ingesta en Excel: las mismas filas que el CSV, todo como texto |
 | `tests/test_linea_p.py` | La línea ℗ entera en la P Line, y el titular sin la licencia como sello |
 | `tests/test_creditos.py` | Artistas por tema y créditos (compositor, letrista, productor, editorial) desde YouTube |

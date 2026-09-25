@@ -1006,7 +1006,8 @@ const CODIGOS_HALLAZGO = [
   'anio_futuro', 'anio_absurdo', 'anio_invalido', 'producto_sin_titulo', 'track_sin_titulo',
   'texto_como_formula', 'isrc_compartido', 'isrc_match_dudoso', 'upc_no_verificado',
   'upc_mezclado', 'release_en_dos_distribuidoras',
-  'artista_no_principal',
+  'artista_no_principal', 'portada_modo_color', 'audio_no_apto', 'isrc_confianza_media',
+  'campos_a_completar',
 ];
 
 function tituloHallazgo(codigo, porDefecto) {

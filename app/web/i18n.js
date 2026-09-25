@@ -642,6 +642,10 @@ const TEXTOS = {
 
   /* ---------------------------------------------------------- títulos de hallazgo */
   'hallazgo.upc_falta': { es: 'Sin UPC', en: 'No UPC' },
+  'hallazgo.portada_modo_color': { es: 'Portada en gris, paleta o transparente', en: 'Cover in gray, palette or transparent' },
+  'hallazgo.audio_no_apto': { es: 'Audio sólo de referencia', en: 'Reference-only audio' },
+  'hallazgo.isrc_confianza_media': { es: 'ISRC de confianza media', en: 'Medium-confidence ISRC' },
+  'hallazgo.campos_a_completar': { es: 'Campos a completar', en: 'Fields to fill in' },
   'hallazgo.artista_no_principal': { es: 'Otro artista principal', en: 'Another main artist' },
   'hallazgo.release_en_dos_distribuidoras': { es: 'Release en dos distribuidoras', en: 'Release at two distributors' },
   'hallazgo.upc_no_verificado': { es: 'UPC de otro release, descartado', en: 'Another release\'s UPC, dropped' },

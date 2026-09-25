@@ -49,6 +49,13 @@ What changed in every published version. The numbers follow
   on its own, following the rubric in `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Fixed
+- "(En Vivo)" and "(Live Session)" showed up as YouTube text carried into
+  the title, and they are part of a version's real title. Meanwhile "(Audio)",
+  "(Letra)", "[MV]" or "(Videoclip Oficial)" slipped through, and the
+  release title was not checked.
+- The same UPC written with 12 and with 13 digits was not caught as a duplicate,
+  an all-zeros UPC passed as valid, and the ISRC was exported with whatever
+  dashes or lowercase it came with.
 - **The Label column carried the whole ℗ line, license included**: "Small
   Label under exclusive license to Warner". It is now the holder, without the
   license, and real lines with more than one ℗ no longer give "℗ Distributed
@@ -164,6 +171,17 @@ What changed in every published version. The numbers follow
   connection while the program shut down. The app's server now stays quiet about
   client disconnects, which are not its error, and the script waits for its
   threads before exiting.
+
+### Changed
+- **The validation stops promising what it does not look at.** "No errors:
+  the catalog has nothing that would cause a rejection" read as "ready to
+  load", with unfilled fields, lossy audio and doubtful codes inside. It now
+  says "no format errors", makes clear it is not a guarantee, and the report
+  always lists what it does not check (text and logos on the cover, what your
+  current distributor has on record, each one's rules). It adds warnings for
+  medium-confidence ISRCs, reference-only audio, grayscale, palette or
+  transparent covers, and the fields no public source has. The READ ME and the
+  README say "usually reject" instead of "reject".
 
 ## [1.1.0] — 2026-09-22
 

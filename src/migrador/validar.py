@@ -18,7 +18,7 @@ que la interfaz los agrupa y el test los busca.
 import re
 from datetime import date
 
-from .contratos import Hallazgo, NivelHallazgo, Producto, ResultadoValidacion
+from .contratos import FORMATOS_LOSSLESS, Hallazgo, NivelHallazgo, Producto, ResultadoValidacion
 from .i18n import T
 from .texto import comparable, parece_formula
 
@@ -30,18 +30,32 @@ from .texto import comparable, parece_formula
 #   NNNNN  designación (5 dígitos)
 RE_ISRC = re.compile(r"^[A-Z]{2}[A-Z0-9]{3}\d{7}$")
 
-# Mínimos de portada. 1400x1400 es el piso de Spotify/Apple; 3000x3000 es lo
-# recomendado y lo que piden varias distribuidoras para ingesta.
+# Mínimos de portada. Por debajo de 1400x1400 casi ninguna distribuidora la
+# acepta; 3000x3000 es lo que piden varias para ingesta. El piso exacto varía
+# según la distribuidora y la tienda, y por eso lo de en medio es un aviso.
 COVER_MIN = 1400
 COVER_RECOMENDADO = 3000
 
 # Residuos típicos de títulos de YouTube que no van en una ficha de release.
+#
+# «En vivo» y «Live Session» estaban en la lista y salían como ruido, pero los
+# títulos que llegan acá son Art Tracks, cuya versión es parte del dato: una
+# grabación en vivo se llama «(En Vivo)» en todas las tiendas, y cambiarle el
+# título en la migración hace que deje de coincidir con la original.
 RE_RUIDO_TITULO = re.compile(
     r"\b(official\s*(music\s*)?video|video\s*oficial|lyric\s*video|video\s*lyric|"
-    r"letra\s*oficial|audio\s*oficial|official\s*audio|visualizer|"
-    r"hd|4k|full\s*album|en\s*vivo|live\s*session)\b",
+    r"letra\s*oficial|audio\s*oficial|official\s*audio|official\s*visuali[sz]er|visuali[sz]er|"
+    r"videoclip(\s*oficial)?|video\s*musical|hd|4k|full\s*album)\b",
     re.I,
 )
+# Los que sólo son ruido cuando son todo el paréntesis: «(Audio)» o «(Letra)»
+# lo son, pero «Audio» o «Letra» pueden ser parte de un título.
+RE_RUIDO_PARENTESIS = re.compile(r"[(\[]\s*(audio|letra|lyrics?|m\s*/?\s*v)\s*[)\]]", re.I)
+
+
+def tiene_ruido(titulo):
+    return bool(RE_RUIDO_TITULO.search(titulo or "") or RE_RUIDO_PARENTESIS.search(titulo or ""))
+
 
 DURACION_MAX_SOSPECHOSA = 15 * 60  # 15 min: puede ser un mix o un álbum entero
 ANIO_MIN = 1900
@@ -73,6 +87,13 @@ def _gtin_check_digit(digitos_sin_check):
     return (10 - total % 10) % 10
 
 
+def gtin13(upc):
+    """El UPC como GTIN-13, para comparar: un UPC-A de 12 dígitos y el mismo
+    código como EAN-13 con un cero adelante son el mismo release."""
+    limpio = re.sub(r"\D", "", str(upc or ""))
+    return limpio.zfill(13) if len(limpio) in (12, 13) else limpio
+
+
 def upc_valido(upc):
     """Valida largo y dígito verificador de un UPC-A (12) o EAN-13 (13).
     Devuelve (ok, motivo)."""
@@ -83,6 +104,10 @@ def upc_valido(upc):
         return False, T("val.upc_no_digitos")
     if len(limpio) not in (12, 13):
         return False, T("val.upc_largo", n=len(limpio))
+    # Todo ceros pasa el dígito verificador y no es el código de nada: es lo
+    # que queda en algunos sistemas cuando el campo nunca se cargó.
+    if not limpio.strip("0"):
+        return False, T("val.upc_ceros")
     esperado = _gtin_check_digit(limpio[:-1])
     if int(limpio[-1]) != esperado:
         return False, T("val.upc_check", tiene=limpio[-1], espera=esperado)
@@ -140,6 +165,24 @@ def medir_imagen(data):
     return None
 
 
+def modo_color(data):
+    """El modo de color de una portada: "rgb", "cmyk", "gris", "alfa" o "paleta",
+    o "" si no se reconoce el formato.
+
+    Para PNG se lee el tipo de color del encabezado, que antes se daba por RGB
+    siempre: una portada en escala de grises, con paleta o con transparencia
+    pasaba sin aviso, y varias tiendas piden RGB sin transparencia.
+    """
+    if not data:
+        return ""
+    if data[:8] == b"\x89PNG\r\n\x1a\n" and len(data) >= 26:
+        return {0: "gris", 2: "rgb", 3: "paleta", 4: "alfa", 6: "alfa"}.get(data[25], "")
+    medida = medir_imagen(data)
+    if not medida:
+        return ""
+    return {1: "gris", 3: "rgb", 4: "cmyk"}.get(medida[2], "")
+
+
 def validar_portada(p):
     """Valida la portada de un producto. Devuelve lista de hallazgos."""
     out = []
@@ -190,6 +233,13 @@ def validar_portada(p):
         )
     if comps == 4:
         out.append(_hallazgo("error", "portada_cmyk", T("val.portada_cmyk"), nombre))
+    modo = modo_color(data)
+    if modo in ("gris", "alfa", "paleta"):
+        out.append(
+            _hallazgo(
+                "aviso", "portada_modo_color", T("val.portada_modo_color", modo=T("val.modo_" + modo)), nombre
+            )
+        )
     return out
 
 
@@ -262,6 +312,19 @@ def validar(productos: list[Producto], artista="") -> ResultadoValidacion:
             )
             out.append(_hallazgo("aviso", "release_en_dos_distribuidoras", texto, nombre))
 
+        if tiene_ruido(p.get("title")):
+            out.append(_hallazgo("aviso", "titulo_con_ruido", T("val.titulo_con_ruido"), nombre))
+
+        # El audio de referencia no es apto para entregar. El reporte ya lo decía;
+        # la validación, que es lo que se mira primero, no lo mencionaba.
+        lossy = [
+            t
+            for t in p.get("tracks", [])
+            if t.get("audio_path") and t.get("audio_format") not in FORMATOS_LOSSLESS
+        ]
+        if lossy:
+            out.append(_hallazgo("aviso", "audio_no_apto", T("val.audio_no_apto", n=len(lossy)), nombre))
+
         if p.get("order_unconfirmed"):
             out.append(_hallazgo("aviso", "orden_sin_confirmar", T("val.orden_sin_confirmar"), nombre))
 
@@ -306,10 +369,21 @@ def validar(productos: list[Producto], artista="") -> ResultadoValidacion:
                     _hallazgo("aviso", "texto_como_formula", T("val.texto_como_formula"), nombre, titulo)
                 )
 
-            if RE_RUIDO_TITULO.search(titulo):
+            # Un código que salió de una coincidencia parecida y no idéntica se
+            # exporta igual que uno seguro; la validación tiene que decirlo.
+            if isrc and t.get("match") == "media":
+                texto = T("val.isrc_confianza_media", isrc=isrc)
+                out.append(_hallazgo("aviso", "isrc_confianza_media", texto, nombre, titulo))
+
+            if tiene_ruido(titulo):
                 out.append(_hallazgo("aviso", "titulo_con_ruido", T("val.titulo_con_ruido"), nombre, titulo))
 
     out.extend(_duplicados(productos))
+
+    # Lo que la hoja no puede traer nunca, dicho una vez para todo el catálogo:
+    # sin esto, «sin errores» se leía como «lista para cargar».
+    if productos:
+        out.append(_hallazgo("aviso", "campos_a_completar", T("val.campos_a_completar"), ""))
 
     errores = [h for h in out if h["nivel"] == "error"]
     avisos = [h for h in out if h["nivel"] == "aviso"]
@@ -396,7 +470,7 @@ def _duplicados(productos):
 
     vistos_upc = {}
     for p in productos:
-        upc = re.sub(r"[\s\-]", "", (p.get("upc") or ""))
+        upc = gtin13(p.get("upc"))
         if not upc:
             continue
         if upc in vistos_upc:
@@ -439,9 +513,15 @@ def reporte_validacion(res, artista=""):
 
     if res["apto"]:
         L.append(T("val.rep_sin_errores"))
+        L.append(T("val.rep_sin_errores_2"))
     else:
         L.append(T("val.rep_con_errores_1"))
         L.append(T("val.rep_con_errores_2"))
+    L.append("")
+
+    # Lo que esta validación no mira, dicho siempre: es una ayuda, no un
+    # certificado, y quien la lee tiene que saber dónde termina.
+    L.extend(T("val.rep_no_valida").split("\n"))
     L.append("")
 
     for nivel, titulo in (("error", T("val.rep_h_errores")), ("aviso", T("val.rep_h_avisos"))):

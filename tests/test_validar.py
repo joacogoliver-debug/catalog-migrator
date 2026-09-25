@@ -309,9 +309,11 @@ def test_detecta_texto_de_youtube_arrastrado_al_titulo(titulo):
     assert "titulo_con_ruido" in codigos(V.validar([_prod(tracks=[_track(titulo)])]))
 
 
-@pytest.mark.parametrize("titulo", ["Amanecer", "Vivo"])
+@pytest.mark.parametrize("titulo", ["Amanecer", "Vivo", "Tema (En Vivo)", "Tema (Live Session)", "Audio"])
 def test_un_titulo_limpio_no_dispara_el_aviso(titulo):
-    """«Live Session» es ruido, pero «Vivo» solo no debería serlo."""
+    """La versión es parte del título de un Art Track: «(En Vivo)» y «(Live
+    Session)» salían como ruido, y cambiarlos en la migración hace que la
+    grabación deje de coincidir con la original."""
     assert "titulo_con_ruido" not in codigos(V.validar([_prod(tracks=[_track(titulo)])]))
 
 

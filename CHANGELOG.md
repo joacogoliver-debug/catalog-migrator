@@ -49,6 +49,13 @@ Lo que cambió en cada versión publicada. Los números siguen
   `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Corregido
+- «(En Vivo)» y «(Live Session)» salían como texto de YouTube arrastrado al
+  título, y son parte del título real de una versión. En cambio se escapaban
+  «(Audio)», «(Letra)», «[MV]» o «(Videoclip Oficial)», y el título del
+  producto no se revisaba.
+- El mismo UPC escrito con 12 y con 13 dígitos no se detectaba como duplicado,
+  un UPC de todos ceros pasaba como válido, y el ISRC se exportaba con los
+  guiones o las minúsculas con que hubiera venido.
 - **La columna Label llevaba la línea ℗ entera, licencia incluida**: «Sello
   Chico under exclusive license to Warner». Ahora es el titular, sin la
   licencia, y en las líneas reales con más de un ℗ ya no sale «℗ Distributed
@@ -165,6 +172,17 @@ Lo que cambió en cada versión publicada. Los números siguen
   conexión de Chrome mientras el programa se cerraba. Ahora el servidor de la
   app calla los cortes del cliente, que no son un error suyo, y el script espera
   a sus hilos antes de salir.
+
+### Cambiado
+- **La validación deja de prometer lo que no mira.** «Sin errores: el catálogo
+  no tiene problemas que causen rechazo» se leía como «listo para cargar», con
+  los campos sin completar, el audio lossy y los códigos dudosos adentro. Ahora
+  dice «sin errores de formato», aclara que no es una garantía, y el informe
+  lista siempre lo que no mira (texto y logos en la portada, lo que tiene
+  registrado tu distribuidora actual, las reglas de cada una). Suma avisos para
+  los ISRC de confianza media, el audio que es sólo de referencia, las portadas
+  en gris, con paleta o transparentes, y los campos que ninguna fuente pública
+  trae. El LEEME y el README dicen «suelen rechazar» en vez de «rechazan».
 
 ## [1.1.0] — 2026-09-22
 

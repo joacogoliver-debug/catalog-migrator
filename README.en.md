@@ -209,15 +209,17 @@ reissue.
 
 ## The pre-delivery validation
 
-This is the part that saves the most time. It separates what causes a rejection
-from what merely deserves a look.
+It separates what usually causes a rejection from what merely deserves a look.
+It is an aid and not a certificate: it does not guarantee the distributor will
+accept the delivery, and the report always says what it does not look at.
 
-**Errors** (the distributor rejects these)
+**Errors** (these usually cause a rejection)
 - ISRC with an invalid format
 - UPC with a wrong check digit or the wrong length
 - ISRC repeated within a release, or the same ISRC on two recordings that do
   not look like the same one (another title or another length)
 - UPC repeated across products
+- An all-zeros UPC
 - Cover not square, below 1400×1400, or in CMYK
 - Release year in the future or impossible
 - Track with no title or no duration
@@ -232,6 +234,11 @@ from what merely deserves a look.
 - The same recording is on two releases with the same ISRC, like the single
   that later went on the album. It is not an error: it is the right thing,
   and the warning is there so nobody "fixes" it by asking for a new code
+- An ISRC that came from a close but not identical match
+- The cover is grayscale, indexed color or transparent
+- The package carries reference-only audio
+- The fields no public source has (genre, language, explicit, C line,
+  territories) that distributors usually ask for
 
 Codes are validated by their real rules: 12-character ISRC format and the GTIN
 check digit for UPC-A and EAN-13.
@@ -504,6 +511,7 @@ pytest -q --cov
 | `tests/test_app.py` | Backend, jobs, HTTP, and the three defenses |
 | `tests/test_capturas.py` | That the screenshots' sample material says the same as the app |
 | `tests/test_entrada_hostil.py` | That nothing coming from outside gets executed: yt-dlp, formulas, covers |
+| `tests/test_validacion_honesta.py` | That the validation says what it looks at and what it does not: noise, codes, color, missing warnings |
 | `tests/test_hoja_xlsx.py` | The ingestion sheet in Excel: the same rows as the CSV, everything as text |
 | `tests/test_linea_p.py` | The whole ℗ line as the P Line, and its holder without the license as the label |
 | `tests/test_creditos.py` | Artists per song and credits (composer, lyricist, producer, publisher) from YouTube |

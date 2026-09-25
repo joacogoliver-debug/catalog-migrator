@@ -622,6 +622,40 @@ TEXTOS = {
         "es": "La portada es de {ancho}x{alto}. Entra, pero el recomendado es {rec}x{rec}.",
         "en": "The cover is {ancho}x{alto}. It passes, but {rec}x{rec} is the recommended size.",
     },
+    "val.portada_modo_color": {
+        "es": "La portada está {modo}. Varias tiendas la piden RGB y sin transparencia.",
+        "en": "The cover is {modo}. Several stores ask for it in RGB and without transparency.",
+    },
+    "val.modo_gris": {"es": "en escala de grises", "en": "grayscale"},
+    "val.modo_alfa": {"es": "con transparencia", "en": "transparent"},
+    "val.modo_paleta": {"es": "en colores indexados (paleta)", "en": "indexed color (palette)"},
+    "val.upc_ceros": {"es": "son todos ceros", "en": "it is all zeros"},
+    "val.audio_no_apto": {
+        "es": "{n} audio(s) de este producto son sólo de referencia (lossy): no son aptos para entregar.",
+        "en": "{n} audio file(s) in this release are reference only (lossy): not fit for delivery.",
+    },
+    "val.isrc_confianza_media": {
+        "es": (
+            "El ISRC {isrc} salió de una coincidencia parecida pero no idéntica en Deezer. "
+            "Verificalo contra lo que tiene tu distribuidora actual."
+        ),
+        "en": (
+            "ISRC {isrc} came from a close but not identical match on Deezer. Check it against "
+            "what your current distributor has."
+        ),
+    },
+    "val.campos_a_completar": {
+        "es": (
+            "La hoja de ingesta trae campos que no salen de ninguna fuente pública (género, "
+            "idioma, explicit, línea C, territorios): van marcados <<COMPLETAR>> y la "
+            "distribuidora suele pedirlos."
+        ),
+        "en": (
+            "The ingestion sheet has fields that do not come from any public source (genre, "
+            "language, explicit, C line, territories): they are marked <<COMPLETAR>> and "
+            "distributors usually ask for them."
+        ),
+    },
     "val.portada_cmyk": {
         "es": "La portada parece estar en CMYK y tiene que ser RGB.",
         "en": "The cover looks like CMYK and has to be RGB.",
@@ -792,8 +826,24 @@ TEXTOS = {
     "val.rep_errores": {"es": "Errores", "en": "Errors"},
     "val.rep_avisos": {"es": "Avisos", "en": "Warnings"},
     "val.rep_sin_errores": {
-        "es": "Sin errores: el catálogo no tiene problemas que causen rechazo.",
-        "en": "No errors: the catalog has nothing that would cause a rejection.",
+        "es": "Sin errores de formato: nada de lo que se pudo revisar suele causar rechazo.",
+        "en": "No format errors: nothing that could be checked usually causes a rejection.",
+    },
+    "val.rep_sin_errores_2": {
+        "es": "No es una garantía de aceptación: mirá los avisos y lo que falta completar.",
+        "en": "It does not guarantee acceptance: check the warnings and what is left to fill in.",
+    },
+    "val.rep_no_valida": {
+        "es": (
+            "Lo que esta validación NO mira: si la portada tiene texto, logos, URLs o precio, o\n"
+            "si está agrandada; si los datos coinciden con lo que tu distribuidora actual\n"
+            "tiene registrado; y las reglas propias de cada distribuidora."
+        ),
+        "en": (
+            "What this validation does NOT look at: whether the cover has text, logos, URLs\n"
+            "or a price, or has been upscaled; whether the data matches what your current\n"
+            "distributor has on record; and each distributor's own rules."
+        ),
     },
     "val.rep_con_errores_1": {
         "es": "! Hay errores que las distribuidoras suelen rechazar. Corregirlos",
@@ -951,7 +1001,7 @@ EMPEZÁ POR LA VALIDACIÓN
 ------------------------
 Abrí primero "{validacion}". Separa dos cosas:
 
-  ERRORES  La distribuidora los rechaza (código con formato inválido, dígito
+  ERRORES  Las distribuidoras suelen rechazarlos (código con formato inválido, dígito
            verificador mal, código duplicado, portada chica o no cuadrada).
            Hay que corregirlos antes de entregar.
 
@@ -1063,7 +1113,7 @@ START WITH THE VALIDATION
 -------------------------
 Open "{validacion}" first. It separates two things:
 
-  ERRORS    The distributor rejects these (badly formatted code, wrong check
+  ERRORS    Distributors usually reject these (badly formatted code, wrong check
             digit, duplicate code, cover too small or not square). They have to
             be fixed before delivering.
 
