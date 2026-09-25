@@ -243,6 +243,12 @@ check digit for UPC-A and EAN-13.
 | ISRC and UPC | [Deezer](https://developers.deezer.com/api) | no |
 | Artwork | [iTunes Search API](https://performance-partners.apple.com/search-api) | no |
 
+Deezer finds the recording, and the same recording is on the single, on the
+album and on every compilation. That is why the UPC is only accepted when the
+Deezer album is the same release as the product: otherwise it stays blank and
+the validation says which other release it was found on, instead of delivering
+another release's code.
+
 Artwork is requested at 3000×3000, but **the resolution Apple actually returned
 is the one reported**, not the one requested: Apple serves the largest it has for
 that release and answers with it even when it is smaller. If we claimed 3000×3000
@@ -487,6 +493,7 @@ pytest -q --cov
 | `tests/test_app.py` | Backend, jobs, HTTP, and the three defenses |
 | `tests/test_capturas.py` | That the screenshots' sample material says the same as the app |
 | `tests/test_entrada_hostil.py` | That nothing coming from outside gets executed: yt-dlp, formulas, covers |
+| `tests/test_upc.py` | That each release's UPC is its own, not another release's with the same songs |
 | `tests/test_fechas.py` | The real release date, kept apart from the YouTube upload date |
 | `tests/test_urls_youtube.py` | What can be pasted in the link field, without mistaking one channel for another |
 | `tests/test_versiones.py` | That a live, remix or remaster version does not take another version's code or cover |

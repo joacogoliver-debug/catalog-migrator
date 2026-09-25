@@ -175,6 +175,17 @@ def test_deezer_album_upcs_devuelve_el_upc_real(deezer_grabado):
     assert R.deezer_album_upcs([ALBUM_ID_REAL]) == {ALBUM_ID_REAL: UPC_REAL}
 
 
+def test_del_album_real_sale_lo_que_hace_falta_para_verificar_el_upc(deezer_grabado):
+    """El UPC se acepta sólo si el título del álbum es el del release. Si Deezer
+    renombrara el campo, cada UPC quedaría descartado en silencio."""
+    info = R.deezer_albumes([ALBUM_ID_REAL])[ALBUM_ID_REAL]
+    assert info["upc"] == UPC_REAL
+    assert info["title"] == "Random Access Memories"
+    assert info["nb_tracks"] == 13
+    assert len(info["tracks"]) == 13
+    assert R.album_coincide("Random Access Memories", info["title"])
+
+
 def test_el_upc_real_pasa_el_validador():
     """Cierra el círculo: el código que Deezer devuelve de verdad tiene que ser
     válido según nuestras propias reglas de dígito verificador. Si no lo fuera,

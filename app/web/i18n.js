@@ -642,6 +642,8 @@ const TEXTOS = {
 
   /* ---------------------------------------------------------- títulos de hallazgo */
   'hallazgo.upc_falta': { es: 'Sin UPC', en: 'No UPC' },
+  'hallazgo.upc_no_verificado': { es: 'UPC de otro release, descartado', en: 'Another release\'s UPC, dropped' },
+  'hallazgo.upc_mezclado': { es: 'UPC distintos en un producto', en: 'Different UPCs in one release' },
   'hallazgo.isrc_falta': { es: 'Sin ISRC', en: 'No ISRC' },
   'hallazgo.sello_falta': { es: 'Sin sello', en: 'No label' },
   'hallazgo.anio_falta': { es: 'Sin año de lanzamiento', en: 'No release year' },

@@ -24,6 +24,16 @@ What changed in every published version. The numbers follow
   on its own, following the rubric in `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Fixed
+- **A single could end up with the album's UPC, and with its cover.** Deezer
+  finds the recording, which is on the single, on the album and on every
+  compilation, and the UPC of any of them landed on the release without checking
+  it was the same one. Since the cover is looked up by UPC first, it also
+  downloaded the other one's artwork. The UPC is now accepted only if the Deezer
+  album is this release; otherwise it stays blank and the validation says where
+  it was found. On fifty real songs, the seven that get dropped are all from
+  another release (a single against the album, the standard edition against the
+  anniversary one). It also warns when the tracks of one release bring different
+  UPCs.
 - **The release date in the ingestion sheet was the YouTube upload date.**
   For back catalog that can be decades off: in real data, a 2001 song shows as
   uploaded in 2024, and the migrated release went out with that date. When it

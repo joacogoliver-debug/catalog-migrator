@@ -24,7 +24,7 @@ from difflib import SequenceMatcher
 from .contratos import DescripcionParseada, Relevamiento, Track
 from .i18n import T
 from .productos import SIN_ALBUM, SIN_DATOS
-from .texto import marcas_version, misma_version, sin_decorado
+from .texto import comparable, marcas_version, misma_version, sin_decorado
 from .texto import plegado as _normalize
 
 API = "https://www.googleapis.com/youtube/v3"
@@ -610,19 +610,88 @@ def deezer_match(t, artist):
     return isrc, (best_meta.get("album") or {}).get("id"), conf
 
 
-def deezer_album_upcs(album_ids):
+def deezer_albumes(album_ids):
+    """Los álbumes de Deezer, por id: lo que se usa de cada uno.
+
+    Antes se pedía el álbum entero y se guardaba sólo el UPC. El título es lo
+    que permite saber si ese álbum es el release del que vino el track, que es
+    la condición para que su UPC sirva (ver `album_coincide`).
+    """
     ids = [a for a in album_ids if a]
     if not ids:
         return {}
 
     def work(aid):
-        return aid, (_deezer_json(f"album/{aid}") or {}).get("upc", "") or ""
+        a = _deezer_json(f"album/{aid}") or {}
+        return aid, {
+            "upc": a.get("upc", "") or "",
+            "title": a.get("title", "") or "",
+            "record_type": a.get("record_type", "") or "",
+            "release_date": a.get("release_date", "") or "",
+            "nb_tracks": a.get("nb_tracks") or 0,
+            "tracks": ((a.get("tracks") or {}).get("data")) or [],
+        }
 
     out = {}
     with ThreadPoolExecutor(max_workers=min(CODES_WORKERS, len(ids))) as ex:
-        for aid, upc in ex.map(work, ids):
-            out[aid] = upc
+        for aid, info in ex.map(work, ids):
+            out[aid] = info
     return out
+
+
+def deezer_album_upcs(album_ids):
+    return {aid: info["upc"] for aid, info in deezer_albumes(album_ids).items()}
+
+
+# Lo que Deezer (o iTunes) le agrega al título de un release y que no es parte
+# del nombre: el formato al final, y los invitados.
+_RE_SUFIJO_FORMATO = re.compile(r"\s+-\s+(single|ep)\s*$", re.I)
+_RE_INVITADOS = re.compile(r"\s*[(\[]\s*(?:feat|ft|featuring|with|con)\.?\s[^)\]]*[)\]]", re.I)
+MIN_SIMILITUD_ALBUM = 0.85
+# Una edición del mismo release, que Deezer nombra y YouTube no (ver
+# `album_coincide`). Deluxe, expanded y bonus quedan afuera: son otro release.
+_RE_EDICION = re.compile(
+    r"[(\[][^)\]]*\b(edition|edición|edicion|anniversary|aniversario)\b[^)\]]*[)\]]", re.I
+)
+_RE_OTRO_RELEASE = re.compile(r"deluxe|expanded|bonus|ampliad", re.I)
+
+
+def album_coincide(titulo_producto, titulo_deezer, fecha_producto="", fecha_deezer=""):
+    """Si el álbum de Deezer es el release del que vino el track.
+
+    La búsqueda de Deezer encuentra la GRABACIÓN, y la misma grabación está en
+    el single, en el álbum y en cada compilado. El `album_id` que trae el
+    resultado es el de cualquiera de ellos, y su UPC terminaba en el producto:
+    un single quedaba con el UPC del álbum, y como la portada se busca primero
+    por UPC, también con su tapa. Ahora el UPC se acepta sólo si el título del
+    álbum de Deezer es el del producto, sin mirar el formato ni los invitados y
+    con la misma versión (un «Deluxe» o un «En Vivo» es otro release).
+
+    Hay un caso que el título solo no resuelve. YouTube llama «Random Access
+    Memories» a la edición aniversario, que en Deezer es «Random Access
+    Memories (10th Anniversary Edition)». Con la misma fecha de lanzamiento de
+    los dos lados, un título que sólo le agrega una edición entre paréntesis es
+    el mismo release; con otra fecha, es la reedición de otro, y queda afuera.
+    Un «Deluxe», «Expanded» o con «Bonus» nunca entra por acá: puede salir el
+    mismo día que la estándar y es otro release, con otro UPC.
+    """
+
+    def limpio(t):
+        return _RE_INVITADOS.sub("", _RE_SUFIJO_FORMATO.sub("", t or "")).strip()
+
+    a, b = limpio(titulo_producto), limpio(titulo_deezer)
+    if not (comparable(a) and comparable(b)):
+        return False
+    # La edición se mira primero: su «10th» traería un número que el título de
+    # YouTube no tiene, y ahí lo que decide es la fecha, no los números.
+    extra = b[len(a) :].strip() if b.lower().startswith(a.lower()) else ""
+    if extra and _RE_EDICION.fullmatch(extra) and not _RE_OTRO_RELEASE.search(extra):
+        return bool(fecha_producto) and fecha_producto == fecha_deezer
+    if not misma_version(a, b):
+        return False
+    if comparable(a) == comparable(b):
+        return True
+    return SequenceMatcher(None, comparable(a), comparable(b)).ratio() >= MIN_SIMILITUD_ALBUM
 
 
 # ---- MusicBrainz (respaldo opcional; límite 1 pedido/seg) ----
@@ -668,12 +737,24 @@ def enrich_with_codes(tracks, artist, log=print, use_musicbrainz=False):
                         album_ids.setdefault(album_id, []).append(t)
                     matched += 1
 
-    # 2) UPC por álbum (Deezer, en paralelo).
+    # 2) UPC por álbum (Deezer, en paralelo), sólo si el álbum es el release.
     log(T("rel.deezer_resultado", matched=matched, n=n, albumes=len(album_ids)))
-    upcs = deezer_album_upcs(list(album_ids.keys()))
+    albumes = deezer_albumes(list(album_ids.keys()))
     for aid, ts in album_ids.items():
+        info = albumes.get(aid) or {}
         for t in ts:
-            t["upc"] = upcs.get(aid, "")
+            # El título del release en YouTube: el del álbum, o el del propio
+            # track cuando es un single.
+            propio = t["album"] if t["album"] != SIN_ALBUM else t["track"]
+            coincide = album_coincide(
+                propio, info.get("title", ""), t.get("release_date", ""), info.get("release_date", "")
+            )
+            if info.get("upc") and coincide:
+                t["upc"] = info["upc"]
+            elif info.get("upc"):
+                # Se deja constancia de por qué no hay UPC, para que la
+                # validación lo diga en vez de un «falta» sin explicación.
+                t["upc_descartado"] = info.get("title", "")
 
     # 3) MusicBrainz: respaldo SÓLO para los que quedaron sin ISRC (secuencial, lento).
     if use_musicbrainz:

@@ -109,6 +109,11 @@ class Track(TypedDict):
     desc3: str
     url: str
 
+    # Lo pone `relevar_core.enrich_with_codes` cuando Deezer asoció el track a
+    # un álbum que no es este release: guarda el título de ese álbum, y el UPC
+    # queda en blanco en vez de ser el de otro producto.
+    upc_descartado: NotRequired[str]
+
     # Lo pone `productos.group_products`, estimado por fecha de subida. YouTube
     # no expone el número de track, así que el producto queda marcado con
     # `order_unconfirmed`.

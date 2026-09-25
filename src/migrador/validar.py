@@ -211,7 +211,11 @@ def validar(productos: list[Producto], artista="") -> ResultadoValidacion:
             out.append(_hallazgo("error", "producto_sin_titulo", T("val.producto_sin_titulo"), nombre))
 
         upc = (p.get("upc") or "").strip()
-        if not upc:
+        descartados = sorted({t.get("upc_descartado") or "" for t in p.get("tracks", [])} - {""})
+        if not upc and descartados:
+            texto = T("val.upc_no_verificado", album=", ".join(descartados))
+            out.append(_hallazgo("aviso", "upc_no_verificado", texto, nombre))
+        elif not upc:
             out.append(_hallazgo("aviso", "upc_falta", T("val.upc_falta"), nombre))
         else:
             ok, motivo = upc_valido(upc)
@@ -219,6 +223,14 @@ def validar(productos: list[Producto], artista="") -> ResultadoValidacion:
                 out.append(
                     _hallazgo("error", "upc_invalido", T("val.upc_invalido", upc=upc, motivo=motivo), nombre)
                 )
+
+        # Los tracks de un mismo release tienen que venir del mismo UPC. Si no,
+        # Deezer los encontró en releases distintos y el producto se quedó con
+        # el más votado, que puede no ser éste.
+        upcs_tracks = {re.sub(r"\D", "", t.get("upc") or "") for t in p.get("tracks", [])} - {""}
+        if len(upcs_tracks) > 1:
+            texto = T("val.upc_mezclado", upcs=", ".join(sorted(upcs_tracks)))
+            out.append(_hallazgo("aviso", "upc_mezclado", texto, nombre))
 
         anio = p.get("release_year")
         if not anio:

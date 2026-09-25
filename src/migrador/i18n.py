@@ -630,6 +630,28 @@ TEXTOS = {
         "es": "El producto no tiene título.",
         "en": "The release has no title.",
     },
+    "val.upc_no_verificado": {
+        "es": (
+            "Sin UPC. Deezer tiene estos temas en «{album}», que no parece este release, así que "
+            "no se usó su UPC: habría sido el código de otro producto. Pedile el UPC de éste a tu "
+            "distribuidora actual."
+        ),
+        "en": (
+            'No UPC. Deezer has these songs on "{album}", which does not look like this release, '
+            "so its UPC was not used: it would have been another release's code. Ask your current "
+            "distributor for this one's UPC."
+        ),
+    },
+    "val.upc_mezclado": {
+        "es": (
+            "Los tracks de este producto aparecen en Deezer bajo UPC distintos ({upcs}). "
+            "Verificá cuál es el de este release antes de entregar."
+        ),
+        "en": (
+            "The tracks of this release show up on Deezer under different UPCs ({upcs}). "
+            "Check which one is this release's before delivering."
+        ),
+    },
     "val.upc_falta": {
         "es": "Sin UPC. La distribuidora va a asignar uno nuevo y se pierde la continuidad del release.",
         "en": "No UPC. The distributor will assign a new one and the release loses its continuity.",

@@ -24,6 +24,16 @@ Lo que cambió en cada versión publicada. Los números siguen
   `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Corregido
+- **Un single podía quedar con el UPC del álbum, y con su portada.** Deezer
+  encuentra la grabación, que está en el single, en el álbum y en cada
+  compilado, y el UPC de cualquiera de ellos terminaba en el producto sin mirar
+  si era el mismo release. Como la portada se busca primero por UPC, también
+  bajaba la tapa del otro. Ahora el UPC se acepta sólo si el álbum de Deezer es
+  este release; si no, queda en blanco y la validación dice en cuál lo encontró.
+  Sobre cincuenta temas reales, los siete que se descartan son todos de otro
+  release (un single contra el álbum, la edición estándar contra la
+  aniversario). También se avisa cuando los tracks de un producto traen UPC
+  distintos.
 - **La fecha de lanzamiento de la hoja de ingesta era la fecha de subida a
   YouTube.** Para el catálogo viejo pueden ser décadas de diferencia: en los
   datos reales, un tema de 2001 figura subido en 2024, y el release migrado

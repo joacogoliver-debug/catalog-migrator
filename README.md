@@ -241,6 +241,12 @@ dígito verificador GTIN de UPC-A y EAN-13.
 | ISRC y UPC | [Deezer](https://developers.deezer.com/api) | no |
 | Portadas | [iTunes Search API](https://performance-partners.apple.com/search-api) | no |
 
+Deezer encuentra la grabación, y la misma grabación está en el single, en el
+álbum y en cada compilado. Por eso el UPC se acepta sólo cuando el álbum de
+Deezer es el mismo release que el producto: si no, queda en blanco y la
+validación dice en qué otro release lo encontró, en vez de entregar el código
+de otro producto.
+
 Las portadas se piden en 3000×3000, pero **se reporta la resolución que Apple
 efectivamente devolvió**, no la que pedimos: Apple sirve el máximo que tiene para
 ese release y responde igual aunque sea más chico. Si dijéramos 3000×3000 sobre
@@ -482,6 +488,7 @@ pytest -q --cov
 | `tests/test_app.py` | Backend, trabajos, HTTP, y las tres defensas |
 | `tests/test_capturas.py` | Que el material de ejemplo de las capturas diga lo mismo que la app |
 | `tests/test_entrada_hostil.py` | Que nada de lo que entra de afuera se ejecute: yt-dlp, fórmulas, portadas |
+| `tests/test_upc.py` | Que el UPC de cada producto sea el suyo, y no el de otro release con los mismos temas |
 | `tests/test_fechas.py` | La fecha de lanzamiento real, separada de la de subida a YouTube |
 | `tests/test_urls_youtube.py` | Qué se puede pegar en el campo del link, sin confundir un canal con otro |
 | `tests/test_versiones.py` | Que un vivo, un remix o un remaster no se queden con el código ni la portada de otra versión |
