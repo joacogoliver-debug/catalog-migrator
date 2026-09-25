@@ -676,6 +676,16 @@ TEXTOS = {
         "es": "Dura {minutos} minutos: puede ser un mix o un álbum entero en un solo video, no un track.",
         "en": "It runs {minutos} minutes: it may be a mix or a whole album in one video, not a track.",
     },
+    "val.texto_como_formula": {
+        "es": (
+            "El texto empieza como una fórmula de planilla. En la hoja de ingesta va con un "
+            "apóstrofo adelante para que no se ejecute al abrirla: revisá que el dato sea ése."
+        ),
+        "en": (
+            "The text starts like a spreadsheet formula. In the ingestion sheet it carries a "
+            "leading apostrophe so it does not run when opened: check that the value is right."
+        ),
+    },
     "val.titulo_con_ruido": {
         "es": "El título arrastra texto de YouTube, como (Official Video). Conviene limpiarlo.",
         "en": "The title carries YouTube text, such as (Official Video). Worth cleaning up.",

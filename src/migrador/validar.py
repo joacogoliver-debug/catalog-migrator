@@ -20,6 +20,7 @@ from datetime import date
 
 from .contratos import Hallazgo, NivelHallazgo, Producto, ResultadoValidacion
 from .i18n import T
+from .texto import parece_formula
 
 # ISRC: CC-XXX-YY-NNNNN (12 caracteres sin guiones).
 #   CC     país (2 letras; incluye códigos especiales como QM/QZ que usan varios
@@ -235,6 +236,13 @@ def validar(productos: list[Producto], artista="") -> ResultadoValidacion:
         if not (p.get("label") or "").strip():
             out.append(_hallazgo("aviso", "sello_falta", T("val.sello_falta"), nombre))
 
+        # Lo que viene de YouTube puede traer una fórmula de planilla. En la
+        # hoja de ingesta se le antepone un apóstrofo para que no se ejecute,
+        # y eso cambia el dato: hay que decirlo, no hacerlo en silencio.
+        for campo in (p.get("title"), p.get("label")):
+            if parece_formula(campo):
+                out.append(_hallazgo("aviso", "texto_como_formula", T("val.texto_como_formula"), nombre))
+
         if p.get("order_unconfirmed"):
             out.append(_hallazgo("aviso", "orden_sin_confirmar", T("val.orden_sin_confirmar"), nombre))
 
@@ -263,6 +271,11 @@ def validar(productos: list[Producto], artista="") -> ResultadoValidacion:
                     _hallazgo(
                         "aviso", "duracion_larga", T("val.duracion_larga", minutos=dur // 60), nombre, titulo
                     )
+                )
+
+            if parece_formula(t.get("track")):
+                out.append(
+                    _hallazgo("aviso", "texto_como_formula", T("val.texto_como_formula"), nombre, titulo)
                 )
 
             if RE_RUIDO_TITULO.search(titulo):

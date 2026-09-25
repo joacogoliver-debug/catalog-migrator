@@ -66,6 +66,25 @@ def _http_json(url, retries=3):
     return None
 
 
+# Las portadas se bajan sólo del CDN de imágenes de Apple, y con un tope. La URL
+# la manda iTunes en su respuesta, y la app la seguía sin mirarla: una respuesta
+# adulterada con `file:///...` hacía que urllib leyera un archivo del disco, y
+# ese archivo terminaba adentro del ZIP que se entrega. El tope es por lo mismo:
+# una portada de 3000x3000 pesa unos pocos MB, y nada justifica leer más.
+_HOST_PORTADAS = ".mzstatic.com"
+MAX_BYTES_PORTADA = 25 * 1024 * 1024
+
+
+def url_de_portada_valida(url):
+    """True si la URL es una imagen del CDN de Apple por HTTPS."""
+    try:
+        u = urllib.parse.urlsplit(url or "")
+    except ValueError:
+        return False
+    host = (u.hostname or "").lower()
+    return u.scheme == "https" and host.endswith(_HOST_PORTADAS)
+
+
 def _upscale(url, px):
     """Reescribe la URL del CDN de Apple al tamaño pedido."""
     return re.sub(r"/\d+x\d+bb\.(jpg|png)$", f"/{px}x{px}bb.jpg", url or "")
@@ -140,15 +159,15 @@ def descargar_portada(url100):
 
     for px in RESOLUCIONES:
         url = _upscale(url100, px)
-        if not url:
+        if not url_de_portada_valida(url):
             return None, 0
         try:
             req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
             with urllib.request.urlopen(req, timeout=30) as r:
-                data = r.read()
+                data = r.read(MAX_BYTES_PORTADA + 1)
         except Exception:  # noqa: BLE001 (idem: sin portada es un aviso, no un error)
             continue
-        if not data:
+        if not data or len(data) > MAX_BYTES_PORTADA:
             continue
         medida = medir_imagen(data)
         if medida:

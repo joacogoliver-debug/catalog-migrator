@@ -16,6 +16,22 @@ What changed in every published version. The numbers follow
   on its own, following the rubric in `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Fixed
+- **Three inputs coming from outside could execute something.**
+  - yt-dlp read a `yt-dlp.conf` from the folder the app was opened from, which
+    for the portable executable is usually Downloads, and a planted `--exec`
+    there ran whatever it said. It is now called with `--ignore-config`, in the
+    job's own folder, and never looked up in the working folder.
+  - A title, label or artist starting with `=` went into the spreadsheets as a
+    live formula, and as is into the ingestion sheet. In the spreadsheets it is
+    now plain text. In the sheet it gets a leading apostrophe only when it
+    really looks like a formula, so a release called "+" or "-Intro-" is left
+    alone, and the validation warns every time a value was changed.
+  - The cover was downloaded from whatever URL iTunes sent, unchecked: with
+    `file:///` a file on disk was read and ended up in the ZIP. It is now only
+    downloaded from Apple's CDN, over HTTPS and with a size cap.
+- The full variant ships yt-dlp inside, but the download looked for it as a
+  separate program: on a machine without yt-dlp installed it said it could fetch
+  the reference audio and failed when it tried. It now uses the one it ships.
 - **The package could not be downloaded from the app.** The "Download" button
   was a direct link to the API, and a link cannot send the header with the
   session token, so the server turned it down. It had been like that since the

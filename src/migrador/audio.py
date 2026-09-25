@@ -159,12 +159,9 @@ def verificar_entorno() -> EntornoAudio:
     except ImportError:
         tiene_tiddl = False
 
-    try:
-        import yt_dlp  # noqa: F401
-
-        tiene_ytdlp = True
-    except ImportError:
-        tiene_ytdlp = _existe("yt-dlp")
+    # Con la misma regla con la que después se lo invoca: decir que está y no
+    # poder correrlo era justamente el bug de la variante completa.
+    tiene_ytdlp = comando_ytdlp() is not None
 
     # Antes de decidir qué se puede hacer, dejamos el ffmpeg incluido al alcance.
     preparar_ffmpeg()
@@ -555,6 +552,70 @@ def _falla(motivo, video_id, log, errores):
     return None, None, None
 
 
+# El argumento con el que el ejecutable empaquetado se corre a sí mismo como
+# yt-dlp. Lo atiende `app/launcher.py` antes de levantar nada.
+ARG_YTDLP_EMPAQUETADO = "--yt-dlp"
+
+
+def _buscar_en_path(nombre):
+    """Ruta absoluta de un ejecutable, buscada SÓLO en las carpetas del PATH.
+
+    No se usa `shutil.which` porque en Windows antepone la carpeta de trabajo a
+    la búsqueda, y el ejecutable portable se abre con doble clic desde
+    Descargas: un `yt-dlp.exe` que una página haya dejado ahí se ejecutaría en
+    lugar del de verdad. Las carpetas relativas del PATH se saltean por lo
+    mismo.
+    """
+    exts = [""]
+    if os.name == "nt":
+        exts += [e.lower() for e in os.environ.get("PATHEXT", ".EXE;.BAT;.CMD").split(";") if e]
+    for carpeta in os.environ.get("PATH", "").split(os.pathsep):
+        if not carpeta or not os.path.isabs(carpeta):
+            continue
+        for ext in exts:
+            candidato = os.path.join(carpeta, nombre + ext)
+            if os.path.isfile(candidato) and os.access(candidato, os.X_OK):
+                return candidato
+    return None
+
+
+def comando_ytdlp():
+    """Cómo invocar yt-dlp, como lista, o None si no hay.
+
+    Primero el módulo, que es lo mismo que mira `verificar_entorno()` para
+    decir que yt-dlp está: antes se detectaba el módulo y se llamaba a un
+    programa `yt-dlp` del PATH, así que la variante completa, que trae el
+    módulo adentro, decía que podía bajar audio y fallaba al intentarlo en
+    cualquier máquina sin yt-dlp instalado aparte. Empaquetado, el intérprete
+    es el propio ejecutable, que se atiende a sí mismo con ARG_YTDLP_EMPAQUETADO.
+    """
+    try:
+        import yt_dlp  # noqa: F401
+
+        if getattr(sys, "frozen", False):
+            return [sys.executable, ARG_YTDLP_EMPAQUETADO]
+        return [sys.executable, "-m", "yt_dlp"]
+    except ImportError:
+        pass
+    ruta = _buscar_en_path("yt-dlp")
+    return [ruta] if ruta else None
+
+
+def argumentos_ytdlp(video_id, salida, js=None):
+    """Los argumentos para bajar un audio de referencia, sin el ejecutable.
+
+    `--ignore-config` es seguridad, no preferencia: sin eso yt-dlp lee un
+    `yt-dlp.conf` de la carpeta de trabajo, y ahí un `--exec` plantado corre lo
+    que diga. El `--` antes de la URL deja claro que lo que sigue no es una
+    opción, aunque hoy la URL la armemos nosotros.
+    """
+    args = ["--ignore-config", "-f", "bestaudio", "--no-playlist", "--quiet", "--no-warnings"]
+    if js:
+        # Sin runtime de JS, YouTube deprecó la extracción y las URLs dan 403.
+        args += ["--js-runtimes", js]
+    return args + ["-o", str(salida), "--", f"https://www.youtube.com/watch?v={video_id}"]
+
+
 def bajar_referencia_youtube(video_id, dest_dir, log=print, errores=None):
     """Baja el mejor audio disponible de YouTube, SIN recomprimir.
 
@@ -569,14 +630,14 @@ def bajar_referencia_youtube(video_id, dest_dir, log=print, errores=None):
     from pathlib import Path
 
     salida = Path(dest_dir) / f"yt_{video_id}.%(ext)s"
-    cmd = ["yt-dlp", "-f", "bestaudio", "--no-playlist", "--quiet", "--no-warnings"]
-    js = _runtime_js()
-    if js:
-        # Sin runtime de JS, YouTube deprecó la extracción y las URLs dan 403.
-        cmd += ["--js-runtimes", js]
-    cmd += ["-o", str(salida), f"https://www.youtube.com/watch?v={video_id}"]
+    base = comando_ytdlp()
+    if not base:
+        return _falla(T("aud.sin_ytdlp"), video_id, log, errores)
+    cmd = base + argumentos_ytdlp(video_id, salida, _runtime_js())
     try:
-        subprocess.run(cmd, capture_output=True, text=True, timeout=600, check=True)
+        # `cwd` en la carpeta del trabajo, que creamos nosotros: nada que haya
+        # en la carpeta desde la que se abrió la app puede meterse en la corrida.
+        subprocess.run(cmd, capture_output=True, text=True, timeout=600, check=True, cwd=str(dest_dir))
     except FileNotFoundError:
         return _falla(T("aud.sin_ytdlp"), video_id, log, errores)
     except subprocess.CalledProcessError as e:

@@ -16,6 +16,22 @@ Lo que cambió en cada versión publicada. Los números siguen
   `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Corregido
+- **Tres entradas que venían de afuera podían ejecutar algo.**
+  - yt-dlp leía un `yt-dlp.conf` de la carpeta desde la que se abría la app,
+    que para el ejecutable portable suele ser Descargas, y ahí un `--exec`
+    plantado corría lo que dijera. Ahora se llama con `--ignore-config`, en la
+    carpeta del trabajo, y nunca buscándolo en la carpeta de trabajo.
+  - Un título, un sello o un artista que empezara con `=` entraba como fórmula
+    viva a las planillas, y tal cual a la hoja de ingesta. En las planillas
+    queda ahora como texto. En la hoja lleva un apóstrofo adelante sólo cuando
+    parece una fórmula de verdad, así un disco que se llama «+» o «-Intro-» no
+    se toca, y la validación avisa cada vez que cambió un dato.
+  - La portada se bajaba de la URL que mandara iTunes, sin mirarla: con
+    `file:///` se leía un archivo del disco, que terminaba en el ZIP. Ahora sólo
+    se baja del CDN de Apple, por HTTPS y con un tope de tamaño.
+- La variante completa trae yt-dlp adentro, pero la descarga lo buscaba como
+  programa aparte: en una máquina sin yt-dlp instalado decía que podía bajar el
+  audio de referencia y fallaba al intentarlo. Ahora usa el que trae.
 - **El paquete no se podía bajar desde la app.** El botón «Descargar» era un
   enlace directo a la API, y un enlace no puede mandar la cabecera con el token
   de la sesión, así que el servidor lo rechazaba. Pasaba desde la primera

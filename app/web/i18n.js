@@ -658,6 +658,10 @@ const TEXTOS = {
   'hallazgo.portada_no_cuadrada': { es: 'Portada no cuadrada', en: 'Cover is not square' },
   'hallazgo.portada_cmyk': { es: 'Portada en CMYK', en: 'Cover is CMYK' },
   'hallazgo.portada_ilegible': { es: 'Portada ilegible', en: 'Cover cannot be read' },
+  'hallazgo.texto_como_formula': {
+    es: 'Texto que parece una fórmula',
+    en: 'Text that looks like a formula',
+  },
   'hallazgo.titulo_con_ruido': {
     es: 'Título con texto de YouTube',
     en: 'Title carries YouTube text',

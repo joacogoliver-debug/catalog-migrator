@@ -27,6 +27,10 @@ _RE_PROHIBIDOS_WINDOWS = re.compile(r'[<>:"/\\|?*]')
 _RE_CONTROL = re.compile(r"[\x00-\x1f]")
 _RE_PUNTUACION = re.compile(r"[^\w\s]")
 _RE_ESPACIOS = re.compile(r"\s+")
+# Lo que un programa de planillas ejecuta al abrir un CSV: empieza con uno de
+# esos signos y lleva lo que necesita una llamada o un enlace DDE. Ver
+# `paquete._texto_csv`, que es quien lo usa para escribir.
+_RE_FORMULA = re.compile(r"^[=+\-@\t\r].*[(|!]", re.S)
 
 
 def sin_acentos(s):
@@ -80,3 +84,14 @@ def mmss(segundos):
     """Una duración en `m:ss`, que es como se lee una canción."""
     segundos = int(segundos or 0)
     return f"{segundos // 60}:{segundos % 60:02d}"
+
+
+def parece_formula(v):
+    """True si un texto se ejecutaría como fórmula al abrir el CSV en una planilla.
+
+    No alcanza con mirar el primer carácter: hay discos que se llaman «+», «=» o
+    «-Intro-», y marcarlos como sospechosos obligaría a tocar el nombre de un
+    release por las dudas. Una fórmula que haga algo necesita un paréntesis, una
+    barra o un signo de exclamación.
+    """
+    return isinstance(v, str) and bool(_RE_FORMULA.match(v))

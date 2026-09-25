@@ -251,7 +251,33 @@ def _registrar_falla(e):
         pass
 
 
+def correr_ytdlp_empaquetado(argv):
+    """Atiende al ejecutable cuando el módulo de audio lo llama como yt-dlp.
+
+    Adentro del ejecutable no hay un `yt-dlp` suelto ni un Python aparte: el
+    módulo viene empaquetado, y la única forma de correrlo como proceso propio
+    (con su timeout y su stderr, que es de donde sale el motivo de cada falla)
+    es volver a lanzar este mismo ejecutable con `audio.ARG_YTDLP_EMPAQUETADO`.
+    Devuelve el código de salida, o None si `argv` no es ese pedido.
+    """
+    from migrador.audio import ARG_YTDLP_EMPAQUETADO
+
+    if not argv or argv[0] != ARG_YTDLP_EMPAQUETADO:
+        return None
+    import yt_dlp
+
+    try:
+        yt_dlp.main(argv[1:])
+    except SystemExit as e:
+        return e.code if isinstance(e.code, int) else (0 if e.code is None else 1)
+    return 0
+
+
 def main(argv=None):
+    codigo = correr_ytdlp_empaquetado(sys.argv[1:] if argv is None else argv)
+    if codigo is not None:
+        return codigo
+
     ap = argparse.ArgumentParser(description=titulo())
     ap.add_argument("--puerto", type=int, default=0, help=T("lau.h_puerto"))
     ap.add_argument("--no-abrir", action="store_true", help=T("lau.h_no_abrir"))

