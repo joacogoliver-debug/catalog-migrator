@@ -492,6 +492,31 @@ TEXTOS = {
         "es": "El pedido trae un Content-Length inválido.",
         "en": "The request has an invalid Content-Length.",
     },
+    "srv.productos_encontrados": {"es": "{n} productos encontrados.", "en": "{n} releases found."},
+    "srv.productos_encontrados_uno": {"es": "{n} producto encontrado.", "en": "{n} release found."},
+    "srv.preparando": {"es": "Preparando", "en": "Getting ready"},
+    "job.listo": {"es": "Listo.", "en": "Done."},
+    "job.cancelado": {"es": "Cancelado.", "en": "Cancelled."},
+    "aud.tidal_conectada": {"es": "[tidal] cuenta conectada", "en": "[tidal] account connected"},
+    "aud.tidal_artista": {
+        "es": "[tidal] artista: {artista} (id {id})",
+        "en": "[tidal] artist: {artista} (id {id})",
+    },
+    "aud.por_tidal": {
+        "es": "[audio] {n} tracks por Tidal ({calidad})",
+        "en": "[audio] {n} tracks from Tidal ({calidad})",
+    },
+    "aud.por_youtube": {
+        "es": "[audio] {n} tracks por YouTube (referencia lossy)",
+        "en": "[audio] {n} tracks from YouTube (lossy reference)",
+    },
+    "aud.uno": {
+        "es": "[audio] {fuente} {i}/{n} {titulo} -> {estado}",
+        "en": "[audio] {fuente} {i}/{n} {titulo} -> {estado}",
+    },
+    "aud.error": {"es": "ERROR {motivo}", "en": "ERROR {motivo}"},
+    "aud.sin_audio": {"es": "SIN AUDIO ({motivo})", "en": "NO AUDIO ({motivo})"},
+    "aud.motivo_desconocido": {"es": "motivo desconocido", "en": "unknown reason"},
     "srv.catalogo_cambio": {
         "es": "El catálogo cambió: se relevó otro artista en otra ventana. Recargá la app.",
         "en": "The catalog changed: another artist was surveyed in another window. Reload the app.",

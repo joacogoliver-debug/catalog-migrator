@@ -51,6 +51,15 @@ Lo que cambió en cada versión publicada. Los números siguen
   `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Corregido
+- Con la app en inglés, el progreso de los trabajos y el log del módulo de
+  audio seguían en castellano («Listo.», «Preparando», «productos encontrados»,
+  «tracks por YouTube»). Ahora salen del catálogo, y un test que lee el código
+  impide que vuelva a escribirse texto por fuera.
+- Faltaban plurales: con un solo producto se leía «1 productos elegidos, 1
+  tracks». Los resúmenes de cada paso se reescribieron para que concuerden, y
+  las cifras salen con el formato del idioma.
+- La cabecera escribía el nombre de la app distinto que el resto («Migrador de
+  catálogos» contra «Migrador de Catálogos»).
 - «Un trabajo a la vez» se chequeaba y se registraba por separado, y dos pedidos
   simultáneos (un doble clic lento, dos ventanas) podían pasar los dos. Ahora
   las dos cosas van juntas.

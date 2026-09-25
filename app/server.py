@@ -683,7 +683,8 @@ def api_relevar(body):
             fraccion=job.fraccion,
         )
         ESTADO.guardar_catalogo(prods, artista, diag)
-        job.avance(f"{len(prods)} productos encontrados.", 1.0)
+        texto = "srv.productos_encontrados_uno" if len(prods) == 1 else "srv.productos_encontrados"
+        job.avance(T(texto, n=len(prods)), 1.0)
         return catalogo_json(prods, artista, diag)
 
     return {"job": _lanzar("relevar", trabajo).a_dict()}
@@ -747,7 +748,7 @@ def api_preparar(body):
         # lo que ya sabemos en vez de aflojar la firma de `validar`.
         copias = cast("list[Producto]", [dict(p, tracks=[dict(t) for t in p["tracks"]]) for p in sel])
 
-        job.avance("Preparando", 0.05)
+        job.avance(T("srv.preparando"), 0.05)
         ESTADO.zips_anteriores()
         # La carpeta del audio la crea el trabajo y no `preparar`. Si la creaba
         # `preparar`, el trabajo recién se enteraba de ella cuando volvía, y un

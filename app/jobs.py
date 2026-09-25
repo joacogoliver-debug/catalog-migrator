@@ -147,11 +147,11 @@ class Registry:
                 job.resultado = resultado
                 job.progreso = 1.0
                 if not job.mensaje:
-                    job.mensaje = "Listo."
+                    job.mensaje = T("job.listo")
                 job.terminado_en = time.time()
                 job.estado = "listo"
             except Cancelado:
-                job.mensaje = "Cancelado."
+                job.mensaje = T("job.cancelado")
                 job.terminado_en = time.time()
                 job.estado = "cancelado"
             except Exception as e:  # noqa: BLE001

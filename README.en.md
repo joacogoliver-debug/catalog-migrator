@@ -511,6 +511,7 @@ pytest -q --cov
 | `tests/test_app.py` | Backend, jobs, HTTP, and the three defenses |
 | `tests/test_capturas.py` | That the screenshots' sample material says the same as the app |
 | `tests/test_entrada_hostil.py` | That nothing coming from outside gets executed: yt-dlp, formulas, covers |
+| `tests/test_textos_fijos.py` | That no user-facing text is written outside the translation catalogs |
 | `tests/test_concurrencia.py` | One job at a time for real, an identified catalog and no leftover temp files |
 | `tests/test_progreso.py` | Real progress, a cancel that responds and retries only where they help |
 | `tests/test_ci.py` | The CI's supply chain rules: actions pinned by SHA, permissions, timeouts, auditing |

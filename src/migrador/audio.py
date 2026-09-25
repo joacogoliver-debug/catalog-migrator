@@ -275,7 +275,7 @@ class TidalSession:
             time.sleep(max(int(info.get("interval") or 2), 1))
             estado = self.poll_login(info["device_code"])
             if estado == "ok":
-                log("[tidal] cuenta conectada")
+                log(T("aud.tidal_conectada"))
                 return True
             if estado != "pendiente":
                 log(f"[tidal] {estado}")
@@ -389,7 +389,7 @@ def construir_indice_isrc(session, artista, log=print):
         log(T("aud.artista_no_encontrado", artista=artista))
         return {}, None
 
-    log(f"[tidal] artista: {nombre_tidal} (id {artist_id})")
+    log(T("aud.tidal_artista", artista=nombre_tidal, id=artist_id))
     indice = {}
     items = []
     # Dos cosas que hay que pedir explícitamente:
@@ -707,14 +707,16 @@ def fetch_audio(
         return t
 
     if con_tidal:
-        log(f"[audio] {len(con_tidal)} tracks por Tidal ({calidad})")
+        log(T("aud.por_tidal", n=len(con_tidal), calidad=calidad))
         with ThreadPoolExecutor(max_workers=TIDAL_WORKERS) as ex:
             for i, t in enumerate(ex.map(_tidal, con_tidal), 1):
                 _avanzar()
-                estado = t.get("audio_format") or f"ERROR {t.get('audio_error', '')}"
+                estado = t.get("audio_format") or T("aud.error", motivo=t.get("audio_error", ""))
                 # Sin caracteres fuera de cp1252: la consola de Windows los
                 # rechaza y cortaría la migración con UnicodeEncodeError.
-                log(f"[audio] tidal {i}/{len(con_tidal)} {t['track'][:40]} -> {estado}")
+                log(
+                    T("aud.uno", fuente="tidal", i=i, n=len(con_tidal), titulo=t["track"][:40], estado=estado)
+                )
 
     # --- Nivel B: YouTube como referencia ---
     fallidos = [t for t in con_tidal if not t.get("audio_path")]
@@ -733,12 +735,13 @@ def fetch_audio(
         return t
 
     if pendientes:
-        log(f"[audio] {len(pendientes)} tracks por YouTube (referencia lossy)")
+        log(T("aud.por_youtube", n=len(pendientes)))
         with ThreadPoolExecutor(max_workers=YT_WORKERS) as ex:
             for i, t in enumerate(ex.map(_yt, pendientes), 1):
                 _avanzar()
-                estado = t.get("audio_format") or f"SIN AUDIO ({t.get('audio_error', 'motivo desconocido')})"
-                log(f"[audio] yt {i}/{len(pendientes)} {t['track'][:40]} -> {estado}")
+                motivo = t.get("audio_error") or T("aud.motivo_desconocido")
+                estado = t.get("audio_format") or T("aud.sin_audio", motivo=motivo)
+                log(T("aud.uno", fuente="yt", i=i, n=len(pendientes), titulo=t["track"][:40], estado=estado))
 
     aptos = sum(1 for t in tracks if (t.get("audio_format") or "") in FORMATOS_LOSSLESS)
     ref = sum(

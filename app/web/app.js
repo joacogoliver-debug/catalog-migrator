@@ -94,6 +94,12 @@ function num(n) {
   return (Number(n) || 0).toLocaleString(locale());
 }
 
+/** Una cantidad con su palabra en singular o en plural: «1 producto», «3
+ *  productos». `html`, si viene, es lo que se muestra en lugar del número. */
+function cuenta(clave, n, html) {
+  return T(n === 1 ? clave + '_uno' : clave, { n: html === undefined ? num(n) : html });
+}
+
 function pesoLegible(bytes) {
   const b = Number(bytes) || 0;
   const dec = (v, d) => v.toLocaleString(locale(), {
@@ -394,7 +400,7 @@ function dibujar() {
 }
 
 function mostrarFatal(e) {
-  S.fatal = (e && e.message) || String(e || 'error desconocido');
+  S.fatal = (e && e.message) || String(e || T('fatal.desconocido'));
   try {
     renderStepper();
     pantalla().innerHTML = vistaFatal();
@@ -620,7 +626,7 @@ function avisoCanal() {
   }
 
   if (d.descartados) {
-    partes.push(alerta('', 'info', T('paso2.descartados', {
+    partes.push(alerta('', 'info', T(d.descartados === 1 ? 'paso2.descartados_uno' : 'paso2.descartados', {
       n: `<strong>${num(d.descartados)}</strong>`,
     })));
   }
@@ -645,6 +651,16 @@ function avisoCanal() {
   return partes.join('');
 }
 
+/** «Elegidos: 3 de 12 productos, 27 tracks», para la barra del paso 2. */
+function resumenElegidos(sel, ps) {
+  const tracks = sel.reduce((a, p) => a + p.tracks, 0);
+  return T('paso2.elegidos', {
+    n: `<strong>${num(sel.length)}</strong>`,
+    total: cuenta('comun.n_productos', ps.length, `<strong>${num(ps.length)}</strong>`),
+    tracks: cuenta('comun.n_tracks', tracks),
+  });
+}
+
 function vistaPaso2() {
   const c = S.catalogo;
   const ps = productosFiltrados();
@@ -660,11 +676,11 @@ function vistaPaso2() {
           <p>${esc(T('paso2.bajada'))}</p>
           <p class="lectura">
             ${T('paso2.resumen', {
-              productos: `<span class="n">${num(r.products)}</span>`,
-              tracks: `<span class="n">${num(r.tracks)}</span>`,
+              productos: cuenta('comun.n_productos', r.products, `<span class="n">${num(r.products)}</span>`),
+              tracks: cuenta('comun.n_tracks', r.tracks, `<span class="n">${num(r.tracks)}</span>`),
               views: `<span class="n">${num(r.views)}</span>`,
-              upc: `<span class="n${r.with_upc < r.products ? ' atencion' : ''}">${r.with_upc} / ${r.products}</span>`,
-              isrc: `<span class="n${r.with_isrc < r.tracks ? ' atencion' : ''}">${r.with_isrc} / ${r.tracks}</span>`,
+              upc: cuenta('comun.n_productos', r.products, `<span class="n${r.with_upc < r.products ? ' atencion' : ''}">${num(r.with_upc)} / ${num(r.products)}</span>`),
+              isrc: cuenta('comun.n_tracks', r.tracks, `<span class="n${r.with_isrc < r.tracks ? ' atencion' : ''}">${num(r.with_isrc)} / ${num(r.tracks)}</span>`),
             })}
           </p>
         </div>
@@ -705,11 +721,7 @@ function vistaPaso2() {
 
     <div class="barra-accion">
       <div class="resumen">
-        ${T('paso2.elegidos', {
-          n: `<strong>${sel.length}</strong>`,
-          total: `<strong>${ps.length}</strong>`,
-          tracks: sel.reduce((a, p) => a + p.tracks, 0),
-        })}
+        ${resumenElegidos(sel, ps)}
       </div>
       <div class="acciones">
         <button class="btn btn-secondary" data-accion="sel-todo" ${sel.length < ps.length ? '' : 'hidden'}>${esc(T('paso2.marcar_todos'))}</button>
@@ -844,8 +856,8 @@ function vistaPaso3() {
       <div class="card-head">
         <h1>${esc(T('paso3.titulo'))}</h1>
         <p>${esc(T('paso3.elegidos', {
-          productos: sel.length,
-          tracks: sel.reduce((a, p) => a + p.tracks, 0),
+          productos: cuenta('comun.n_productos', sel.length),
+          tracks: cuenta('comun.n_tracks', sel.reduce((a, p) => a + p.tracks, 0)),
         }))}</p>
       </div>
     </div>
@@ -969,8 +981,8 @@ function vistaPaso4() {
         <p><span class="mono">${esc(r.archivo)}</span>, ${pesoLegible(r.bytes)}.</p>
         <p class="lectura">
           ${T('paso4.resumen', {
-            productos: `<span class="n">${num(r.productos)}</span>`,
-            portadas: `<span class="n${r.portadas < r.productos ? ' atencion' : ''}">${r.portadas} / ${r.productos}</span>`,
+            productos: cuenta('comun.n_productos', r.productos, `<span class="n">${num(r.productos)}</span>`),
+            portadas: `<span class="n${r.portadas < r.productos ? ' atencion' : ''}">${num(r.portadas)} / ${num(r.productos)}</span>`,
             errores: `<span class="n${v.resumen.errores ? ' negativo' : ''}">${esc(T(v.resumen.errores === 1 ? 'comun.n_errores_uno' : 'comun.n_errores', { n: v.resumen.errores }))}</span>`,
             avisos: `<span class="n${v.resumen.avisos ? ' atencion' : ''}">${esc(T(v.resumen.avisos === 1 ? 'comun.n_avisos_uno' : 'comun.n_avisos', { n: v.resumen.avisos }))}</span>`,
           })}
@@ -1024,7 +1036,7 @@ function panelValidacion(v) {
 
   const cabecera = errores.length
     ? alerta('danger', 'error', `<strong>${esc(T(errores.length === 1 ? 'validacion.errores_titulo_uno' : 'validacion.errores_titulo', { n: errores.length }))}</strong>
-        ${T('validacion.errores_detalle', { archivo: `<span class="mono">${esc(T('archivos.validacion'))}</span>` })}`)
+        ${T(v.resumen.errores === 1 ? 'validacion.errores_detalle_uno' : 'validacion.errores_detalle', { archivo: `<span class="mono">${esc(T('archivos.validacion'))}</span>` })}`)
     : alerta('ok', 'ok', `<strong>${esc(T('validacion.sin_errores'))}</strong> ${esc(T(avisos.length === 1 ? 'validacion.hay_avisos_uno' : 'validacion.hay_avisos', { n: avisos.length }))}`);
 
   // Agrupados por tipo de hallazgo: 41 filas de "sin ISRC" no se leen; "Sin
@@ -1543,11 +1555,7 @@ function actualizarResumenSeleccion() {
   const sel = seleccionados();
   const caja = document.querySelector('.barra-accion .resumen');
   if (caja) {
-    caja.innerHTML = T('paso2.elegidos', {
-      n: `<strong>${sel.length}</strong>`,
-      total: `<strong>${ps.length}</strong>`,
-      tracks: sel.reduce((a, p) => a + p.tracks, 0),
-    });
+    caja.innerHTML = resumenElegidos(sel, ps);
   }
   const btn = document.querySelector('[data-accion="ir-3"]');
   if (btn) btn.disabled = sel.length === 0;

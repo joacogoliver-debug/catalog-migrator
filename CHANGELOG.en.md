@@ -51,6 +51,15 @@ What changed in every published version. The numbers follow
   on its own, following the rubric in `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Fixed
+- With the app in English, job progress and the audio module's log were still
+  in Spanish ("Listo.", "Preparando", "productos encontrados", "tracks por
+  YouTube"). They now come from the catalog, and a test that reads the code
+  stops text from being written outside it again.
+- Plurals were missing: with a single release it read "1 releases picked, 1
+  tracks". Each step's summaries were rewritten so they agree, and figures use
+  the language's format.
+- The header spelled the app's name differently from everywhere else ("Catalog
+  migrator" against "Catalog Migrator").
 - "One job at a time" was checked and registered separately, and two
   simultaneous requests (a slow double click, two windows) could both get
   through. Both things now happen together.

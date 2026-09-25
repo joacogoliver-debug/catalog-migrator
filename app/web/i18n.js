@@ -85,7 +85,8 @@ const TEXTOS = {
   },
 
   /* ---------------------------------------------------------- cabecera y pie */
-  'cabecera.titulo': { es: 'Migrador de catálogos', en: 'Catalog migrator' },
+  // El mismo nombre que `app.nombre`: eran dos grafías de la app en la misma pantalla.
+  'cabecera.titulo': { es: 'Migrador de Catálogos', en: 'Catalog Migrator' },
   'cabecera.pasos': { es: 'Pasos', en: 'Steps' },
   'cabecera.idioma': { es: 'Idioma', en: 'Language' },
   'cabecera.tema': { es: 'Cambiar entre claro y oscuro', en: 'Switch between light and dark' },
@@ -114,6 +115,7 @@ const TEXTOS = {
   'comun.cancelado': { es: 'Cancelado.', en: 'Cancelled.' },
   'comun.continuar': { es: 'Continuar', en: 'Continue' },
   'comun.reintentar': { es: 'Reintentar', en: 'Try again' },
+  'fatal.desconocido': { es: 'error desconocido', en: 'unknown error' },
   'comun.n_productos': { es: '{n} productos', en: '{n} releases' },
   'comun.n_productos_uno': { es: '{n} producto', en: '{n} release' },
   'comun.n_tracks': { es: '{n} tracks', en: '{n} tracks' },
@@ -399,8 +401,8 @@ const TEXTOS = {
     en: 'Catalog surveyed. The data comes from YouTube, Deezer and Apple.',
   },
   'paso2.resumen': {
-    es: '{productos} productos y {tracks} tracks, con {views} reproducciones. UPC en {upc} productos, ISRC en {isrc} tracks.',
-    en: '{productos} releases and {tracks} tracks, with {views} plays. UPC on {upc} releases, ISRC on {isrc} tracks.',
+    es: '{productos} y {tracks}, con {views} reproducciones. UPC en {upc}, ISRC en {isrc}.',
+    en: '{productos} and {tracks}, with {views} plays. UPC on {upc}, ISRC on {isrc}.',
   },
   'paso2.otro_artista': { es: 'Relevar otro artista', en: 'Survey another artist' },
   'paso2.productos': { es: 'Productos', en: 'Releases' },
@@ -435,8 +437,8 @@ const TEXTOS = {
     en: 'What is missing gets filled in at the new distributor: the app makes up neither codes nor track order.',
   },
   'paso2.elegidos': {
-    es: '{n} de {total} productos elegidos, {tracks} tracks',
-    en: '{n} of {total} releases picked, {tracks} tracks',
+    es: 'Elegidos: {n} de {total}, {tracks}',
+    en: 'Picked: {n} of {total}, {tracks}',
   },
   'paso2.marcar_todos': { es: 'Marcar todos', en: 'Select all' },
   'paso2.desmarcar_todos': { es: 'Desmarcar todos', en: 'Clear selection' },
@@ -448,6 +450,10 @@ const TEXTOS = {
   'paso2.que_es_topic': {
     es: 'El Topic es el que YouTube genera solo con el catálogo distribuido, y es el único que trae distribuidora, álbum, año y sello.',
     en: 'The Topic channel is the one YouTube builds on its own from the distributed catalog, and the only one carrying distributor, album, year and label.',
+  },
+  'paso2.descartados_uno': {
+    es: 'Dejé afuera {n} video que no es un lanzamiento, como un videoclip, un vivo o una entrevista. Sin la descripción auto-generada de YouTube no tiene álbum ni códigos, así que no sirve para una migración.',
+    en: 'I left out {n} video that is not a release, such as a music video, a live set or an interview. Without YouTube\'s auto-generated description it carries no album and no codes, so it is no use for a migration.',
   },
   'paso2.descartados': {
     es: 'Dejé afuera {n} videos que no son lanzamientos, como videoclips, vivos y entrevistas. Sin la descripción auto-generada de YouTube no tienen álbum ni códigos, así que no sirven para una migración.',
@@ -492,8 +498,8 @@ const TEXTOS = {
   /* ---------------------------------------------------------- paso 3 */
   'paso3.titulo': { es: '¿Qué querés descargar?', en: 'What do you want to download?' },
   'paso3.elegidos': {
-    es: '{productos} productos elegidos, {tracks} tracks.',
-    en: '{productos} releases picked, {tracks} tracks.',
+    es: 'Elegiste {productos}, {tracks}.',
+    en: 'You picked {productos}, {tracks}.',
   },
   'paso3.contenido': { es: 'Contenido del paquete', en: 'What goes in the package' },
   'paso3.planilla': { es: 'Planilla y validación', en: 'Spreadsheet and validation' },
@@ -593,8 +599,8 @@ const TEXTOS = {
   'paso4.error_titulo': { es: 'No se pudo generar', en: 'Could not build it' },
   'paso4.listo': { es: 'Tu paquete está listo', en: 'Your package is ready' },
   'paso4.resumen': {
-    es: '{productos} productos, portadas para {portadas}. La validación encontró {errores} y {avisos}.',
-    en: '{productos} releases, cover art for {portadas}. Validation found {errores} and {avisos}.',
+    es: '{productos}, portadas para {portadas}. La validación encontró {errores} y {avisos}.',
+    en: '{productos}, cover art for {portadas}. Validation found {errores} and {avisos}.',
   },
   'paso4.zip_disponible': {
     es: 'El ZIP queda disponible mientras la app esté abierta.',
@@ -620,6 +626,10 @@ const TEXTOS = {
   'validacion.errores_titulo_uno': {
     es: '{n} error que suele causar rechazo.',
     en: '{n} error that usually causes a rejection.',
+  },
+  'validacion.errores_detalle_uno': {
+    es: 'Conviene corregirlo antes de entregar. El detalle también está en {archivo}, dentro del ZIP.',
+    en: 'Worth fixing before delivering. The detail is also in {archivo}, inside the ZIP.',
   },
   'validacion.errores_detalle': {
     es: 'Conviene corregirlos antes de entregar. El detalle también está en {archivo}, dentro del ZIP.',
