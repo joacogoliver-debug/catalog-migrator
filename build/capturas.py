@@ -38,6 +38,7 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 
@@ -131,7 +132,7 @@ VISTAS = [
         S.config.tidal_conectada = true;""",
     ),
     # --- trabajo y resultado ---
-    # Las lineas del log salen de LOG_PORTADAS, que esta en los dos idiomas.
+    # Las lineas del log salen de log_portadas(), en el idioma de la captura.
     dict(
         nombre="progreso",
         readme=True,
@@ -312,46 +313,41 @@ def catalogo_demo():
 
 
 # Los hallazgos de validación y las líneas del log son texto que la app arma en
-# el momento, así que en las capturas van escritos a mano. Van en los dos
-# idiomas porque el README en inglés muestra estas mismas capturas, y una
-# interfaz en inglés con los mensajes en castellano es peor que no traducir.
+# el momento, así que en las capturas se arman acá. Salen del mismo catálogo que
+# usan `validar.py` y `portadas.py`, con `T()`, y no escritos a mano: escritos a
+# mano ya se habían desviado (el log decía «no esta en Apple Music», sin tilde,
+# cuando la app escribe «no está») y cada cambio de redacción los dejaba viejos
+# sin que nada avisara. Así además salen solos en el idioma de la captura.
 #
 # Los títulos de los discos NO se traducen, y está bien: son los de un artista
 # inventado que canta en castellano, y eso es exactamente lo que ve quien migra
 # un catálogo latino desde una distribuidora que le habla en inglés.
-HALLAZGOS = {
-    "es": [
-        "Sin UPC. La distribuidora va a asignar uno nuevo y se pierde la continuidad del release.",
-        "El ISRC ARCB2240000 no tiene el formato de 12 caracteres (CC-XXX-YY-NNNNN).",
-        "El orden de los tracks es estimado por fecha de subida y no está confirmado.",
-        "Sin sello (℗). Varias distribuidoras lo piden.",
-        "La portada es de 1400x1400. Entra, pero el recomendado es 3000x3000.",
-        "El título arrastra texto de YouTube, como (Official Video). Conviene limpiarlo.",
-    ],
-    "en": [
-        "No UPC. The distributor will assign a new one and the release loses its continuity.",
-        "ISRC ARCB2240000 does not follow the 12-character format (CC-XXX-YY-NNNNN).",
-        "Track order is estimated from the upload date and is not confirmed.",
-        "No label (℗). Several distributors ask for it.",
-        "The cover is 1400x1400. It passes, but the recommended size is 3000x3000.",
-        "The title carries YouTube text, such as (Official Video). Worth cleaning up.",
-    ],
-}
 
-LOG_PORTADAS = {
-    "es": [
-        "Preparando",
-        "Portada 1 de 4, Cartografia del ruido: 3000x3000",
-        "Portada 2 de 4, Ducha fria: 1400x1400, el maximo que tiene Apple",
-        "Portada 3 de 4, Sesiones del jacaranda: no esta en Apple Music",
-    ],
-    "en": [
-        "Getting ready",
-        "Cover 1 of 4, Cartografia del ruido: 3000x3000",
-        "Cover 2 of 4, Ducha fria: 1400x1400, the largest Apple has",
-        "Cover 3 of 4, Sesiones del jacaranda: not on Apple Music",
-    ],
-}
+
+def hallazgos_demo():
+    from migrador.i18n import T
+
+    return [
+        T("val.upc_falta"),
+        T("val.isrc_invalido", isrc="ARCB2240000"),
+        T("val.orden_sin_confirmar"),
+        T("val.sello_falta"),
+        T("val.portada_bajo_recomendado", ancho=1400, alto=1400, rec=3000),
+        T("val.titulo_con_ruido"),
+    ]
+
+
+def log_portadas():
+    from migrador.i18n import T
+
+    def una(i, titulo, estado):
+        return T("por.una", i=i, total=4, titulo=titulo, estado=estado)
+
+    return [
+        una(1, "Cartografía del ruido", "3000x3000"),
+        una(2, "Ducha fría", T("por.maximo_apple", px=1400)),
+        una(3, "Sesiones del jacarandá", T("por.sin_match")),
+    ]
 
 
 def idioma():
@@ -362,7 +358,7 @@ def idioma():
 
 
 def resultado_demo():
-    msg = HALLAZGOS[idioma()]
+    msg = hallazgos_demo()
     sufijo = "migracion" if idioma() == "es" else "migration"
     return {
         "archivo": f"delta-serrano-{sufijo}.zip",
@@ -372,14 +368,17 @@ def resultado_demo():
         "portadas": 3,
         "validacion": {
             "apto": False,
-            "resumen": {"errores": 2, "avisos": 4},
+            # Los niveles son los que emite validar.py: la falta de UPC es un
+            # aviso, no un error, y una captura que dijera otra cosa mostraría
+            # una validación que la app no hace.
+            "resumen": {"errores": 1, "avisos": 5},
             "hallazgos": [
                 # El `codigo` es lo que agrupa los hallazgos y lo que les pone
                 # titulo. Sin el, la app los mete a todos en la misma bolsa y la
                 # captura muestra la validacion agrupando mal: son los mismos
                 # codigos que emite validar.py.
                 {
-                    "nivel": "error",
+                    "nivel": "aviso",
                     "codigo": "upc_falta",
                     "producto": "Sesiones del jacarandá",
                     "track": "",
@@ -554,7 +553,7 @@ def escribir_pagina():
         "catalogo": json.dumps(catalogo_demo(), ensure_ascii=False),
         "resultado": json.dumps(resultado_demo(), ensure_ascii=False),
         "preps": json.dumps(preps, ensure_ascii=False),
-        "log": json.dumps(LOG_PORTADAS[idioma()], ensure_ascii=False),
+        "log": json.dumps(log_portadas(), ensure_ascii=False),
     }
 
     html = html.replace('<script src="app.js"></script>', stub)
@@ -660,19 +659,38 @@ def main():
     print(f"    tamano:    {ANCHO * escala}x{ALTO * escala} (16:9)")
 
     srv = backend.crear_servidor(0)
+    # Que el cierre espere a los hilos de cada pedido. En la app son daemon a
+    # propósito, porque la ventana se cierra y listo; acá el proceso termina
+    # apenas sale la última captura, y un hilo que todavía estaba atendiendo a
+    # Chrome escribía en stderr mientras el intérprete se apagaba. Eso es un
+    # `Fatal Python error: _enter_buffered_busy` y un código de salida distinto
+    # de cero, con las siete capturas bien hechas: la verificación salía roja
+    # por algo que no era un problema de las capturas. Se pide antes del primer
+    # pedido porque `daemon_threads` se lee al crear cada hilo.
+    srv.daemon_threads = False
+    srv.block_on_close = True
     puerto = srv.server_address[1]
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     for _ in range(100):
         try:
             c = http.client.HTTPConnection("127.0.0.1", puerto, timeout=1)
-            c.request("GET", "/_capturas.html")
-            if c.getresponse().status == 200:
-                break
+            try:
+                c.request("GET", "/_capturas.html")
+                if c.getresponse().status == 200:
+                    break
+            finally:
+                # Cerrada, y no abandonada: con keep-alive el hilo que la
+                # atiende se queda esperando el pedido siguiente hasta el
+                # timeout del handler, y ahora el cierre lo espera.
+                c.close()
         except Exception:  # noqa: BLE001 (el servidor todavia no levanto, se reintenta)
             time.sleep(0.05)
-    perfil = os.path.join(RAIZ, "build", "migrador", "perfil-capturas")
-    crudo = os.path.join(RAIZ, "build", "migrador", "render.png")
-    os.makedirs(os.path.dirname(crudo), exist_ok=True)
+    # En un temporal del sistema y no en `build/migrador/`. Una carpeta con ese
+    # nombre al lado del path es justo la trampa que el ciclo 1 sacó de
+    # PyInstaller: Python la toma como paquete de espacio de nombres `migrador`.
+    trabajo = tempfile.mkdtemp(prefix="migrador_capturas_")
+    perfil = os.path.join(trabajo, "perfil")
+    crudo = os.path.join(trabajo, "render.png")
     hechas = 0
     try:
         for tema in temas:
@@ -713,12 +731,9 @@ def main():
     finally:
         srv.shutdown()
         srv.server_close()
-        for f in (PAGINA, crudo):
-            if os.path.exists(f):
-                os.remove(f)
-        shutil.rmtree(perfil, ignore_errors=True)
-
-        shutil.rmtree(perfil, ignore_errors=True)
+        if os.path.exists(PAGINA):
+            os.remove(PAGINA)
+        shutil.rmtree(trabajo, ignore_errors=True)
 
     print(f"\n    {hechas} capturas en {destino}")
     return 0

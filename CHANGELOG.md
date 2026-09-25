@@ -15,6 +15,18 @@ Lo que cambió en cada versión publicada. Los números siguen
   interfaz, seguridad y difusión), cada una por separado, con la rúbrica de
   `docs/BRIEF-AUTOMEJORA.md`.
 
+### Corregido
+- Las capturas del README mostraban la versión 1.0.1 en el pie, y la app ya era
+  la 1.1.0. Se regeneraron en los dos idiomas, y sus textos de ejemplo salen
+  ahora del mismo catálogo que usa la app: escritos a mano se habían desviado
+  (un mensaje sin tildes, y una falta de UPC mostrada como error cuando la
+  validación la da como aviso).
+- `build/capturas.py` terminaba a veces con `Fatal Python error` aunque las
+  capturas salieran bien. Un hilo del servidor seguía escribiendo el corte de
+  conexión de Chrome mientras el programa se cerraba. Ahora el servidor de la
+  app calla los cortes del cliente, que no son un error suyo, y el script espera
+  a sus hilos antes de salir.
+
 ## [1.1.0] — 2026-09-22
 
 ### Cambiado

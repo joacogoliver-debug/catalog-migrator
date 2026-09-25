@@ -472,6 +472,7 @@ pytest -q --cov
 | `tests/test_portadas.py` | Resolución real de las portadas |
 | `tests/test_paquete.py` | Estructura del ZIP y etiquetado de calidad |
 | `tests/test_app.py` | Backend, trabajos, HTTP, y las tres defensas |
+| `tests/test_capturas.py` | Que el material de ejemplo de las capturas diga lo mismo que la app |
 | `tests/test_migrar_core.py` | Contrato del orquestador |
 | `tests/test_errores_youtube.py` | Traducción de los errores de la YouTube Data API |
 | `tests/test_audio_tidal.py` | Contrato con tiddl, se saltea si no está instalado |

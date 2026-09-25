@@ -1062,11 +1062,32 @@ class Handler(BaseHTTPRequestHandler):
             return self._error(T("srv.inesperado", error=e), HTTPStatus.INTERNAL_SERVER_ERROR)
 
 
+class Servidor(ThreadingHTTPServer):
+    """El servidor de la app, que calla cuando el cliente corta.
+
+    Una ventana que se cierra, una pestaña que recarga o un Chrome headless que
+    termina cortan la conexión mientras el handler espera el pedido siguiente, y
+    la lectura revienta con `ConnectionResetError` antes de llegar a `do_GET`,
+    donde ya se atiende. `socketserver` lo imprimía como traceback en stderr,
+    desde el hilo del pedido. En el ejecutable, que no tiene consola, eso va al
+    vacío; pero si coincide con el cierre del intérprete es un `Fatal Python
+    error`, que es lo que hacía fallar `build/capturas.py` una de cada tantas.
+
+    Sólo se callan los cortes de conexión. Cualquier otra excepción sigue
+    saliendo entera, porque ahí sí hay algo nuestro que arreglar.
+    """
+
+    def handle_error(self, request, client_address):
+        if isinstance(sys.exc_info()[1], (ConnectionError, TimeoutError)):
+            return
+        super().handle_error(request, client_address)
+
+
 def crear_servidor(puerto=0):
     """Servidor atado a localhost. puerto=0 deja que el sistema elija uno libre,
     así nunca choca con algo que ya esté escuchando."""
     limpiar_temporales_viejos()
-    return ThreadingHTTPServer(("127.0.0.1", puerto), Handler)
+    return Servidor(("127.0.0.1", puerto), Handler)
 
 
 def main(puerto=0, abrir=True):

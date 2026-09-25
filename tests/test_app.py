@@ -632,6 +632,46 @@ def test_el_cuerpo_se_consume_aunque_la_ruta_no_lo_use(cliente):
         conn.close()
 
 
+@pytest.fixture
+def servidor_suelto():
+    """Un servidor sin arrancar, sólo para llamar a sus métodos."""
+    srv = backend.Servidor(("127.0.0.1", 0), backend.Handler)
+    yield srv
+    srv.server_close()
+
+
+def test_la_app_usa_el_servidor_que_calla_los_cortes():
+    srv = backend.crear_servidor(0)
+    try:
+        assert isinstance(srv, backend.Servidor)
+    finally:
+        srv.server_close()
+
+
+@pytest.mark.parametrize(
+    "corte", [ConnectionResetError, ConnectionAbortedError, BrokenPipeError, TimeoutError]
+)
+def test_un_cliente_que_corta_no_deja_un_traceback(servidor_suelto, capsys, corte):
+    """Una ventana que se cierra corta la conexión mientras el handler espera el
+    pedido siguiente. `socketserver` lo imprimía como traceback desde el hilo, y
+    si caía justo en el cierre del intérprete era un `Fatal Python error`."""
+    try:
+        raise corte("el cliente cortó")
+    except corte:
+        servidor_suelto.handle_error(None, ("127.0.0.1", 1))
+    assert capsys.readouterr().err == ""
+
+
+def test_un_error_nuestro_sigue_saliendo_entero(servidor_suelto, capsys):
+    """Callar los cortes no puede tapar un bug de verdad."""
+    try:
+        raise ValueError("un error de la app")
+    except ValueError:
+        servidor_suelto.handle_error(None, ("127.0.0.1", 1))
+    err = capsys.readouterr().err
+    assert "ValueError" in err and "un error de la app" in err
+
+
 # ============================================================
 # La tercera defensa, la CSP
 # ============================================================

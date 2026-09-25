@@ -15,6 +15,18 @@ What changed in every published version. The numbers follow
   distribution and metadata, software, interface, security and outreach), each
   on its own, following the rubric in `docs/BRIEF-AUTOMEJORA.md`.
 
+### Fixed
+- The README screenshots showed version 1.0.1 in the footer while the app was
+  already 1.1.0. They were regenerated in both languages, and their sample text
+  now comes from the same catalog the app uses: written by hand, it had drifted
+  (a message without accents, and a missing UPC shown as an error when the
+  validation gives it as a warning).
+- `build/capturas.py` sometimes ended with `Fatal Python error` even when the
+  screenshots came out fine. A server thread was still writing Chrome's closed
+  connection while the program shut down. The app's server now stays quiet about
+  client disconnects, which are not its error, and the script waits for its
+  threads before exiting.
+
 ## [1.1.0] — 2026-09-22
 
 ### Changed
