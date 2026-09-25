@@ -9,10 +9,6 @@ Lo que cambió en cada versión publicada. Los números siguen
 ## [Sin publicar]
 
 ### Agregado
-- **Modelo de amenazas escrito**, en [docs/AMENAZAS.md](docs/AMENAZAS.md) y en
-  inglés: qué protege la app, de quién, con qué defensa y qué test la cubre, y
-  qué queda afuera a propósito (por ejemplo, que un proceso local del mismo
-  usuario puede leer el token, igual que la clave).
 - **La app explica la regla número uno de una migración**: conservar el ISRC,
   el UPC y la fecha original es lo que une cada release nuevo al que ya está en
   las tiendas, con sus reproducciones y playlists, y la baja en la distribuidora
@@ -28,19 +24,6 @@ Lo que cambió en cada versión publicada. Los números siguen
 - **Filtro «Sólo los que tienen algo que completar»** en la tabla del paso 2:
   deja los productos sin UPC, con ISRC faltantes o con el orden sin confirmar.
   En un catálogo grande, «¿qué me falta?» se contestaba scrolleando.
-- **La interfaz tiene tests**, en `tests/js/`, que cargan el `app.js` real sin
-  navegador y comprueban, entre otras cosas, que un título de YouTube con HTML
-  adentro llegue escapado a la pantalla. Es la única barrera entre lo que viene
-  de afuera y lo que se dibuja, y hasta ahora no la probaba nada. Corren con
-  `node --test`, y `pytest` los lanza solo si Node está instalado.
-- **Tests contra respuestas reales de la YouTube Data API.** Hasta ahora sólo
-  Deezer e iTunes tenían respuestas grabadas; el relevamiento completo, la
-  paginación y la lectura de las descripciones no se probaban contra lo que
-  YouTube devuelve de verdad, y ahí estaban varios de los errores que este
-  ciclo encontró. `build/grabar_fixtures.py --youtube` las graba con la clave
-  en una cabecera y se niega a guardar si la encuentra en algún lado. Se suman
-  tests de las rutas del servidor que no tenían, y el umbral de cobertura sube
-  de 58 % a 75 %, con 78 % medido.
 - Si Deezer no respondió, el log lo dice. Antes se veía igual que «no hay
   códigos para este artista».
 - **La hoja de ingesta también viene en Excel**, `_Hoja de ingesta.xlsx`, con
@@ -76,13 +59,15 @@ Lo que cambió en cada versión publicada. Los números siguen
   `/c/`, y el link de cualquier tema del artista (`watch?v=`, `youtu.be`,
   `/shorts/`, YouTube Music): la app busca el canal que lo subió, por una unidad
   de cuota.
-- `docs/AUDITORIA-2.md` y `docs/MEJORAS-2.md`, el diagnóstico del segundo ciclo
-  de mejoras y el backlog que sale de él. Esta vez el repositorio se miró con
-  seis miradas distintas (industria musical, distribución y metadata, software,
-  interfaz, seguridad y difusión), cada una por separado, con la rúbrica de
-  `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Corregido
+- **El paquete no se podía bajar desde la app.** El botón «Descargar» era un
+  enlace directo a la API, y un enlace no puede mandar la cabecera con el token
+  de la sesión, así que el servidor lo rechazaba. Pasaba desde la primera
+  versión pública, y además la ventana nativa tenía las descargas apagadas.
+  Ahora el botón pide primero un ticket de un solo uso, que vence en un minuto y
+  sólo se obtiene con el token, y la descarga anda en la ventana y en el
+  navegador sin aflojar ninguna de las tres defensas.
 - **Afirmaciones que no se podían sostener**: la validación «marca lo que
   suele» rechazarse y no «lo que va a ser rechazado»; los ISRC y UPC son «los
   que se pueden recuperar de Deezer»; se fueron «casi todas las
@@ -96,14 +81,9 @@ Lo que cambió en cada versión publicada. Los números siguen
 - **El comando del `.deb` ya no nombra la versión 1.0.2**, que no existe más.
 - **El README dice qué pasa con MusicBrainz**, que los términos nombran: hay un
   respaldo en el código, apagado, y hoy no se le manda nada.
-- **SECURITY.md y el servidor nombran las tres defensas.** Decían «dos» y no
-  mencionaban la CSP, así que quien quisiera reportar no sabía que saltearla
-  entra en el alcance.
 - **La atestación de procedencia se describe como es**: condicional a que el
   repositorio sea público, y sin frenar el release si falla. SECURITY.md y el
   README la presentaban como garantizada.
-- **La lista de hosts válidos ya no trae una entrada que nunca coincide** (un
-  `::1` sin corchetes), y un test verifica que cada una se pueda alcanzar.
 - **El FLAC de Tidal ya no se presenta como «máster».** Es la copia sin
   pérdida que sirve la plataforma, que sirve para entregar cuando no hay otra
   cosa, pero puede tener menos resolución que el máster de estudio.
@@ -145,10 +125,6 @@ Lo que cambió en cada versión publicada. Los números siguen
   «Portada 3 de 4» de algo que ya había terminado.
 - **La clave se pega a la vista**, así se puede ver si entró entera, y
   «Verificando» tiene su indicador animado: usaba una clase que no existía.
-- **El contrato del relevamiento decía mal dos cosas**: las distribuidoras
-  estaban declaradas como números cuando una trae el título del track más
-  visto, y las estadísticas de códigos como «cualquier cosa». Los dobles de
-  prueba copiaban esa forma incompleta y ahora tienen la real.
 - Con la app en inglés, el progreso de los trabajos y el log del módulo de
   audio seguían en castellano («Listo.», «Preparando», «productos encontrados»,
   «tracks por YouTube»). Ahora salen del catálogo, y un test que lee el código
@@ -158,9 +134,6 @@ Lo que cambió en cada versión publicada. Los números siguen
   las cifras salen con el formato del idioma.
 - La cabecera escribía el nombre de la app distinto que el resto («Migrador de
   catálogos» contra «Migrador de Catálogos»).
-- «Un trabajo a la vez» se chequeaba y se registraba por separado, y dos pedidos
-  simultáneos (un doble clic lento, dos ventanas) podían pasar los dos. Ahora
-  las dos cosas van juntas.
 - Con dos ventanas abiertas, si en una se relevaba otro artista, la otra armaba
   el paquete de ése con los productos que tenía elegidos del anterior. Ahora el
   catálogo tiene un identificador y el servidor lo rechaza con un aviso.
@@ -288,47 +261,18 @@ Lo que cambió en cada versión publicada. Los números siguen
 - La variante completa trae yt-dlp adentro, pero la descarga lo buscaba como
   programa aparte: en una máquina sin yt-dlp instalado decía que podía bajar el
   audio de referencia y fallaba al intentarlo. Ahora usa el que trae.
-- **El paquete no se podía bajar desde la app.** El botón «Descargar» era un
-  enlace directo a la API, y un enlace no puede mandar la cabecera con el token
-  de la sesión, así que el servidor lo rechazaba. Pasaba desde la primera
-  versión pública, y además la ventana nativa tenía las descargas apagadas.
-  Ahora el botón pide primero un ticket de un solo uso, que vence en un minuto y
-  sólo se obtiene con el token, y la descarga anda en la ventana y en el
-  navegador sin aflojar ninguna de las tres defensas.
-- Las capturas del README mostraban la versión 1.0.1 en el pie, y la app ya era
-  la 1.1.0. Se regeneraron en los dos idiomas, y sus textos de ejemplo salen
-  ahora del mismo catálogo que usa la app: escritos a mano se habían desviado
-  (un mensaje sin tildes, y una falta de UPC mostrada como error cuando la
-  validación la da como aviso).
-- `build/capturas.py` terminaba a veces con `Fatal Python error` aunque las
-  capturas salieran bien. Un hilo del servidor seguía escribiendo el corte de
-  conexión de Chrome mientras el programa se cerraba. Ahora el servidor de la
-  app calla los cortes del cliente, que no son un error suyo, y el script espera
-  a sus hilos antes de salir.
 
 ### Cambiado
+- **Las notas de cada release arrancan por cuál bajar**, y después dicen qué
+  cambió para quien usa la app. Lo interno (tests, CI, tipos) va en la sección
+  «Para quien desarrolla» del CHANGELOG, y en el release queda plegado al final.
+  En la 1.1.0 eran cien líneas sobre pytest y pyright antes de decir qué bajar.
 - **El README empieza por lo que importa a quien migra**: la promesa en una
   línea (cambiar de distribuidora sin perder los códigos), para quién es y para
   quién no, y la descarga directa de cada sistema, que antes era una línea hacia
   una página con treinta archivos. Suma preguntas frecuentes (¿funciona con mi
   distribuidora?, ¿necesito saber programar?, ¿es legal?) y separa con una
   línea la parte para quien quiere tocar el código.
-- **pyright prende 34 reglas de `strict`**, las que el código ya cumple, para
-  que desde ahora no se puedan romper sin que el CI lo diga. Para llegar hubo
-  que darles contrato a las funciones que devolvían diccionarios sueltos (la
-  portada de Apple, las opciones de filtro, el paquete listo, el resultado de
-  `migrar()`, las estadísticas del cruce con Deezer), y un test por cada una
-  compara lo que devuelve de verdad contra su contrato. `pyproject.toml` dice
-  qué reglas faltan y por qué.
-- **El CI da permiso de escritura sólo al paso que publica el release.**
-  Antes lo tenían también los ocho jobs que compilan, que instalan paquetes de
-  PyPI: uno comprometido habría recibido un token con permiso para escribir en
-  el repositorio. Y las acciones de GitHub van fijadas por el SHA del commit en
-  vez de por un tag, que quien controla la acción puede mover.
-- Dependabot propone las actualizaciones de pip y de las acciones, y un job
-  nuevo corre `pip-audit` sobre todo lo que viaja adentro de los ejecutables.
-  PyInstaller y pyright tienen versión fija, todos los jobs tienen timeout, y
-  los tests del build corren sin la clave de YouTube en el entorno.
 - El piso de yt-dlp sube a 2024.07.01, que deja afuera las versiones con
   CVE-2024-38519.
 - **La clave de YouTube viaja en una cabecera, no en la URL.** Hoy ningún
@@ -339,9 +283,6 @@ Lo que cambió en cada versión publicada. Los números siguen
   usuario, se crean cerrados desde el primer momento. Antes el permiso se
   cerraba después, y en un sistema con varios usuarios quedaba una ventana en
   que los demás la podían leer.
-- El control de claves revisa también la historia entera de git, en el CI:
-  una clave que entró en un commit y salió en el siguiente ya no está en
-  ningún archivo, pero sigue en cada clon.
 - **El servidor local suma cuatro refuerzos, sin tocar las tres defensas.**
   Ninguna otra página puede meter la app en un iframe (`frame-ancestors`,
   `X-Frame-Options`, COOP y CORP). Un pedido que el navegador marca como hecho
@@ -359,6 +300,71 @@ Lo que cambió en cada versión publicada. Los números siguen
   los ISRC de confianza media, el audio que es sólo de referencia, las portadas
   en gris, con paleta o transparentes, y los campos que ninguna fuente pública
   trae. El LEEME y el README dicen «suelen rechazar» en vez de «rechazan».
+
+### Para quien desarrolla
+- **Modelo de amenazas escrito**, en [docs/AMENAZAS.md](docs/AMENAZAS.md) y en
+  inglés: qué protege la app, de quién, con qué defensa y qué test la cubre, y
+  qué queda afuera a propósito (por ejemplo, que un proceso local del mismo
+  usuario puede leer el token, igual que la clave).
+- **La interfaz tiene tests**, en `tests/js/`, que cargan el `app.js` real sin
+  navegador y comprueban, entre otras cosas, que un título de YouTube con HTML
+  adentro llegue escapado a la pantalla. Es la única barrera entre lo que viene
+  de afuera y lo que se dibuja, y hasta ahora no la probaba nada. Corren con
+  `node --test`, y `pytest` los lanza solo si Node está instalado.
+- **Tests contra respuestas reales de la YouTube Data API.** Hasta ahora sólo
+  Deezer e iTunes tenían respuestas grabadas; el relevamiento completo, la
+  paginación y la lectura de las descripciones no se probaban contra lo que
+  YouTube devuelve de verdad, y ahí estaban varios de los errores que este
+  ciclo encontró. `build/grabar_fixtures.py --youtube` las graba con la clave
+  en una cabecera y se niega a guardar si la encuentra en algún lado. Se suman
+  tests de las rutas del servidor que no tenían, y el umbral de cobertura sube
+  de 58 % a 75 %, con 78 % medido.
+- `docs/AUDITORIA-2.md` y `docs/MEJORAS-2.md`, el diagnóstico del segundo ciclo
+  de mejoras y el backlog que sale de él. Esta vez el repositorio se miró con
+  seis miradas distintas (industria musical, distribución y metadata, software,
+  interfaz, seguridad y difusión), cada una por separado, con la rúbrica de
+  `docs/BRIEF-AUTOMEJORA.md`.
+- **SECURITY.md y el servidor nombran las tres defensas.** Decían «dos» y no
+  mencionaban la CSP, así que quien quisiera reportar no sabía que saltearla
+  entra en el alcance.
+- **La lista de hosts válidos ya no trae una entrada que nunca coincide** (un
+  `::1` sin corchetes), y un test verifica que cada una se pueda alcanzar.
+- **El contrato del relevamiento decía mal dos cosas**: las distribuidoras
+  estaban declaradas como números cuando una trae el título del track más
+  visto, y las estadísticas de códigos como «cualquier cosa». Los dobles de
+  prueba copiaban esa forma incompleta y ahora tienen la real.
+- «Un trabajo a la vez» se chequeaba y se registraba por separado, y dos pedidos
+  simultáneos (un doble clic lento, dos ventanas) podían pasar los dos. Ahora
+  las dos cosas van juntas.
+- Las capturas del README mostraban la versión 1.0.1 en el pie, y la app ya era
+  la 1.1.0. Se regeneraron en los dos idiomas, y sus textos de ejemplo salen
+  ahora del mismo catálogo que usa la app: escritos a mano se habían desviado
+  (un mensaje sin tildes, y una falta de UPC mostrada como error cuando la
+  validación la da como aviso).
+- `build/capturas.py` terminaba a veces con `Fatal Python error` aunque las
+  capturas salieran bien. Un hilo del servidor seguía escribiendo el corte de
+  conexión de Chrome mientras el programa se cerraba. Ahora el servidor de la
+  app calla los cortes del cliente, que no son un error suyo, y el script espera
+  a sus hilos antes de salir.
+- **pyright prende 34 reglas de `strict`**, las que el código ya cumple, para
+  que desde ahora no se puedan romper sin que el CI lo diga. Para llegar hubo
+  que darles contrato a las funciones que devolvían diccionarios sueltos (la
+  portada de Apple, las opciones de filtro, el paquete listo, el resultado de
+  `migrar()`, las estadísticas del cruce con Deezer), y un test por cada una
+  compara lo que devuelve de verdad contra su contrato. `pyproject.toml` dice
+  qué reglas faltan y por qué.
+- **El CI da permiso de escritura sólo al paso que publica el release.**
+  Antes lo tenían también los ocho jobs que compilan, que instalan paquetes de
+  PyPI: uno comprometido habría recibido un token con permiso para escribir en
+  el repositorio. Y las acciones de GitHub van fijadas por el SHA del commit en
+  vez de por un tag, que quien controla la acción puede mover.
+- Dependabot propone las actualizaciones de pip y de las acciones, y un job
+  nuevo corre `pip-audit` sobre todo lo que viaja adentro de los ejecutables.
+  PyInstaller y pyright tienen versión fija, todos los jobs tienen timeout, y
+  los tests del build corren sin la clave de YouTube en el entorno.
+- El control de claves revisa también la historia entera de git, en el CI:
+  una clave que entró en un commit y salió en el siguiente ya no está en
+  ningún archivo, pero sigue en cada clon.
 
 ## [1.1.0] — 2026-09-22
 

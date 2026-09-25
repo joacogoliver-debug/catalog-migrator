@@ -164,6 +164,11 @@ Tipos que se usan acá: `feat`, `fix`, `refactor`, `test`, `docs`, `build`,
 El cuerpo del mensaje importa más que el título. Contá qué se rompía antes, no
 qué archivos tocaste: eso ya lo dice el diff.
 
+Cada cambio va también al CHANGELOG, en los dos idiomas, bajo «Sin publicar».
+Lo que nota quien usa la app va en Agregado, Cambiado o Corregido, escrito para
+esa persona; lo que no (tests, CI, tipos, herramientas) va en la última
+sección, «Para quien desarrolla», que las notas del release muestran plegada.
+
 ## Dónde está cada cosa
 
 | Archivo | Qué hace |

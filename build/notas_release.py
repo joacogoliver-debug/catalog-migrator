@@ -13,11 +13,15 @@ cada versión no aparecía ahí en absoluto: el CHANGELOG existía y nadie lo le
 publicar, así que quien bajaba el binario no tenía forma de saber qué cambió sin
 ir a buscarlo.
 
-Ahora las notas se arman con dos partes bien separadas:
+Ahora las notas se arman con dos partes bien separadas, en este orden:
 
-  - **qué cambió**, que sale del CHANGELOG y no se escribe dos veces;
   - **cuál bajar y cómo verificarlo**, que no está en el CHANGELOG porque no es
-    un cambio, y vive en `build/notas/es.md` y `build/notas/en.md`.
+    un cambio, y vive en `build/notas/es.md` y `build/notas/en.md`. Va primero
+    porque a esta página llega quien viene del README a bajar la app;
+  - **qué cambió**, que sale del CHANGELOG y no se escribe dos veces. Lo que no
+    nota quien usa la app (tests, CI, tipos) va en la sección «Para quien
+    desarrolla» del CHANGELOG, y acá queda plegado al final: en la 1.1.0 eran
+    cien líneas sobre pytest y pyright antes de decir qué había que bajar.
 
 Además verifica que el CHANGELOG tenga de verdad una entrada para la versión que
 se está publicando. Sin ese control, taguear `v1.0.3` con el CHANGELOG todavía en
@@ -40,6 +44,13 @@ IDIOMAS = [
 ]
 
 REPO_POR_DEFECTO = "joacogoliver-debug/catalog-migrator"
+
+# La sección del CHANGELOG con lo que sólo le importa a quien toca el código, y
+# el rótulo con que se pliega en el release.
+SECCION_DEV = {
+    "es": ("### Para quien desarrolla", "Para quien desarrolla: tests, CI y tipos"),
+    "en": ("### For developers", "For developers: tests, CI and types"),
+}
 
 
 VERSION_PY = os.path.join(RAIZ, "src", "migrador", "version.py")
@@ -104,6 +115,20 @@ def absolutizar(texto, repo, rama="main"):
     return re.sub(r"\[([^\]]+)\]\(([^)\s]+)\)", reemplazo, texto)
 
 
+def partir(cambios, idioma):
+    """(lo que nota quien usa la app, lo interno), según la sección del CHANGELOG."""
+    encabezado, _ = SECCION_DEV[idioma]
+    m = re.search(rf"^{re.escape(encabezado)}\s*$", cambios, re.M)
+    if not m:
+        return cambios, ""
+    resto = cambios[m.end() :]
+    # La sección termina en el próximo `###`, si hubiera otro después.
+    fin = re.search(r"^### ", resto, re.M)
+    interno = resto[: fin.start()] if fin else resto
+    usuario = cambios[: m.start()] + (resto[fin.start() :] if fin else "")
+    return usuario.strip(), interno.strip()
+
+
 def notas(v, repo=REPO_POR_DEFECTO):
     """El cuerpo completo del release, en los dos idiomas."""
     partes = []
@@ -118,12 +143,16 @@ def notas(v, repo=REPO_POR_DEFECTO):
         with open(os.path.join(NOTAS, prosa), encoding="utf-8") as f:
             fija = f.read().format(repo=repo).strip()
 
-        cambios = absolutizar(cambios, repo)
+        usuario, interno = partir(absolutizar(cambios, repo), idioma)
         titulo = "## Qué cambió" if idioma == "es" else "## What changed"
         if idioma == "en":
             partes.append("---\n\n# In English")
-        partes.append(f"{titulo}\n\n{cambios}")
         partes.append(fija)
+        partes.append(f"{titulo}\n\n{usuario}")
+        if interno:
+            # Plegado: está para quien lo busque, sin tapar lo demás.
+            rotulo = SECCION_DEV[idioma][1]
+            partes.append(f"<details>\n<summary>{rotulo}</summary>\n\n{interno}\n\n</details>")
 
     if faltan:
         sys.exit(

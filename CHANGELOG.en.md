@@ -9,10 +9,6 @@ What changed in every published version. The numbers follow
 ## [Unreleased]
 
 ### Added
-- **A written threat model**, in [docs/AMENAZAS.en.md](docs/AMENAZAS.en.md)
-  and in Spanish: what the app protects, from whom, with which defense and
-  which test covers it, and what is left out on purpose (for instance, that a
-  local process of the same user can read the token, just like the key).
 - **The app explains the number one rule of a migration**: keeping the ISRC,
   the UPC and the original date is what joins each new release to the one
   already in stores, with its plays and playlists, and taking the catalog down
@@ -28,20 +24,6 @@ What changed in every published version. The numbers follow
 - **"Only those with something to fill in" filter** on the step 2 table: it
   keeps releases with no UPC, missing ISRCs or an unconfirmed order. In a big
   catalog, "what am I missing?" used to be answered by scrolling.
-- **The interface has tests**, in `tests/js/`, which load the real `app.js`
-  without a browser and check, among other things, that a YouTube title with
-  HTML inside reaches the screen escaped. It is the only barrier between what
-  comes from outside and what gets drawn, and nothing tested it until now. They
-  run with `node --test`, and `pytest` launches them by itself if Node is
-  installed.
-- **Tests against real YouTube Data API responses.** Until now only Deezer
-  and iTunes had recorded responses; the full survey, pagination and
-  description parsing were not tested against what YouTube really returns, and
-  that is where several of the errors this cycle found lived.
-  `build/grabar_fixtures.py --youtube` records them with the key in a header and
-  refuses to save if it finds the key anywhere. Tests are added for the server
-  routes that had none, and the coverage threshold goes up from 58% to 75%,
-  with 78% measured.
 - If Deezer did not answer, the log says so. Before, it looked the same as "no
   codes for this artist".
 - **The ingestion sheet also comes in Excel**, `_Ingestion sheet.xlsx`, with
@@ -77,13 +59,15 @@ What changed in every published version. The numbers follow
   the link of any of the artist's songs (`watch?v=`, `youtu.be`, `/shorts/`,
   YouTube Music): the app looks up the channel that uploaded it, for one unit of
   quota.
-- `docs/AUDITORIA-2.md` and `docs/MEJORAS-2.md`, the diagnosis of the second
-  improvement cycle and the backlog that comes out of it. This time the
-  repository was looked at from six separate angles (music industry,
-  distribution and metadata, software, interface, security and outreach), each
-  on its own, following the rubric in `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Fixed
+- **The package could not be downloaded from the app.** The "Download" button
+  was a direct link to the API, and a link cannot send the header with the
+  session token, so the server turned it down. It had been like that since the
+  first public version, and the native window also had downloads switched off.
+  The button now asks first for a single-use ticket, which expires in a minute
+  and can only be obtained with the token, and the download works in the window
+  and in the browser without loosening any of the three defenses.
 - **Claims that could not be backed**: the validation "flags what is
   usually" rejected, not "what will be rejected"; ISRCs and UPCs are "the ones
   that can be recovered from Deezer"; gone are "nearly every distributor",
@@ -100,14 +84,9 @@ What changed in every published version. The numbers follow
 - **The README says what happens with MusicBrainz**, which the terms name:
   there is a fallback in the code, switched off, and nothing is sent to it
   today.
-- **SECURITY.md and the server name the three defenses.** They said "two"
-  and did not mention the CSP, so someone wanting to report did not know that
-  getting around it is in scope.
 - **The provenance attestation is described as it is**: conditional on the
   repository being public, and not stopping the release if it fails.
   SECURITY.md and the README presented it as guaranteed.
-- **The valid host list no longer carries an entry that never matches** (a
-  bare `::1`), and a test checks that each one can be reached.
 - **Tidal's FLAC is no longer presented as "the master".** It is the
   lossless copy the platform streams, fine for delivery when there is nothing
   else, but it can have a lower resolution than the studio master.
@@ -151,10 +130,6 @@ What changed in every published version. The numbers follow
 - **The key is pasted in plain view**, so you can see whether all of it went
   in, and "Checking" has its animated indicator: it used a class that did not
   exist.
-- **The survey contract got two things wrong**: distributors were declared
-  as numbers when one field carries the title of the most viewed track, and
-  the code stats as "anything". The test doubles copied that incomplete shape
-  and now have the real one.
 - With the app in English, job progress and the audio module's log were still
   in Spanish ("Listo.", "Preparando", "productos encontrados", "tracks por
   YouTube"). They now come from the catalog, and a test that reads the code
@@ -164,9 +139,6 @@ What changed in every published version. The numbers follow
   the language's format.
 - The header spelled the app's name differently from everywhere else ("Catalog
   migrator" against "Catalog Migrator").
-- "One job at a time" was checked and registered separately, and two
-  simultaneous requests (a slow double click, two windows) could both get
-  through. Both things now happen together.
 - With two windows open, if another artist was surveyed in one, the other built
   that artist's package with the releases it had picked from the previous one.
   The catalog now has an identifier and the server refuses it with a warning.
@@ -292,47 +264,19 @@ What changed in every published version. The numbers follow
 - The full variant ships yt-dlp inside, but the download looked for it as a
   separate program: on a machine without yt-dlp installed it said it could fetch
   the reference audio and failed when it tried. It now uses the one it ships.
-- **The package could not be downloaded from the app.** The "Download" button
-  was a direct link to the API, and a link cannot send the header with the
-  session token, so the server turned it down. It had been like that since the
-  first public version, and the native window also had downloads switched off.
-  The button now asks first for a single-use ticket, which expires in a minute
-  and can only be obtained with the token, and the download works in the window
-  and in the browser without loosening any of the three defenses.
-- The README screenshots showed version 1.0.1 in the footer while the app was
-  already 1.1.0. They were regenerated in both languages, and their sample text
-  now comes from the same catalog the app uses: written by hand, it had drifted
-  (a message without accents, and a missing UPC shown as an error when the
-  validation gives it as a warning).
-- `build/capturas.py` sometimes ended with `Fatal Python error` even when the
-  screenshots came out fine. A server thread was still writing Chrome's closed
-  connection while the program shut down. The app's server now stays quiet about
-  client disconnects, which are not its error, and the script waits for its
-  threads before exiting.
 
 ### Changed
+- **Each release's notes start with which one to download**, and then say
+  what changed for whoever uses the app. The internal part (tests, CI, types)
+  goes in the CHANGELOG's "For developers" section, and in the release it
+  stays folded at the end. In 1.1.0 it was a hundred lines about pytest and
+  pyright before saying what to download.
 - **The README starts with what matters to whoever migrates**: the promise
   in one line (switch distributors without losing the codes), who it is for
   and who it is not for, and a direct download for each system, which used to
   be a line to a page with thirty files. It adds frequently asked questions
   (does it work with my distributor?, do I need to code?, is it legal?) and
   sets off with a rule the part for whoever wants to touch the code.
-- **pyright turns on 34 `strict` rules**, the ones the code already meets, so
-  that from now on they cannot be broken without CI saying so. Getting there
-  meant giving a contract to the functions that returned loose dictionaries
-  (the Apple cover, the filter options, the finished package, the result of
-  `migrar()`, the Deezer matching stats), and one test per function compares
-  what it really returns against its contract. `pyproject.toml` says which
-  rules are missing and why.
-- **CI grants write permission only to the step that publishes the
-  release.** Before, the eight build jobs had it too, and they install
-  packages from PyPI: a compromised one would have received a token able to
-  write to the repository. And GitHub actions are pinned by commit SHA instead
-  of by a tag, which whoever controls the action can move.
-- Dependabot proposes pip and action updates, and a new job runs `pip-audit` on
-  everything shipped inside the executables. PyInstaller and pyright are
-  pinned, every job has a timeout, and the build's tests run without the
-  YouTube key in the environment.
 - The yt-dlp floor goes up to 2024.07.01, which leaves out the versions with
   CVE-2024-38519.
 - **The YouTube key travels in a header, not in the URL.** No error message
@@ -342,9 +286,6 @@ What changed in every published version. The numbers follow
 - The config folder and file, where the key the user loads lives, are created
   closed from the start. Before, the permission was closed afterwards, and on a
   machine with several users there was a window in which others could read it.
-- The key check also goes through the whole git history, in CI: a key that went
-  into one commit and out in the next is no longer in any file, but it is still
-  in every clone.
 - **The local server adds four reinforcements, without touching the three
   defenses.** No other page can put the app in an iframe (`frame-ancestors`,
   `X-Frame-Options`, COOP and CORP). A request the browser marks as made by
@@ -362,6 +303,72 @@ What changed in every published version. The numbers follow
   medium-confidence ISRCs, reference-only audio, grayscale, palette or
   transparent covers, and the fields no public source has. The READ ME and the
   README say "usually reject" instead of "reject".
+
+### For developers
+- **A written threat model**, in [docs/AMENAZAS.en.md](docs/AMENAZAS.en.md)
+  and in Spanish: what the app protects, from whom, with which defense and
+  which test covers it, and what is left out on purpose (for instance, that a
+  local process of the same user can read the token, just like the key).
+- **The interface has tests**, in `tests/js/`, which load the real `app.js`
+  without a browser and check, among other things, that a YouTube title with
+  HTML inside reaches the screen escaped. It is the only barrier between what
+  comes from outside and what gets drawn, and nothing tested it until now. They
+  run with `node --test`, and `pytest` launches them by itself if Node is
+  installed.
+- **Tests against real YouTube Data API responses.** Until now only Deezer
+  and iTunes had recorded responses; the full survey, pagination and
+  description parsing were not tested against what YouTube really returns, and
+  that is where several of the errors this cycle found lived.
+  `build/grabar_fixtures.py --youtube` records them with the key in a header and
+  refuses to save if it finds the key anywhere. Tests are added for the server
+  routes that had none, and the coverage threshold goes up from 58% to 75%,
+  with 78% measured.
+- `docs/AUDITORIA-2.md` and `docs/MEJORAS-2.md`, the diagnosis of the second
+  improvement cycle and the backlog that comes out of it. This time the
+  repository was looked at from six separate angles (music industry,
+  distribution and metadata, software, interface, security and outreach), each
+  on its own, following the rubric in `docs/BRIEF-AUTOMEJORA.md`.
+- **SECURITY.md and the server name the three defenses.** They said "two"
+  and did not mention the CSP, so someone wanting to report did not know that
+  getting around it is in scope.
+- **The valid host list no longer carries an entry that never matches** (a
+  bare `::1`), and a test checks that each one can be reached.
+- **The survey contract got two things wrong**: distributors were declared
+  as numbers when one field carries the title of the most viewed track, and
+  the code stats as "anything". The test doubles copied that incomplete shape
+  and now have the real one.
+- "One job at a time" was checked and registered separately, and two
+  simultaneous requests (a slow double click, two windows) could both get
+  through. Both things now happen together.
+- The README screenshots showed version 1.0.1 in the footer while the app was
+  already 1.1.0. They were regenerated in both languages, and their sample text
+  now comes from the same catalog the app uses: written by hand, it had drifted
+  (a message without accents, and a missing UPC shown as an error when the
+  validation gives it as a warning).
+- `build/capturas.py` sometimes ended with `Fatal Python error` even when the
+  screenshots came out fine. A server thread was still writing Chrome's closed
+  connection while the program shut down. The app's server now stays quiet about
+  client disconnects, which are not its error, and the script waits for its
+  threads before exiting.
+- **pyright turns on 34 `strict` rules**, the ones the code already meets, so
+  that from now on they cannot be broken without CI saying so. Getting there
+  meant giving a contract to the functions that returned loose dictionaries
+  (the Apple cover, the filter options, the finished package, the result of
+  `migrar()`, the Deezer matching stats), and one test per function compares
+  what it really returns against its contract. `pyproject.toml` says which
+  rules are missing and why.
+- **CI grants write permission only to the step that publishes the
+  release.** Before, the eight build jobs had it too, and they install
+  packages from PyPI: a compromised one would have received a token able to
+  write to the repository. And GitHub actions are pinned by commit SHA instead
+  of by a tag, which whoever controls the action can move.
+- Dependabot proposes pip and action updates, and a new job runs `pip-audit` on
+  everything shipped inside the executables. PyInstaller and pyright are
+  pinned, every job has a timeout, and the build's tests run without the
+  YouTube key in the environment.
+- The key check also goes through the whole git history, in CI: a key that went
+  into one commit and out in the next is no longer in any file, but it is still
+  in every clone.
 
 ## [1.1.0] — 2026-09-22
 

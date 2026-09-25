@@ -8,6 +8,7 @@ entrada para la versión que se está publicando: sin eso, un tag apurado produc
 un release que miente, y eso se descubre ya publicado.
 """
 
+import os
 import re
 
 import pytest
@@ -157,3 +158,65 @@ def test_la_prosa_solo_usa_el_marcador_del_repositorio(archivo):
     campos = set(re.findall(r"\{(\w*)\}", prosa))
     assert campos <= {"repo"}, campos
     prosa.format(repo=REPO)  # no tiene que levantar
+
+
+# ============================================================
+# Primero quien baja la app
+# ============================================================
+
+
+def test_las_notas_arrancan_por_cual_bajar():
+    """A esta página llega quien viene del README a bajar la app. En la 1.1.0
+    eran cien líneas sobre pytest y pyright antes de decir qué bajar."""
+    cuerpo = notas_release.notas(VERSION_PUBLICADA, REPO)
+    assert cuerpo.index("## Cuál bajar") < cuerpo.index("## Qué cambió")
+    assert cuerpo.index("## Which one to download") < cuerpo.index("## What changed")
+
+
+CAMBIOS = """### Corregido
+- **El paquete no se podía bajar.** Se arregló.
+
+### Para quien desarrolla
+- pyright prende reglas nuevas.
+- El CI fija las acciones por SHA.
+"""
+
+
+def test_lo_interno_se_separa_de_lo_que_nota_quien_usa_la_app():
+    usuario, interno = notas_release.partir(CAMBIOS, "es")
+    assert "El paquete no se podía bajar" in usuario
+    assert "pyright" not in usuario and "Para quien desarrolla" not in usuario
+    assert interno.splitlines() == ["- pyright prende reglas nuevas.", "- El CI fija las acciones por SHA."]
+
+
+def test_sin_seccion_interna_queda_todo_como_estaba():
+    assert notas_release.partir("### Fixed\n- Algo.", "en") == ("### Fixed\n- Algo.", "")
+
+
+def test_lo_interno_va_plegado_al_final(monkeypatch):
+    real = notas_release.seccion_changelog
+
+    def con_interno(archivo, v):
+        base = real(archivo, v) or ""
+        titulo = "### Para quien desarrolla" if archivo == "CHANGELOG.md" else "### For developers"
+        return base + f"\n\n{titulo}\n- Un cambio de CI."
+
+    monkeypatch.setattr(notas_release, "seccion_changelog", con_interno)
+    cuerpo = notas_release.notas(VERSION_PUBLICADA, REPO)
+    assert cuerpo.count("<details>") == 2
+    es = cuerpo[: cuerpo.index("# In English")]
+    assert es.index("## Qué cambió") < es.index("<details>")
+    assert "### Para quien desarrolla" not in cuerpo, "el título pasa a ser el rótulo plegado"
+
+
+@pytest.mark.parametrize(
+    ("archivo", "titulo"),
+    [("CHANGELOG.md", "### Para quien desarrolla"), ("CHANGELOG.en.md", "### For developers")],
+)
+def test_en_el_changelog_lo_interno_es_la_ultima_seccion_de_cada_version(archivo, titulo):
+    with open(os.path.join(notas_release.RAIZ, archivo), encoding="utf-8") as f:
+        texto = f.read()
+    for bloque in re.split(r"(?m)^## ", texto)[1:]:
+        if titulo in bloque:
+            despues = bloque[bloque.index(titulo) + len(titulo) :]
+            assert "\n### " not in despues, f"{archivo}: hay una sección después de «{titulo}»"

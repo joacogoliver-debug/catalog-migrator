@@ -159,6 +159,12 @@ Types used here: `feat`, `fix`, `refactor`, `test`, `docs`, `build`, `chore`,
 The body matters more than the subject. Say what used to break, not which files
 you touched: the diff already says that.
 
+Every change also goes into the CHANGELOG, in both languages, under
+"Unreleased". What the person using the app notices goes in Added, Changed or
+Fixed, written for that person; what they do not (tests, CI, types, tooling)
+goes in the last section, "For developers", which the release notes show
+folded.
+
 ## Where everything lives
 
 | File | What it does |
