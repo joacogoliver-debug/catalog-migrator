@@ -213,6 +213,7 @@ def group_products(tracks: list[Track], artist="") -> list[Producto]:
                 "release_date": min(lanzamientos) if lanzamientos else "",
                 "upload_date": min(subidas) if subidas else "",
                 "label": _mode(t.get("label") for t in ts),
+                "p_line": _mode(t.get("p_line") for t in ts),
                 "distributor": _mode(t.get("distributor") for t in ts),
                 "upc": _mode(t.get("upc") for t in ts),
                 "tracks": ts,

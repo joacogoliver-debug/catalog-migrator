@@ -114,6 +114,7 @@ def test_descripcion_vacia():
         "release_year": None,
         "release_date": None,
         "label": None,
+        "p_line": None,
         "artists": [],
         "credits": {"composers": [], "lyricists": [], "producers": [], "publishers": []},
     }

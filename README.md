@@ -497,6 +497,7 @@ pytest -q --cov
 | `tests/test_app.py` | Backend, trabajos, HTTP, y las tres defensas |
 | `tests/test_capturas.py` | Que el material de ejemplo de las capturas diga lo mismo que la app |
 | `tests/test_entrada_hostil.py` | Que nada de lo que entra de afuera se ejecute: yt-dlp, fórmulas, portadas |
+| `tests/test_linea_p.py` | La línea ℗ entera en la P Line, y el titular sin la licencia como sello |
 | `tests/test_creditos.py` | Artistas por tema y créditos (compositor, letrista, productor, editorial) desde YouTube |
 | `tests/test_orden.py` | El número de disco y de track: el real de Deezer, o marcado como estimado |
 | `tests/test_agrupacion.py` | Qué tracks forman un release: fecha de lanzamiento, distribuidora y el caso sin fecha |

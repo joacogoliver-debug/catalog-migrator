@@ -42,6 +42,12 @@ Lo que cambió en cada versión publicada. Los números siguen
   `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Corregido
+- **La columna Label llevaba la línea ℗ entera, licencia incluida**: «Sello
+  Chico under exclusive license to Warner». Ahora es el titular, sin la
+  licencia, y en las líneas reales con más de un ℗ ya no sale «℗ Distributed
+  exclusively by…». La P Line, en cambio, va entera y tal como la publicó la
+  distribuidora original; antes se armaba con el año del release, y una
+  edición de 2023 con grabaciones de ℗ 2013 salía con un ℗ que no es.
 - `Territories` iba fijo en `Worldwide` y `Disc Number` en 1. Los dos eran
   inventar: un catálogo licenciado para una región se abría al mundo, y un
   álbum doble salía entero en el primer disco. Ahora van a completar cuando no

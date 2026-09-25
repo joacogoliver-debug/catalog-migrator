@@ -972,6 +972,11 @@ licenciado sólo para una región.
 Esos campos los tiene que llenar el dueño del catálogo, están marcados en vez
 de vacíos o inventados justamente para que no pasen desapercibidos.
 
+"P Line" es la línea ℗ tal como la publicó la distribuidora original, y
+"Label" es su titular, sin la licencia ("under exclusive license to…"). Para un
+artista independiente el titular suele ser el propio artista, y no siempre es
+el sello con el que va a salir en la distribuidora nueva: revisalo.
+
 Composer, Lyricist, Producer y Publisher vienen de los créditos que publica
 YouTube en cada tema, cuando la distribuidora original los mandó; si no, van
 en <<COMPLETAR>>. Verificá que sean los nombres legales que pide la
@@ -1065,6 +1070,11 @@ licensed for a single region.
 
 Those fields have to be filled in by the catalog owner. They are marked rather
 than left empty or made up precisely so they do not slip through.
+
+"P Line" is the ℗ line exactly as the original distributor published it, and
+"Label" is its holder, without the license ("under exclusive license to…"). For
+an independent artist the holder is often the artist themselves, and not always
+the label the release will go out under at the new distributor: review it.
 
 Composer, Lyricist, Producer and Publisher come from the credits YouTube
 publishes for each song, when the original distributor sent them; otherwise

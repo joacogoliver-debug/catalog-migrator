@@ -350,6 +350,39 @@ _RE_RELEASED = re.compile(r"Released on:\s*(\d{4})-(\d{2})-(\d{2})")
 _RE_SELLO_RELLENO = re.compile(r"^\d{5,}\s+Records DK$", re.IGNORECASE)
 
 
+# Lo que sigue al titular del ℗ y no es su nombre: la licencia y el grupo al que
+# pertenece. «℗ 2020 Sello Chico under exclusive license to Warner» es de Sello
+# Chico, y la columna Label llevaba la frase entera.
+_RE_CORTE_TITULAR = re.compile(
+    r"\s*(?:\bunder\s+(?:exclusive\s+)?licen[cs]e\b|,?\s*\ba\s+division\s+of\b|,?\s*\bdistributed\s+by\b|"
+    r"\bbajo\s+licencia\b|\blicensed\s+to\b).*$",
+    re.I,
+)
+
+
+def _titular(linea):
+    """El titular de una línea ℗, sin la licencia, o None.
+
+    Hay líneas con más de un ℗, como «2021 ℗ Distributed exclusively by Warner
+    Music France, ℗ 2001 Daft Life Ltd.»: se recorren los tramos y se toma el
+    primero que nombra a alguien, salteando los de distribución, que no son un
+    titular. Antes el sello salía «℗ Distributed exclusively by…».
+    """
+    for tramo in linea.split("℗"):
+        tramo = tramo.strip(" ,;")
+        m = _RE_ANIO_SELLO.match(tramo)
+        nombre = (m.group(2) if m and _anio_plausible(int(m.group(1))) else tramo).strip(" ,;")
+        nombre = _RE_CORTE_TITULAR.sub("", nombre).strip(" ,;")
+        if not nombre or re.match(r"(?i)distributed\b|\d{4}$", nombre):
+            continue
+        # "5358533 Records DK" no es un sello: es el relleno que pone DistroKid con
+        # el id de la cuenta cuando el artista no declaró ninguno.
+        if _RE_SELLO_RELLENO.match(nombre):
+            continue
+        return nombre
+    return None
+
+
 def _anio_plausible(a):
     """Un año de lanzamiento que pueda existir.
 
@@ -408,6 +441,7 @@ def parse_description(desc) -> DescripcionParseada:
         "release_year": None,
         "release_date": None,
         "label": None,
+        "p_line": None,
         "artists": [],
         "credits": {"composers": [], "lyricists": [], "producers": [], "publishers": []},
     }
@@ -448,18 +482,15 @@ def parse_description(desc) -> DescripcionParseada:
     # que pueda existir. Si no lo es, la línea entera es el sello.
     pm = _RE_PHONO_LINE.search(desc)
     if pm:
-        linea = pm.group(1).strip()
+        linea = re.sub(r"\s+", " ", pm.group(1)).strip()
         m = _RE_ANIO_SELLO.match(linea)
         if m and _anio_plausible(int(m.group(1))):
             res["release_year"] = int(m.group(1))
-            res["label"] = (m.group(2) or "").strip() or None
-        else:
-            res["label"] = linea or None
-        # "5358533 Records DK" no es un sello: es el relleno que pone DistroKid con
-        # el id de la cuenta cuando el artista no declaro ninguno. Mostrarlo como
-        # sello en la planilla y en la interfaz era mentir con cara de dato.
-        if res["label"] and _RE_SELLO_RELLENO.match(res["label"]):
-            res["label"] = None
+        # La línea entera es la P Line, tal como la publicó la distribuidora: es
+        # un dato de la fuente. Se arma aparte del sello, que es un recorte.
+        res["p_line"] = f"℗ {linea}" if linea else None
+        # Mostrar el relleno de DistroKid como sello era mentir con cara de dato.
+        res["label"] = _titular(linea)
 
     # "Released on:" es la fecha real del lanzamiento. Se guarda entera: es la
     # fecha que la hoja de ingesta necesita, y antes se leía sólo el año y la
@@ -499,6 +530,7 @@ def build_tracks(videos) -> list[Track]:
                 "album": meta["album"] or SIN_ALBUM,
                 "distributor": meta["distributor"] or SIN_DATOS,
                 "label": meta["label"] or "",
+                "p_line": meta["p_line"] or "",
                 "release_year": meta["release_year"] or "",
                 "isrc": "",  # se completa por enriquecimiento (Deezer), si está disponible
                 "upc": "",  # idem (a nivel álbum)

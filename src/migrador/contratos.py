@@ -75,7 +75,10 @@ class DescripcionParseada(TypedDict):
     # La fecha completa de «Released on:», AAAA-MM-DD, cuando la trae. Es la
     # fecha del lanzamiento, no la de subida del video.
     release_date: str | None
+    # El titular de la línea ℗, sin la licencia («under exclusive license to…»).
     label: str | None
+    # La línea ℗ entera, como la publicó la distribuidora.
+    p_line: str | None
     # Los artistas de la línea «Título · Artista · Otro», en ese orden.
     artists: list[str]
     credits: Creditos
@@ -122,6 +125,8 @@ class Track(TypedDict):
     # AAAA-MM-DD, de «Released on:» en la descripción, o "" si no la trae. No
     # confundir con `upload_date`: un disco de 2001 puede estar subido en 2024.
     release_date: str
+    # La línea ℗ entera, o "" si la descripción no la trae.
+    p_line: str
     # Los artistas del tema según YouTube, el principal primero. Vacío si la
     # descripción no los trae.
     artists: list[str]
@@ -180,6 +185,8 @@ class Producto(TypedDict):
     # nunca va a la hoja como fecha del release.
     upload_date: str
     label: str
+    # La línea ℗ del release, la más repetida entre sus tracks, o "".
+    p_line: str
     distributor: str
     upc: str
     tracks: list[Track]

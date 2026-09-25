@@ -42,6 +42,13 @@ What changed in every published version. The numbers follow
   on its own, following the rubric in `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Fixed
+- **The Label column carried the whole ℗ line, license included**: "Small
+  Label under exclusive license to Warner". It is now the holder, without the
+  license, and real lines with more than one ℗ no longer give "℗ Distributed
+  exclusively by…". The P Line, on the other hand, goes whole and exactly as
+  the original distributor published it; before, it was built from the release
+  year, and a 2023 edition with ℗ 2013 recordings came out with a ℗ that is not
+  the real one.
 - `Territories` was fixed to `Worldwide` and `Disc Number` to 1. Both were
   made up: a catalog licensed for one region was opened to the world, and a
   double album came out entirely on the first disc. They are now to be filled

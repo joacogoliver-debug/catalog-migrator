@@ -332,11 +332,11 @@ def hoja_ingesta_csv(productos, artista, incluir_audio=True, incluir_portadas=Tr
     w.writerow(COLUMNAS_INGESTA)
 
     for p in productos:
-        anio = p.get("release_year") or ""
         sello = p.get("label") or MARCA_COMPLETAR
-        # La línea ℗ se arma con lo que trae YouTube; si falta el año no la
-        # inventamos.
-        p_line = f"{anio} {sello}".strip() if anio and p.get("label") else MARCA_COMPLETAR
+        # La línea ℗ tal como la publicó la distribuidora. Antes se armaba con
+        # el año y el sello, y el año era el del release: una edición de 2023 con
+        # grabaciones de ℗ 2013 salía con un ℗ que no es.
+        p_line = p.get("p_line") or MARCA_COMPLETAR
         for t in p["tracks"]:
             # Cada campo pasa por `_texto_csv`: ver la nota sobre las fórmulas.
             w.writerow(
