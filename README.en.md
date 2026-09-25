@@ -134,8 +134,9 @@ free. How to go on:
 
 Instead of a paid signature, trust rests on three verifiable things: the code is
 public, **the executable is compiled here in GitHub Actions** from that code in
-plain sight, and every release publishes the SHA256 plus a provenance
-attestation. You can verify that the binary came out of this repo:
+plain sight, and every release publishes the SHA256 and, while the repo is
+public, a provenance attestation (if a release lacks one, the SHA256 is still
+there). You can verify that the binary came out of this repo:
 
 ```bash
 gh attestation verify Migrador-de-Catalogos-windows-completa.exe --repo joacogoliver-debug/catalog-migrator
@@ -484,7 +485,7 @@ defenses, all three cheap and all three with a test of their own:
    it, because the origin is a different one. Downloading the ZIP is a link,
    which cannot send that header, so it goes through a single-use ticket that
    expires in a minute and can only be obtained with the token.
-2. **`Host` check.** Only `127.0.0.1` or `localhost` are accepted, which cuts off
+2. **`Host` check.** Only `127.0.0.1`, `localhost` or `[::1]` are accepted, which cuts off
    DNS rebinding, the classic way around the previous defense.
 3. **CSP.** The page cannot request or execute anything from outside. The first
    two cut off whoever wants to get in; this one cuts off the opposite, because
@@ -496,6 +497,9 @@ defenses, all three cheap and all three with a test of their own:
 It is also consistent with an app that works with no internet: the typefaces and
 everything else come from this same server, and the test checks both things, that
 the header is intact and that the page does not break it.
+
+Who each defense exists against, which test covers it and what is left out on
+purpose is in the [threat model](docs/AMENAZAS.en.md).
 
 ## Tests
 

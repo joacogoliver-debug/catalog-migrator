@@ -13,16 +13,23 @@ SEGURIDAD
 El servidor escucha sólo en 127.0.0.1, pero eso por sí solo no alcanza. Un
 servidor local sin más protección lo puede usar **cualquier página web abierta
 en el navegador de esa misma máquina**: le manda pedidos a localhost y, como el
-navegador adjunta la petición igual, termina operando la app del usuario. Dos
-defensas, las dos baratas:
+navegador adjunta la petición igual, termina operando la app del usuario. Tres
+defensas, las tres baratas y con test:
 
   1. **Token de sesión.** Se genera uno nuevo en cada arranque, se inyecta en
      index.html y toda ruta /api/ lo exige en la cabecera X-App-Token. Una
      página externa no puede leerlo, porque el origen es distinto y la política
      del navegador se lo impide.
-  2. **Cabecera Host.** Se acepta sólo 127.0.0.1 o localhost. Eso corta el
-     rebinding de DNS, que es la vuelta clásica para saltear la defensa
+  2. **Cabecera Host.** Se acepta sólo 127.0.0.1, localhost o [::1]. Eso corta
+     el rebinding de DNS, que es la vuelta clásica para saltear la defensa
      anterior.
+  3. **CSP.** La página no puede pedir ni ejecutar nada de afuera. Las dos
+     primeras cortan a quien quiere entrar; ésta, a lo que la app muestra, que
+     viene de YouTube, Deezer y Apple y no tiene que poder traer un script.
+
+Encima de las tres, capas que suman y no reemplazan: `Sec-Fetch-Site` y
+`Origin`, y las cabeceras que impiden meter la app en un iframe. Contra quién
+existe cada cosa, y qué queda afuera a propósito, está en docs/AMENAZAS.md.
 
 Endpoints:
   GET  /                      la interfaz
@@ -100,7 +107,11 @@ TOKEN = secrets.token_urlsafe(24)
 
 # Hosts que aceptamos en la cabecera Host. Cualquier otro nombre significa que
 # alguien resolvió un dominio propio a 127.0.0.1 para hablarle a la app.
-HOSTS_VALIDOS = ("127.0.0.1", "localhost", "::1", "[::1]")
+# Como llegan en la cabecera Host, sin el puerto. IPv6 va entre corchetes
+# («[::1]:8000»); un «::1» suelto no puede llegar nunca, porque sin corchetes no
+# se distingue del puerto. `Origin` lo trae sin corchetes y se los agrega quien
+# lo compara (`_origen_propio`).
+HOSTS_VALIDOS = ("127.0.0.1", "localhost", "[::1]")
 
 
 def _audio_habilitado():

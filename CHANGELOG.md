@@ -9,6 +9,10 @@ Lo que cambió en cada versión publicada. Los números siguen
 ## [Sin publicar]
 
 ### Agregado
+- **Modelo de amenazas escrito**, en [docs/AMENAZAS.md](docs/AMENAZAS.md) y en
+  inglés: qué protege la app, de quién, con qué defensa y qué test la cubre, y
+  qué queda afuera a propósito (por ejemplo, que un proceso local del mismo
+  usuario puede leer el token, igual que la clave).
 - **La app explica la regla número uno de una migración**: conservar el ISRC,
   el UPC y la fecha original es lo que une cada release nuevo al que ya está en
   las tiendas, con sus reproducciones y playlists, y la baja en la distribuidora
@@ -79,6 +83,14 @@ Lo que cambió en cada versión publicada. Los números siguen
   `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Corregido
+- **SECURITY.md y el servidor nombran las tres defensas.** Decían «dos» y no
+  mencionaban la CSP, así que quien quisiera reportar no sabía que saltearla
+  entra en el alcance.
+- **La atestación de procedencia se describe como es**: condicional a que el
+  repositorio sea público, y sin frenar el release si falla. SECURITY.md y el
+  README la presentaban como garantizada.
+- **La lista de hosts válidos ya no trae una entrada que nunca coincide** (un
+  `::1` sin corchetes), y un test verifica que cada una se pueda alcanzar.
 - **El FLAC de Tidal ya no se presenta como «máster».** Es la copia sin
   pérdida que sirve la plataforma, que sirve para entregar cuando no hay otra
   cosa, pero puede tener menos resolución que el máster de estudio.

@@ -410,6 +410,20 @@ def test_un_host_ajeno_se_rechaza(cliente):
     )
 
 
+@pytest.mark.parametrize("host", backend.HOSTS_VALIDOS)
+def test_cada_host_de_la_lista_se_puede_alcanzar(cliente, host):
+    """Una entrada de la lista que nunca coincide es una defensa que parece más
+    ancha de lo que es. Pasaba con un «::1» sin corchetes."""
+    assert cliente.crudo("GET", "/app.css", {"Host": f"{host}:8765"}) == 200
+
+
+def test_un_origin_ipv6_se_reconoce_sin_corchetes(cliente):
+    """`Origin` trae el IPv6 sin corchetes, y se tiene que seguir aceptando."""
+    token = {"X-App-Token": backend.TOKEN}
+    assert cliente.crudo("GET", "/api/config", {**token, "Origin": "http://[::1]:8765"}) == 200
+    assert cliente.crudo("GET", "/api/config", {**token, "Origin": "http://evil.example.com"}) == 403
+
+
 def test_los_estaticos_no_piden_token_pero_si_controlan_el_host(cliente):
     assert cliente.crudo("GET", "/app.css") == 200
     assert cliente.crudo("GET", "/app.css", {"Host": "evil.example.com"}) == 403

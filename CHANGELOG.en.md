@@ -9,6 +9,10 @@ What changed in every published version. The numbers follow
 ## [Unreleased]
 
 ### Added
+- **A written threat model**, in [docs/AMENAZAS.en.md](docs/AMENAZAS.en.md)
+  and in Spanish: what the app protects, from whom, with which defense and
+  which test covers it, and what is left out on purpose (for instance, that a
+  local process of the same user can read the token, just like the key).
 - **The app explains the number one rule of a migration**: keeping the ISRC,
   the UPC and the original date is what joins each new release to the one
   already in stores, with its plays and playlists, and taking the catalog down
@@ -80,6 +84,14 @@ What changed in every published version. The numbers follow
   on its own, following the rubric in `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Fixed
+- **SECURITY.md and the server name the three defenses.** They said "two"
+  and did not mention the CSP, so someone wanting to report did not know that
+  getting around it is in scope.
+- **The provenance attestation is described as it is**: conditional on the
+  repository being public, and not stopping the release if it fails.
+  SECURITY.md and the README presented it as guaranteed.
+- **The valid host list no longer carries an entry that never matches** (a
+  bare `::1`), and a test checks that each one can be reached.
 - **Tidal's FLAC is no longer presented as "the master".** It is the
   lossless copy the platform streams, fine for delivery when there is nothing
   else, but it can have a lower resolution than the studio master.

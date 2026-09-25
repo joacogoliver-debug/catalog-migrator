@@ -132,8 +132,9 @@ Cómo seguir:
 
 En vez de una firma paga, la confianza se apoya en tres cosas verificables: el
 código es público, **el ejecutable se compila acá en GitHub Actions** desde ese
-código a la vista de todos, y cada release publica el SHA256 más una atestación
-de procedencia. Podés verificar que el binario salió de este repo:
+código a la vista de todos, y cada release publica el SHA256 y, mientras el repo
+sea público, una atestación de procedencia (si un release no la trae, el SHA256
+está igual). Podés verificar que el binario salió de este repo:
 
 ```bash
 gh attestation verify Migrador-de-Catalogos-windows-completa.exe --repo joacogoliver-debug/catalog-migrator
@@ -478,7 +479,7 @@ defensas más, las tres baratas y las tres con test propio:
    leer, porque el origen es distinto. La descarga del ZIP es un enlace, que
    no puede mandar esa cabecera, así que pasa por un ticket de un solo uso que
    vence en un minuto y que sólo se obtiene con el token.
-2. **Control de `Host`.** Se acepta sólo `127.0.0.1` o `localhost`, lo que corta
+2. **Control de `Host`.** Se acepta sólo `127.0.0.1`, `localhost` o `[::1]`, lo que corta
    el rebinding de DNS, que es la vuelta clásica para saltear lo anterior.
 3. **CSP.** La página no puede pedir ni ejecutar nada de afuera. Las dos
    primeras cortan a quien quiera entrar; ésta corta lo contrario, porque el
@@ -490,6 +491,9 @@ defensas más, las tres baratas y las tres con test propio:
 Es además consistente con una app que funciona sin internet: las tipografías y
 todo lo demás salen de este mismo servidor, y el test verifica las dos cosas, que
 la cabecera esté entera y que la página no la incumpla.
+
+Contra quién existe cada defensa, qué test la cubre y qué queda afuera a
+propósito está en el [modelo de amenazas](docs/AMENAZAS.md).
 
 ## Tests
 

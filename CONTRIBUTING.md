@@ -65,12 +65,13 @@ tres defensas más, y las tres tienen test.
 
 1. **Token de sesión**, nuevo en cada arranque, inyectado en `index.html` y
    exigido en toda ruta `/api/`.
-2. **Control de `Host`**, que acepta sólo `127.0.0.1` y `localhost`, y corta el
+2. **Control de `Host`**, que acepta sólo `127.0.0.1`, `localhost` y `[::1]`, y corta el
    rebinding de DNS.
 3. **CSP**, que no deja a la página pedir ni ejecutar nada de afuera.
 
 **Ninguna se debilita.** Cualquier cambio en `app/server.py` viene con un test
-nuevo o modificado que cubra lo que tocaste.
+nuevo o modificado que cubra lo que tocaste. Contra quién existe cada una, y qué
+test la cubre, está en [docs/AMENAZAS.md](docs/AMENAZAS.md).
 
 ### 2. Sin frameworks y sin build step
 

@@ -65,12 +65,13 @@ further defenses, and all three have tests.
 
 1. **Session token**, new at every startup, injected into `index.html` and
    demanded on every `/api/` route.
-2. **`Host` check**, which accepts only `127.0.0.1` and `localhost`, and cuts off
+2. **`Host` check**, which accepts only `127.0.0.1`, `localhost` and `[::1]`, and cuts off
    DNS rebinding.
 3. **CSP**, which does not let the page request or execute anything from outside.
 
 **None of them gets weakened.** Any change to `app/server.py` comes with a new or
-modified test covering what you touched.
+modified test covering what you touched. Who each one exists against, and which
+test covers it, is in [docs/AMENAZAS.en.md](docs/AMENAZAS.en.md).
 
 ### 2. No frameworks and no build step
 
