@@ -462,6 +462,51 @@ def leeme():
 # ZIP
 # ============================================================
 
+# El largo máximo de una ruta adentro del ZIP. Windows no abre rutas de más de
+# 260 caracteres, y «Extraer todo» del Explorador descomprime en
+# `C:\Users\<usuario>\Downloads\<nombre del zip>\`, que ya se come unos
+# sesenta. El peor caso medido antes de este tope pasaba los 290 adentro del
+# ZIP, y fallaba recién al descomprimir, en la máquina de quien recibe la
+# entrega. Lo que se recorta es el título del archivo de audio: la carpeta raíz
+# y la del producto tienen su propio tope, y el número de track y la marca de
+# lossy no se tocan nunca.
+LARGO_MAX_RUTA = 200
+LARGO_ARTISTA_RAIZ = 40
+
+
+def carpeta_raiz(artista):
+    """La carpeta que envuelve todo el paquete."""
+    fecha = date.today().isoformat()
+    return f"{_slug_archivo(artista, LARGO_ARTISTA_RAIZ)} - {T('paq.carpeta_raiz')} {fecha}"
+
+
+def nombre_audio(t, lugar=110):
+    """El nombre del archivo de audio de un track adentro de su carpeta.
+
+    `lugar` es cuántos caracteres le quedan al nombre entero dentro del
+    presupuesto de la ruta. Los lossy van marcados en el nombre: es la última
+    barrera para que no se entreguen por error.
+    """
+    n = t.get("track_number") or 0
+    ext = t.get("audio_format") or os.path.splitext(t.get("audio_path") or "")[1]
+    marca = "" if t.get("audio_format") in FORMATOS_LOSSLESS else " " + T("paq.tag_lossy")
+    prefijo = f"{n:02d} - "
+    largo = max(12, min(80, lugar - len(prefijo) - len(marca) - len(ext)))
+    return f"{prefijo}{_slug_archivo(t.get('track'), largo)}{marca}{ext}"
+
+
+def entrada_zip(*partes):
+    """El nombre de una entrada del ZIP, controlado.
+
+    Cada parte ya sale de un nombre saneado; esto es la segunda puerta. Si
+    alguna trae una barra o es `..`, el paquete no se arma: preferimos un error
+    acá antes que un ZIP que escriba fuera de su carpeta al descomprimirse.
+    """
+    for parte in partes:
+        if parte in ("", ".", "..") or "/" in parte or "\\" in parte:
+            raise ValueError(f"nombre de entrada inseguro en el ZIP: {parte!r}")
+    return "/".join(partes)
+
 
 def build_zip(
     productos: list[Producto],
@@ -479,15 +524,15 @@ def build_zip(
     Se escribe directo a disco porque un catálogo en FLAC son varios GB.
     """
     F = nombres_archivos()
-    raiz = f"{_slug_archivo(artista)} - {T('paq.carpeta_raiz')} {date.today().isoformat()}"
+    raiz = carpeta_raiz(artista)
     # ZIP_STORED para el audio: FLAC y Opus ya están comprimidos, deflate
     # gastaría CPU sin ganar espacio. Sí comprimimos planillas y texto.
     with zipfile.ZipFile(out_path, "w", zipfile.ZIP_DEFLATED, allowZip64=True) as z:
         # Los .txt van con BOM (utf-8-sig): los abre gente en Windows y sin BOM
         # algunos editores viejos muestran los acentos rotos.
-        z.writestr(f"{raiz}/{F['leeme']}", leeme().encode("utf-8-sig"))
+        z.writestr(entrada_zip(raiz, F["leeme"]), leeme().encode("utf-8-sig"))
         z.writestr(
-            f"{raiz}/{F['reporte']}",
+            entrada_zip(raiz, F["reporte"]),
             reporte_texto(productos, artista, entorno, con_tidal).encode("utf-8-sig"),
         )
 
@@ -495,35 +540,33 @@ def build_zip(
         from . import validar as V
 
         res_val = V.validar(productos, artista)
-        z.writestr(f"{raiz}/{F['validacion']}", V.reporte_validacion(res_val, artista).encode("utf-8-sig"))
+        z.writestr(
+            entrada_zip(raiz, F["validacion"]), V.reporte_validacion(res_val, artista).encode("utf-8-sig")
+        )
 
         if incluir_planilla:
-            z.writestr(f"{raiz}/{F['catalogo']}", planilla_maestra_bytes(productos, artista))
+            z.writestr(entrada_zip(raiz, F["catalogo"]), planilla_maestra_bytes(productos, artista))
             # CSV de ingesta: es el archivo que se carga en la distribuidora.
-            z.writestr(f"{raiz}/{F['ingesta']}", hoja_ingesta_csv(productos, artista).encode("utf-8-sig"))
+            z.writestr(
+                entrada_zip(raiz, F["ingesta"]), hoja_ingesta_csv(productos, artista).encode("utf-8-sig")
+            )
 
         for p in productos:
-            carpeta = f"{raiz}/{p['folder']}"
+            carpeta = p["folder"]
             if incluir_planilla:
-                z.writestr(f"{carpeta}/{T('paq.f_datos')}", planilla_producto_bytes(p, artista))
+                z.writestr(entrada_zip(raiz, carpeta, T("paq.f_datos")), planilla_producto_bytes(p, artista))
             portada = p.get("cover_bytes")
             if incluir_portadas and portada:
-                z.writestr(f"{carpeta}/{T('paq.f_portada')}", portada)
+                z.writestr(entrada_zip(raiz, carpeta, T("paq.f_portada")), portada)
 
             if incluir_audio:
+                lugar = LARGO_MAX_RUTA - len(raiz) - len(carpeta) - 2
                 for t in p["tracks"]:
                     ruta = t.get("audio_path")
                     if not ruta or not os.path.exists(ruta):
                         continue
-                    n = t.get("track_number") or 0
-                    ext = t.get("audio_format") or os.path.splitext(ruta)[1]
-                    nombre = f"{n:02d} - {_slug_archivo(t.get('track'))}{ext}"
-                    # Los lossy van marcados en el nombre del archivo: es la
-                    # última barrera para que no se entreguen por error.
-                    if t.get("audio_format") not in FORMATOS_LOSSLESS:
-                        marca = T("paq.tag_lossy")
-                        nombre = f"{n:02d} - {_slug_archivo(t.get('track'))} {marca}{ext}"
-                    z.write(ruta, f"{carpeta}/{nombre}", compress_type=zipfile.ZIP_STORED)
+                    nombre = entrada_zip(raiz, carpeta, nombre_audio(t, lugar))
+                    z.write(ruta, nombre, compress_type=zipfile.ZIP_STORED)
             log(T("paq.log_carpeta", carpeta=p["folder"]))
 
     tam = os.path.getsize(out_path)

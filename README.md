@@ -476,6 +476,7 @@ pytest -q --cov
 | `tests/test_app.py` | Backend, trabajos, HTTP, y las tres defensas |
 | `tests/test_capturas.py` | Que el material de ejemplo de las capturas diga lo mismo que la app |
 | `tests/test_entrada_hostil.py` | Que nada de lo que entra de afuera se ejecute: yt-dlp, fórmulas, portadas |
+| `tests/test_nombres_zip.py` | Nombres adentro del ZIP: únicos, cortos y sin salirse de la raíz |
 | `tests/test_migrar_core.py` | Contrato del orquestador |
 | `tests/test_errores_youtube.py` | Traducción de los errores de la YouTube Data API |
 | `tests/test_audio_tidal.py` | Contrato con tiddl, se saltea si no está instalado |

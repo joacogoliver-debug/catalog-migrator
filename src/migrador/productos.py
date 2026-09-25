@@ -14,6 +14,7 @@ hasta que lo complete el enriquecimiento por Deezer, y el reporte de migración
 avisa cuando un producto quedó sin orden confirmado.
 """
 
+import re
 from collections import Counter
 
 from .contratos import Producto, ResumenSeleccion, TipoProducto, Track
@@ -58,8 +59,11 @@ def _mode(values):
 
 
 def _slug(s, maxlen=60):
-    """Nombre de carpeta seguro. Sesenta caracteres, que es lo que entra sin
-    que la ruta completa dentro del ZIP se pase de los 260 de Windows."""
+    """Nombre de carpeta seguro, de hasta sesenta caracteres.
+
+    El largo solo no alcanza para no pasarse de los 260 de Windows, porque la
+    ruta suma la carpeta raíz y el nombre de cada archivo: el presupuesto total
+    lo maneja `paquete.LARGO_MAX_RUTA`, que recorta el título del archivo."""
     return nombre_seguro(s, maxlen, "Sin titulo")
 
 
@@ -123,16 +127,42 @@ def group_products(tracks: list[Track], artist="") -> list[Producto]:
     productos.sort(key=lambda p: (str(p["release_year"] or ""), p["release_date"] or ""), reverse=True)
     for i, p in enumerate(productos, 1):
         p["product_id"] = f"p{i:03d}"
-        p["folder"] = folder_name(p)
+    asignar_carpetas(productos)
     return productos
 
 
 def folder_name(p):
-    """Nombre de carpeta del producto dentro del ZIP: '2019 - Album [UPC]'."""
+    """Nombre de carpeta del producto dentro del ZIP: '2019 - Album [UPC]'.
+
+    Del UPC entran sólo los dígitos. Viene de Deezer o de Tidal y se pegaba
+    crudo: un UPC `../../evil` sacaba la carpeta de la raíz del ZIP, y un
+    descompresor que no sanea escribía afuera.
+    """
     año = p.get("release_year") or "s-f"  # s-f = sin fecha
     base = f"{año} - {_slug(p.get('title'))}"
-    upc = (p.get("upc") or "").strip()
+    upc = re.sub(r"\D", "", p.get("upc") or "")
     return f"{base} [{upc}]" if upc else base
+
+
+def asignar_carpetas(productos):
+    """Le pone a cada producto una carpeta que no repite la de otro.
+
+    Dos productos podían quedar con el mismo nombre: dos singles «Intro» del
+    mismo año sin UPC, dos títulos que difieren recién después del carácter
+    sesenta, o títulos en una escritura no latina, que al pasar a ASCII quedan
+    todos en «Sin titulo». Adentro del ZIP eran dos entradas con el mismo
+    nombre, y al descomprimir la portada y la planilla de uno pisaban las del
+    otro. Se compara sin mayúsculas porque Windows no las distingue.
+    """
+    usados = set()
+    for p in productos:
+        base = folder_name(p)
+        nombre, n = base, 2
+        while nombre.casefold() in usados:
+            nombre, n = f"{base} ({n})", n + 1
+        usados.add(nombre.casefold())
+        p["folder"] = nombre
+    return productos
 
 
 # ============================================================

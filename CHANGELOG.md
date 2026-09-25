@@ -16,6 +16,19 @@ Lo que cambió en cada versión publicada. Los números siguen
   `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Corregido
+- **Un producto podía pisar los archivos de otro al descomprimir el ZIP.** Dos
+  singles con el mismo título y el mismo año sin UPC, dos títulos que recién
+  difieren después del carácter sesenta, o títulos en una escritura no latina,
+  que al pasar a ASCII quedan todos en «Sin titulo», terminaban en la misma
+  carpeta: la portada y la planilla de uno reemplazaban a las del otro. Ahora
+  cada producto tiene su carpeta, con `(2)` si hace falta.
+- Las rutas adentro del ZIP podían pasar los 260 caracteres que admite Windows,
+  y «Extraer todo» fallaba en la máquina de quien recibía la entrega. Ahora hay
+  un tope para la ruta entera, que se descuenta del título del tema sin tocar
+  nunca el número de track ni la marca de audio lossy.
+- El UPC entraba crudo al nombre de la carpeta. Ahora entran sólo sus dígitos, y
+  el armado se niega a escribir una entrada que quede fuera de la carpeta del
+  paquete.
 - **Tres entradas que venían de afuera podían ejecutar algo.**
   - yt-dlp leía un `yt-dlp.conf` de la carpeta desde la que se abría la app,
     que para el ejecutable portable suele ser Descargas, y ahí un `--exec`

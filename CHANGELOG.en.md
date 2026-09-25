@@ -16,6 +16,18 @@ What changed in every published version. The numbers follow
   on its own, following the rubric in `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Fixed
+- **A release could overwrite another one's files when the ZIP was unpacked.**
+  Two singles with the same title and year and no UPC, two titles that only
+  differ after the sixtieth character, or titles in a non-Latin script, which all
+  become "Sin titulo" when turned into ASCII, ended up in the same folder: one's
+  cover and spreadsheet replaced the other's. Each release now gets its own
+  folder, with `(2)` when needed.
+- Paths inside the ZIP could go past the 260 characters Windows allows, and
+  "Extract all" failed on the machine of whoever received the delivery. There is
+  now a cap for the whole path, taken out of the song title without ever
+  touching the track number or the lossy audio mark.
+- The UPC went into the folder name as is. Only its digits go in now, and the
+  build refuses to write an entry that would land outside the package folder.
 - **Three inputs coming from outside could execute something.**
   - yt-dlp read a `yt-dlp.conf` from the folder the app was opened from, which
     for the portable executable is usually Downloads, and a planted `--exec`
