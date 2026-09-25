@@ -168,7 +168,8 @@ MIGRADOR_IDIOMA=en python app/launcher.py
 
 ## How it's used
 
-**1. You paste the link** of the artist's channel, Topic or `@handle`.
+**1. You paste the link** of the artist's channel, Topic or `@handle`. The
+link of any of their songs works too: the app looks up the channel that uploaded it.
 
 ![The entry screen](docs/capturas/en/01-entrada.png)
 
@@ -486,6 +487,7 @@ pytest -q --cov
 | `tests/test_app.py` | Backend, jobs, HTTP, and the three defenses |
 | `tests/test_capturas.py` | That the screenshots' sample material says the same as the app |
 | `tests/test_entrada_hostil.py` | That nothing coming from outside gets executed: yt-dlp, formulas, covers |
+| `tests/test_urls_youtube.py` | What can be pasted in the link field, without mistaking one channel for another |
 | `tests/test_versiones.py` | That a live, remix or remaster version does not take another version's code or cover |
 | `tests/test_nombres_zip.py` | Names inside the ZIP: unique, short and never outside the root |
 | `tests/test_migrar_core.py` | Orchestrator contract |

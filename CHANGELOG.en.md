@@ -9,6 +9,10 @@ What changed in every published version. The numbers follow
 ## [Unreleased]
 
 ### Added
+- The link field also takes a bare `UC…` ID, `/user/` and `/c/` links, and
+  the link of any of the artist's songs (`watch?v=`, `youtu.be`, `/shorts/`,
+  YouTube Music): the app looks up the channel that uploaded it, for one unit of
+  quota.
 - `docs/AUDITORIA-2.md` and `docs/MEJORAS-2.md`, the diagnosis of the second
   improvement cycle and the backlog that comes out of it. This time the
   repository was looked at from six separate angles (music industry,
@@ -16,6 +20,10 @@ What changed in every published version. The numbers follow
   on its own, following the rubric in `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Fixed
+- **An `@handle` with an accent or an ñ could survey another artist's
+  catalog.** The browser copies `youtube.com/@pe%C3%B1a`, encoded, and the app
+  stopped at the `%`: it asked for `@pe`, and if that channel existed it surveyed
+  it without any error. The link is now decoded before reading it.
 - **A live version, a remix or a remaster took the studio version's ISRC.**
   Before searching Deezer, the app stripped from the title exactly what says
   which version it is: "Song (Live)" became "Song", matched the studio one one

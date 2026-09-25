@@ -361,8 +361,8 @@ const TEXTOS = {
   },
   'paso1.rotulo_link': { es: 'Link del canal', en: 'Channel link' },
   'paso1.ayuda_link': {
-    es: 'Acepta la URL del canal o un <span class="mono">@handle</span>.',
-    en: 'Takes the channel URL or an <span class="mono">@handle</span>.',
+    es: 'Acepta la URL del canal, un <span class="mono">@handle</span> o el link de cualquier tema del artista.',
+    en: 'Takes the channel URL, an <span class="mono">@handle</span> or the link of any of the artist\'s songs.',
   },
   'paso1.falta_link': { es: 'Pegá el link del canal.', en: 'Paste the channel link.' },
   'paso1.ya_relevado': {

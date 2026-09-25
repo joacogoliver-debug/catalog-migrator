@@ -264,8 +264,18 @@ TEXTOS = {
         "en": "Could not reach the YouTube API. ({detalle})",
     },
     "yt.url_no_reconocida": {
-        "es": "No pude extraer el canal de la URL. Usá una URL /channel/UC... o @handle.",
-        "en": "Could not work out the channel from that URL. Use a /channel/UC... URL or an @handle.",
+        "es": (
+            "No pude sacar el canal de ese link. Sirve el link del canal (con @nombre o con "
+            "/channel/UC…) o el de cualquier tema del artista."
+        ),
+        "en": (
+            "Could not work out the channel from that link. Use the channel link (with @name "
+            "or /channel/UC…) or the link of any of the artist's songs."
+        ),
+    },
+    "yt.video_no_encontrado": {
+        "es": "No encontré ese tema en YouTube. Revisá el link, o pegá el del canal.",
+        "en": "Could not find that song on YouTube. Check the link, or paste the channel's.",
     },
     "yt.canal_no_encontrado": {
         "es": "No se encontró el canal ({canal}). Revisá la URL.",

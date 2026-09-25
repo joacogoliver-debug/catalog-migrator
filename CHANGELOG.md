@@ -9,6 +9,10 @@ Lo que cambió en cada versión publicada. Los números siguen
 ## [Sin publicar]
 
 ### Agregado
+- El campo del link acepta también el ID `UC…` suelto, los links `/user/` y
+  `/c/`, y el link de cualquier tema del artista (`watch?v=`, `youtu.be`,
+  `/shorts/`, YouTube Music): la app busca el canal que lo subió, por una unidad
+  de cuota.
 - `docs/AUDITORIA-2.md` y `docs/MEJORAS-2.md`, el diagnóstico del segundo ciclo
   de mejoras y el backlog que sale de él. Esta vez el repositorio se miró con
   seis miradas distintas (industria musical, distribución y metadata, software,
@@ -16,6 +20,10 @@ Lo que cambió en cada versión publicada. Los números siguen
   `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Corregido
+- **Un `@handle` con ñ o con tilde podía relevar el catálogo de otro
+  artista.** El navegador copia `youtube.com/@pe%C3%B1a`, codificado, y la app
+  se cortaba en el `%`: pedía `@pe`, y si ese canal existía lo relevaba sin
+  ningún error. Ahora el link se decodifica antes de leerlo.
 - **Una versión en vivo, un remix o un remaster se quedaban con el ISRC de la
   versión de estudio.** Antes de buscar en Deezer, la app le sacaba al título
   justo lo que dice qué versión es: «Tema (En Vivo)» quedaba como «Tema»,

@@ -136,24 +136,81 @@ def _error_de_youtube(codigo_http, body):
     return RelevarError(T("yt.error_generico", codigo=codigo_http, mensaje=mensaje))
 
 
+_RE_ID_CANAL = re.compile(r"^UC[\w-]{22}$")
+_RE_ID_VIDEO = re.compile(r"^[\w-]{11}$")
+
+
+def _id_de_video(url):
+    """El id del video de un link a un tema (`watch?v=`, `youtu.be/`,
+    `/shorts/`), o None. Sirve para llegar al canal que lo subió."""
+    partes = urllib.parse.urlsplit(url if "://" in url else "https://" + url)
+    host = (partes.hostname or "").lower()
+    candidato = None
+    if host.endswith("youtu.be"):
+        candidato = partes.path.strip("/").split("/")[0]
+    elif host.endswith("youtube.com"):
+        if partes.path.rstrip("/") == "/watch":
+            candidato = (urllib.parse.parse_qs(partes.query).get("v") or [""])[0]
+        elif partes.path.startswith("/shorts/"):
+            candidato = partes.path.split("/")[2]
+    return candidato if candidato and _RE_ID_VIDEO.match(candidato) else None
+
+
+def pedido_de_canal(url):
+    """Cómo pedirle el canal a la API, a partir de lo que pegó el usuario.
+
+    Devuelve (parámetros de `channels.list`, lo que se muestra si no aparece), o
+    (None, id_de_video) cuando lo pegado es un tema y hay que buscar su canal
+    primero. Levanta RelevarError si no hay por dónde agarrarlo.
+
+    La URL se decodifica ANTES de buscar el handle. El navegador copia
+    `youtube.com/@pe%C3%B1a`, y el regex se cortaba en el `%`: se pedía `@pe`,
+    y si ese canal existía se relevaba el catálogo de otro artista sin ningún
+    error, que es lo peor que puede pasar con un anexo de contrato.
+    """
+    url = urllib.parse.unquote((url or "").strip())
+    base = {"part": "snippet,contentDetails"}
+
+    m = re.search(r"/channel/(UC[\w-]+)", url)
+    if m:
+        return dict(base, id=m.group(1)), url
+    if _RE_ID_CANAL.match(url):
+        return dict(base, id=url), url
+    m = re.search(r"/user/([\w.\-]+)", url)
+    if m:
+        return dict(base, forUsername=m.group(1)), m.group(1)
+    m = re.search(r"@([\w.\-·]+)", url)
+    if m:
+        return dict(base, forHandle="@" + m.group(1)), "@" + m.group(1)
+    # Las URL personalizadas viejas (`/c/Nombre`) no tienen consulta propia en
+    # la API; hoy casi siempre coinciden con el handle, así que se prueba así.
+    m = re.search(r"/c/([\w.\-]+)", url)
+    if m:
+        return dict(base, forHandle="@" + m.group(1)), m.group(1)
+    video = _id_de_video(url)
+    if video:
+        return None, video
+    raise RelevarError(T("yt.url_no_reconocida"), "url")
+
+
 def resolve_channel(url, key):
     """Devuelve (channel_id, uploads_playlist_id, channel_title)."""
-    url = url.strip()
-    m = re.search(r"/channel/(UC[\w-]+)", url)
-    handle = None
-    if m:
-        params = {"part": "snippet,contentDetails", "id": m.group(1)}
-    else:
-        hm = re.search(r"@([\w.\-]+)", url)
-        if not hm:
-            raise RelevarError(T("yt.url_no_reconocida"), "url")
-        handle = hm.group(1)
-        params = {"part": "snippet,contentDetails", "forHandle": "@" + handle}
+    params, muestra = pedido_de_canal(url)
+    if params is None:
+        # Pegaron el link de un tema: su canal sale de `videos.list`, que cuesta
+        # una unidad de cuota, y de ahí se sigue como con cualquier canal.
+        datos = api_get("videos", {"part": "snippet", "id": muestra}, key)
+        items = datos.get("items") or []
+        canal = ((items[0].get("snippet") or {}).get("channelId") if items else "") or ""
+        if not canal:
+            raise RelevarError(T("yt.video_no_encontrado"), "url")
+        params, muestra = {"part": "snippet,contentDetails", "id": canal}, canal
+    handle = muestra
 
     data = api_get("channels", params, key)
     items = data.get("items") or []
     if not items:
-        raise RelevarError(T("yt.canal_no_encontrado", canal=handle or url), "url")
+        raise RelevarError(T("yt.canal_no_encontrado", canal=handle), "url")
     ch = items[0]
     return (
         ch["id"],
