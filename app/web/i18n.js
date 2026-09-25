@@ -341,8 +341,8 @@ const TEXTOS = {
     en: 'Create an <em>API key</em> and paste it below.',
   },
   'clave.gratis': {
-    es: 'Es gratis. El cupo diario alcanza para unos 500 catálogos.',
-    en: 'It is free. The daily quota covers around 500 catalogs.',
+    es: 'Es gratis. Google da 10.000 unidades por día; relevar un canal Topic gasta una por cada 25 temas, más poco, y pegar un canal común suma unas 100 por la búsqueda del Topic.',
+    en: 'It is free. Google gives 10,000 units a day; surveying a Topic channel costs one per 25 songs, plus a little, and pasting a regular channel adds about 100 for the Topic lookup.',
   },
   'clave.rotulo': { es: 'Clave de la API de YouTube', en: 'YouTube API key' },
   'clave.ayuda': {
@@ -386,8 +386,8 @@ const TEXTOS = {
     en: 'The ISRC identifies each recording and the UPC each release. Looked up on Deezer, no key and no cost. It takes a little longer, but these are the codes the new distributor needs.',
   },
   'paso1.clave_incluida': {
-    es: 'Esta copia trae una clave de YouTube compartida, con cupo para unos 500 catálogos por día entre todos.',
-    en: 'This copy ships with a shared YouTube key, with quota for about 500 catalogs a day across everyone using it.',
+    es: 'Esta copia trae una clave de YouTube compartida: el cupo diario es uno solo para todos los que la usan.',
+    en: 'This copy ships with a shared YouTube key: the daily quota is a single one for everyone using it.',
   },
   'paso1.prefiero_mia': { es: 'Prefiero usar la mía', en: 'I would rather use mine' },
   'paso1.cargar_clave': { es: 'Cargar mi propia clave', en: 'Enter my own key' },

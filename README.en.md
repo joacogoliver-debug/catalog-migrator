@@ -2,11 +2,12 @@
 
 [Español](README.md) · **English**
 
-Free app that surveys an artist's catalog and prepares it for a move to another
-distributor. You paste the YouTube channel link and it gives you back the
-**ISRCs**, the **UPCs**, high-resolution **artwork**, a ready-to-load **ingestion
-sheet**, and a **pre-delivery validation** that tells you what is going to be
-rejected before you send it.
+**Switch distributors without losing your catalog's codes.** Paste the link to
+the artist's YouTube channel and the app builds the package for the new
+distributor: the **ISRCs** and **UPCs** that can be recovered from Deezer, the
+**artwork** from Apple Music at the highest resolution there is, an **ingestion
+sheet** to load, and a **pre-delivery validation** that flags what distributors
+usually reject, before you send it.
 
 Made by [Joaquín García Oliver](https://www.linkedin.com/in/joaquingarciaoliver/).
 Open source and free of charge.
@@ -17,16 +18,36 @@ Open source and free of charge.
 
 <sub>The screenshots use a sample catalog. The artist, the titles and the codes
 are made up, so as not to publish anyone's catalog. They are generated with
-`python build/capturas.py` against the real app while it runs, so they cannot go
-stale without it showing. This English set comes from the same command with
-`MIGRADOR_IDIOMA=en` and `--salida docs/capturas/en`.</sub>
+`python build/capturas.py` against the real app while it runs, and a test checks
+the findings they show against the ones the validation really emits. This English set comes from the same
+command with `MIGRADOR_IDIOMA=en` and `--salida docs/capturas/en`.</sub>
 
 ---
 
+## Who it is for
+
+For whoever manages a catalog and is taking it to another distributor: a small
+label, a manager, a distributor or the artist themselves. It works if the
+catalog is yours or you manage it with the rights holder's authorization.
+
+**It is not for you if** you need a DDEX XML (the app does not produce one, and
+says why further down), if the catalog is not on YouTube with its Topic
+channel, or if you are after downloading other people's music: the audio
+module is optional, comes switched off and asks for your own paid account.
+
 ## Download
 
-Go to [Releases](https://github.com/joacogoliver-debug/catalog-migrator/releases)
-and grab the file for your system.
+| Your system | Get |
+|---|---|
+| **Windows** | [The installer](https://github.com/joacogoliver-debug/catalog-migrator/releases/latest/download/Migrador-de-Catalogos-windows-completa-instalador.exe): double click, Next, and it lands in the Start menu |
+| **Mac with an Apple chip** (M1, M2, M3, M4…) | [The executable](https://github.com/joacogoliver-debug/catalog-migrator/releases/latest/download/Migrador-de-Catalogos-macos-apple-silicon-completa), and the [five-minute guide](docs/INSTALAR-MAC.en.md) to open it |
+| **Mac with Intel** | [The executable](https://github.com/joacogoliver-debug/catalog-migrator/releases/latest/download/Migrador-de-Catalogos-macos-intel-completa), with the [same guide](docs/INSTALAR-MAC.en.md) |
+| **Linux** | The `.deb` for Debian and Ubuntu, or the standalone executable, on [Releases](https://github.com/joacogoliver-debug/catalog-migrator/releases/latest) |
+
+These are the `completa` variants, which carry everything and open ready to go.
+The rest (the `esencial` one, the no-install `.exe`, the Mac `.app`) and every
+file's SHA256 are on [Releases](https://github.com/joacogoliver-debug/catalog-migrator/releases/latest);
+what follows explains which is which.
 
 ### Windows
 
@@ -56,8 +77,8 @@ Two files are published for each architecture:
 
 | File | What it is |
 |---|---|
-| `...-app.zip` | **The recommended one.** A real `.app`: drag it to Applications and it lands in Launchpad, with its icon. |
-| no extension | The bare executable, for the Terminal or a USB stick. |
+| no extension | **The tested one.** The standalone executable, opened from Terminal with the [guide](docs/INSTALAR-MAC.en.md). CI starts it on a GitHub Mac on every build and asks it for the page. |
+| `...-app.zip` | A real `.app`: drag it to Applications and it lands in Launchpad, with its icon. It is more comfortable, but it is new and **has not been opened on a real Mac yet**; if it does not start, the standalone executable is the verified path. |
 
 With the `.app`, the first time you have to open it with **right click → Open**,
 and confirm. After that it opens with a double click like any other program. The
@@ -86,11 +107,11 @@ Two files are published:
 
 | File | What it is |
 |---|---|
-| `migrador-catalogos_...deb` | **The recommended one** on Debian and Ubuntu. It lands in the applications menu, with an icon, and uninstalls like any package. |
+| `migrador-catalogos_...deb` | For Debian and Ubuntu: it lands in the applications menu, with an icon, and uninstalls like any package. Tests check its structure, but it **has not been installed on a real Ubuntu yet**; if it fails, the standalone executable is the one CI starts on every build. |
 | `Migrador-de-Catalogos-linux-...` | The bare executable, for any other distribution. |
 
 ```bash
-sudo apt install ./migrador-catalogos_1.0.2-completa_amd64.deb
+sudo apt install ./migrador-catalogos_*-completa_amd64.deb
 ```
 
 And to uninstall it, `sudo apt remove migrador-catalogos`.
@@ -142,7 +163,6 @@ there). You can verify that the binary came out of this repo:
 gh attestation verify Migrador-de-Catalogos-windows-completa.exe --repo joacogoliver-debug/catalog-migrator
 ```
 
-It is the same stance `yt-dlp` takes.
 
 ---
 
@@ -264,6 +284,36 @@ that release and answers with it even when it is smaller. If we claimed 3000×30
 about a 600×600 cover, the spreadsheet would state that it meets the ingestion
 minimum when in fact it is going to be rejected.
 
+## Frequently asked questions
+
+**Does it work with my distributor?** It does not connect to any: it builds the
+files and you do the upload. The ingestion sheet carries the columns in common
+use in upload sheets, and it also comes in Excel so you can adapt it. Ask the
+new distributor which format it wants before filling it in.
+
+**Do I need to know how to code?** No. On Windows you install it with a double
+click. On a Mac you paste three lines into Terminal the first time, and the
+[guide](docs/INSTALAR-MAC.en.md) says which.
+
+**Is it legal?** The app reads public data: the YouTube channel, Deezer's
+catalog and Apple's artwork. It is meant for migrating a catalog you own or
+manage with the rights holder's authorization; the [terms](TERMS.md) say so in
+detail. Audio is separate: the module comes switched off and uses your own
+Tidal account.
+
+**How much does it cost?** Nothing. There is no paid version and no account to
+create.
+
+**Where does my data go?** To no server of the author's: there is none. The app
+queries YouTube with your key, and Deezer and Apple with public data. It is in
+[Privacy](#privacy).
+
+**I am missing ISRCs or UPCs. What do I do?** Ask your current distributor for
+them before accepting new codes: a new code is a new release, which starts
+without the plays and playlists of the old one. The catalog screen says whether
+they are missing because the artist is not on Deezer or because Deezer did not
+answer.
+
 ## If something does not work
 
 If the app does not open, or something you expected is missing (the audio
@@ -288,8 +338,9 @@ what it detected, and it does not include your key.
 - **It does not generate DDEX ERN.** Emitting valid ERN requires being a
   registered DDEX party with an identifier of your own, so an "almost DDEX" XML
   would be rejected anyway while giving the false impression of being ready.
-  Instead we generate a CSV with the standard columns that nearly every
-  distributor accepts or maps.
+  Instead we generate a CSV with the columns in common use in distributors'
+  upload sheets, plus the same sheet in Excel; before loading it, ask the new
+  one which format it wants.
 - **It does not invent metadata.** Whatever cannot come from public sources
   (genre, explicit, © line, territories) is marked `<<COMPLETAR>>` in the
   ingestion sheet, not left blank and not filled in by eye. Composers, lyricists,
@@ -333,6 +384,11 @@ The detail is in [TERMS.md](TERMS.md). The app shows the terms the first time it
 opens and keeps them reachable from the foot of the window.
 
 ---
+
+---
+
+**From here down, for whoever wants to run it from source, build it or change
+it.**
 
 ## Running it from source
 
@@ -535,6 +591,7 @@ pytest -q --cov
 | `tests/test_app.py` | Backend, jobs, HTTP, and the three defenses |
 | `tests/test_capturas.py` | That the screenshots' sample material says the same as the app |
 | `tests/test_entrada_hostil.py` | That nothing coming from outside gets executed: yt-dlp, formulas, covers |
+| `tests/test_readme.py` | The README as a landing page: every download link exists in the release, usage before the technical part, no unmeasured figures |
 | `tests/test_guia_migracion.py` | What the READ ME tells whoever migrates: keep the codes, take down last, and Tidal's copy is not the master |
 | `tests/test_contraste.py` | Token contrast, read from `colors.css` in both themes: text at 4.5, controls and the main button at 3 |
 | `tests/test_interfaz_js.py` | The interface tests (`tests/js/`, with `node --test`): external text arrives escaped, figures, plurals |

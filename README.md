@@ -2,11 +2,12 @@
 
 **Español** · [English](README.en.md)
 
-App gratuita para relevar el catálogo de un artista y preparar su migración a
-otra distribuidora. Pegás el link del canal de YouTube y te devuelve los
-**ISRC**, los **UPC**, las **portadas** en alta resolución, una **hoja de
-ingesta** lista para cargar y una **validación pre-entrega** que te dice qué va a
-ser rechazado antes de que lo mandes.
+**Cambiá de distribuidora sin perder los códigos de tu catálogo.** Pegás el link
+del canal de YouTube del artista y la app arma el paquete para la distribuidora
+nueva: los **ISRC** y los **UPC** que se pueden recuperar de Deezer, las
+**portadas** de Apple Music en la resolución más alta que haya, una **hoja de
+ingesta** para cargar, y una **validación pre-entrega** que marca lo que las
+distribuidoras suelen rechazar, antes de que lo mandes.
 
 Hecha por [Joaquín García Oliver](https://www.linkedin.com/in/joaquingarciaoliver/).
 Código abierto y sin costo.
@@ -17,16 +18,36 @@ Código abierto y sin costo.
 
 <sub>Las capturas usan un catálogo de ejemplo. El artista, los títulos y los
 códigos son inventados, para no publicar el catálogo de nadie. Se generan con
-`python build/capturas.py` sobre la app real corriendo, así que no pueden quedar
-desactualizadas sin que se note. Las de la versión en inglés salen del mismo
+`python build/capturas.py` sobre la app real corriendo, y un test compara los
+hallazgos que muestran con los que la validación emite de verdad. Las de la versión en inglés salen del mismo
 comando con `MIGRADOR_IDIOMA=en` y `--salida docs/capturas/en`.</sub>
 
 ---
 
+## Para quién es
+
+Para quien administra un catálogo y lo va a llevar a otra distribuidora: un
+sello chico, un manager, una distribuidora o el propio artista. Sirve si el
+catálogo es tuyo o lo administrás con autorización del titular.
+
+**No es para vos si** necesitás un XML DDEX (la app no lo genera, y dice por qué
+más abajo), si el catálogo no está en YouTube con su canal Topic, o si buscás
+bajar música de otros: el módulo de audio es opcional, viene apagado y pide tu
+propia cuenta paga.
+
 ## Descargar
 
-Andá a [Releases](https://github.com/joacogoliver-debug/catalog-migrator/releases)
-y bajá el archivo de tu sistema.
+| Tu sistema | Bajá |
+|---|---|
+| **Windows** | [El instalador](https://github.com/joacogoliver-debug/catalog-migrator/releases/latest/download/Migrador-de-Catalogos-windows-completa-instalador.exe): doble clic, Siguiente, y queda en el menú Inicio |
+| **Mac con chip Apple** (M1, M2, M3, M4…) | [El ejecutable](https://github.com/joacogoliver-debug/catalog-migrator/releases/latest/download/Migrador-de-Catalogos-macos-apple-silicon-completa), y la [guía de cinco minutos](docs/INSTALAR-MAC.md) para abrirlo |
+| **Mac con Intel** | [El ejecutable](https://github.com/joacogoliver-debug/catalog-migrator/releases/latest/download/Migrador-de-Catalogos-macos-intel-completa), con la [misma guía](docs/INSTALAR-MAC.md) |
+| **Linux** | El `.deb` para Debian y Ubuntu, o el ejecutable suelto, en [Releases](https://github.com/joacogoliver-debug/catalog-migrator/releases/latest) |
+
+Son las variantes `completa`, que traen todo y se abren andando. Las demás
+(la `esencial`, el `.exe` sin instalar, el `.app` de Mac) y el SHA256 de cada
+archivo están en [Releases](https://github.com/joacogoliver-debug/catalog-migrator/releases/latest);
+lo que sigue explica cuál es cuál.
 
 ### Windows
 
@@ -55,8 +76,8 @@ De cada arquitectura se publican dos archivos:
 
 | Archivo | Qué es |
 |---|---|
-| `...-app.zip` | **La recomendada.** Un `.app` de verdad: lo arrastrás a Aplicaciones y queda en el Launchpad, con su icono. |
-| sin extensión | El ejecutable suelto, para la Terminal o un pendrive. |
+| sin extensión | **El probado.** El ejecutable suelto, que se abre desde la Terminal con la [guía](docs/INSTALAR-MAC.md). El CI lo arranca en una Mac de GitHub en cada build y le pide la página. |
+| `...-app.zip` | Un `.app` de verdad: lo arrastrás a Aplicaciones y queda en el Launchpad, con su icono. Es más cómodo, pero es nuevo y **todavía no se abrió en una Mac real**; si no arranca, el ejecutable suelto es el camino verificado. |
 
 Con el `.app`, la primera vez hay que abrirlo con **clic derecho → Abrir**, y
 confirmar. Después se abre con doble clic como cualquier otro programa. El clic
@@ -84,11 +105,11 @@ Se publican dos archivos:
 
 | Archivo | Qué es |
 |---|---|
-| `migrador-catalogos_...deb` | **La recomendada** en Debian y Ubuntu. Queda en el menú de aplicaciones, con icono, y se desinstala como cualquier paquete. |
+| `migrador-catalogos_...deb` | Para Debian y Ubuntu: queda en el menú de aplicaciones, con icono, y se desinstala como cualquier paquete. Su estructura la verifican los tests, pero **todavía no se instaló en un Ubuntu real**; si falla, el ejecutable suelto es el que el CI arranca en cada build. |
 | `Migrador-de-Catalogos-linux-...` | El ejecutable suelto, para cualquier otra distribución. |
 
 ```bash
-sudo apt install ./migrador-catalogos_1.0.2-completa_amd64.deb
+sudo apt install ./migrador-catalogos_*-completa_amd64.deb
 ```
 
 Y para desinstalarlo, `sudo apt remove migrador-catalogos`.
@@ -140,7 +161,6 @@ está igual). Podés verificar que el binario salió de este repo:
 gh attestation verify Migrador-de-Catalogos-windows-completa.exe --repo joacogoliver-debug/catalog-migrator
 ```
 
-Es la misma postura que usa `yt-dlp`.
 
 ---
 
@@ -250,6 +270,10 @@ dígito verificador GTIN de UPC-A y EAN-13.
 | ISRC y UPC | [Deezer](https://developers.deezer.com/api) | no |
 | Portadas | [iTunes Search API](https://performance-partners.apple.com/search-api) | no |
 
+Los términos de uso nombran también a MusicBrainz: el código tiene un respaldo
+que lo consulta, pero viene apagado y la app no lo ofrece, así que hoy no se le
+manda nada.
+
 Deezer encuentra la grabación, y la misma grabación está en el single, en el
 álbum y en cada compilado. Por eso el UPC se acepta sólo cuando el álbum de
 Deezer es el mismo release que el producto: si no, queda en blanco y la
@@ -261,6 +285,34 @@ efectivamente devolvió**, no la que pedimos: Apple sirve el máximo que tiene p
 ese release y responde igual aunque sea más chico. Si dijéramos 3000×3000 sobre
 una portada de 600×600, la planilla afirmaría que cumple el mínimo de ingesta
 cuando en realidad la van a rechazar.
+
+## Preguntas frecuentes
+
+**¿Funciona con mi distribuidora?** No se conecta con ninguna: arma los archivos
+y la carga la hacés vos. La hoja de ingesta trae las columnas de uso común en
+las hojas de carga, y viene también en Excel para adaptarla. Preguntale a la
+distribuidora nueva qué formato pide antes de completarla.
+
+**¿Necesito saber programar?** No. En Windows se instala con doble clic. En Mac
+hay que pegar tres líneas en la Terminal la primera vez, y la
+[guía](docs/INSTALAR-MAC.md) dice cuáles.
+
+**¿Es legal?** La app lee datos públicos: el canal de YouTube, el catálogo de
+Deezer y las portadas de Apple. Está pensada para migrar un catálogo propio o
+que administrás con autorización del titular; los [términos](TERMINOS.md) lo
+dicen con detalle. El audio es aparte: el módulo viene apagado y usa tu propia
+cuenta de Tidal.
+
+**¿Cuánto cuesta?** Nada. No hay versión paga ni cuenta que crear.
+
+**¿Adónde van mis datos?** A ningún servidor del autor: no hay. La app consulta
+YouTube con tu clave, y Deezer y Apple con datos públicos. Está en
+[Privacidad](#privacidad).
+
+**Me faltan ISRC o UPC. ¿Qué hago?** Pedíselos a tu distribuidora actual antes
+de aceptar códigos nuevos: un código nuevo es un release nuevo, que arranca sin
+las reproducciones ni las playlists del anterior. La pantalla del catálogo dice
+si faltan porque el artista no está en Deezer o porque Deezer no respondió.
 
 ## Si algo no anda
 
@@ -286,7 +338,9 @@ y no incluye tu clave.
 - **No genera DDEX ERN.** Emitir ERN válido requiere ser una parte registrada de
   DDEX con identificador propio, así que un XML "casi DDEX" se rechazaría igual
   dando falsa sensación de que está listo. En su lugar generamos un CSV con las
-  columnas estándar que aceptan o mapean casi todas las distribuidoras.
+  columnas de uso común en las hojas de carga de las distribuidoras, más la
+  misma hoja en Excel; antes de cargarla, conviene preguntarle a la nueva qué
+  formato pide.
 - **No inventa metadata.** Lo que no puede salir de fuentes públicas (género,
   explicit, línea ©, territorios) queda marcado `<<COMPLETAR>>` en la hoja de
   ingesta, no vacío ni rellenado a ojo. Los compositores, letristas, productores y
@@ -329,6 +383,11 @@ El detalle está en [TERMINOS.md](TERMINOS.md). La app los muestra la primera ve
 que se abre y los deja siempre accesibles desde el pie de la ventana.
 
 ---
+
+---
+
+**De acá para abajo, para quien quiere correrla desde el código, compilarla o
+cambiarla.**
 
 ## Correrla desde el código
 
@@ -529,6 +588,7 @@ pytest -q --cov
 | `tests/test_app.py` | Backend, trabajos, HTTP, y las tres defensas |
 | `tests/test_capturas.py` | Que el material de ejemplo de las capturas diga lo mismo que la app |
 | `tests/test_entrada_hostil.py` | Que nada de lo que entra de afuera se ejecute: yt-dlp, fórmulas, portadas |
+| `tests/test_readme.py` | El README como entrada: que cada enlace de descarga exista en el release, lo de uso antes de lo técnico, sin cifras sin medir |
 | `tests/test_guia_migracion.py` | Lo que el LEEME le dice a quien migra: conservar los códigos, la baja al final y que la copia de Tidal no es el máster |
 | `tests/test_contraste.py` | El contraste de los tokens, leído de `colors.css` en los dos temas: texto a 4,5, controles y botón principal a 3 |
 | `tests/test_interfaz_js.py` | Los tests de la interfaz (`tests/js/`, con `node --test`): que lo de afuera llegue escapado, cifras, plurales |

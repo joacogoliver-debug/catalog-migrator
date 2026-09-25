@@ -83,6 +83,19 @@ Lo que cambió en cada versión publicada. Los números siguen
   `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Corregido
+- **Afirmaciones que no se podían sostener**: la validación «marca lo que
+  suele» rechazarse y no «lo que va a ser rechazado»; los ISRC y UPC son «los
+  que se pueden recuperar de Deezer»; se fueron «casi todas las
+  distribuidoras», «la misma postura que yt-dlp» y el cupo de «unos 500
+  catálogos por día», que no salía de ninguna cuenta. La interfaz dice ahora
+  cuánto gasta cada relevamiento.
+- **El `.app` de Mac ya no se presenta como el recomendado**: nunca se abrió en
+  una Mac real, y así lo dicen el README y la guía de Mac, que ahora lo
+  menciona. Lo mismo con el `.deb`, verificado por estructura y nunca
+  instalado. El probado es el ejecutable suelto, que el CI arranca en cada build.
+- **El comando del `.deb` ya no nombra la versión 1.0.2**, que no existe más.
+- **El README dice qué pasa con MusicBrainz**, que los términos nombran: hay un
+  respaldo en el código, apagado, y hoy no se le manda nada.
 - **SECURITY.md y el servidor nombran las tres defensas.** Decían «dos» y no
   mencionaban la CSP, así que quien quisiera reportar no sabía que saltearla
   entra en el alcance.
@@ -294,6 +307,12 @@ Lo que cambió en cada versión publicada. Los números siguen
   a sus hilos antes de salir.
 
 ### Cambiado
+- **El README empieza por lo que importa a quien migra**: la promesa en una
+  línea (cambiar de distribuidora sin perder los códigos), para quién es y para
+  quién no, y la descarga directa de cada sistema, que antes era una línea hacia
+  una página con treinta archivos. Suma preguntas frecuentes (¿funciona con mi
+  distribuidora?, ¿necesito saber programar?, ¿es legal?) y separa con una
+  línea la parte para quien quiere tocar el código.
 - **pyright prende 34 reglas de `strict`**, las que el código ya cumple, para
   que desde ahora no se puedan romper sin que el CI lo diga. Para llegar hubo
   que darles contrato a las funciones que devolvían diccionarios sueltos (la

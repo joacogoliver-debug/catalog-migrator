@@ -99,3 +99,11 @@ es público y el ejecutable se compila en GitHub, a la vista, desde ese código.
 
 Si preferís no pelearte con nada de esto, se puede correr desde el código fuente
 con dos comandos: está en el [README](../README.md#correrla-desde-el-código).
+
+## ¿Y el `.app`?
+
+En Releases también hay un `...-app.zip` por arquitectura: un `.app` que se
+arrastra a Aplicaciones y queda en el Launchpad. La primera vez se abre con
+**clic derecho → Abrir** y confirmando. Es más cómodo que la Terminal, pero es
+nuevo y **todavía no se abrió en una Mac real**: si no arranca, lo de arriba es
+el camino verificado.

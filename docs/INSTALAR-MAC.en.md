@@ -98,3 +98,11 @@ the executable is compiled on GitHub, in plain sight, from that code.
 
 If you would rather not deal with any of this, it can be run from source with two
 commands: see the [README](../README.en.md#running-it-from-source).
+
+## What about the `.app`?
+
+Releases also has an `...-app.zip` per architecture: an `.app` you drag to
+Applications and that lands in Launchpad. The first time you open it with
+**right click → Open** and confirming. It is more comfortable than Terminal, but
+it is new and **has not been opened on a real Mac yet**: if it does not start,
+the steps above are the verified path.

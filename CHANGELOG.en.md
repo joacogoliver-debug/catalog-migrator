@@ -84,6 +84,22 @@ What changed in every published version. The numbers follow
   on its own, following the rubric in `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Fixed
+- **Claims that could not be backed**: the validation "flags what is
+  usually" rejected, not "what will be rejected"; ISRCs and UPCs are "the ones
+  that can be recovered from Deezer"; gone are "nearly every distributor",
+  "the same stance as yt-dlp" and the quota of "around 500 catalogs a day",
+  which came from no calculation. The interface now says what each survey
+  costs.
+- **The Mac `.app` is no longer presented as the recommended one**: it has
+  never been opened on a real Mac, and the README and the Mac guide, which now
+  mention it, say so. Same with the `.deb`, checked by structure and never
+  installed. The tested one is the standalone executable, which CI starts on
+  every build.
+- **The `.deb` command no longer names version 1.0.2**, which no longer
+  exists.
+- **The README says what happens with MusicBrainz**, which the terms name:
+  there is a fallback in the code, switched off, and nothing is sent to it
+  today.
 - **SECURITY.md and the server name the three defenses.** They said "two"
   and did not mention the CSP, so someone wanting to report did not know that
   getting around it is in scope.
@@ -295,6 +311,12 @@ What changed in every published version. The numbers follow
   threads before exiting.
 
 ### Changed
+- **The README starts with what matters to whoever migrates**: the promise
+  in one line (switch distributors without losing the codes), who it is for
+  and who it is not for, and a direct download for each system, which used to
+  be a line to a page with thirty files. It adds frequently asked questions
+  (does it work with my distributor?, do I need to code?, is it legal?) and
+  sets off with a rule the part for whoever wants to touch the code.
 - **pyright turns on 34 `strict` rules**, the ones the code already meets, so
   that from now on they cannot be broken without CI saying so. Getting there
   meant giving a contract to the functions that returned loose dictionaries
