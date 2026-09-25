@@ -9,6 +9,8 @@ Lo que cambió en cada versión publicada. Los números siguen
 ## [Sin publicar]
 
 ### Agregado
+- Si Deezer no respondió, el log lo dice. Antes se veía igual que «no hay
+  códigos para este artista».
 - **La hoja de ingesta también viene en Excel**, `_Hoja de ingesta.xlsx`, con
   las mismas filas que el CSV, cada celda como texto y lo que falta resaltado.
   El CSV no sobrevive a pasar por Excel: el UPC pierde el cero de adelante y
@@ -49,6 +51,19 @@ Lo que cambió en cada versión publicada. Los números siguen
   `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Corregido
+- **«Cancelar» tardaba decenas de segundos en responder durante la búsqueda de
+  códigos**, y la barra quedaba clavada en 55 %. Con 600 temas se midieron 24
+  segundos, y mientras tanto la app rechazaba un relevamiento nuevo por
+  «trabajo en curso». Ahora la búsqueda en Deezer, el listado de videos y la
+  metadata avisan avance en cada paso, y cancelar corta ahí. El armado del
+  paquete va por tramos (portadas, audio, ZIP) en vez de quedarse en 85 %
+  durante la fase más larga.
+- Un `Retry-After` con fecha tumbaba el relevamiento entero, con la cuota de
+  YouTube ya gastada.
+- Deezer reintentaba seis veces, con espera, cualquier error, también el «no
+  hay datos», que es permanente: nueve segundos perdidos por consulta. Ahora
+  reintenta sólo el límite de tasa y el servicio ocupado, con espera creciente.
+  YouTube reintenta también su límite de tasa, que antes cortaba en el acto.
 - «(En Vivo)» y «(Live Session)» salían como texto de YouTube arrastrado al
   título, y son parte del título real de una versión. En cambio se escapaban
   «(Audio)», «(Letra)», «[MV]» o «(Videoclip Oficial)», y el título del

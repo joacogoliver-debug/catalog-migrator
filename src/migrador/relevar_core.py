@@ -12,7 +12,9 @@ Función principal: relevar(url, yt_key, with_codes, progress) -> dict.
 """
 
 import json
+import random
 import re
+import threading
 import time
 import urllib.error
 import urllib.parse
@@ -49,8 +51,16 @@ class RelevarError(Exception):
 # ============================================================
 
 # Errores de YouTube que son del momento y no del pedido. Reintentar tiene
-# sentido; con 403 (cuota agotada, clave invalida) o 404 no lo tiene.
-_HTTP_REINTENTABLE = (500, 502, 503, 504)
+# sentido; con 403 (cuota agotada, clave invalida) o 404 no lo tiene. El límite
+# de tasa sí es del momento aunque llegue como 403, y se reintenta aparte.
+_HTTP_REINTENTABLE = (429, 500, 502, 503, 504)
+_MOTIVOS_PASAJEROS = ("rateLimitExceeded", "userRateLimitExceeded")
+
+
+def _espera(intento, tope=30.0):
+    """Espera creciente con un poco de azar, para que varios hilos que fallaron
+    juntos no vuelvan a pegarle al servicio en el mismo instante."""
+    return min(tope, 1.5 * (2**intento)) + random.uniform(0, 0.5)
 
 
 def api_get(endpoint, params, key, intentos=3):
@@ -74,8 +84,9 @@ def api_get(endpoint, params, key, intentos=3):
                 return json.loads(resp.read().decode("utf-8"))
         except urllib.error.HTTPError as e:
             body = e.read().decode("utf-8", "ignore")
-            if e.code in _HTTP_REINTENTABLE and intento < intentos - 1:
-                time.sleep(1.5 * (intento + 1))
+            pasajero = e.code in _HTTP_REINTENTABLE or any(m in body for m in _MOTIVOS_PASAJEROS)
+            if pasajero and intento < intentos - 1:
+                time.sleep(_espera(intento))
                 continue
             raise _error_de_youtube(e.code, body) from e
         except (urllib.error.URLError, TimeoutError, ValueError) as e:
@@ -83,7 +94,7 @@ def api_get(endpoint, params, key, intentos=3):
             # JSON (un portal cautivo devolviendo HTML, por ejemplo).
             ultimo = e
             if intento < intentos - 1:
-                time.sleep(1.5 * (intento + 1))
+                time.sleep(_espera(intento))
                 continue
             raise RelevarError(T("yt.sin_conexion", detalle=f"{type(e).__name__}: {e}")) from e
     raise RelevarError(T("yt.sin_respuesta", detalle=ultimo))
@@ -299,7 +310,13 @@ def buscar_canal_topic(titulo_canal, key):
     return mejor if mejor_score >= MIN_SIMILITUD_TOPIC else None
 
 
-def list_video_ids(uploads_playlist, key):
+def list_video_ids(uploads_playlist, key, avance=None):
+    """Los ids de todos los videos de la lista de subidas.
+
+    `avance(hechos, total)` se llama después de cada página. Es lo que mueve la
+    barra y, sobre todo, lo que deja cancelar: sin ningún aviso en el medio, un
+    canal de miles de videos no podía cortarse hasta terminar de listar.
+    """
     ids = []
     page = None
     while True:
@@ -311,18 +328,24 @@ def list_video_ids(uploads_playlist, key):
             vid = it.get("contentDetails", {}).get("videoId")
             if vid:
                 ids.append(vid)
+        if avance:
+            total = int((data.get("pageInfo") or {}).get("totalResults") or 0)
+            avance(len(ids), max(total, len(ids)))
         page = data.get("nextPageToken")
         if not page:
             break
     return ids
 
 
-def fetch_videos(video_ids, key):
+def fetch_videos(video_ids, key, avance=None):
+    """La metadata de los videos, de a cincuenta. `avance(hechos, total)` por lote."""
     out = []
     for i in range(0, len(video_ids), 50):
         batch = video_ids[i : i + 50]
         data = api_get("videos", {"part": "snippet,statistics,contentDetails", "id": ",".join(batch)}, key)
         out.extend(data.get("items", []))
+        if avance:
+            avance(min(i + 50, len(video_ids)), len(video_ids))
     return out
 
 
@@ -570,16 +593,57 @@ USER_AGENT = "MigradorDeCatalogos/1.0 (+https://github.com/joacogoliver-debug/ca
 CODES_WORKERS = 6
 
 
+# Los errores de Deezer que son del momento: 4 es el límite de tasa y 700 el
+# servicio ocupado. Cualquier otro (800 es «no hay datos») es permanente, y
+# reintentarlo seis veces con espera eran nueve segundos perdidos por consulta.
+_DEEZER_PASAJEROS = (4, 700)
+
+
+class _Fallas:
+    """Cuántas consultas a Deezer no tuvieron respuesta, en este relevamiento.
+
+    Es lo que separa «Deezer no tiene a este artista» de «Deezer no contestó»,
+    que para quien mira el resultado se veían iguales: cero códigos.
+    """
+
+    def __init__(self):
+        self.n = 0
+        self._lock = threading.Lock()
+
+    def sumar(self):
+        with self._lock:
+            self.n += 1
+
+    def empezar(self):
+        with self._lock:
+            self.n = 0
+
+
+FALLAS_DEEZER = _Fallas()
+
+
 def _deezer_json(path):
-    """GET a Deezer con reintento. Deezer señala el límite de tasa con un JSON
-    de error a HTTP 200 ({"error": {...}}), así que lo detectamos y reintentamos."""
+    """GET a Deezer, o None si no hubo respuesta útil.
+
+    Deezer señala el límite de tasa con un JSON de error a HTTP 200
+    ({"error": {"code": 4}}). Se reintenta sólo eso y el servicio ocupado, con
+    espera creciente; un «no hay datos» se devuelve enseguida.
+    """
     url = f"{DEEZER_API}/{path}"
-    for _ in range(6):
+    for intento in range(6):
         data = _http_json(url)
-        if isinstance(data, dict) and data.get("error"):
-            time.sleep(1.5)
-            continue
-        return data
+        if data is None:
+            FALLAS_DEEZER.sumar()
+            return None
+        err = data.get("error") if isinstance(data, dict) else None
+        if not err:
+            return data
+        codigo = err.get("code") if isinstance(err, dict) else None
+        if codigo not in _DEEZER_PASAJEROS:
+            return None
+        if intento < 5:
+            time.sleep(_espera(intento, tope=8.0))
+    FALLAS_DEEZER.sumar()
     return None
 
 
@@ -605,20 +669,33 @@ def _clean_title(title):
     return re.sub(r"\s+", " ", t).strip(" -·")
 
 
+def _retry_after(e, por_defecto=2.0):
+    """Los segundos de `Retry-After`, con tope. Puede venir como número o como
+    fecha HTTP; con fecha, `int()` levantaba ValueError y eso tumbaba el
+    relevamiento entero, con la cuota de YouTube ya gastada."""
+    try:
+        segundos = float(e.headers.get("Retry-After", por_defecto))
+    except (TypeError, ValueError):
+        segundos = por_defecto
+    return min(max(segundos, 0.5), 30.0)
+
+
 def _http_json(url, headers=None, retries=3):
+    """GET que devuelve JSON, o None si no hubo respuesta. Un 404 es una
+    respuesta (no existe), y devuelve {}."""
     req = urllib.request.Request(url, headers=headers or {})
-    for _ in range(retries):
+    for intento in range(retries):
         try:
             with urllib.request.urlopen(req, timeout=25) as r:
                 return json.loads(r.read().decode("utf-8"))
         except urllib.error.HTTPError as e:
-            if e.code in (429, 500, 502, 503):
-                time.sleep(int(e.headers.get("Retry-After", "1")) + 1)
+            if e.code in (429, 500, 502, 503, 504) and intento < retries - 1:
+                time.sleep(_retry_after(e))
                 continue
-            return None
+            return {} if e.code == 404 else None
         except Exception:  # noqa: BLE001 (idem que portadas: red)
-            time.sleep(1)
-            continue
+            if intento < retries - 1:
+                time.sleep(_espera(intento, tope=8.0))
     return None
 
 
@@ -865,9 +942,16 @@ def musicbrainz_isrc(t, artist):
     return ""
 
 
-def enrich_with_codes(tracks, artist, log=print, use_musicbrainz=False):
-    """Completa isrc/upc/match en los tracks. Deezer principal + MB opcional."""
+def enrich_with_codes(tracks, artist, log=print, use_musicbrainz=False, avance=None):
+    """Completa isrc/upc/match en los tracks. Deezer principal + MB opcional.
+
+    `avance(hechos, total)` se llama al terminar cada track. Es la fase más
+    larga del relevamiento y no avisaba nada: la barra quedaba clavada y
+    «Cancelar» tardaba decenas de segundos en responder, porque la cancelación
+    sólo se nota cuando alguien avisa avance.
+    """
     n = len(tracks)
+    FALLAS_DEEZER.empezar()
 
     # 1) Deezer en paralelo (ISRC + album_id por track).
     def work(t):
@@ -877,7 +961,9 @@ def enrich_with_codes(tracks, artist, log=print, use_musicbrainz=False):
     matched = 0
     if n:
         with ThreadPoolExecutor(max_workers=min(CODES_WORKERS, n)) as ex:
-            for t, isrc, album_id, conf in ex.map(work, tracks):
+            for i, (t, isrc, album_id, conf) in enumerate(ex.map(work, tracks), 1):
+                if avance:
+                    avance(i, n)
                 if conf:
                     t["isrc"], t["match"] = isrc, conf
                     if album_id:
@@ -947,7 +1033,9 @@ def enrich_with_codes(tracks, artist, log=print, use_musicbrainz=False):
 
     isrc_n = sum(1 for t in tracks if t["isrc"])
     upc_n = sum(1 for t in tracks if t["upc"])
-    return {"matched": matched, "isrc": isrc_n, "upc": upc_n, "source": "Deezer"}
+    if FALLAS_DEEZER.n:
+        log(T("rel.deezer_fallas", n=FALLAS_DEEZER.n))
+    return {"matched": matched, "isrc": isrc_n, "upc": upc_n, "source": "Deezer", "fallas": FALLAS_DEEZER.n}
 
 
 def _aggregate_distributors(tracks):
@@ -972,11 +1060,15 @@ def slugify(name):
 # ============================================================
 
 
-def relevar(url, yt_key, with_codes=True, progress=None, use_musicbrainz=False) -> Relevamiento:
+def relevar(
+    url, yt_key, with_codes=True, progress=None, use_musicbrainz=False, fraccion=None
+) -> Relevamiento:
     """Releva el catálogo completo de un canal.
 
     with_codes: buscar ISRC/UPC (Deezer; sin clave). use_musicbrainz: respaldo
     lento opcional. progress(msg, frac): callback de avance (0.0-1.0).
+    fraccion(frac): avance sin línea de log, para las fases de muchos pasos
+    chicos; mueve la barra y deja cancelar sin llenar el log.
     Devuelve dict: artist, channel_title, tracks, distribs, total_views, units, codes.
     Lanza RelevarError ante problemas mostrables al usuario.
     """
@@ -1011,12 +1103,16 @@ def relevar(url, yt_key, with_codes=True, progress=None, use_musicbrainz=False) 
                 step(T("rel.uso_topic", canal=t_title), 0.12)
 
     step(T("rel.listando"), 0.15)
-    vids = list_video_ids(uploads, yt_key)
+    vids = list_video_ids(
+        uploads, yt_key, avance=lambda h, t: step(T("rel.listando_n", h=h, t=t), 0.15 + 0.15 * h / t)
+    )
     if not vids:
         raise RelevarError(T("yt.canal_vacio"))
 
     step(T("rel.bajando_metadata", n=len(vids)), 0.30)
-    videos = fetch_videos(vids, yt_key)
+    videos = fetch_videos(
+        vids, yt_key, avance=lambda h, t: step(T("rel.metadata_n", h=h, t=t), 0.30 + 0.15 * h / t)
+    )
 
     # Nos quedamos SÓLO con los lanzamientos: los que tienen distribuidora
     # parseada de "Provided to YouTube by". Los demás (vlogs, vivos, videoclips,
@@ -1044,8 +1140,22 @@ def relevar(url, yt_key, with_codes=True, progress=None, use_musicbrainz=False) 
     codes_stats = None
     if with_codes:
         step(T("rel.buscando_codigos"), 0.55)
+
+        def avance_codigos(h, total):
+            # Una línea de log cada diez, que el log es para leerlo; la barra y
+            # la cancelación, en cambio, en cada track.
+            frac = 0.55 + 0.35 * h / total
+            if h % 10 == 0 or h == total:
+                step(T("rel.codigos_n", h=h, t=total), frac)
+            elif fraccion:
+                fraccion(frac)
+
         codes_stats = enrich_with_codes(
-            tracks, artist, log=lambda m: step(m, 0.75), use_musicbrainz=use_musicbrainz
+            tracks,
+            artist,
+            log=lambda m: step(m, 0.90),
+            use_musicbrainz=use_musicbrainz,
+            avance=avance_codigos,
         )
 
     step(T("rel.armando_excel"), 0.95)

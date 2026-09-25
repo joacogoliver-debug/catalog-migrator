@@ -327,6 +327,19 @@ TEXTOS = {
         "en": "Looking up ISRC and UPC codes (Deezer)…",
     },
     "rel.armando_excel": {"es": "Armando el Excel…", "en": "Building the spreadsheet…"},
+    "rel.listando_n": {"es": "Listando videos: {h} de {t}", "en": "Listing videos: {h} of {t}"},
+    "rel.metadata_n": {"es": "Metadata: {h} de {t}", "en": "Metadata: {h} of {t}"},
+    "rel.codigos_n": {"es": "Códigos: {h} de {t} tracks", "en": "Codes: {h} of {t} tracks"},
+    "rel.deezer_fallas": {
+        "es": (
+            "Deezer no respondió {n} consultas: los códigos que faltan pueden estar ahí. "
+            "Probá relevar de nuevo en un rato."
+        ),
+        "en": (
+            "Deezer did not answer {n} requests: the missing codes may be there. Try surveying "
+            "again in a while."
+        ),
+    },
     "rel.deezer_resultado": {
         "es": "Deezer: códigos para {matched} de {n} tracks, UPC de {albumes} álbumes",
         "en": "Deezer: codes for {matched} of {n} tracks, UPC for {albumes} albums",

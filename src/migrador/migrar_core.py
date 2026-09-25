@@ -34,7 +34,7 @@ from .i18n import T
 
 
 def relevar_catalogo(
-    url, yt_key, with_codes=True, progress=None, use_musicbrainz=False
+    url, yt_key, with_codes=True, progress=None, use_musicbrainz=False, fraccion=None
 ) -> tuple[list[Producto], str, list[Track], Diagnostico]:
     """Releva el catálogo y lo devuelve ya agrupado en productos.
 
@@ -49,6 +49,7 @@ def relevar_catalogo(
         with_codes=with_codes,
         progress=progress,
         use_musicbrainz=use_musicbrainz,
+        fraccion=fraccion,
     )
     tracks = res["tracks"]
     artista = res["artist"]
@@ -102,6 +103,7 @@ def preparar(
     calidad="LOSSLESS",
     log=print,
     avance_portadas=None,
+    avance_audio=None,
 ):
     """Baja lo que se pidió para los productos seleccionados.
 
@@ -137,6 +139,7 @@ def preparar(
                 usar_referencia=usar_referencia,
                 calidad=calidad,
                 log=log,
+                avance=avance_audio,
             )
 
     return seleccion, dir_audio, entorno
@@ -157,6 +160,7 @@ def empaquetar(
     incluir_audio=True,
     incluir_portadas=True,
     log=print,
+    avance=None,
 ):
     """Arma el ZIP del entregable. Devuelve (ruta, tamaño_bytes)."""
     if out_path is None:
@@ -174,6 +178,7 @@ def empaquetar(
         incluir_audio=incluir_audio,
         incluir_portadas=incluir_portadas,
         log=log,
+        avance=avance,
     )
 
 

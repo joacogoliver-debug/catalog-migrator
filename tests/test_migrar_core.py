@@ -119,7 +119,7 @@ def relevar_doble(monkeypatch):
     """
     control = {"escenario": "topic", "llamadas": {}}
 
-    def doble(url, yt_key, with_codes=True, progress=None, use_musicbrainz=False):
+    def doble(url, yt_key, with_codes=True, progress=None, use_musicbrainz=False, fraccion=None):
         control["llamadas"] = {"url": url, "yt_key": yt_key, "with_codes": with_codes}
         if progress:
             progress("probando el callback", 0.5)

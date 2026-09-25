@@ -663,12 +663,17 @@ def bajar_referencia_youtube(video_id, dest_dir, log=print, errores=None):
 # ============================================================
 
 
-def fetch_audio(productos, session=None, usar_referencia=True, dest_dir=None, calidad="LOSSLESS", log=print):
+def fetch_audio(
+    productos, session=None, usar_referencia=True, dest_dir=None, calidad="LOSSLESS", log=print, avance=None
+):
     """Baja el audio de todos los tracks de los productos seleccionados.
 
     Estrategia: si hay sesión de Tidal y el track matcheó por ISRC, va por FLAC.
     Si no y `usar_referencia`, cae a YouTube etiquetado como referencia. Cada
     track queda con `audio_path`, `audio_label` y `audio_format`.
+
+    `avance(hechos, total)` se llama al terminar cada descarga, para la barra:
+    es la fase más larga del armado y antes no informaba nada.
     """
     dest_dir = dest_dir or tempfile.mkdtemp(prefix="migrador_audio_")
     os.makedirs(dest_dir, exist_ok=True)
@@ -685,6 +690,13 @@ def fetch_audio(productos, session=None, usar_referencia=True, dest_dir=None, ca
     for t in tracks:
         _init(t)
 
+    hechos = {"n": 0}
+
+    def _avanzar():
+        hechos["n"] += 1
+        if avance:
+            avance(hechos["n"], max(len(tracks), hechos["n"]))
+
     # --- Nivel A: Tidal ---
     def _tidal(t):
         try:
@@ -698,6 +710,7 @@ def fetch_audio(productos, session=None, usar_referencia=True, dest_dir=None, ca
         log(f"[audio] {len(con_tidal)} tracks por Tidal ({calidad})")
         with ThreadPoolExecutor(max_workers=TIDAL_WORKERS) as ex:
             for i, t in enumerate(ex.map(_tidal, con_tidal), 1):
+                _avanzar()
                 estado = t.get("audio_format") or f"ERROR {t.get('audio_error', '')}"
                 # Sin caracteres fuera de cp1252: la consola de Windows los
                 # rechaza y cortaría la migración con UnicodeEncodeError.
@@ -723,6 +736,7 @@ def fetch_audio(productos, session=None, usar_referencia=True, dest_dir=None, ca
         log(f"[audio] {len(pendientes)} tracks por YouTube (referencia lossy)")
         with ThreadPoolExecutor(max_workers=YT_WORKERS) as ex:
             for i, t in enumerate(ex.map(_yt, pendientes), 1):
+                _avanzar()
                 estado = t.get("audio_format") or f"SIN AUDIO ({t.get('audio_error', 'motivo desconocido')})"
                 log(f"[audio] yt {i}/{len(pendientes)} {t['track'][:40]} -> {estado}")
 

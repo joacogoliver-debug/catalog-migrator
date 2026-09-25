@@ -655,8 +655,11 @@ def build_zip(
     incluir_audio=True,
     incluir_portadas=True,
     log=print,
+    avance=None,
 ):
     """Arma el ZIP del entregable en `out_path`. Devuelve (ruta, bytes).
+
+    `avance(hechos, total)` se llama después de cada producto, para la barra.
 
     Se escribe directo a disco porque un catálogo en FLAC son varios GB.
     """
@@ -692,7 +695,9 @@ def build_zip(
             hoja = hoja_ingesta_xlsx_bytes(productos, artista, incluir_audio, incluir_portadas)
             z.writestr(entrada_zip(raiz, F["ingesta_xlsx"]), hoja)
 
-        for p in productos:
+        for n, p in enumerate(productos, 1):
+            if avance:
+                avance(n, len(productos))
             carpeta = p["folder"]
             if incluir_planilla:
                 datos = planilla_producto_bytes(p, artista, incluir_audio)

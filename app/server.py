@@ -644,7 +644,11 @@ def api_relevar(body):
 
     def trabajo(job):
         prods, artista, _, diag = M.relevar_catalogo(
-            url, clave, with_codes=con_codigos, progress=lambda m, f=None: job.avance(m, f)
+            url,
+            clave,
+            with_codes=con_codigos,
+            progress=lambda m, f=None: job.avance(m, f),
+            fraccion=job.fraccion,
         )
         ESTADO.guardar_catalogo(prods, artista, diag)
         job.avance(f"{len(prods)} productos encontrados.", 1.0)
@@ -705,18 +709,25 @@ def api_preparar(body):
         dir_audio = None
         carpeta = None
 
-        # Las portadas son lo que mas tarda, asi que la barra sale de ahi: entre
-        # 0.05 y 0.85, y el ZIP toma el resto. Sin esto se quedaba en 5 % durante
-        # casi todo el trabajo y saltaba a 90.
+        # La barra va por tramos: portadas, audio y ZIP, cada uno con su parte.
+        # Antes las portadas iban de 5 a 85 % y el resto no informaba nada, así
+        # que con audio la barra quedaba clavada en 85 % durante la fase más
+        # larga, y en 90 % mientras se escribía el ZIP.
         #
-        # La fraccion la informa `fetch_portadas` con numeros. Antes se sacaba
-        # parseando su linea de log con un `^Portada (\d+) de (\d+)`, y eso se
-        # rompia apenas la app pasaba a ingles.
+        # Las fracciones las informa cada fase con números. Antes se sacaban
+        # parseando su línea de log con un `^Portada (\d+) de (\d+)`, y eso se
+        # rompía apenas la app pasaba a inglés.
         ultima = {"frac": None}
+        fin_portadas = 0.40 if quiere_audio else 0.85
 
-        def avance_portadas(i, total):
-            if total > 0:
-                ultima["frac"] = 0.05 + 0.8 * i / total
+        def en_tramo(desde, hasta):
+            def avance(i, total):
+                if total > 0:
+                    ultima["frac"] = desde + (hasta - desde) * min(i, total) / total
+
+            return avance
+
+        avance_portadas = en_tramo(0.05, fin_portadas)
 
         def avance_preparar(m):
             if ultima["frac"] is None:
@@ -734,6 +745,7 @@ def api_preparar(body):
                 tidal_session=ses,
                 log=avance_preparar,
                 avance_portadas=avance_portadas,
+                avance_audio=en_tramo(fin_portadas, 0.85),
             )
             if dir_audio:
                 ESTADO.registrar_temporal(dir_audio)
@@ -750,7 +762,8 @@ def api_preparar(body):
                 incluir_planilla=quiere_planilla,
                 incluir_audio=quiere_audio,
                 incluir_portadas=quiere_portadas,
-                log=lambda m: job.avance(m),
+                log=avance_preparar,
+                avance=en_tramo(0.9, 0.99),
             )
         except BaseException:
             # Si el armado falla o lo cancelan, la carpeta del ZIP a medio

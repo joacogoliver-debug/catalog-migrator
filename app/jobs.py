@@ -66,6 +66,13 @@ class Job:
                 # casi nunca aporta y no queremos crecer sin límite.
                 del self.log[1 : len(self.log) - MAX_LOG + 1]
 
+    def fraccion(self, fraccion):
+        """Mueve la barra sin sumar una línea al log. La cancelación se nota acá
+        igual que en `avance`: es para las fases con muchos pasos chicos."""
+        self.abortar_si_cancelado()
+        with self._lock:
+            self.progreso = max(0.0, min(1.0, float(fraccion)))
+
     def abortar_si_cancelado(self):
         if self._cancelar.is_set():
             raise Cancelado()

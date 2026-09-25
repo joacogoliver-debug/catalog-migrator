@@ -9,6 +9,8 @@ What changed in every published version. The numbers follow
 ## [Unreleased]
 
 ### Added
+- If Deezer did not answer, the log says so. Before, it looked the same as "no
+  codes for this artist".
 - **The ingestion sheet also comes in Excel**, `_Ingestion sheet.xlsx`, with
   the same rows as the CSV, every cell as text and what is missing
   highlighted. The CSV does not survive going through Excel: the UPC loses its
@@ -49,6 +51,18 @@ What changed in every published version. The numbers follow
   on its own, following the rubric in `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Fixed
+- **"Cancel" took tens of seconds to respond during the code lookup**, and the
+  bar stayed stuck at 55%. With 600 songs it measured 24 seconds, and meanwhile
+  the app refused a new survey as "job in progress". The Deezer lookup, the
+  video listing and the metadata now report progress at every step, and
+  cancelling stops there. Building the package goes by stages (covers, audio,
+  ZIP) instead of sitting at 85% during the longest phase.
+- A `Retry-After` with a date brought the whole survey down, with the YouTube
+  quota already spent.
+- Deezer retried any error six times, with waits, including "no data", which is
+  permanent: nine seconds lost per request. It now retries only the rate limit
+  and a busy service, with growing waits. YouTube also retries its rate limit,
+  which used to stop on the spot.
 - "(En Vivo)" and "(Live Session)" showed up as YouTube text carried into
   the title, and they are part of a version's real title. Meanwhile "(Audio)",
   "(Letra)", "[MV]" or "(Videoclip Oficial)" slipped through, and the
