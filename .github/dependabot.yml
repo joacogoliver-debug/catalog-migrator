@@ -1,0 +1,23 @@
+# Propone las actualizaciones de dependencias como pull requests, una por
+# semana y agrupadas, para que no se acumulen ni lleguen de a cien.
+#
+# Las acciones de GitHub van fijadas por SHA (ver los workflows): sin esto,
+# quedarían congeladas para siempre. Con esto, cada versión nueva llega como un
+# cambio que se revisa y que tiene que pasar el CI.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      acciones:
+        patterns: ["*"]
+
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      dependencias:
+        patterns: ["*"]

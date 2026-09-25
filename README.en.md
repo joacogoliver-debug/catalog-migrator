@@ -343,7 +343,7 @@ executable is compiled without a console.
 ### Building
 
 ```bash
-pip install pyinstaller
+pip install -r requirements-build.txt   # PyInstaller, pinned
 python build/build.py --con-audio                 # full variant
 python build/build.py                             # essential variant
 python build/build.py --con-audio --instalador    # and the Windows installer
@@ -511,6 +511,7 @@ pytest -q --cov
 | `tests/test_app.py` | Backend, jobs, HTTP, and the three defenses |
 | `tests/test_capturas.py` | That the screenshots' sample material says the same as the app |
 | `tests/test_entrada_hostil.py` | That nothing coming from outside gets executed: yt-dlp, formulas, covers |
+| `tests/test_ci.py` | The CI's supply chain rules: actions pinned by SHA, permissions, timeouts, auditing |
 | `tests/test_secretos.py` | That the key does not leave where it belongs: header, permissions, history |
 | `tests/test_validacion_honesta.py` | That the validation says what it looks at and what it does not: noise, codes, color, missing warnings |
 | `tests/test_hoja_xlsx.py` | The ingestion sheet in Excel: the same rows as the CSV, everything as text |

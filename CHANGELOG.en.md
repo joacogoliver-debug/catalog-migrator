@@ -173,6 +173,17 @@ What changed in every published version. The numbers follow
   threads before exiting.
 
 ### Changed
+- **CI grants write permission only to the step that publishes the
+  release.** Before, the eight build jobs had it too, and they install
+  packages from PyPI: a compromised one would have received a token able to
+  write to the repository. And GitHub actions are pinned by commit SHA instead
+  of by a tag, which whoever controls the action can move.
+- Dependabot proposes pip and action updates, and a new job runs `pip-audit` on
+  everything shipped inside the executables. PyInstaller and pyright are
+  pinned, every job has a timeout, and the build's tests run without the
+  YouTube key in the environment.
+- The yt-dlp floor goes up to 2024.07.01, which leaves out the versions with
+  CVE-2024-38519.
 - **The YouTube key travels in a header, not in the URL.** No error message
   showed it today, but any that quoted the URL would have carried it along: now
   it is not there. It was checked against the real API that Google accepts it

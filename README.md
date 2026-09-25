@@ -339,7 +339,7 @@ compila sin consola.
 ### Compilar
 
 ```bash
-pip install pyinstaller
+pip install -r requirements-build.txt   # PyInstaller, con versión fija
 python build/build.py --con-audio                 # variante completa
 python build/build.py                             # variante esencial
 python build/build.py --con-audio --instalador    # y el instalador de Windows
@@ -505,6 +505,7 @@ pytest -q --cov
 | `tests/test_app.py` | Backend, trabajos, HTTP, y las tres defensas |
 | `tests/test_capturas.py` | Que el material de ejemplo de las capturas diga lo mismo que la app |
 | `tests/test_entrada_hostil.py` | Que nada de lo que entra de afuera se ejecute: yt-dlp, fórmulas, portadas |
+| `tests/test_ci.py` | Las reglas de supply chain del CI: acciones por SHA, permisos, timeouts, auditoría |
 | `tests/test_secretos.py` | Que la clave no salga de donde tiene que estar: cabecera, permisos, historia |
 | `tests/test_validacion_honesta.py` | Que la validación diga lo que mira y lo que no: ruido, códigos, color, avisos que faltaban |
 | `tests/test_hoja_xlsx.py` | La hoja de ingesta en Excel: las mismas filas que el CSV, todo como texto |

@@ -19,7 +19,9 @@
 tiddl>=3.4.1
 
 # Descarga del audio de referencia (lossy) de YouTube.
-yt-dlp>=2024.1.0
+# El piso deja afuera las versiones con CVE-2024-38519 (arreglado en 2024.07.01),
+# que permitía escribir archivos con extensiones arbitrarias.
+yt-dlp>=2024.7.1
 
 # ffmpeg como paquete, para que el build --con-audio lo empaquete adentro del
 # ejecutable y el usuario no tenga que instalarlo aparte. Trae la build

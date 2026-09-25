@@ -174,6 +174,17 @@ Lo que cambió en cada versión publicada. Los números siguen
   a sus hilos antes de salir.
 
 ### Cambiado
+- **El CI da permiso de escritura sólo al paso que publica el release.**
+  Antes lo tenían también los ocho jobs que compilan, que instalan paquetes de
+  PyPI: uno comprometido habría recibido un token con permiso para escribir en
+  el repositorio. Y las acciones de GitHub van fijadas por el SHA del commit en
+  vez de por un tag, que quien controla la acción puede mover.
+- Dependabot propone las actualizaciones de pip y de las acciones, y un job
+  nuevo corre `pip-audit` sobre todo lo que viaja adentro de los ejecutables.
+  PyInstaller y pyright tienen versión fija, todos los jobs tienen timeout, y
+  los tests del build corren sin la clave de YouTube en el entorno.
+- El piso de yt-dlp sube a 2024.07.01, que deja afuera las versiones con
+  CVE-2024-38519.
 - **La clave de YouTube viaja en una cabecera, no en la URL.** Hoy ningún
   mensaje de error la mostraba, pero cualquiera que citara la URL la habría
   llevado con él: ahora no está ahí. Se verificó contra la API real que Google

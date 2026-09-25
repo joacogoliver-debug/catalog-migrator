@@ -144,6 +144,11 @@ def probar_tests():
     """
     paso("Corriendo los tests")
     env = dict(os.environ, PYTHONIOENCODING="utf-8")
+    # Los tests corren sin la clave de YouTube en el entorno. No la necesitan, y
+    # en el CI la clave del secreto estaba ahí mientras corría la suite entera,
+    # que importa dependencias de PyPI: ninguna tiene por qué poder leerla.
+    for variable in ("MIGRADOR_CLAVE_YT", "YOUTUBE_API_KEY"):
+        env.pop(variable, None)
     r = subprocess.run(
         [sys.executable, "-m", "pytest", "-q"], cwd=RAIZ, env=env, capture_output=True, text=True
     )

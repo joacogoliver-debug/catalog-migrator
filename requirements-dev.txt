@@ -19,9 +19,15 @@ pytest-cov>=5.0
 ruff==0.16.8
 
 # El verificador de tipos. Va en modo estricto progresivo: la configuración está
-# en pyproject.toml y hoy el repositorio pasa en cero errores.
-pyright>=1.1.400
+# en pyproject.toml y hoy el repositorio pasa en cero errores. Clavado como ruff:
+# una versión nueva de pyright trae reglas nuevas, y «0 errores» tiene que
+# significar lo mismo en el CI que en la máquina de quien escribe.
+pyright==1.1.414
 
 # Los ganchos que corren antes de cada commit (ruff y el control de claves).
 # Se enganchan una sola vez, con `pre-commit install`.
 pre-commit>=4.0
+
+# Para leer los workflows en tests/test_ci.py. Ya viene con pre-commit, pero lo
+# que un test usa tiene que estar dicho acá y no llegar de rebote.
+pyyaml>=6.0

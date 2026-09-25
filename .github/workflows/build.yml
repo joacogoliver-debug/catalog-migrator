@@ -20,13 +20,32 @@ on:
   push:
     tags: ["v*"]
 
+# Las acciones van fijadas por el SHA del commit, con el tag en un comentario. Un
+# tag como `v4` lo puede mover quien controla esa acción, y lo que corre al
+# publicar el release tiene permiso de escritura sobre el repositorio. El SHA no
+# se mueve; Dependabot propone la actualización y se revisa como cualquier otro
+# cambio (ver .github/dependabot.yml).
+
+# De base, sólo lectura. Antes se daba escritura a nivel del workflow, así que la
+# recibían también los ocho jobs de compilación, que instalan paquetes de PyPI:
+# uno comprometido tenía un token con permiso para escribir en el repositorio.
+# Ahora cada job pide lo que usa, y escribe sólo el que publica.
 permissions:
-  contents: write
-  id-token: write        # necesario para la atestación de procedencia
-  attestations: write
+  contents: read
+
+# Dos corridas del mismo tag no se pisan. No se cancela la anterior: podría
+# estar a mitad de publicar.
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   build:
+    permissions:
+      contents: read
+      id-token: write        # la atestación de procedencia
+      attestations: write
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -57,9 +76,9 @@ jobs:
     name: build (${{ matrix.nombre }} · ${{ matrix.variante }})
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           # 3.13 y no 3.12: tiddl 3.x declara Requires-Python >=3.13, y en 3.12
           # pip resuelve a la 2.8.0, que no tiene la clase TidalAPI que usa el
@@ -74,7 +93,9 @@ jobs:
           # pytest incluido: build.py corre la suite antes de empaquetar y
           # aborta si algo falla.
           pip install -r requirements-dev.txt
-          pip install pyinstaller
+          # Con versión fija, en su propio archivo, así Dependabot la actualiza
+          # y no se compila con lo que PyPI tenga ese día.
+          pip install -r requirements-build.txt
 
       - name: Instalar dependencias de audio
         if: matrix.variante == 'completa'
@@ -197,32 +218,36 @@ jobs:
       - name: Atestación de procedencia
         if: ${{ github.event.repository.private == false }}
         continue-on-error: true
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2
         with:
           subject-path: |
             dist/Migrador-de-Catalogos-*
             dist/migrador-catalogos_*.deb
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: migrador-${{ matrix.nombre }}-${{ matrix.variante }}
           path: dist/*
           if-no-files-found: error
 
   publicar:
-    # Sólo al empujar un tag: adjunta los binarios al release.
+    # Sólo al empujar un tag: adjunta los binarios al release. Es el único job
+    # que escribe, y lo único que escribe es el release.
     if: startsWith(github.ref, 'refs/tags/v')
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
     steps:
       # El checkout hace falta para leer el CHANGELOG y la prosa de las notas.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.13"
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           path: artefactos
 
@@ -243,7 +268,7 @@ jobs:
           cat notas-release.md
 
       - name: Adjuntar al release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           files: artefactos/**/*
           generate_release_notes: true
