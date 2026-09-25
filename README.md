@@ -260,8 +260,10 @@ cuando en realidad la van a rechazar.
   dando falsa sensación de que está listo. En su lugar generamos un CSV con las
   columnas estándar que aceptan o mapean casi todas las distribuidoras.
 - **No inventa metadata.** Lo que no puede salir de fuentes públicas (género,
-  explicit, compositores, editoriales, línea ©) queda marcado `<<COMPLETAR>>` en
-  la hoja de ingesta, no vacío ni rellenado a ojo.
+  explicit, línea ©, territorios) queda marcado `<<COMPLETAR>>` en la hoja de
+  ingesta, no vacío ni rellenado a ojo. Los compositores, letristas, productores y
+  editoriales salen de los créditos que YouTube publica en cada tema cuando la
+  distribuidora original los mandó, y si no, también quedan a completar.
 - **No adivina el número de track.** YouTube no lo expone. Cuando Deezer tiene el
   álbum y se verificó que es el mismo release, el número de track y de disco son
   los de su tracklist. Si no, el orden se estima por fecha de subida, se marca como
@@ -495,6 +497,7 @@ pytest -q --cov
 | `tests/test_app.py` | Backend, trabajos, HTTP, y las tres defensas |
 | `tests/test_capturas.py` | Que el material de ejemplo de las capturas diga lo mismo que la app |
 | `tests/test_entrada_hostil.py` | Que nada de lo que entra de afuera se ejecute: yt-dlp, fórmulas, portadas |
+| `tests/test_creditos.py` | Artistas por tema y créditos (compositor, letrista, productor, editorial) desde YouTube |
 | `tests/test_orden.py` | El número de disco y de track: el real de Deezer, o marcado como estimado |
 | `tests/test_agrupacion.py` | Qué tracks forman un release: fecha de lanzamiento, distribuidora y el caso sin fecha |
 | `tests/test_hoja_y_zip.py` | Que la hoja de ingesta y las planillas nombren los archivos que el ZIP trae |

@@ -21,7 +21,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 from difflib import SequenceMatcher
 
-from .contratos import DescripcionParseada, Relevamiento, Track
+from .contratos import Creditos, DescripcionParseada, Relevamiento, Track
 from .i18n import T
 from .productos import SIN_ALBUM, SIN_DATOS
 from .texto import comparable, marcas_version, misma_version, sin_decorado
@@ -359,6 +359,47 @@ def _anio_plausible(a):
     return 1900 <= a <= date.today().year + 1
 
 
+# Los roles de los créditos que publica YouTube, y a qué columna de la hoja de
+# ingesta van. «Writer» va sólo a compositor: en un instrumental no hay letra, y
+# ponerlo también como letrista sería afirmar algo que la fuente no dice. El
+# resto (intérpretes, ingenieros, mastering) no es un dato que pida la ingesta.
+_ROLES_CREDITO = {
+    "composer": ("composers",),
+    "composer lyricist": ("composers", "lyricists"),
+    "songwriter": ("composers", "lyricists"),
+    "writer": ("composers",),
+    "author": ("lyricists",),
+    "lyricist": ("lyricists",),
+    "producer": ("producers",),
+    "music publisher": ("publishers",),
+    "publisher": ("publishers",),
+}
+_RE_LINEA_CREDITO = re.compile(r"^\s*([A-Za-z][A-Za-z ,\-]{1,80}?)\s*:\s*(.+?)\s*$")
+
+
+def _creditos(bloques) -> Creditos:
+    """Los créditos de los bloques de la descripción, por columna de la hoja."""
+    out: dict[str, list[str]] = {"composers": [], "lyricists": [], "producers": [], "publishers": []}
+    for bloque in bloques:
+        for linea in bloque.splitlines():
+            m = _RE_LINEA_CREDITO.match(linea)
+            if not m or m.group(1).lower().startswith(("released on", "provided to youtube")):
+                continue
+            nombre = m.group(2).strip()
+            # YouTube escribe a veces «Music  Publisher», con dos espacios.
+            roles = [re.sub(r"\s+", " ", r).strip().lower() for r in m.group(1).split(",")]
+            for rol in roles:
+                for columna in _ROLES_CREDITO.get(rol, ()):
+                    if nombre not in out[columna]:
+                        out[columna].append(nombre)
+    return {
+        "composers": out["composers"],
+        "lyricists": out["lyricists"],
+        "producers": out["producers"],
+        "publishers": out["publishers"],
+    }
+
+
 def parse_description(desc) -> DescripcionParseada:
     """Extrae distribuidor, álbum, año y sello de una descripción auto-generada."""
     res: DescripcionParseada = {
@@ -367,6 +408,8 @@ def parse_description(desc) -> DescripcionParseada:
         "release_year": None,
         "release_date": None,
         "label": None,
+        "artists": [],
+        "credits": {"composers": [], "lyricists": [], "producers": [], "publishers": []},
     }
     if not desc:
         return res
@@ -381,6 +424,16 @@ def parse_description(desc) -> DescripcionParseada:
     # En singles/EP no hay bloque de álbum y el [2] es la línea ℗ (o "Released
     # on:"): no es un álbum, así que lo descartamos y queda en SIN_ALBUM.
     blocks = [b.strip() for b in re.split(r"\n\s*\n", desc) if b.strip()]
+
+    # Los artistas: el segundo bloque es «Título · Artista · Otro · Otro». Es lo
+    # que trae los invitados y los coautores, que antes se perdían y la hoja
+    # ponía el nombre del canal como artista de todos los temas.
+    if len(blocks) >= 2 and blocks[0].lower().startswith(prefix) and " · " in blocks[1]:
+        partes = [x.strip() for x in blocks[1].splitlines()[0].split(" · ")]
+        res["artists"] = [x for x in partes[1:] if x]
+    # Los créditos van después del bloque ℗, nunca en los dos primeros.
+    if len(blocks) >= 3 and blocks[0].lower().startswith(prefix):
+        res["credits"] = _creditos(blocks[3:])
     if len(blocks) >= 3 and blocks[0].lower().startswith(prefix):
         cand = blocks[2].splitlines()[0].strip()
         if cand and not cand.startswith("℗") and not cand.lower().startswith("released on:"):
@@ -456,6 +509,8 @@ def build_tracks(videos) -> list[Track]:
                 "comments": int(st.get("commentCount", 0) or 0),
                 "upload_date": pub,
                 "release_date": meta["release_date"] or "",
+                "artists": meta["artists"],
+                "credits": meta["credits"],
                 "desc3": desc3,
                 "url": f"https://youtu.be/{v.get('id')}",
             }

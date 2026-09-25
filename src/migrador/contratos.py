@@ -49,6 +49,19 @@ NivelHallazgo = Literal["error", "aviso"]
 Anio = int | str
 
 
+class Creditos(TypedDict):
+    """Los créditos que publica YouTube en la descripción de un Art Track.
+
+    Vienen de la distribuidora original y no todas los mandan. Cada lista trae
+    los nombres tal como figuran, sin inventar ni completar nada.
+    """
+
+    composers: list[str]
+    lyricists: list[str]
+    producers: list[str]
+    publishers: list[str]
+
+
 class DescripcionParseada(TypedDict):
     """Lo que `relevar_core.parse_description` saca de la descripción de YouTube.
 
@@ -63,6 +76,9 @@ class DescripcionParseada(TypedDict):
     # fecha del lanzamiento, no la de subida del video.
     release_date: str | None
     label: str | None
+    # Los artistas de la línea «Título · Artista · Otro», en ese orden.
+    artists: list[str]
+    credits: Creditos
 
 
 class CruceTidal(TypedDict):
@@ -106,6 +122,10 @@ class Track(TypedDict):
     # AAAA-MM-DD, de «Released on:» en la descripción, o "" si no la trae. No
     # confundir con `upload_date`: un disco de 2001 puede estar subido en 2024.
     release_date: str
+    # Los artistas del tema según YouTube, el principal primero. Vacío si la
+    # descripción no los trae.
+    artists: list[str]
+    credits: Creditos
     desc3: str
     url: str
 

@@ -9,6 +9,16 @@ Lo que cambió en cada versión publicada. Los números siguen
 ## [Sin publicar]
 
 ### Agregado
+- **La hoja de ingesta trae los créditos que YouTube publica.** Cada Art Track
+  dice quién compuso, escribió la letra y produjo el tema, cuando la
+  distribuidora original lo mandó, y la hoja lo marcaba como imposible de
+  obtener. En los datos reales, 46 de 50 temas traían compositor. Ahora van en
+  `Composer`, `Lyricist`, `Producer` y `Publisher`, y lo que falta sigue a
+  completar.
+- El artista de cada tema es el que nombra YouTube, y los demás van en la
+  columna nueva `Additional Artists`. Antes todos los temas salían a nombre del
+  canal y los invitados se perdían. Si el artista del canal no es el principal
+  de un tema, la validación avisa que se verifique quién controla ese master.
 - **El número de track y de disco son los reales cuando Deezer tiene el
   álbum.** La app ya bajaba el tracklist y lo tiraba, y la hoja llevaba el
   orden estimado por fecha de subida sin ninguna marca. Ahora, si el álbum de

@@ -101,6 +101,8 @@ def _track(
         "comments": 0,
         "upload_date": date or f"{anio}-01-01",
         "release_date": released or "",
+        "artists": [],
+        "credits": {"composers": [], "lyricists": [], "producers": [], "publishers": []},
         "desc3": "",
         "url": f"https://youtu.be/{vid or 'x'}",
     }

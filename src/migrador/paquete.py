@@ -254,9 +254,16 @@ COLUMNAS_INGESTA = [
     "ISRC",
     "Track Title",
     "Track Artist",
+    # Los demás artistas de la línea de YouTube. No se sabe si son invitados o
+    # coprincipales: YouTube no lo dice, y el LEEME pide revisarlo.
+    "Additional Artists",
     "Duration",
     "Explicit",
+    # Los créditos que publica YouTube, cuando la distribuidora original los
+    # mandó. Si no, a completar.
     "Composer",
+    "Lyricist",
+    "Producer",
     "Publisher",
     "Lyrics Language",
     # --- referencia interna ---
@@ -269,6 +276,19 @@ COLUMNAS_INGESTA = [
     "Track Order",
     "YouTube URL",
 ]
+
+
+def _creditos_de(t, columna):
+    nombres = (t.get("credits") or {}).get(columna) or []
+    return "; ".join(nombres) if nombres else MARCA_COMPLETAR
+
+
+def artistas_de(t, artista):
+    """(artista del tema, los demás). Sin datos, el del canal y nadie más."""
+    artistas = t.get("artists") or []
+    if not artistas:
+        return artista, ""
+    return artistas[0], "; ".join(artistas[1:])
 
 
 def orden_de(p, t):
@@ -345,11 +365,13 @@ def hoja_ingesta_csv(productos, artista, incluir_audio=True, incluir_portadas=Tr
                         t.get("track_number") or "",
                         t.get("isrc") or MARCA_COMPLETAR,
                         t.get("track", ""),
-                        artista,
+                        *artistas_de(t, artista),
                         _mmss(t.get("duration_s")),
                         MARCA_COMPLETAR,  # Explicit
-                        MARCA_COMPLETAR,  # Composer
-                        MARCA_COMPLETAR,  # Publisher
+                        _creditos_de(t, "composers"),
+                        _creditos_de(t, "lyricists"),
+                        _creditos_de(t, "producers"),
+                        _creditos_de(t, "publishers"),
                         MARCA_COMPLETAR,  # Lyrics Language
                         # Los nombres con que los archivos quedan adentro del
                         # ZIP, relativos a su raíz. Antes era el nombre del

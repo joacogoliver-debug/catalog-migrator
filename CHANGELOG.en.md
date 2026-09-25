@@ -9,6 +9,16 @@ What changed in every published version. The numbers follow
 ## [Unreleased]
 
 ### Added
+- **The ingestion sheet carries the credits YouTube publishes.** Each Art
+  Track says who composed, wrote the lyrics and produced the song, when the
+  original distributor sent it, and the sheet marked it as impossible to get.
+  In real data, 46 of 50 songs had a composer. They now go in `Composer`,
+  `Lyricist`, `Producer` and `Publisher`, and what is missing is still to be
+  filled in.
+- Each song's artist is the one YouTube names, and the others go in the new
+  `Additional Artists` column. Before, every song came out under the channel's
+  name and the featured artists were lost. If the channel's artist is not a
+  song's main artist, the validation warns to check who controls that master.
 - **Track and disc numbers are the real ones when Deezer has the album.** The
   app already downloaded the tracklist and threw it away, and the sheet carried
   the order estimated from the upload date with no mark at all. Now, if the

@@ -263,8 +263,10 @@ minimum when in fact it is going to be rejected.
   Instead we generate a CSV with the standard columns that nearly every
   distributor accepts or maps.
 - **It does not invent metadata.** Whatever cannot come from public sources
-  (genre, explicit, composers, publishers, © line) is marked `<<COMPLETAR>>` in
-  the ingestion sheet, not left blank and not filled in by eye.
+  (genre, explicit, © line, territories) is marked `<<COMPLETAR>>` in the
+  ingestion sheet, not left blank and not filled in by eye. Composers, lyricists,
+  producers and publishers come from the credits YouTube publishes for each song
+  when the original distributor sent them, and otherwise are to be filled in too.
 - **It does not guess the track number.** YouTube does not expose it. When Deezer
   has the album and it was verified as the same release, the track and disc
   numbers are those of its tracklist. Otherwise the order is estimated from the
@@ -501,6 +503,7 @@ pytest -q --cov
 | `tests/test_app.py` | Backend, jobs, HTTP, and the three defenses |
 | `tests/test_capturas.py` | That the screenshots' sample material says the same as the app |
 | `tests/test_entrada_hostil.py` | That nothing coming from outside gets executed: yt-dlp, formulas, covers |
+| `tests/test_creditos.py` | Artists per song and credits (composer, lyricist, producer, publisher) from YouTube |
 | `tests/test_orden.py` | Disc and track numbers: the real ones from Deezer, or flagged as estimated |
 | `tests/test_agrupacion.py` | Which tracks make up a release: release date, distributor and the no-date case |
 | `tests/test_hoja_y_zip.py` | That the ingestion sheet and the spreadsheets name the files the ZIP carries |

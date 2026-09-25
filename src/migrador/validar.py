@@ -292,6 +292,15 @@ def validar(productos: list[Producto], artista="") -> ResultadoValidacion:
                     )
                 )
 
+            # Si el artista del canal no es el principal del tema, el master
+            # puede ser de otro: un feat. en el disco de otro artista, o un
+            # compilado. Migrarlo sin preguntar es migrar algo ajeno.
+            artistas = t.get("artists") or []
+            dueno = p.get("artist") or artista
+            if artistas and dueno and comparable(artistas[0]) != comparable(dueno):
+                texto = T("val.artista_no_principal", principal=artistas[0], artista=dueno)
+                out.append(_hallazgo("aviso", "artista_no_principal", texto, nombre, titulo))
+
             if parece_formula(t.get("track")):
                 out.append(
                     _hallazgo("aviso", "texto_como_formula", T("val.texto_como_formula"), nombre, titulo)

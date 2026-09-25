@@ -664,6 +664,18 @@ TEXTOS = {
             "new one is live, and migrate just one of the two."
         ),
     },
+    "val.artista_no_principal": {
+        "es": (
+            "El artista principal de este tema es {principal}, no {artista}. Puede ser un "
+            "feat. en el disco de otro o un compilado: verificá quién controla el master antes "
+            "de migrarlo."
+        ),
+        "en": (
+            "This song's main artist is {principal}, not {artista}. It may be a feature on "
+            "someone else's record or a compilation: check who controls the master before "
+            "migrating it."
+        ),
+    },
     "val.upc_falta": {
         "es": "Sin UPC. La distribuidora va a asignar uno nuevo y se pierde la continuidad del release.",
         "en": "No UPC. The distributor will assign a new one and the release loses its continuity.",
@@ -950,7 +962,7 @@ propósito: son los nombres de campo que espera la distribuidora, no texto
 para leer. Lo que se pudo relevar viene completo. Lo que no puede salir de
 fuentes públicas está marcado con <<COMPLETAR>>:
 
-  Genre, Language, Explicit, Composer, Publisher, C Line, Territories
+  Genre, Language, Explicit, C Line, Territories
 
 y "Disc Number" cuando el disco no se pudo confirmar. Territories va a
 completar porque los derechos del release original no salen de ningún lado
@@ -959,6 +971,13 @@ licenciado sólo para una región.
 
 Esos campos los tiene que llenar el dueño del catálogo, están marcados en vez
 de vacíos o inventados justamente para que no pasen desapercibidos.
+
+Composer, Lyricist, Producer y Publisher vienen de los créditos que publica
+YouTube en cada tema, cuando la distribuidora original los mandó; si no, van
+en <<COMPLETAR>>. Verificá que sean los nombres legales que pide la
+distribuidora nueva. "Additional Artists" trae los otros artistas que YouTube
+nombra en el tema, sin decir si son invitados (feat.) o artistas principales:
+revisalo antes de cargar.
 
 Las dos fechas, "Release Date" y "Original Release Date", traen la fecha real
 del lanzamiento, que YouTube publica en cada tema. En una migración el release
@@ -1037,7 +1056,7 @@ purpose: they are the field names the distributor expects, not text to
 read. What could be surveyed comes filled in. What cannot come from public
 sources is marked <<COMPLETAR>>:
 
-  Genre, Language, Explicit, Composer, Publisher, C Line, Territories
+  Genre, Language, Explicit, C Line, Territories
 
 and "Disc Number" when the disc could not be confirmed. Territories is to be
 filled in because the original release's rights do not come from anywhere
@@ -1046,6 +1065,13 @@ licensed for a single region.
 
 Those fields have to be filled in by the catalog owner. They are marked rather
 than left empty or made up precisely so they do not slip through.
+
+Composer, Lyricist, Producer and Publisher come from the credits YouTube
+publishes for each song, when the original distributor sent them; otherwise
+they are <<COMPLETAR>>. Check that they are the legal names the new
+distributor asks for. "Additional Artists" carries the other artists YouTube
+names on the song, without saying whether they are featured (feat.) or main
+artists: review it before loading.
 
 Both dates, "Release Date" and "Original Release Date", carry the real release
 date, which YouTube publishes for every song. In a migration the release keeps
