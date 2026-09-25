@@ -104,6 +104,7 @@ def preparar(
     log=print,
     avance_portadas=None,
     avance_audio=None,
+    dir_audio=None,
 ):
     """Baja lo que se pidió para los productos seleccionados.
 
@@ -114,7 +115,8 @@ def preparar(
     sale la barra de progreso de la parte que más tarda.
     """
     entorno = audio_mod.verificar_entorno()
-    dir_audio = None
+    # Si quien llama da la carpeta del audio, es suya y la limpia él aunque esto
+    # se corte a la mitad (ver `server.api_preparar`).
 
     if quiere_portadas:
         portadas_mod.fetch_portadas(seleccion, artista, log=log, avance=avance_portadas)
@@ -140,6 +142,7 @@ def preparar(
                 calidad=calidad,
                 log=log,
                 avance=avance_audio,
+                dest_dir=dir_audio,
             )
 
     return seleccion, dir_audio, entorno

@@ -28,6 +28,10 @@ class Cancelado(Exception):
     """La cancelación pedida por el usuario se propaga como excepción."""
 
 
+class Ocupado(Exception):
+    """Ya hay un trabajo exclusivo en curso y no se lanzó otro."""
+
+
 class Job:
     """Un trabajo en curso. El frontend lo lee por /api/job/<id>."""
 
@@ -116,10 +120,19 @@ class Registry:
         # cada paquete generado se queda en el disco hasta cerrar la app.
         self._al_descartar = al_descartar
 
-    def lanzar(self, tipo, fn):
-        """Corre fn(job) en un hilo y devuelve el Job."""
+    def lanzar(self, tipo, fn, exclusivo=False):
+        """Corre fn(job) en un hilo y devuelve el Job.
+
+        Con `exclusivo`, levanta Ocupado si ya hay un trabajo en curso. El
+        control y el registro van adentro del mismo lock: mirar `activos()` y
+        después lanzar dejaba una ventana en la que dos pedidos simultáneos
+        pasaban los dos, que es justo lo que la regla de un trabajo por vez
+        quiere evitar.
+        """
         job = Job(tipo)
         with self._lock:
+            if exclusivo and any(j.estado in ("pendiente", "corriendo") for j in self._jobs.values()):
+                raise Ocupado()
             self._jobs[job.id] = job
 
         def correr():

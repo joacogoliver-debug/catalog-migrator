@@ -51,6 +51,17 @@ Lo que cambió en cada versión publicada. Los números siguen
   `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Corregido
+- «Un trabajo a la vez» se chequeaba y se registraba por separado, y dos pedidos
+  simultáneos (un doble clic lento, dos ventanas) podían pasar los dos. Ahora
+  las dos cosas van juntas.
+- Con dos ventanas abiertas, si en una se relevaba otro artista, la otra armaba
+  el paquete de ése con los productos que tenía elegidos del anterior. Ahora el
+  catálogo tiene un identificador y el servidor lo rechaza con un aviso.
+- Cancelar el paquete a mitad de las descargas de audio dejaba varios GB en la
+  carpeta temporal hasta el día siguiente, y un paquete nuevo dejaba el ZIP del
+  anterior. Las dos cosas se borran ahora en el momento.
+- Un pedido sin productos elegidos armaba el paquete del catálogo entero. La
+  interfaz no lo manda así, pero ahora es un error.
 - **«Cancelar» tardaba decenas de segundos en responder durante la búsqueda de
   códigos**, y la barra quedaba clavada en 55 %. Con 600 temas se midieron 24
   segundos, y mientras tanto la app rechazaba un relevamiento nuevo por

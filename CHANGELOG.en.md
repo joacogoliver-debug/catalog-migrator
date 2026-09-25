@@ -51,6 +51,17 @@ What changed in every published version. The numbers follow
   on its own, following the rubric in `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Fixed
+- "One job at a time" was checked and registered separately, and two
+  simultaneous requests (a slow double click, two windows) could both get
+  through. Both things now happen together.
+- With two windows open, if another artist was surveyed in one, the other built
+  that artist's package with the releases it had picked from the previous one.
+  The catalog now has an identifier and the server refuses it with a warning.
+- Cancelling the package halfway through the audio downloads left several GB in
+  the temporary folder until the next day, and a new package left the previous
+  one's ZIP behind. Both are now removed right away.
+- A request with no releases picked built the package of the whole catalog. The
+  interface does not send it that way, but it is now an error.
 - **"Cancel" took tens of seconds to respond during the code lookup**, and the
   bar stayed stuck at 55%. With 600 songs it measured 24 seconds, and meanwhile
   the app refused a new survey as "job in progress". The Deezer lookup, the

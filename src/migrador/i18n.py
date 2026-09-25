@@ -492,6 +492,10 @@ TEXTOS = {
         "es": "El pedido trae un Content-Length inválido.",
         "en": "The request has an invalid Content-Length.",
     },
+    "srv.catalogo_cambio": {
+        "es": "El catálogo cambió: se relevó otro artista en otra ventana. Recargá la app.",
+        "en": "The catalog changed: another artist was surveyed in another window. Reload the app.",
+    },
     "srv.sin_chunked": {
         "es": "El pedido llegó por partes y este servidor no lo acepta así.",
         "en": "The request came in chunks and this server does not take it that way.",

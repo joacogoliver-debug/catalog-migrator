@@ -1328,6 +1328,9 @@ const ACCIONES = {
     S.error = ''; S.errorCodigo = ''; S.errorDescarga = ''; S.resultado = null; S.ocupado = true; S.paso = 4; S.job = null; render();
     try {
       const { job } = await api('/api/preparar', {
+        // Si en otra ventana se relevó otro artista, el servidor lo nota por
+        // acá y no arma el paquete de aquél con los ids de éste.
+        catalogo_id: S.catalogo && S.catalogo.catalogo_id,
         ids,
         planilla: S.opciones.planilla,
         portadas: S.opciones.portadas,

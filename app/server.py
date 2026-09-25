@@ -71,7 +71,7 @@ for _p in (_AQUI, os.path.join(_RAIZ, "src"), _RAIZ):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-from jobs import Registry  # noqa: E402
+from jobs import Ocupado, Registry  # noqa: E402
 from migrador import audio as audio_mod  # noqa: E402
 from migrador import i18n  # noqa: E402
 from migrador import migrar_core as M  # noqa: E402
@@ -404,6 +404,10 @@ class Estado:
         self.productos = []
         self.artista = ""
         self.diagnostico = {}
+        # Cambia con cada relevamiento. Los ids de producto son posicionales
+        # (p001, p002…) y se regeneran, así que una pestaña que quedó con el
+        # catálogo de antes pedía el ZIP de otro artista con sus ids viejos.
+        self.catalogo_id = ""
         # Sin anotar, el tipo deducido sería None y guardar la sesión daría
         # error de tipos. Se escribe suelto para no importar `audio` acá.
         self.tidal: "audio_mod.TidalSession | None" = None
@@ -413,10 +417,16 @@ class Estado:
         self.lock = threading.RLock()
 
     def por_ids(self, ids):
+        """Los productos elegidos. Sin ids, ninguno.
+
+        Una lista vacía significaba «todos»: un pedido que llegara sin ids por
+        error armaba el paquete del catálogo entero. La interfaz nunca lo manda
+        así, pero es una trampa para el próximo que toque la API.
+        """
+        if not ids:
+            return []
         with self.lock:
             productos = list(self.productos)
-        if not ids:
-            return productos
         return P.filter_products(productos, ids=ids)
 
     def guardar_catalogo(self, prods, artista, diag):
@@ -424,6 +434,15 @@ class Estado:
             self.productos = prods
             self.artista = artista
             self.diagnostico = diag
+            self.catalogo_id = secrets.token_hex(6)
+
+    def zips_anteriores(self):
+        """Borra los ZIP de paquetes anteriores. Se llama al armar uno nuevo: la
+        interfaz sólo ofrece bajar el último, y con audio cada uno pesa GB."""
+        with self.lock:
+            viejos, self.zips = list(self.zips.values()), {}
+        for ruta in viejos:
+            shutil.rmtree(os.path.dirname(ruta), ignore_errors=True)
 
     def registrar_zip(self, job_id, ruta):
         with self.lock:
@@ -529,6 +548,7 @@ def producto_json(p):
 def catalogo_json(productos, artista, diag=None):
     desde, hasta = P.year_range(productos)
     return {
+        "catalogo_id": ESTADO.catalogo_id,
         "artista": artista,
         "diagnostico": diag or {},
         "productos": [producto_json(p) for p in productos],
@@ -611,6 +631,18 @@ def api_guardar_clave(body):
     return {"ok": True}
 
 
+def _mismo_catalogo(body):
+    """Que el pedido hable del catálogo que está en memoria.
+
+    Si viene un `catalogo_id` y no es el de ahora, otra pestaña relevó otro
+    artista mientras tanto, y los ids que trae son de aquel catálogo. Sin id se
+    acepta, como hasta ahora: es lo que mandan los scripts y los tests.
+    """
+    pedido = body.get("catalogo_id")
+    if pedido and pedido != ESTADO.catalogo_id:
+        raise ErrorDeCampo(T("srv.catalogo_cambio"), "catalogo")
+
+
 def _sin_trabajo_en_curso():
     """Un trabajo largo por vez.
 
@@ -654,10 +686,19 @@ def api_relevar(body):
         job.avance(f"{len(prods)} productos encontrados.", 1.0)
         return catalogo_json(prods, artista, diag)
 
-    return {"job": JOBS.lanzar("relevar", trabajo).a_dict()}
+    return {"job": _lanzar("relevar", trabajo).a_dict()}
+
+
+def _lanzar(tipo, trabajo):
+    """Lanza un trabajo largo, uno por vez, sin carrera (ver `Registry.lanzar`)."""
+    try:
+        return JOBS.lanzar(tipo, trabajo, exclusivo=True)
+    except Ocupado:
+        raise ValueError(T("srv.trabajo_en_curso")) from None
 
 
 def api_validar(body):
+    _mismo_catalogo(body)
     sel = ESTADO.por_ids(body.get("ids"))
     if not sel:
         raise ValueError(T("srv.sin_seleccion"))
@@ -680,6 +721,7 @@ def _revisar_espacio(con_audio):
 
 
 def api_preparar(body):
+    _mismo_catalogo(body)
     ids = body.get("ids") or []
     sel = ESTADO.por_ids(ids)
     if not sel:
@@ -706,7 +748,14 @@ def api_preparar(body):
         copias = cast("list[Producto]", [dict(p, tracks=[dict(t) for t in p["tracks"]]) for p in sel])
 
         job.avance("Preparando", 0.05)
-        dir_audio = None
+        ESTADO.zips_anteriores()
+        # La carpeta del audio la crea el trabajo y no `preparar`. Si la creaba
+        # `preparar`, el trabajo recién se enteraba de ella cuando volvía, y un
+        # paquete cancelado a mitad de las descargas dejaba varios GB en el
+        # temporal, que sólo se limpiaban doce horas después.
+        dir_audio = tempfile.mkdtemp(prefix="migrador_audio_") if quiere_audio else None
+        if dir_audio:
+            ESTADO.registrar_temporal(dir_audio)
         carpeta = None
 
         # La barra va por tramos: portadas, audio y ZIP, cada uno con su parte.
@@ -736,7 +785,7 @@ def api_preparar(body):
                 job.avance(m, ultima["frac"])
 
         try:
-            _, dir_audio, ent = M.preparar(
+            _, _dir, ent = M.preparar(
                 copias,
                 artista,
                 quiere_planilla=quiere_planilla,
@@ -746,9 +795,8 @@ def api_preparar(body):
                 log=avance_preparar,
                 avance_portadas=avance_portadas,
                 avance_audio=en_tramo(fin_portadas, 0.85),
+                dir_audio=dir_audio,
             )
-            if dir_audio:
-                ESTADO.registrar_temporal(dir_audio)
 
             job.avance(T("srv.armando_zip"), 0.9)
             carpeta = tempfile.mkdtemp(prefix="migrador_zip_")
@@ -788,7 +836,7 @@ def api_preparar(body):
             "productos": len(copias),
         }
 
-    return {"job": JOBS.lanzar("preparar", trabajo).a_dict()}
+    return {"job": _lanzar("preparar", trabajo).a_dict()}
 
 
 def api_tidal_iniciar():
