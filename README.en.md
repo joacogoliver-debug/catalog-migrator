@@ -191,6 +191,7 @@ audio if you enabled that module.
 Artist - Migration 2026-09-14/
 ├── _Pre-delivery validation.txt   ← start here
 ├── _Ingestion sheet.csv           ← the file you load into the distributor
+├── _Ingestion sheet.xlsx          ← the same one, to fill in with Excel
 ├── _Full catalog.xlsx
 ├── _Migration report.txt
 ├── _READ ME.txt
@@ -503,6 +504,7 @@ pytest -q --cov
 | `tests/test_app.py` | Backend, jobs, HTTP, and the three defenses |
 | `tests/test_capturas.py` | That the screenshots' sample material says the same as the app |
 | `tests/test_entrada_hostil.py` | That nothing coming from outside gets executed: yt-dlp, formulas, covers |
+| `tests/test_hoja_xlsx.py` | The ingestion sheet in Excel: the same rows as the CSV, everything as text |
 | `tests/test_linea_p.py` | The whole ℗ line as the P Line, and its holder without the license as the label |
 | `tests/test_creditos.py` | Artists per song and credits (composer, lyricist, producer, publisher) from YouTube |
 | `tests/test_orden.py` | Disc and track numbers: the real ones from Deezer, or flagged as estimated |

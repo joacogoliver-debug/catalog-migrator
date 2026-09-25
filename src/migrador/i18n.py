@@ -834,6 +834,7 @@ TEXTOS = {
     "paq.f_validacion": {"es": "_Validacion pre-entrega.txt", "en": "_Pre-delivery validation.txt"},
     "paq.f_catalogo": {"es": "_Catalogo completo.xlsx", "en": "_Full catalog.xlsx"},
     "paq.f_ingesta": {"es": "_Hoja de ingesta.csv", "en": "_Ingestion sheet.csv"},
+    "paq.f_ingesta_xlsx": {"es": "_Hoja de ingesta.xlsx", "en": "_Ingestion sheet.xlsx"},
     "paq.f_datos": {"es": "datos.xlsx", "en": "data.xlsx"},
     "paq.f_portada": {"es": "portada.jpg", "en": "cover.jpg"},
     # ---- paquete: el reporte de migración -----------------------------------
@@ -906,6 +907,7 @@ TEXTOS = {
     "paq.sin_audio": {"es": "sin audio", "en": "no audio"},
     "paq.hoja_catalogo": {"es": "Catálogo", "en": "Catalog"},
     "paq.hoja_producto": {"es": "Producto", "en": "Release"},
+    "paq.hoja_ingesta": {"es": "Ingesta", "en": "Ingestion"},
     "paq.maestra_titulo": {
         "es": "{artista}: Catálogo para migración",
         "en": "{artista}: Catalog for migration",
@@ -938,6 +940,8 @@ En la raíz:
       Todos los productos en una sola planilla.
   {ingesta}
       El archivo para cargar en la distribuidora nueva.
+  {ingesta_xlsx}
+      La misma hoja en Excel, para completar lo que falta.
   {validacion}
       Qué va a ser rechazado y qué conviene revisar.
   {reporte}
@@ -971,6 +975,17 @@ licenciado sólo para una región.
 
 Esos campos los tiene que llenar el dueño del catálogo, están marcados en vez
 de vacíos o inventados justamente para que no pasen desapercibidos.
+
+NO EDITES EL CSV CON EXCEL. Al abrirlo, Excel convierte el UPC en un número
+(pierde el cero de adelante y lo muestra como 8,86E+11), lee "3:20" como una
+hora y, con la configuración en castellano, mete todo en una sola columna. Si
+lo guardás así, la hoja queda rota. Para completar lo que falta usá
+"{ingesta_xlsx}", que trae las mismas filas con todo como texto y lo que falta
+resaltado; si tu distribuidora carga CSV, exportalo desde ahí como "CSV UTF-8".
+
+La distribuidora puede pedir campos que la hoja no trae porque no salen de
+ningún lado público: número de catálogo, subgénero, versión del título, año de
+la línea C. Si los pide, agregalos a mano.
 
 "P Line" es la línea ℗ tal como la publicó la distribuidora original, y
 "Label" es su titular, sin la licencia ("under exclusive license to…"). Para un
@@ -1037,6 +1052,8 @@ In the root:
       Every release in a single spreadsheet.
   {ingesta}
       The file to load into the new distributor.
+  {ingesta_xlsx}
+      The same sheet in Excel, to fill in what is missing.
   {validacion}
       What will be rejected and what is worth reviewing.
   {reporte}
@@ -1070,6 +1087,18 @@ licensed for a single region.
 
 Those fields have to be filled in by the catalog owner. They are marked rather
 than left empty or made up precisely so they do not slip through.
+
+DO NOT EDIT THE CSV IN EXCEL. When it opens it, Excel turns the UPC into a
+number (it drops the leading zero and shows it as 8.86E+11), reads "3:20" as a
+time and, with some regional settings, puts everything in a single column. If
+you save it like that, the sheet is broken. To fill in what is missing use
+"{ingesta_xlsx}", which has the same rows with everything as text and what is
+missing highlighted; if your distributor loads CSV, export it from there as
+"CSV UTF-8".
+
+The distributor may ask for fields the sheet does not carry because they do not
+come from anywhere public: catalog number, subgenre, title version, C line
+year. If it asks, add them by hand.
 
 "P Line" is the ℗ line exactly as the original distributor published it, and
 "Label" is its holder, without the license ("under exclusive license to…"). For

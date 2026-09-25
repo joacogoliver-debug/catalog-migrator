@@ -9,6 +9,13 @@ Lo que cambió en cada versión publicada. Los números siguen
 ## [Sin publicar]
 
 ### Agregado
+- **La hoja de ingesta también viene en Excel**, `_Hoja de ingesta.xlsx`, con
+  las mismas filas que el CSV, cada celda como texto y lo que falta resaltado.
+  El CSV no sobrevive a pasar por Excel: el UPC pierde el cero de adelante y
+  pasa a notación científica, `3:20` se lee como una hora y, con la
+  configuración en castellano, todo cae en una sola columna. El LEEME lo dice, y
+  nombra además los campos que una distribuidora puede pedir y que la hoja no
+  trae porque no salen de ningún lado público.
 - **La hoja de ingesta trae los créditos que YouTube publica.** Cada Art Track
   dice quién compuso, escribió la letra y produjo el tema, cuando la
   distribuidora original lo mandó, y la hoja lo marcaba como imposible de

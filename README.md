@@ -192,6 +192,7 @@ activaste ese módulo.
 Artista - Migracion 2026-09-14/
 ├── _Validacion pre-entrega.txt    ← empezá por acá
 ├── _Hoja de ingesta.csv           ← el archivo para cargar en la distribuidora
+├── _Hoja de ingesta.xlsx          ← la misma, para completarla en Excel
 ├── _Catalogo completo.xlsx
 ├── _Reporte de migracion.txt
 ├── _LEEME.txt
@@ -497,6 +498,7 @@ pytest -q --cov
 | `tests/test_app.py` | Backend, trabajos, HTTP, y las tres defensas |
 | `tests/test_capturas.py` | Que el material de ejemplo de las capturas diga lo mismo que la app |
 | `tests/test_entrada_hostil.py` | Que nada de lo que entra de afuera se ejecute: yt-dlp, fórmulas, portadas |
+| `tests/test_hoja_xlsx.py` | La hoja de ingesta en Excel: las mismas filas que el CSV, todo como texto |
 | `tests/test_linea_p.py` | La línea ℗ entera en la P Line, y el titular sin la licencia como sello |
 | `tests/test_creditos.py` | Artistas por tema y créditos (compositor, letrista, productor, editorial) desde YouTube |
 | `tests/test_orden.py` | El número de disco y de track: el real de Deezer, o marcado como estimado |

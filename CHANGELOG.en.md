@@ -9,6 +9,13 @@ What changed in every published version. The numbers follow
 ## [Unreleased]
 
 ### Added
+- **The ingestion sheet also comes in Excel**, `_Ingestion sheet.xlsx`, with
+  the same rows as the CSV, every cell as text and what is missing
+  highlighted. The CSV does not survive going through Excel: the UPC loses its
+  leading zero and turns into scientific notation, `3:20` is read as a time and,
+  with some regional settings, everything falls into one column. The READ ME
+  says so, and also names the fields a distributor may ask for that the sheet
+  does not carry because they do not come from anywhere public.
 - **The ingestion sheet carries the credits YouTube publishes.** Each Art
   Track says who composed, wrote the lyrics and produced the song, when the
   original distributor sent it, and the sheet marked it as impossible to get.

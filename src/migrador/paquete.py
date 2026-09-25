@@ -317,20 +317,15 @@ def disco_de(p, t):
     return 1 if len(p["tracks"]) == 1 else MARCA_COMPLETAR
 
 
-def hoja_ingesta_csv(productos, artista, incluir_audio=True, incluir_portadas=True):
-    """CSV con las columnas estándar de ingesta, una fila por track.
+def filas_ingesta(productos, artista, incluir_audio=True, incluir_portadas=True):
+    """Las filas de la hoja de ingesta, una por track, sin ningún formato.
 
-    Lo que sabemos va completo; lo que no puede salir de YouTube ni de las APIs
-    públicas (género, explicit, compositores, editoriales) queda marcado con
-    <<COMPLETAR>> en vez de vacío o inventado, así se ve de una qué falta.
+    Las comparten el CSV y el xlsx, para que las dos hojas no puedan decir
+    cosas distintas. Lo que sabemos va completo; lo que no puede salir de las
+    fuentes públicas queda marcado con <<COMPLETAR>> en vez de vacío o inventado,
+    así se ve de una qué falta.
     """
-    import csv
-    from io import StringIO
-
-    buf = StringIO()
-    w = csv.writer(buf, lineterminator="\n")
-    w.writerow(COLUMNAS_INGESTA)
-
+    filas = []
     for p in productos:
         sello = p.get("label") or MARCA_COMPLETAR
         # La línea ℗ tal como la publicó la distribuidora. Antes se armaba con
@@ -338,54 +333,97 @@ def hoja_ingesta_csv(productos, artista, incluir_audio=True, incluir_portadas=Tr
         # grabaciones de ℗ 2013 salía con un ℗ que no es.
         p_line = p.get("p_line") or MARCA_COMPLETAR
         for t in p["tracks"]:
-            # Cada campo pasa por `_texto_csv`: ver la nota sobre las fórmulas.
-            w.writerow(
+            filas.append(
                 [
-                    _texto_csv(v)
-                    for v in [
-                        p.get("upc") or MARCA_COMPLETAR,
-                        p.get("title", ""),
-                        artista,
-                        p.get("kind", ""),
-                        # Nunca la fecha de subida a YouTube ni un 1 de enero
-                        # armado con el año: las dos cosas entraban antes, y
-                        # un disco de 2001 salía fechado en 2024.
-                        p.get("release_date") or MARCA_COMPLETAR,
-                        p.get("release_date") or MARCA_COMPLETAR,
-                        sello,
-                        p_line,
-                        MARCA_COMPLETAR,  # C Line: no sale de YouTube
-                        MARCA_COMPLETAR,  # Genre
-                        MARCA_COMPLETAR,  # Language
-                        # Los territorios del release original no salen de ningún
-                        # lado público. Poner «Worldwide» era inventar derechos: un
-                        # catálogo licenciado sólo para una región se abría al mundo.
-                        MARCA_COMPLETAR,
-                        disco_de(p, t),
-                        t.get("track_number") or "",
-                        t.get("isrc") or MARCA_COMPLETAR,
-                        t.get("track", ""),
-                        *artistas_de(t, artista),
-                        _mmss(t.get("duration_s")),
-                        MARCA_COMPLETAR,  # Explicit
-                        _creditos_de(t, "composers"),
-                        _creditos_de(t, "lyricists"),
-                        _creditos_de(t, "producers"),
-                        _creditos_de(t, "publishers"),
-                        MARCA_COMPLETAR,  # Lyrics Language
-                        # Los nombres con que los archivos quedan adentro del
-                        # ZIP, relativos a su raíz. Antes era el nombre del
-                        # temporal («tidal_998877.flac») y «portada.jpg» fijo,
-                        # que en inglés es «cover.jpg»: en una carga masiva la
-                        # distribuidora cruza audio y hoja por este nombre.
-                        archivo_audio(p, t, artista, incluir_audio),
-                        archivo_portada(p, incluir_portadas),
-                        _fuente_corta(t),
-                        orden_de(p, t),
-                        t.get("url", ""),
-                    ]
+                    p.get("upc") or MARCA_COMPLETAR,
+                    p.get("title", ""),
+                    artista,
+                    p.get("kind", ""),
+                    # Nunca la fecha de subida a YouTube ni un 1 de enero
+                    # armado con el año: las dos cosas entraban antes, y
+                    # un disco de 2001 salía fechado en 2024.
+                    p.get("release_date") or MARCA_COMPLETAR,
+                    p.get("release_date") or MARCA_COMPLETAR,
+                    sello,
+                    p_line,
+                    MARCA_COMPLETAR,  # C Line: no sale de YouTube
+                    MARCA_COMPLETAR,  # Genre
+                    MARCA_COMPLETAR,  # Language
+                    # Los territorios del release original no salen de ningún
+                    # lado público. Poner «Worldwide» era inventar derechos: un
+                    # catálogo licenciado sólo para una región se abría al mundo.
+                    MARCA_COMPLETAR,
+                    disco_de(p, t),
+                    t.get("track_number") or "",
+                    t.get("isrc") or MARCA_COMPLETAR,
+                    t.get("track", ""),
+                    *artistas_de(t, artista),
+                    _mmss(t.get("duration_s")),
+                    MARCA_COMPLETAR,  # Explicit
+                    _creditos_de(t, "composers"),
+                    _creditos_de(t, "lyricists"),
+                    _creditos_de(t, "producers"),
+                    _creditos_de(t, "publishers"),
+                    MARCA_COMPLETAR,  # Lyrics Language
+                    # Los nombres con que los archivos quedan adentro del
+                    # ZIP, relativos a su raíz. Antes era el nombre del
+                    # temporal («tidal_998877.flac») y «portada.jpg» fijo,
+                    # que en inglés es «cover.jpg»: en una carga masiva la
+                    # distribuidora cruza audio y hoja por este nombre.
+                    archivo_audio(p, t, artista, incluir_audio),
+                    archivo_portada(p, incluir_portadas),
+                    _fuente_corta(t),
+                    orden_de(p, t),
+                    t.get("url", ""),
                 ]
             )
+    return filas
+
+
+def hoja_ingesta_csv(productos, artista, incluir_audio=True, incluir_portadas=True):
+    """La hoja de ingesta en CSV, que es lo que carga la mayoría."""
+    import csv
+    from io import StringIO
+
+    buf = StringIO()
+    w = csv.writer(buf, lineterminator="\n")
+    w.writerow(COLUMNAS_INGESTA)
+    for fila in filas_ingesta(productos, artista, incluir_audio, incluir_portadas):
+        # Cada campo pasa por `_texto_csv`: ver la nota sobre las fórmulas.
+        w.writerow([_texto_csv(v) for v in fila])
+    return buf.getvalue()
+
+
+def hoja_ingesta_xlsx_bytes(productos, artista, incluir_audio=True, incluir_portadas=True):
+    """La misma hoja de ingesta, en Excel y con todo como texto.
+
+    Existe porque el LEEME pide completar los <<COMPLETAR>>, y lo natural es
+    abrir el CSV en Excel, que lo rompe al abrirlo: el UPC pasa a notación
+    científica y pierde el cero de adelante, con la configuración regional en
+    castellano todo cae en una sola columna porque espera `;`, y una duración
+    `3:20` se lee como una hora. Acá cada celda es texto y los <<COMPLETAR>> van
+    resaltados, así se ve de una qué falta.
+    """
+    from io import BytesIO
+
+    wb = Workbook()
+    ws = _hoja(wb)
+    ws.title = T("paq.hoja_ingesta")
+    for col, nombre in enumerate(COLUMNAS_INGESTA, 1):
+        c = _celda(ws, 1, col, nombre)
+        c.font = Font(size=10, bold=True, color="FFFFFF")
+        c.fill = PatternFill("solid", fgColor=NAVY)
+        ws.column_dimensions[get_column_letter(col)].width = max(12, min(40, len(nombre) + 6))
+    for n, fila in enumerate(filas_ingesta(productos, artista, incluir_audio, incluir_portadas), 2):
+        for col, valor in enumerate(fila, 1):
+            c = _celda(ws, n, col, "" if valor is None else str(valor))
+            c.number_format = "@"
+            if valor == MARCA_COMPLETAR:
+                c.fill = PatternFill("solid", fgColor=AMBAR)
+    ws.freeze_panes = "A2"
+    ws.auto_filter.ref = f"A1:{get_column_letter(len(COLUMNAS_INGESTA))}{max(1, ws.max_row)}"
+    buf = BytesIO()
+    wb.save(buf)
     return buf.getvalue()
 
 
@@ -508,7 +546,7 @@ def reporte_texto(productos: list[Producto], artista, entorno=None, con_tidal=Fa
 
 
 def nombres_archivos():
-    """Los nombres de los cinco archivos de la raíz del ZIP, en el idioma elegido.
+    """Los nombres de los archivos de la raíz del ZIP, en el idioma elegido.
 
     Siguen al idioma, igual que el resto: quien baja el paquete en inglés espera
     abrirlo en inglés. El guion bajo del principio no es decorativo, los deja
@@ -523,6 +561,7 @@ def nombres_archivos():
         "validacion": T("paq.f_validacion"),
         "catalogo": T("paq.f_catalogo"),
         "ingesta": T("paq.f_ingesta"),
+        "ingesta_xlsx": T("paq.f_ingesta_xlsx"),
     }
 
 
@@ -648,6 +687,8 @@ def build_zip(
                 entrada_zip(raiz, F["ingesta"]),
                 hoja_ingesta_csv(productos, artista, incluir_audio, incluir_portadas).encode("utf-8-sig"),
             )
+            hoja = hoja_ingesta_xlsx_bytes(productos, artista, incluir_audio, incluir_portadas)
+            z.writestr(entrada_zip(raiz, F["ingesta_xlsx"]), hoja)
 
         for p in productos:
             carpeta = p["folder"]
