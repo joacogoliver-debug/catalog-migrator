@@ -479,6 +479,10 @@ TEXTOS = {
         "es": "El pedido trae un Content-Length inválido.",
         "en": "The request has an invalid Content-Length.",
     },
+    "srv.sin_chunked": {
+        "es": "El pedido llegó por partes y este servidor no lo acepta así.",
+        "en": "The request came in chunks and this server does not take it that way.",
+    },
     "srv.pedido_grande": {"es": "El pedido es demasiado grande.", "en": "The request is too large."},
     "srv.pedido_cortado": {"es": "El pedido llegó cortado.", "en": "The request arrived truncated."},
     "srv.json_invalido": {"es": "El pedido no es JSON válido.", "en": "The request is not valid JSON."},

@@ -173,6 +173,14 @@ What changed in every published version. The numbers follow
   threads before exiting.
 
 ### Changed
+- **The local server adds four reinforcements, without touching the three
+  defenses.** No other page can put the app in an iframe (`frame-ancestors`,
+  `X-Frame-Options`, COOP and CORP). A request the browser marks as made by
+  another site is refused even with the token. A request body is only
+  interpreted after passing Host, token and origin, and one that cannot be read
+  whole closes the connection instead of polluting the next request. And a token
+  with odd characters or a path on another drive gives 403 and 404, not an
+  internal error with the exception's text.
 - **The validation stops promising what it does not look at.** "No errors:
   the catalog has nothing that would cause a rejection" read as "ready to
   load", with unfilled fields, lossy audio and doubtful codes inside. It now

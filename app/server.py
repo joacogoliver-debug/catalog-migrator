@@ -845,6 +845,14 @@ class Handler(BaseHTTPRequestHandler):
         # exactamente lo que hace una app que funciona sin internet.
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Referrer-Policy", "no-referrer")
+        # Ninguna otra página puede meter la app en un iframe, ni quedarse con
+        # una referencia a su ventana, ni incrustar sus respuestas. Sin esto, una
+        # pestaña que adivinara el puerto podía mostrar la app adentro de la suya
+        # y engañar clics (aceptar los términos, conectar Tidal). Suman a las
+        # tres defensas; no reemplazan ninguna.
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("Cross-Origin-Opener-Policy", "same-origin")
+        self.send_header("Cross-Origin-Resource-Policy", "same-origin")
 
     def _json(self, datos, codigo=HTTPStatus.OK):
         cuerpo = json.dumps(datos, ensure_ascii=False).encode("utf-8")
@@ -852,6 +860,9 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(cuerpo)))
         self.send_header("Cache-Control", "no-store")
+        if self.close_connection:
+            # Que el cliente sepa que esta conexión no se reusa.
+            self.send_header("Connection", "close")
         self._cabeceras_base()
         self.end_headers()
         self.wfile.write(cuerpo)
@@ -866,22 +877,38 @@ class Handler(BaseHTTPRequestHandler):
             cuerpo["codigo_error"] = marca
         self._json(cuerpo, codigo)
 
-    def _leer_body(self):
-        """Lee y consume el cuerpo del pedido. Devuelve {} si viene vacío.
+    def _leer_crudo(self):
+        """Lee y consume el cuerpo del pedido, sin interpretarlo.
 
-        Consumirlo es obligatorio aunque no se use: ver la nota en do_POST.
+        Consumirlo es obligatorio aunque no se use: ver la nota en do_POST. Si
+        no se puede consumir entero (un largo que no es un número, uno más grande
+        que el tope, o un cuerpo por partes que acá no se entiende), la conexión
+        se cierra: lo que quede en el socket se metería adelante del pedido
+        siguiente, que es el bug que la lectura obligatoria vino a cortar.
         """
+        if self.headers.get("Transfer-Encoding"):
+            self.close_connection = True
+            raise ValueError(T("srv.sin_chunked"))
         try:
             largo = int(self.headers.get("Content-Length") or 0)
         except ValueError:
+            self.close_connection = True
             raise ValueError(T("srv.content_length")) from None
         if largo <= 0:
-            return {}
+            return b""
         if largo > MAX_BODY:
+            self.close_connection = True
             raise ValueError(T("srv.pedido_grande"))
         crudo = self.rfile.read(largo)
         if len(crudo) < largo:
+            self.close_connection = True
             raise ValueError(T("srv.pedido_cortado"))
+        return crudo
+
+    def _parsear_body(self, crudo):
+        """El cuerpo como objeto JSON, o {} si vino vacío."""
+        if not crudo:
+            return {}
         try:
             datos = json.loads(crudo.decode("utf-8"))
         except (ValueError, UnicodeDecodeError):
@@ -902,8 +929,30 @@ class Handler(BaseHTTPRequestHandler):
         return nombre in HOSTS_VALIDOS
 
     def _token_valido(self):
-        recibido = self.headers.get("X-App-Token") or ""
-        return secrets.compare_digest(recibido, TOKEN)
+        # Comparado en bytes: con texto, un token con caracteres fuera de ASCII
+        # hacía que `compare_digest` levantara y el pedido terminaba en un 500
+        # con el texto de la excepción, en vez de un 403 como cualquier otro.
+        recibido = (self.headers.get("X-App-Token") or "").encode("utf-8", "replace")
+        return secrets.compare_digest(recibido, TOKEN.encode("ascii"))
+
+    def _origen_propio(self):
+        """False si el navegador avisa que el pedido lo hizo otra página.
+
+        Es una capa más sobre el token, que sigue siendo lo que protege: los
+        navegadores actuales mandan `Sec-Fetch-Site` y, en los POST, `Origin`, y
+        si dicen que viene de otro sitio no hay por qué seguir. Si no los mandan
+        (un navegador viejo, o un cliente que no es un navegador) no se rechaza
+        nada por eso: la decisión la sigue tomando el token.
+        """
+        sitio = (self.headers.get("Sec-Fetch-Site") or "").strip().lower()
+        if sitio and sitio not in ("same-origin", "none"):
+            return False
+        origen = (self.headers.get("Origin") or "").strip()
+        if origen and origen != "null":
+            host = urllib.parse.urlsplit(origen).hostname or ""
+            if host not in HOSTS_VALIDOS and f"[{host}]" not in HOSTS_VALIDOS:
+                return False
+        return True
 
     def log_message(self, formato, *args):
         # Silencio: el log de acceso de http.server ensucia la consola de la app.
@@ -931,7 +980,7 @@ class Handler(BaseHTTPRequestHandler):
         ruta = urllib.parse.urlparse(self.path).path
 
         if ruta.startswith("/api/"):
-            if not self._token_valido():
+            if not self._token_valido() or not self._origen_propio():
                 return self._error(T("srv.rechazado_token"), HTTPStatus.FORBIDDEN)
 
             if ruta == "/api/config":
@@ -1006,7 +1055,13 @@ class Handler(BaseHTTPRequestHandler):
 
         destino = os.path.normpath(os.path.join(WEB_DIR, limpio))
         base = os.path.normpath(WEB_DIR)
-        if os.path.commonpath([base, destino]) != base:
+        try:
+            afuera = os.path.commonpath([base, destino]) != base
+        except ValueError:
+            # En Windows, `/D:foo` queda en otra unidad y `commonpath` levanta:
+            # eso daba un 500 con el texto de la excepción. Está afuera y listo.
+            afuera = True
+        if afuera:
             return self._error(T("srv.no_encontrado"), HTTPStatus.NOT_FOUND)
         if not os.path.isfile(destino):
             return self._error(T("srv.no_encontrado"), HTTPStatus.NOT_FOUND)
@@ -1043,7 +1098,8 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header(
             "Content-Security-Policy",
             "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; "
-            "font-src 'self'; connect-src 'self'; form-action 'none'; base-uri 'none'",
+            "font-src 'self'; connect-src 'self'; form-action 'none'; base-uri 'none'; "
+            "frame-ancestors 'none'; object-src 'none'",
         )
         self._cabeceras_base()
         self.end_headers()
@@ -1072,15 +1128,23 @@ class Handler(BaseHTTPRequestHandler):
         # '{}POST' y el servidor respondía 501 "Unsupported method". Se veía como
         # un error aleatorio de Tidal que desaparecía al reintentar, porque el
         # reintento abría otra conexión.
+        #
+        # Leerlo no es interpretarlo: el JSON se parsea recién después de pasar
+        # Host, token y origen. Antes, una página cualquiera podía hacer que el
+        # servidor parseara ocho megas antes de rechazarla.
         try:
-            cuerpo = self._leer_body()
+            crudo = self._leer_crudo()
         except ValueError as e:
             return self._error(e, HTTPStatus.BAD_REQUEST)
 
         if not self._host_valido():
             return self._error(T("srv.rechazado"), HTTPStatus.FORBIDDEN)
-        if not self._token_valido():
+        if not self._token_valido() or not self._origen_propio():
             return self._error(T("srv.rechazado_token"), HTTPStatus.FORBIDDEN)
+        try:
+            cuerpo = self._parsear_body(crudo)
+        except ValueError as e:
+            return self._error(e, HTTPStatus.BAD_REQUEST)
 
         try:
             if ruta in RUTAS_POST_SIN_BODY:

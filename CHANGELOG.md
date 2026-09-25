@@ -174,6 +174,14 @@ Lo que cambió en cada versión publicada. Los números siguen
   a sus hilos antes de salir.
 
 ### Cambiado
+- **El servidor local suma cuatro refuerzos, sin tocar las tres defensas.**
+  Ninguna otra página puede meter la app en un iframe (`frame-ancestors`,
+  `X-Frame-Options`, COOP y CORP). Un pedido que el navegador marca como hecho
+  por otro sitio se rechaza aunque traiga el token. El cuerpo de un pedido se
+  interpreta recién después de pasar Host, token y origen, y uno que no se puede
+  leer entero cierra la conexión en vez de contaminar el pedido siguiente. Y un
+  token con caracteres raros o una ruta en otra unidad de disco dan 403 y 404,
+  no un error interno con el texto de la excepción.
 - **La validación deja de prometer lo que no mira.** «Sin errores: el catálogo
   no tiene problemas que causen rechazo» se leía como «listo para cargar», con
   los campos sin completar, el audio lossy y los códigos dudosos adentro. Ahora

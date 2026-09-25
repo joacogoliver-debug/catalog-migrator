@@ -786,6 +786,8 @@ def test_la_pagina_declara_una_csp(cliente):
         "connect-src 'self'",  # la página no puede llamar a ningún lado
         "form-action 'none'",  # ni mandar un formulario afuera
         "base-uri 'none'",  # ni cambiar la base de las URLs relativas
+        "frame-ancestors 'none'",  # ni quedar adentro del iframe de otra página
+        "object-src 'none'",  # ni cargar plugins
     ],
 )
 def test_la_csp_declara_la_directiva(cliente, directiva):
@@ -865,3 +867,115 @@ def test_las_tipografias_no_vienen_de_ningun_cdn():
         with open(ruta, encoding="utf-8") as f:
             urls += [u for u in re.findall(r"url\(['\"]?([^'\")]+)", f.read()) if "//" in u]
     assert urls == []
+
+
+# ============================================================
+# Refuerzos sobre las tres defensas
+# ============================================================
+#
+# Ninguno reemplaza al token, al Host ni a la CSP. Cada uno cierra algo que las
+# tres dejaban pasar sin daño, pero de más.
+
+
+def _pedido(cliente, metodo, ruta, cabeceras=None, cuerpo=None):
+    """Un pedido a mano, con las cabeceras exactas que se pasan, sobre una
+    conexión propia. Devuelve (código, cabeceras, cuerpo, conexión)."""
+    conn = http.client.HTTPConnection("127.0.0.1", cliente.puerto, timeout=20)
+    conn.putrequest(metodo, ruta, skip_host=True, skip_accept_encoding=True)
+    cab = {"Host": f"127.0.0.1:{cliente.puerto}", **(cabeceras or {})}
+    for k, v in cab.items():
+        conn.putheader(k, v)
+    conn.endheaders(cuerpo)
+    r = conn.getresponse()
+    return r.status, {k.lower(): v for k, v in r.getheaders()}, r.read(), conn
+
+
+@pytest.mark.parametrize("ruta", ["/", "/app.js", "/api/config"])
+def test_ninguna_respuesta_se_puede_meter_en_un_iframe(cliente, ruta):
+    _cod, cab, _cuerpo, conn = _pedido(cliente, "GET", ruta, {"X-App-Token": backend.TOKEN})
+    conn.close()
+    assert cab["x-frame-options"] == "DENY"
+    assert cab["cross-origin-opener-policy"] == "same-origin"
+    assert cab["cross-origin-resource-policy"] == "same-origin"
+
+
+@pytest.mark.parametrize("sitio", ["cross-site", "same-site"])
+def test_un_pedido_que_el_navegador_marca_de_otro_sitio_se_rechaza(cliente, sitio):
+    """Con token y todo: si el navegador dice que lo hizo otra página, no sigue."""
+    cod, _cab, _c, conn = _pedido(
+        cliente, "GET", "/api/config", {"X-App-Token": backend.TOKEN, "Sec-Fetch-Site": sitio}
+    )
+    conn.close()
+    assert cod == 403
+
+
+@pytest.mark.parametrize("sitio", ["same-origin", "none", None])
+def test_los_pedidos_propios_pasan(cliente, sitio):
+    cab = {"X-App-Token": backend.TOKEN}
+    if sitio:
+        cab["Sec-Fetch-Site"] = sitio
+    cod, _cab, _c, conn = _pedido(cliente, "GET", "/api/config", cab)
+    conn.close()
+    assert cod == 200
+
+
+def test_un_post_con_origin_ajeno_se_rechaza(cliente):
+    cuerpo = b"{}"
+    cab = {"X-App-Token": backend.TOKEN, "Content-Type": "application/json", "Content-Length": "2"}
+    cod, _c, _b, conn = _pedido(
+        cliente, "POST", "/api/validar", {**cab, "Origin": "https://evil.example"}, cuerpo
+    )
+    conn.close()
+    assert cod == 403
+    propio = {**cab, "Origin": f"http://127.0.0.1:{cliente.puerto}"}
+    cod, _c, _b, conn = _pedido(cliente, "POST", "/api/validar", propio, cuerpo)
+    conn.close()
+    assert cod != 403  # pasó las defensas: lo que responda es cosa de la ruta
+
+
+def test_sin_token_ni_siquiera_se_parsea_el_cuerpo(cliente):
+    """Antes se parseaba el JSON y el rechazo salía como «JSON inválido»."""
+    basura = b"esto no es json"
+    cod, _c, cuerpo, conn = _pedido(
+        cliente, "POST", "/api/validar", {"Content-Length": str(len(basura))}, basura
+    )
+    conn.close()
+    assert cod == 403
+    assert json.loads(cuerpo)["error"] == i18n.T("srv.rechazado_token")
+
+
+def test_un_cuerpo_demasiado_grande_cierra_la_conexion(cliente, monkeypatch):
+    monkeypatch.setattr(backend, "MAX_BODY", 10)
+    cod, cab, _b, conn = _pedido(
+        cliente, "POST", "/api/validar", {"X-App-Token": backend.TOKEN, "Content-Length": "50"}, b"x" * 50
+    )
+    conn.close()
+    assert cod == 400
+    assert cab.get("connection", "").lower() == "close"
+
+
+def test_un_cuerpo_por_partes_se_rechaza_y_cierra(cliente):
+    cod, cab, _b, conn = _pedido(
+        cliente,
+        "POST",
+        "/api/validar",
+        {"X-App-Token": backend.TOKEN, "Transfer-Encoding": "chunked"},
+        b"2\r\n{}\r\n0\r\n\r\n",
+    )
+    conn.close()
+    assert cod == 400
+    assert cab.get("connection", "").lower() == "close"
+
+
+def test_un_token_con_caracteres_raros_es_403_y_no_500(cliente):
+    cod, _c, _b, conn = _pedido(
+        cliente, "GET", "/api/config", {"X-App-Token": "éé".encode().decode("latin-1")}
+    )
+    conn.close()
+    assert cod == 403
+
+
+def test_una_ruta_en_otra_unidad_es_404_y_no_500(cliente):
+    cod, _c, _b, conn = _pedido(cliente, "GET", "/D:foo")
+    conn.close()
+    assert cod == 404
