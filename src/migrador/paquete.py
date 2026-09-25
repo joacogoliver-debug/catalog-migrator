@@ -139,7 +139,9 @@ def _encabezado(ws, titulo, subtitulo=""):
     return fila + 1
 
 
-def _filas_producto(ws, fila, p, con_archivo=True):
+def _filas_producto(ws, fila, p, archivo=None):
+    """Las filas de un producto. `archivo(t)` da el nombre del audio de cada
+    track tal como queda en el ZIP, o "" si no va."""
     for t in p["tracks"]:
         fuente = _fuente_corta(t)
         valores = [
@@ -154,7 +156,7 @@ def _filas_producto(ws, fila, p, con_archivo=True):
             p.get("label", ""),
             p.get("distributor", ""),
             fuente,
-            os.path.basename(t["audio_path"]) if (con_archivo and t.get("audio_path")) else "",
+            archivo(t) if archivo else "",
             t.get("views", 0),
             t.get("url", ""),
         ]
@@ -189,7 +191,7 @@ def _hoja(wb):
     return ws
 
 
-def planilla_maestra_bytes(productos: list[Producto], artista):
+def planilla_maestra_bytes(productos: list[Producto], artista, incluir_audio=True):
     """Excel con todo el catálogo seleccionado."""
     from io import BytesIO
 
@@ -207,7 +209,7 @@ def planilla_maestra_bytes(productos: list[Producto], artista):
         ),
     )
     for p in productos:
-        fila = _filas_producto(ws, fila, p)
+        fila = _filas_producto(ws, fila, p, lambda t, p=p: archivo_audio(p, t, artista, incluir_audio))
     ws.auto_filter.ref = f"A4:{get_column_letter(len(columnas()))}{fila - 1}"
 
     buf = BytesIO()
@@ -265,7 +267,7 @@ COLUMNAS_INGESTA = [
 ]
 
 
-def hoja_ingesta_csv(productos, artista):
+def hoja_ingesta_csv(productos, artista, incluir_audio=True, incluir_portadas=True):
     """CSV con las columnas estándar de ingesta, una fila por track.
 
     Lo que sabemos va completo; lo que no puede salir de YouTube ni de las APIs
@@ -316,8 +318,13 @@ def hoja_ingesta_csv(productos, artista):
                         MARCA_COMPLETAR,  # Composer
                         MARCA_COMPLETAR,  # Publisher
                         MARCA_COMPLETAR,  # Lyrics Language
-                        os.path.basename(t["audio_path"]) if t.get("audio_path") else "",
-                        "portada.jpg" if p.get("cover_bytes") else "",
+                        # Los nombres con que los archivos quedan adentro del
+                        # ZIP, relativos a su raíz. Antes era el nombre del
+                        # temporal («tidal_998877.flac») y «portada.jpg» fijo,
+                        # que en inglés es «cover.jpg»: en una carga masiva la
+                        # distribuidora cruza audio y hoja por este nombre.
+                        archivo_audio(p, t, artista, incluir_audio),
+                        archivo_portada(p, incluir_portadas),
                         _fuente_corta(t),
                         t.get("url", ""),
                     ]
@@ -326,7 +333,7 @@ def hoja_ingesta_csv(productos, artista):
     return buf.getvalue()
 
 
-def planilla_producto_bytes(p, artista):
+def planilla_producto_bytes(p, artista, incluir_audio=True):
     """Excel de un solo producto, para que viaje dentro de su carpeta."""
     from io import BytesIO
 
@@ -344,7 +351,8 @@ def planilla_producto_bytes(p, artista):
             tracks=p["track_count"],
         ),
     )
-    _filas_producto(ws, fila, p)
+    # Adentro de la carpeta del producto, el nombre va sin la carpeta.
+    _filas_producto(ws, fila, p, lambda t: archivo_audio(p, t, artista, incluir_audio, con_carpeta=False))
     buf = BytesIO()
     wb.save(buf)
     return buf.getvalue()
@@ -517,6 +525,29 @@ def entrada_zip(*partes):
     return "/".join(partes)
 
 
+def archivo_audio(p, t, artista, incluido=True, con_carpeta=True):
+    """El nombre con que el audio de `t` queda adentro del ZIP, o "" si no va.
+
+    Es el MISMO cálculo que usa `build_zip` para escribirlo, y por eso la hoja,
+    las planillas y el ZIP no pueden decir cosas distintas. Con `con_carpeta`,
+    relativo a la raíz del paquete; sin, el nombre solo.
+    """
+    ruta = t.get("audio_path")
+    if not incluido or not ruta or not os.path.exists(ruta):
+        return ""
+    lugar = LARGO_MAX_RUTA - len(carpeta_raiz(artista)) - len(p["folder"]) - 2
+    nombre = nombre_audio(t, lugar)
+    return f"{p['folder']}/{nombre}" if con_carpeta else nombre
+
+
+def archivo_portada(p, incluida=True, con_carpeta=True):
+    """El nombre con que la portada queda adentro del ZIP, o "" si no va."""
+    if not incluida or not p.get("cover_bytes"):
+        return ""
+    nombre = T("paq.f_portada")
+    return f"{p['folder']}/{nombre}" if con_carpeta else nombre
+
+
 def build_zip(
     productos: list[Producto],
     artista,
@@ -554,28 +585,31 @@ def build_zip(
         )
 
         if incluir_planilla:
-            z.writestr(entrada_zip(raiz, F["catalogo"]), planilla_maestra_bytes(productos, artista))
+            maestra = planilla_maestra_bytes(productos, artista, incluir_audio)
+            z.writestr(entrada_zip(raiz, F["catalogo"]), maestra)
             # CSV de ingesta: es el archivo que se carga en la distribuidora.
             z.writestr(
-                entrada_zip(raiz, F["ingesta"]), hoja_ingesta_csv(productos, artista).encode("utf-8-sig")
+                entrada_zip(raiz, F["ingesta"]),
+                hoja_ingesta_csv(productos, artista, incluir_audio, incluir_portadas).encode("utf-8-sig"),
             )
 
         for p in productos:
             carpeta = p["folder"]
             if incluir_planilla:
-                z.writestr(entrada_zip(raiz, carpeta, T("paq.f_datos")), planilla_producto_bytes(p, artista))
-            portada = p.get("cover_bytes")
-            if incluir_portadas and portada:
-                z.writestr(entrada_zip(raiz, carpeta, T("paq.f_portada")), portada)
+                datos = planilla_producto_bytes(p, artista, incluir_audio)
+                z.writestr(entrada_zip(raiz, carpeta, T("paq.f_datos")), datos)
+            portada = archivo_portada(p, incluir_portadas, con_carpeta=False)
+            if portada:
+                z.writestr(entrada_zip(raiz, carpeta, portada), p.get("cover_bytes") or b"")
 
-            if incluir_audio:
-                lugar = LARGO_MAX_RUTA - len(raiz) - len(carpeta) - 2
-                for t in p["tracks"]:
-                    ruta = t.get("audio_path")
-                    if not ruta or not os.path.exists(ruta):
-                        continue
-                    nombre = entrada_zip(raiz, carpeta, nombre_audio(t, lugar))
-                    z.write(ruta, nombre, compress_type=zipfile.ZIP_STORED)
+            for t in p["tracks"]:
+                nombre = archivo_audio(p, t, artista, incluir_audio, con_carpeta=False)
+                if nombre:
+                    z.write(
+                        t.get("audio_path") or "",
+                        entrada_zip(raiz, carpeta, nombre),
+                        compress_type=zipfile.ZIP_STORED,
+                    )
             log(T("paq.log_carpeta", carpeta=p["folder"]))
 
     tam = os.path.getsize(out_path)

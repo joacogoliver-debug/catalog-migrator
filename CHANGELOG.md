@@ -24,6 +24,14 @@ Lo que cambió en cada versión publicada. Los números siguen
   `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Corregido
+- **La hoja de ingesta nombraba archivos que no estaban en el ZIP.** La columna
+  de audio llevaba el nombre del archivo temporal (`tidal_998877.flac`) cuando
+  en el ZIP se llamaba `01 - Tema.flac`, y la de portada decía `portada.jpg`
+  aunque en inglés el archivo fuera `cover.jpg`, o aunque no se hubieran pedido
+  portadas. En una carga masiva la distribuidora cruza cada fila con su archivo
+  por ese nombre, y así no encontraba ninguno. Ahora la hoja, las planillas y el
+  ZIP sacan el nombre del mismo lugar, con la ruta dentro del paquete, y queda
+  vacío lo que no se incluyó.
 - **Un single podía quedar con el UPC del álbum, y con su portada.** Deezer
   encuentra la grabación, que está en el single, en el álbum y en cada
   compilado, y el UPC de cualquiera de ellos terminaba en el producto sin mirar

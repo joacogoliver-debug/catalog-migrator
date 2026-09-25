@@ -493,6 +493,7 @@ pytest -q --cov
 | `tests/test_app.py` | Backend, jobs, HTTP, and the three defenses |
 | `tests/test_capturas.py` | That the screenshots' sample material says the same as the app |
 | `tests/test_entrada_hostil.py` | That nothing coming from outside gets executed: yt-dlp, formulas, covers |
+| `tests/test_hoja_y_zip.py` | That the ingestion sheet and the spreadsheets name the files the ZIP carries |
 | `tests/test_upc.py` | That each release's UPC is its own, not another release's with the same songs |
 | `tests/test_fechas.py` | The real release date, kept apart from the YouTube upload date |
 | `tests/test_urls_youtube.py` | What can be pasted in the link field, without mistaking one channel for another |

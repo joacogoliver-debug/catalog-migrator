@@ -24,6 +24,14 @@ What changed in every published version. The numbers follow
   on its own, following the rubric in `docs/BRIEF-AUTOMEJORA.md`.
 
 ### Fixed
+- **The ingestion sheet named files that were not in the ZIP.** The audio
+  column carried the temporary file's name (`tidal_998877.flac`) while the ZIP
+  called it `01 - Song.flac`, and the cover column said `portada.jpg` even when
+  in English the file was `cover.jpg`, or when no covers had been asked for. In
+  a bulk upload the distributor matches each row with its file by that name, so
+  it found none. The sheet, the spreadsheets and the ZIP now take the name from
+  the same place, with the path inside the package, and what was not included
+  stays empty.
 - **A single could end up with the album's UPC, and with its cover.** Deezer
   finds the recording, which is on the single, on the album and on every
   compilation, and the UPC of any of them landed on the release without checking
