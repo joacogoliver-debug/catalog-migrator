@@ -8,10 +8,10 @@ entrega **producto por producto**, porque así lo recibe la distribuidora nueva
 (un UPC, una portada, un conjunto de audios). Este módulo hace esa traducción.
 
 Limitación conocida y deliberada: YouTube no expone el número de track dentro
-del álbum. El orden que armamos acá es una *aproximación* por fecha de subida
-(los álbumes suelen subirse en orden). El campo `track_number` queda en None
-hasta que lo complete el enriquecimiento por Deezer, y el reporte de migración
-avisa cuando un producto quedó sin orden confirmado.
+del álbum. Cuando Deezer tiene el mismo release, `enrich_with_codes` pone el
+número de track y de disco de su tracklist, y ese es el orden. Si no, el orden
+que armamos acá es una *aproximación* por fecha de subida, y el reporte y la
+columna `Track Order` avisan que quedó sin confirmar.
 """
 
 import re

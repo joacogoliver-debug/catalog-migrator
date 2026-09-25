@@ -262,12 +262,6 @@ class ResumenSeleccion(TypedDict):
     views: int
 
 
-class TopicSugerido(TypedDict):
-    id: str
-    titulo: str
-    url: str
-
-
 class ResumenDistribuidora(TypedDict):
     """Lo que el relevamiento cuenta de cada distribuidora del canal."""
 
@@ -304,14 +298,11 @@ class Relevamiento(TypedDict):
     tracks: list[Track]
     distribs: dict[str, ResumenDistribuidora]
     total_views: int
-    units: int
     codes: EstadisticaCodigos | None
 
     # Diagnóstico del canal. Sin esto la app no puede contar que cambió de canal
     # ni que descartó videos, y el cambio ocurriría a espaldas del usuario.
     es_topic: bool
-    cobertura_metadata: float
-    topic_sugerido: TopicSugerido | None
     via_topic: bool
     canal_pedido: str
     descartados: int
@@ -334,8 +325,6 @@ class Diagnostico(TypedDict):
     """El subconjunto del relevamiento que `migrar_core` le pasa a la interfaz."""
 
     es_topic: bool
-    cobertura_metadata: float
-    topic_sugerido: TopicSugerido | None
     canal: str
     via_topic: bool
     canal_pedido: str

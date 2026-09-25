@@ -83,8 +83,9 @@ mixed at 13% into the surface, with saturated text of the same tone on top.
 Neither a colored border nor a pastel fill: the flat patch is the shortcut that
 makes everything look alike.
 
-**All of it was measured.** The worst text-over-surface pair gives 4.7 in dark
-and 4.9 in light, both above the AA minimum. The 500 neutrals were left out of
+**All of it was measured, and a test measures it again** on `colors.css` on
+every run. The worst pair in the interface is a state over its own fill: 4.7 in
+dark (the negative) and 5.1 in light (the warning), both above AA's 4.5. The 500 neutrals were left out of
 the text roles because they gave 3.6 and 3.7.
 
 ## 4. Typography

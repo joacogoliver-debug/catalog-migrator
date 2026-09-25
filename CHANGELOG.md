@@ -302,6 +302,19 @@ Lo que cambió en cada versión publicada. Los números siguen
   trae. El LEEME y el README dicen «suelen rechazar» en vez de «rechazan».
 
 ### Para quien desarrolla
+- **Fuera lo que no decía nada**: `cobertura_metadata` y `topic_sugerido`
+  eran constantes desde que el relevamiento filtra lo que no es lanzamiento, y
+  la rama de la interfaz que los usaba (con su botón y cuatro textos) no se
+  ejecutaba nunca; `units` no lo leía nadie y subestimaba el costo. Los dobles
+  de prueba que inventaban esos valores ya no los traen.
+- **DESIGN.md y los tokens dicen lo mismo**: la cabecera deja el desenfoque que
+  §9 prohíbe, se fueron siete tokens sin uso, y el «peor par de texto», que
+  estaba escrito con tres números distintos, es uno solo (4,7 en oscuro y 5,1
+  en claro, un estado sobre su relleno) y un test lo mide sobre `colors.css`.
+- `pyproject.toml` con descripción en los dos idiomas, `keywords` y las claves
+  de URL que reconocen las herramientas, y sin los comentarios del repo de
+  antes (la versión «en `app/server.py`», un ignore para un archivo que ya no
+  está en la raíz).
 - **Modelo de amenazas escrito**, en [docs/AMENAZAS.md](docs/AMENAZAS.md) y en
   inglés: qué protege la app, de quién, con qué defensa y qué test la cubre, y
   qué queda afuera a propósito (por ejemplo, que un proceso local del mismo

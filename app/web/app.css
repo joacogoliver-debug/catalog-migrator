@@ -192,8 +192,9 @@ main {
 
 .header {
   flex: 0 0 auto;
-  background: color-mix(in srgb, var(--lienzo) 78%, transparent);
-  backdrop-filter: blur(12px);
+  /* Lienzo pleno y sin desenfoque: DESIGN.md §9 prohíbe el vidrio esmerilado,
+     y la cabecera no tiene nada que tapar porque lo que scrollea es `main`. */
+  background: var(--lienzo);
   border-bottom: 1px solid var(--borde-suave);
 }
 .header-inner { display: flex; align-items: center; gap: var(--e-5); height: 64px; }

@@ -63,11 +63,8 @@ def _respuesta_topic():
         "tracks": TRACKS_FALSOS,
         "distribs": {"ONErpm": {"videos": 3, "views": 300, "top": 100, "top_title": "Tema A"}},
         "total_views": 300,
-        "units": 3,
         "codes": {"isrc": 3, "upc": 2, "matched": 3, "source": "Deezer", "fallas": 0},
         "es_topic": True,
-        "cobertura_metadata": 1.0,
-        "topic_sugerido": None,
         "via_topic": False,
         "canal_pedido": "Artista Doble - Topic",
         "descartados": 0,
@@ -95,15 +92,8 @@ def _respuesta_canal_comun():
         "tracks": sin_datos,
         "distribs": {},
         "total_views": 300,
-        "units": 3,
         "codes": None,
         "es_topic": False,
-        "cobertura_metadata": 0.0,
-        "topic_sugerido": {
-            "id": "UCxxx",
-            "titulo": "Artista Doble - Topic",
-            "url": "https://www.youtube.com/channel/UCxxx",
-        },
         "via_topic": True,
         "canal_pedido": "Artista Doble Oficial",
         "descartados": 7,
@@ -187,8 +177,6 @@ def test_el_callback_de_progreso_llega_y_se_usa(relevar_doble):
 def test_diagnostico_de_un_canal_topic(relevar_doble):
     _p, _a, _t, diag = M.relevar_catalogo("https://www.youtube.com/@Test", "clave-falsa")
     assert diag["es_topic"] is True
-    assert diag["cobertura_metadata"] == 1.0
-    assert diag["topic_sugerido"] is None
     assert diag["via_topic"] is False
 
 
@@ -205,8 +193,6 @@ def test_diagnostico_de_un_canal_comun(relevar_doble):
     assert diag["via_topic"] is True
     assert diag["canal_pedido"] == "Artista Doble Oficial"
     assert diag["descartados"] == 7
-    assert diag["cobertura_metadata"] == 0.0
-    assert (diag["topic_sugerido"] or {}).get("titulo") == "Artista Doble - Topic"
 
     assert any("relev" in a and "Topic" in a for a in avisos)
     assert any("afuera" in a and "7 videos" in a for a in avisos)

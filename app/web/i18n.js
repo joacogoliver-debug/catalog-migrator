@@ -507,19 +507,6 @@ const TEXTOS = {
     es: 'Deezer no respondió una consulta, aun después de reintentar. Algún código puede faltar por eso y no porque no exista: relevar de nuevo más tarde puede completarlo.',
     en: 'Deezer did not answer one lookup, even after retrying. A code may be missing because of that and not because it does not exist: surveying again later may fill it in.',
   },
-  'paso2.sin_metadata_titulo': {
-    es: 'Este canal no trae la metadata del catálogo.',
-    en: 'This channel carries no catalog metadata.',
-  },
-  'paso2.sin_metadata_cuerpo': {
-    es: 'No hay álbumes, sellos ni años, y los códigos casi no se pueden encontrar.',
-    en: 'There are no albums, labels or years, and the codes are nearly impossible to find.',
-  },
-  'paso2.usar_topic': { es: 'Relevar «{titulo}» en su lugar', en: 'Survey "{titulo}" instead' },
-  'paso2.buscar_topic': {
-    es: 'Buscá «{artista} - Topic» en YouTube y pegá ese link.',
-    en: 'Search for "{artista} - Topic" on YouTube and paste that link.',
-  },
 
   /* ---------------------------------------------------------- tabla */
   'tabla.col_producto': { es: 'Producto', en: 'Release' },

@@ -83,8 +83,10 @@ mezclado al 13% en la superficie, con el texto saturado del mismo tono encima.
 Ni borde de color, ni relleno pastel: la mancha plana es el atajo que hace que
 todo se vea igual.
 
-**Todo se midió.** El peor par de texto sobre superficie da 4.7 en oscuro y 4.9
-en claro, los dos por encima del mínimo AA. Los neutrales 500 quedaron afuera de
+**Todo se midió, y un test lo vuelve a medir** sobre `colors.css` en cada
+corrida. El peor par de la interfaz es un estado sobre su propio relleno: 4,7 en
+oscuro (el negativo) y 5,1 en claro (la atención), los dos por encima del 4,5 de
+AA. Los neutrales 500 quedaron afuera de
 los roles de texto porque daban 3.6 y 3.7.
 
 ## 4. Tipografía

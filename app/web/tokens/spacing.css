@@ -28,13 +28,6 @@
   --r-marca:   6px;
   --r-control: 8px;
   --r-panel:   12px;
-  --r-shell:   0px;
-  --margen-shell: 0px;
-
-  /* La separación la hace el borde de un píxel, no la sombra. Sólo lo que
-     flota de verdad lleva una, y tiene desplazamiento y desenfoque. */
-  --sombra-menu:  0 8px 24px -8px rgba(0, 0, 0, .6);
-  --sombra-modal: 0 24px 60px -20px rgba(0, 0, 0, .75);
 
   /* ---- Movimiento ---- */
   --m-rapido: 100ms cubic-bezier(.2, 0, 0, 1);

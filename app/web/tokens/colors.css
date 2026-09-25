@@ -14,8 +14,10 @@
      - los estados son un relleno oscuro teñido con el texto saturado encima,
        del mismo tono. Nunca un borde de color.
 
-   Todo lo que lleva texto se midió: el peor par de la interfaz da 4.9 en
-   oscuro y 4.6 en claro, los dos por encima del mínimo AA.
+   Todo lo que lleva texto se midió, y tests/test_contraste.py lo vuelve a medir
+   en cada corrida: el peor par de la interfaz es un estado sobre su propio
+   relleno, y da 4,7 en oscuro (el negativo) y 5,1 en claro (la atención), los
+   dos por encima del 4,5 de AA.
    ============================================================ */
 
 :root {
@@ -55,10 +57,8 @@
   /* El lienzo es el grafito bajado, no un negro neutro: el mundo de la app es
      cálido y el fondo también. */
   --lienzo:     #0A0A09;
-  --fondo:      #0A0A09;   /* la app no se despega del lienzo: es el lienzo */
   --panel:      var(--grafito);
   --panel-alto: #1E1D1C;
-  --flotante:   #1E1D1C;
 
   /* Un píxel a baja opacidad en vez de un escalón de gris. */
   --borde:       rgba(245, 242, 237, .10);
@@ -80,14 +80,12 @@
   --texto-3:      var(--neutral-400);    /* 5.4; el 500 daba 3.6 y quedó afuera */
   --texto-acento: var(--teal-300);
 
-  --linea:        rgba(245, 242, 237, .05);
   --linea-fuerte: rgba(245, 242, 237, .14);
   --foco:         var(--teal-400);
 
   --acento:        var(--teal-400);
   --acento-fuerte: var(--teal-300);
   --acento-tenue:  color-mix(in srgb, var(--teal-400) 10%, var(--panel));
-  --fila-elegida:  transparent;    /* la fila elegida se marca con la casilla */
   --sobre-acento:  var(--grafito);
 
   --logo-origen:  var(--hueso);
@@ -104,7 +102,6 @@
   --ok-fondo:   color-mix(in srgb, var(--positivo) 13%, var(--panel));
   --warn-fondo: color-mix(in srgb, var(--atencion) 13%, var(--panel));
   --mal-fondo:  color-mix(in srgb, var(--negativo) 13%, var(--panel));
-  --dato-fondo: color-mix(in srgb, var(--teal-400) 13%, var(--panel));
 
   color-scheme: dark;
 }
@@ -114,10 +111,8 @@
      misma gramática: el lienzo es el hueso bajado, las tarjetas son el hueso,
      y los bordes son grafito a baja opacidad. */
   --lienzo:     #E8E4DC;
-  --fondo:      #E8E4DC;
   --panel:      var(--hueso);
   --panel-alto: #EDEAE3;
-  --flotante:   #FFFFFF;
 
   --borde:       rgba(20, 20, 20, .12);
   --borde-suave: rgba(20, 20, 20, .06);
@@ -137,14 +132,12 @@
   --texto-3:      var(--neutral-600);   /* 5.4; el 500 daba 3.7 y quedó afuera */
   --texto-acento: var(--teal-700);
 
-  --linea:        rgba(20, 20, 20, .06);
   --linea-fuerte: rgba(20, 20, 20, .16);
   --foco:         var(--teal-600);
 
   --acento:        var(--teal-600);
   --acento-fuerte: var(--teal-700);
   --acento-tenue:  color-mix(in srgb, var(--teal-600) 8%, var(--panel));
-  --fila-elegida:  transparent;
   --sobre-acento:  var(--hueso);
 
   --logo-origen:  var(--grafito);
@@ -158,7 +151,6 @@
   --ok-fondo:   color-mix(in srgb, var(--positivo) 11%, var(--panel));
   --warn-fondo: color-mix(in srgb, var(--atencion) 11%, var(--panel));
   --mal-fondo:  color-mix(in srgb, var(--negativo) 11%, var(--panel));
-  --dato-fondo: color-mix(in srgb, var(--teal-600) 11%, var(--panel));
 
   color-scheme: light;
 }

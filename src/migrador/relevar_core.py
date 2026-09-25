@@ -1076,7 +1076,7 @@ def relevar(
     lento opcional. progress(msg, frac): callback de avance (0.0-1.0).
     fraccion(frac): avance sin línea de log, para las fases de muchos pasos
     chicos; mueve la barra y deja cancelar sin llenar el log.
-    Devuelve dict: artist, channel_title, tracks, distribs, total_views, units, codes.
+    Devuelve un `Relevamiento`: artist, channel_title, tracks, distribs, total_views, codes.
     Lanza RelevarError ante problemas mostrables al usuario.
     """
 
@@ -1138,11 +1138,7 @@ def relevar(
 
     artist = _nombre_artista(title)
 
-    # Después del filtro, todo lo que quedó tiene metadata, así que la cobertura
-    # es 1.0 por construcción. El campo se mantiene porque la interfaz lo usa.
     es_topic = es_canal_topic(title)
-    cobertura = 1.0
-    topic_sugerido = None
 
     codes_stats: EstadisticaCodigos | None = None
     if with_codes:
@@ -1166,18 +1162,14 @@ def relevar(
         )
 
     step(T("rel.armando_excel"), 0.95)
-    units = 1 + 2 * ((len(vids) + 49) // 50)
     return {
         "artist": artist,
         "channel_title": title,
         "tracks": tracks,
         "distribs": _aggregate_distributors(tracks),
         "total_views": sum(t["views"] for t in tracks),
-        "units": units,
         "codes": codes_stats,
         "es_topic": es_topic,
-        "cobertura_metadata": round(cobertura, 3),
-        "topic_sugerido": topic_sugerido,
         # Para contarle al usuario qué canal se usó y qué quedó afuera, en vez de
         # que el cambio ocurra a sus espaldas.
         "via_topic": via_topic,

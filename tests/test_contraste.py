@@ -108,3 +108,51 @@ def test_los_controles_usan_esos_tokens():
     assert "var(--borde-control)" in regla('.check input[type="checkbox"]')
     primario = regla(".btn-primary")
     assert "var(--primario)" in primario and "var(--sobre-primario)" in primario
+
+
+def _mezcla(tema, nombre):
+    """Resuelve un `color-mix(in srgb, var(--a) N%, var(--b))` como lo hace CSS:
+    promedio de los canales ya codificados, sin pasar a lineal."""
+    v = tema[nombre].strip()
+    m = re.fullmatch(r"color-mix\(in srgb, var\(--([\w-]+)\) (\d+)%, var\(--([\w-]+)\)\)", v)
+    assert m, f"--{nombre} no es la mezcla que el test sabe leer: {v}"
+    a, p, b = _hex(tema, m.group(1)), int(m.group(2)) / 100, _hex(tema, m.group(3))
+    canales = (round(int(a[i : i + 2], 16) * p + int(b[i : i + 2], 16) * (1 - p)) for i in (1, 3, 5))
+    return "#" + "".join(f"{x:02X}" for x in canales)
+
+
+# Cada estado se escribe con su color saturado sobre su propio relleno.
+ESTADOS = [("negativo", "mal-fondo"), ("atencion", "warn-fondo"), ("positivo", "ok-fondo")]
+
+
+def _peor_par(tema):
+    t = TEMAS[tema]
+    pares = [contraste(_hex(t, x), _hex(t, s)) for x in ("texto", "texto-2", "texto-3") for s in SUPERFICIES]
+    pares += [contraste(_hex(t, c), _mezcla(t, f)) for c, f in ESTADOS]
+    return min(pares)
+
+
+@pytest.mark.parametrize("tema", ["oscuro", "claro"])
+@pytest.mark.parametrize(("color", "relleno"), ESTADOS)
+def test_cada_estado_se_lee_sobre_su_relleno(tema, color, relleno):
+    t = TEMAS[tema]
+    r = contraste(_hex(t, color), _mezcla(t, relleno))
+    assert r >= 4.5, f"{tema}: --{color} sobre --{relleno} da {r:.2f}"
+
+
+@pytest.mark.parametrize(
+    ("archivo", "coma"),
+    [
+        (os.path.join("app", "web", "tokens", "colors.css"), True),
+        (os.path.join("docs", "DESIGN.md"), True),
+        (os.path.join("docs", "DESIGN.en.md"), False),
+    ],
+)
+def test_el_peor_par_escrito_es_el_que_se_mide(archivo, coma):
+    """El «peor par» estaba escrito con tres números distintos en tres lugares."""
+    texto = open(os.path.join(RAIZ, archivo), encoding="utf-8").read()
+    for tema in ("oscuro", "claro"):
+        numero = f"{_peor_par(tema):.1f}"
+        if coma:
+            numero = numero.replace(".", ",")
+        assert numero in texto, f"{archivo} no dice {numero} para el tema {tema}"

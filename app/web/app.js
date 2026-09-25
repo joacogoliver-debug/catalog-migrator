@@ -700,23 +700,6 @@ function avisoCanal() {
       ${esc(T('paso2.no_esta_en_deezer_cuerpo'))}`));
   }
 
-  // Sólo si algo salió raro: el canal es Topic pero igual falta metadata.
-  if (d.cobertura_metadata !== undefined && d.cobertura_metadata < 0.3) {
-    const sug = d.topic_sugerido;
-    partes.push(alerta('warn', 'alerta', `
-      <strong>${esc(T('paso2.sin_metadata_titulo'))}</strong>
-      ${esc(T('paso2.sin_metadata_cuerpo'))}
-      ${sug ? `
-        <div class="row mt-3">
-          <button class="btn btn-secondary btn-sm" data-accion="usar-topic">
-            ${esc(T('paso2.usar_topic', { titulo: sug.titulo }))}
-          </button>
-        </div>` : `
-        <p class="small mt-2">
-          ${esc(T('paso2.buscar_topic', { artista: S.catalogo.artista }))}
-        </p>`}`));
-  }
-
   return partes.join('');
 }
 
@@ -1399,25 +1382,6 @@ const ACCIONES = {
 
   async cancelar() {
     if (S.job) { try { await api(`/api/job/${S.job.id}/cancelar`, {}); } catch (_) {} }
-  },
-
-  async 'usar-topic'() {
-    const sug = ((S.catalogo && S.catalogo.diagnostico) || {}).topic_sugerido;
-    if (!sug) return;
-    // Relevamos el Topic con el mismo flujo del paso 1, sin que tenga que ir a
-    // buscar el link a mano.
-    S.url = sug.url;
-    S.paso = 1; S.error = ''; S.errorCodigo = ''; S.ocupado = true; S.job = null; render();
-    try {
-      const { job } = await api('/api/relevar', { url: sug.url, con_codigos: true });
-      adoptarCatalogo(await esperarJob(job, () => actualizarProgreso()));
-      S.ocupado = false; render();
-    } catch (e) {
-      S.ocupado = false;
-      S.error = e.message === 'CANCELADO' ? '' : e.message;
-      S.errorCodigo = e.codigo || '';
-      render();
-    }
   },
 
   'volver-1'() { S.paso = 1; S.aviso = ''; S.error = ''; S.errorCodigo = ''; S.resultado = null; S.entrando = true; render(); arriba(); },

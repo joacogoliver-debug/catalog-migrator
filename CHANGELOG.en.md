@@ -305,6 +305,18 @@ What changed in every published version. The numbers follow
   README say "usually reject" instead of "reject".
 
 ### For developers
+- **Out with what said nothing**: `cobertura_metadata` and `topic_sugerido`
+  had been constants ever since the survey filters out what is not a release,
+  and the interface branch that used them (with its button and four texts)
+  never ran; `units` was read by no one and underestimated the cost. The test
+  doubles that made those values up no longer carry them.
+- **DESIGN.md and the tokens say the same thing**: the header drops the blur
+  §9 forbids, seven unused tokens are gone, and the "worst text pair", which
+  was written with three different numbers, is a single one (4.7 in dark and
+  5.1 in light, a state over its fill) and a test measures it on `colors.css`.
+- `pyproject.toml` with a description in both languages, `keywords` and the
+  URL keys tools recognize, and without the comments from the old repo (the
+  version "in `app/server.py`", an ignore for a file no longer at the root).
 - **A written threat model**, in [docs/AMENAZAS.en.md](docs/AMENAZAS.en.md)
   and in Spanish: what the app protects, from whom, with which defense and
   which test covers it, and what is left out on purpose (for instance, that a

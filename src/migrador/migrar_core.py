@@ -60,8 +60,6 @@ def relevar_catalogo(
     # catálogo sale sin álbumes ni códigos y hay que avisarlo.
     diag: Diagnostico = {
         "es_topic": res.get("es_topic", True),
-        "cobertura_metadata": res.get("cobertura_metadata", 1.0),
-        "topic_sugerido": res.get("topic_sugerido"),
         "canal": res.get("channel_title", ""),
         # Si el usuario pegó un OAC, se relevó el Topic en su lugar: hay que
         # decírselo, no cambiar de canal en silencio.

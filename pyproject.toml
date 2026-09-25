@@ -17,13 +17,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "migrador-catalogos"
-description = "Releva el catálogo de un artista y prepara su migración a otra distribuidora"
+description = "Cambiar de distribuidora sin perder los códigos: ISRC, UPC, portadas, hoja de ingesta y validación desde el canal de YouTube del artista · Switch distributors without losing the codes"
+keywords = ["music", "catalog", "distribution", "migration", "isrc", "upc", "youtube", "ddex", "metadata"]
 readme = "README.md"
 requires-python = ">=3.13"
 license = "MIT"
 authors = [{ name = "Joaquín García Oliver" }]
-# La versión vive en app/server.py, que es lo que leen el instalador, el release
-# y la interfaz. Se lee de ahí para no tener dos números que discrepen.
+# La versión vive en src/migrador/version.py, que es lo que leen el instalador,
+# el release y la interfaz. Se lee de ahí para no tener dos números que
+# discrepen.
 dynamic = ["version"]
 # El núcleo no necesita nada: relevar, agrupar y validar se hacen con la
 # biblioteca estándar. Lo que hace falta para cada cosa está en los extras.
@@ -38,9 +40,13 @@ audio = ["tiddl>=3.4.1", "yt-dlp>=2024.7.1", "imageio-ffmpeg>=0.6"]
 # Las herramientas de quien desarrolla.
 dev = ["pytest>=8.0", "pytest-cov>=5.0", "ruff==0.16.8", "pyright==1.1.414", "pre-commit>=4.0", "pyyaml>=6.0"]
 
+# Con los nombres que reconocen pip y los índices, no traducidos: son claves,
+# no texto para leer.
 [project.urls]
-Repositorio = "https://github.com/joacogoliver-debug/catalog-migrator"
-Novedades = "https://github.com/joacogoliver-debug/catalog-migrator/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/joacogoliver-debug/catalog-migrator"
+Repository = "https://github.com/joacogoliver-debug/catalog-migrator"
+Changelog = "https://github.com/joacogoliver-debug/catalog-migrator/blob/main/CHANGELOG.md"
+Issues = "https://github.com/joacogoliver-debug/catalog-migrator/issues"
 
 [tool.setuptools.dynamic]
 version = { attr = "migrador.version.VERSION" }
@@ -61,13 +67,12 @@ target-version = "py313"
 select = ["E", "F", "W", "B", "BLE"]
 
 [tool.ruff.lint.per-file-ignores]
-# Los tests y el launcher arman sys.path antes de importar los módulos del
-# proyecto: el import no puede estar arriba de todo porque todavía no habría
+# Los tests, el launcher y el servidor arman sys.path antes de importar el
+# paquete: el import no puede estar arriba de todo porque todavía no habría
 # nada que importar.
 "tests/*.py" = ["E402"]
 "app/launcher.py" = ["E402"]
 "app/server.py" = ["E402"]
-"relevar_core.py" = ["E402"]
 
 [tool.ruff.format]
 # El formateador usa el mismo `line-length` de arriba. Se adopta con una salvedad
