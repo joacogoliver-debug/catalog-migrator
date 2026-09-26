@@ -317,6 +317,12 @@ Lo que cambió en cada versión publicada. Los números siguen
   trae. El LEEME y el README dicen «suelen rechazar» en vez de «rechazan».
 
 ### Para quien desarrolla
+- **Material de lanzamiento preparado, sin publicar**: la imagen para redes de
+  1280×640 (`docs/redes/`, se arma con `python build/imagen_redes.py` a partir
+  de los tokens y el logo de la app), una página para GitHub Pages en `docs/` en
+  los dos idiomas, sin scripts ni nada de afuera, y en
+  [docs/LANZAMIENTO.md](docs/LANZAMIENTO.md) la descripción y los topics
+  propuestos, los textos para cada canal y qué falta hacer para publicarlo.
 - **Fuera lo que no decía nada**: `cobertura_metadata` y `topic_sugerido`
   eran constantes desde que el relevamiento filtra lo que no es lanzamiento, y
   la rama de la interfaz que los usaba (con su botón y cuatro textos) no se

@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Migrador de Catálogos · cambiá de distribuidora sin perder los códigos</title>
+<meta name="description" content="App gratuita y de código abierto que arma, desde el canal de YouTube del artista, el paquete para migrar su catálogo a otra distribuidora: ISRC, UPC, portadas, hoja de ingesta y validación.">
+<meta property="og:title" content="Migrador de Catálogos">
+<meta property="og:description" content="Cambiá de distribuidora sin perder los códigos de tu catálogo.">
+<meta property="og:image" content="https://raw.githubusercontent.com/joacogoliver-debug/catalog-migrator/main/docs/redes/social-preview.png">
+<link rel="alternate" hreflang="en" href="en.html">
+<!--
+  La página de GitHub Pages, si se activa desde la carpeta docs/. Sin scripts,
+  sin fuentes ni imágenes de afuera y sin medir nada, como la app. Los colores
+  son los de app/web/tokens/colors.css, escritos acá porque Pages sólo sirve
+  docs/ y no puede leer los tokens de la app.
+-->
+<style>
+  :root {
+    --lienzo: #0A0A09; --panel: #141414; --borde: rgba(245, 242, 237, .10);
+    --texto: #F5F2ED; --texto-2: #B4B1AB; --texto-3: #94928D; --acento: #8CC2C0;
+    --primario: #F5F2ED; --sobre-primario: #141414;
+    color-scheme: dark;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --lienzo: #E8E4DC; --panel: #F5F2ED; --borde: rgba(20, 20, 20, .12);
+      --texto: #141414; --texto-2: #434240; --texto-3: #5C5B58; --acento: #155251;
+      --primario: #141414; --sobre-primario: #F5F2ED;
+      color-scheme: light;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--lienzo); color: var(--texto);
+    font: 17px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  main { max-width: 980px; margin: 0 auto; padding: 56px 24px 80px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 64px; }
+  header img { height: 44px; }
+  header a { color: var(--texto-2); }
+  h1 { font-size: clamp(36px, 6vw, 60px); font-weight: 300; line-height: 1.08; letter-spacing: -0.02em; margin: 0 0 20px; }
+  h1 em { font-style: normal; color: var(--acento); }
+  h2 { font-size: 24px; font-weight: 500; margin: 64px 0 16px; }
+  p, li { color: var(--texto-2); max-width: 70ch; }
+  strong { color: var(--texto); font-weight: 600; }
+  a { color: var(--acento); }
+  .descargas { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin: 28px 0 8px; }
+  .descargas a {
+    display: block; padding: 16px 18px; border: 1px solid var(--borde); border-radius: 12px;
+    background: var(--panel); color: var(--texto); text-decoration: none;
+  }
+  .descargas a span { display: block; color: var(--texto-3); font-size: 14px; }
+  .descargas a.principal { background: var(--primario); color: var(--sobre-primario); border-color: var(--primario); }
+  .descargas a.principal span { color: var(--sobre-primario); opacity: .75; }
+  img.captura { width: 100%; height: auto; border: 1px solid var(--borde); border-radius: 12px; margin-top: 40px; }
+  ol li { margin-bottom: 8px; }
+  dt { color: var(--texto); font-weight: 600; margin-top: 18px; }
+  dd { margin: 4px 0 0; color: var(--texto-2); max-width: 70ch; }
+  footer { margin-top: 80px; color: var(--texto-3); font-size: 15px; }
+  footer a { color: var(--texto-2); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <picture>
+      <source srcset="marca/lockup-positive.svg" media="(prefers-color-scheme: light)">
+      <img src="marca/lockup-negative.svg" alt="Migrador de Catálogos">
+    </picture>
+    <a href="en.html" lang="en">English</a>
+  </header>
+
+  <h1>Cambiá de distribuidora<br><em>sin perder los códigos.</em></h1>
+  <p>Pegás el link del canal de YouTube del artista y la app arma el paquete para
+  la distribuidora nueva: los <strong>ISRC</strong> y los <strong>UPC</strong> que se
+  pueden recuperar de Deezer, las <strong>portadas</strong> de Apple Music en la
+  resolución más alta que haya, una <strong>hoja de ingesta</strong> para cargar, y una
+  <strong>validación</strong> que marca lo que las distribuidoras suelen rechazar.</p>
+  <p>Gratis, de código abierto y sin cuentas: corre entera en tu computadora.</p>
+
+  <div class="descargas">
+    <a class="principal" href="https://github.com/joacogoliver-debug/catalog-migrator/releases/latest/download/Migrador-de-Catalogos-windows-completa-instalador.exe">Windows<span>Instalador, doble clic</span></a>
+    <a href="https://github.com/joacogoliver-debug/catalog-migrator/releases/latest/download/Migrador-de-Catalogos-macos-apple-silicon-completa">Mac con chip Apple<span>M1, M2, M3, M4…</span></a>
+    <a href="https://github.com/joacogoliver-debug/catalog-migrator/releases/latest/download/Migrador-de-Catalogos-macos-intel-completa">Mac con Intel<span>Procesador Intel</span></a>
+    <a href="https://github.com/joacogoliver-debug/catalog-migrator/releases/latest">Linux<span>.deb o ejecutable suelto</span></a>
+  </div>
+  <p>En Mac hay que abrirlo desde la Terminal la primera vez:
+  la <a href="https://github.com/joacogoliver-debug/catalog-migrator/blob/main/docs/INSTALAR-MAC.md">guía de cinco minutos</a>
+  dice cómo.</p>
+
+  <img class="captura" src="capturas/05-catalogo-1.png" alt="El catálogo relevado, con los productos a los que les falta algo ya marcados">
+
+  <h2>Para quién es</h2>
+  <p>Para quien administra un catálogo y lo va a llevar a otra distribuidora: un
+  sello chico, un manager, una distribuidora o el propio artista, con el catálogo
+  propio o administrado con autorización del titular.</p>
+  <p><strong>No es para vos si</strong> necesitás un XML DDEX, si el catálogo no está en
+  YouTube con su canal Topic, o si buscás bajar música de otros.</p>
+
+  <h2>Cómo se usa</h2>
+  <ol>
+    <li><strong>Pegás el link</strong> del canal, Topic o <code>@handle</code> del artista, o el de cualquiera de sus temas.</li>
+    <li><strong>Elegís qué productos migrar</strong>: la tabla marca a cuáles les falta algo.</li>
+    <li><strong>Elegís qué descargar</strong>: planilla y validación, portadas, y audio si activaste ese módulo.</li>
+    <li><strong>Descargás un ZIP</strong> con una carpeta por producto, y la app te dice qué sigue.</li>
+  </ol>
+
+  <h2>Preguntas frecuentes</h2>
+  <dl>
+    <dt>¿Funciona con mi distribuidora?</dt>
+    <dd>No se conecta con ninguna: arma los archivos y la carga la hacés vos. La hoja
+    de ingesta trae las columnas de uso común y viene también en Excel para adaptarla.</dd>
+    <dt>¿Necesito saber programar?</dt>
+    <dd>No. En Windows se instala con doble clic; en Mac hay que pegar tres líneas en la Terminal la primera vez.</dd>
+    <dt>¿Es legal?</dt>
+    <dd>La app lee datos públicos de YouTube, Deezer y Apple, y está pensada para migrar
+    un catálogo propio o administrado con autorización. Los
+    <a href="https://github.com/joacogoliver-debug/catalog-migrator/blob/main/TERMINOS.md">términos</a> lo dicen con detalle.</dd>
+    <dt>¿Adónde van mis datos?</dt>
+    <dd>A ningún servidor del autor: no hay. Tu clave de YouTube queda en tu computadora.</dd>
+  </dl>
+
+  <footer>
+    Hecha por <a href="https://www.linkedin.com/in/joaquingarciaoliver/">Joaquín García Oliver</a> ·
+    <a href="https://github.com/joacogoliver-debug/catalog-migrator">Código en GitHub</a> ·
+    <a href="https://github.com/joacogoliver-debug/catalog-migrator/blob/main/CHANGELOG.md">Novedades</a>
+  </footer>
+</main>
+</body>
+</html>

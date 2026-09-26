@@ -193,7 +193,10 @@ sección, «Para quien desarrolla», que las notas del release muestran plegada.
 | `tests/fixtures/` | Respuestas reales de Deezer e iTunes, grabadas una vez |
 | `docs/` | Decisiones de producto y de diseño |
 
-`docs/marca/` es el logotipo y sus reglas de uso. No se toca.
+`docs/marca/` es el logotipo y sus reglas de uso. No se toca. La imagen para
+redes y la página de GitHub Pages, que salen de él, están en `docs/redes/` y
+`docs/index.html`, y [docs/LANZAMIENTO.md](docs/LANZAMIENTO.md) dice qué falta
+para publicarlas.
 
 ## Reportar algo
 

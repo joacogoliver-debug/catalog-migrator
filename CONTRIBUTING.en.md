@@ -189,7 +189,11 @@ folded.
 | `tests/fixtures/` | Real Deezer and iTunes responses, recorded once |
 | `docs/` | Product and design decisions |
 
-`docs/marca/` is the logo and its usage rules. It is not to be touched.
+`docs/marca/` is the logo and its usage rules. It is not to be touched. The
+social image and the GitHub Pages page, which come from it, live in
+`docs/redes/` and `docs/index.html`, and
+[docs/LANZAMIENTO.en.md](docs/LANZAMIENTO.en.md) says what is left to publish
+them.
 
 ## Reporting something
 

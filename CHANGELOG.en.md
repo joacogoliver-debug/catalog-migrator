@@ -319,6 +319,12 @@ What changed in every published version. The numbers follow
   README say "usually reject" instead of "reject".
 
 ### For developers
+- **Launch material prepared, not published**: the 1280×640 social image
+  (`docs/redes/`, built with `python build/imagen_redes.py` from the app's
+  tokens and logo), a GitHub Pages page in `docs/` in both languages, with no
+  scripts or outside resources, and in
+  [docs/LANZAMIENTO.en.md](docs/LANZAMIENTO.en.md) the proposed description
+  and topics, the texts for each channel and what is left to publish it.
 - **Out with what said nothing**: `cobertura_metadata` and `topic_sugerido`
   had been constants ever since the survey filters out what is not a release,
   and the interface branch that used them (with its button and four texts)
