@@ -594,6 +594,7 @@ pytest -q --cov
 | `tests/test_app.py` | Backend, jobs, HTTP, and the three defenses |
 | `tests/test_capturas.py` | That the screenshots' sample material says the same as the app |
 | `tests/test_entrada_hostil.py` | That nothing coming from outside gets executed: yt-dlp, formulas, covers |
+| `tests/test_tidal_indice.py` | The Tidal match with a fake session: every appearance of an ISRC and the number from the release that is the product |
 | `tests/test_cierre.py` | Really closing the app: the heartbeat watcher with a fake clock (suspend included) and the native window's confirmation |
 | `tests/test_readme.py` | The README as a landing page: every download link exists in the release, usage before the technical part, no unmeasured figures |
 | `tests/test_guia_migracion.py` | What the READ ME tells whoever migrates: keep the codes, take down last, and Tidal's copy is not the master |

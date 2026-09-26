@@ -294,7 +294,9 @@ def artistas_de(t, artista):
 
 def orden_de(p, t):
     """De dónde sale el número de track, para la columna «Track Order»."""
-    if t.get("tidal"):
+    # Sólo si el número salió del mismo release en Tidal. Que el tema esté en
+    # Tidal no alcanza: puede estar en el single y en el álbum, con otro número.
+    if t.get("orden_fuente") == "tidal":
         return "confirmed (Tidal)"
     if t.get("orden_fuente") == "deezer":
         return "confirmed (Deezer)"
@@ -310,9 +312,6 @@ def disco_de(p, t):
     el segundo disco entero en el primero. Un release de un solo track tiene un
     solo disco, eso sí se sabe.
     """
-    tidal = t.get("tidal") or {}
-    if tidal.get("volume_number"):
-        return tidal["volume_number"]
     if t.get("disc_number"):
         return t["disc_number"]
     return 1 if len(p["tracks"]) == 1 else MARCA_COMPLETAR

@@ -61,6 +61,13 @@ Lo que cambió en cada versión publicada. Los números siguen
   de cuota.
 
 ### Corregido
+- **Con Tidal conectado, un tema del álbum podía quedar con el número y el UPC
+  del single, y el orden marcado como confirmado.** El índice por ISRC
+  guardaba una sola aparición de cada grabación, la del último release
+  procesado, y los singles se procesan después de los álbumes. Ahora guarda
+  todas, elige el release de Tidal que es el producto (por UPC, o por el que
+  tiene todos sus temas y el tamaño más parecido) y toma el número, el disco y
+  el UPC sólo de ése. La hoja dice «confirmed (Tidal)» sólo en ese caso.
 - **Cerrar la app en el navegador la cierra de verdad.** Cerrar la pestaña no
   le avisaba a nadie y el binario no tiene consola, así que quedaba un servidor
   corriendo para siempre, uno más por cada doble clic. Ahora la página late cada

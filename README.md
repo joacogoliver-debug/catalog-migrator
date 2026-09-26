@@ -592,6 +592,7 @@ pytest -q --cov
 | `tests/test_app.py` | Backend, trabajos, HTTP, y las tres defensas |
 | `tests/test_capturas.py` | Que el material de ejemplo de las capturas diga lo mismo que la app |
 | `tests/test_entrada_hostil.py` | Que nada de lo que entra de afuera se ejecute: yt-dlp, fórmulas, portadas |
+| `tests/test_tidal_indice.py` | El cruce con Tidal con una sesión de mentira: todas las apariciones de un ISRC y el número del release que es el producto |
 | `tests/test_cierre.py` | Cerrar la app de verdad: el vigía de latidos con un reloj de mentira (suspensión incluida) y la confirmación de la ventana nativa |
 | `tests/test_readme.py` | El README como entrada: que cada enlace de descarga exista en el release, lo de uso antes de lo técnico, sin cifras sin medir |
 | `tests/test_guia_migracion.py` | Lo que el LEEME le dice a quien migra: conservar los códigos, la baja al final y que la copia de Tidal no es el máster |

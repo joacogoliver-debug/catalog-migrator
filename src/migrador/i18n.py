@@ -1153,9 +1153,10 @@ son aproximaciones y conviene verificarlos:
                           4-6 EP, 7+ álbum). Un EP corto puede figurar como
                           single.
 
-  Orden de los tracks     Cuando Deezer tiene el álbum y es el mismo release,
-                          o cuando se pudo cruzar con Tidal por ISRC, el número
-                          de track es el real. Si no, es un estimado por fecha
+  Orden de los tracks     Cuando Deezer o Tidal tienen el mismo release, con
+                          todos sus temas, el número de track es el real. Que
+                          un tema esté en Tidal no alcanza: puede estar en el
+                          single y en el álbum, con otro número. Si no, es un estimado por fecha
                           de subida: la columna "Track Order" de la hoja de
                           ingesta dice cuál es cuál, y el reporte lo marca como
                           "sin confirmar".
@@ -1284,9 +1285,10 @@ approximations and are worth checking:
   Type (single/EP/album)  Worked out from the track count (1-3 single, 4-6 EP,
                           7+ album). A short EP can show up as a single.
 
-  Track order             When Deezer has the album and it is the same
-                          release, or where it could be cross-checked against
-                          Tidal by ISRC, the track number is the real one.
+  Track order             When Deezer or Tidal has the same release, with all
+                          its songs, the track number is the real one. A song
+                          being on Tidal is not enough: it can be on the single
+                          and on the album, with a different number.
                           Otherwise it is estimated from the upload date: the
                           "Track Order" column of the ingestion sheet says which
                           is which, and the report marks it as "unconfirmed".

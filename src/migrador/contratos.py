@@ -146,7 +146,8 @@ class Track(TypedDict):
     track_number: NotRequired[int | None]
     # El disco, junto con el número real. Sin él, el disco no se sabe.
     disc_number: NotRequired[int]
-    # De dónde salió el número real: "deezer". Ausente, es un estimado.
+    # De dónde salió el número real: "deezer" o "tidal", siempre del mismo
+    # release que el producto. Ausente, es un estimado.
     orden_fuente: NotRequired[str]
     # El álbum de Deezer en cuyo tracklist se ubicó. Sirve para juntar temas
     # sin fecha que son del mismo release (ver `productos._agrupar_por_release`).

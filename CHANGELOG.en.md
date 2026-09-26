@@ -61,6 +61,13 @@ What changed in every published version. The numbers follow
   quota.
 
 ### Fixed
+- **With Tidal connected, an album song could end up with the single's
+  number and UPC, and the order marked as confirmed.** The ISRC index kept a
+  single appearance of each recording, the one from the last release
+  processed, and singles are processed after albums. It now keeps them all,
+  picks the Tidal release that is the product (by UPC, or the one that has all
+  its songs and the closest size) and takes the number, disc and UPC only from
+  that one. The sheet says "confirmed (Tidal)" only in that case.
 - **Closing the app in the browser really closes it.** Closing the tab told
   nobody and the binary has no console, so a server kept running forever, one
   more per double click. Now the page sends a heartbeat every 15 seconds and

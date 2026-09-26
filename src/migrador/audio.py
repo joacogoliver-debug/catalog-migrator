@@ -27,6 +27,7 @@ Dos decisiones de diseño que sostienen la honestidad de la herramienta:
 """
 
 import os
+import re
 import shutil
 import sys
 import subprocess
@@ -375,10 +376,14 @@ def buscar_artista_tidal(session, nombre):
 
 def construir_indice_isrc(session, artista, log=print):
     """Baja la discografía completa del artista en Tidal y arma un índice
-    {ISRC -> datos del track}.
+    {ISRC -> lista de apariciones}.
 
     Esto es lo que permite matchear por código en vez de por título: el ISRC
     identifica la grabación de forma única, así que un match por ISRC es exacto.
+    Pero la misma grabación está en el single, en el álbum y en cada compilado,
+    y cada aparición trae su número de track y su UPC. Antes se guardaba una
+    sola, la del último release procesado, y el tema del álbum podía quedar con
+    el número y el UPC del single, marcado como orden confirmado.
     """
     try:
         artist_id, nombre_tidal = buscar_artista_tidal(session, artista)
@@ -441,57 +446,102 @@ def construir_indice_isrc(session, artista, log=print):
             isrc = (getattr(t, "isrc", "") or "").upper().strip()
             if not isrc:
                 continue
-            indice[isrc] = {
-                "track_id": getattr(t, "id", None),
-                "album_id": album_id,
-                "album_title": getattr(al, "title", ""),
-                "upc": getattr(al, "upc", "") or "",
-                "track_number": getattr(t, "trackNumber", None),
-                "volume_number": getattr(t, "volumeNumber", None),
-                "title": getattr(t, "title", ""),
-                # Etiquetas de calidad que declara Tidal (a confirmar al bajar).
-                "tags": list(getattr(getattr(t, "mediaMetadata", None), "tags", []) or []),
-            }
+            indice.setdefault(isrc, []).append(
+                {
+                    "track_id": getattr(t, "id", None),
+                    "album_id": album_id,
+                    "album_title": getattr(al, "title", ""),
+                    "album_tracks": len(tracks),
+                    "upc": getattr(al, "upc", "") or "",
+                    "track_number": getattr(t, "trackNumber", None),
+                    "volume_number": getattr(t, "volumeNumber", None),
+                    "title": getattr(t, "title", ""),
+                    # Etiquetas de calidad que declara Tidal (a confirmar al bajar).
+                    "tags": list(getattr(getattr(t, "mediaMetadata", None), "tags", []) or []),
+                }
+            )
 
     log(T("aud.indice", isrc=len(indice), releases=len(items)))
     return indice, artist_id
 
 
+def _digitos(upc):
+    """El UPC sin ceros adelante: el mismo código con 12 y con 13 dígitos."""
+    return re.sub(r"\D", "", upc or "").lstrip("0")
+
+
+def release_de_tidal(p, indice):
+    """El release de Tidal que es este producto, o None.
+
+    Por UPC si el producto lo tiene y Tidal lo trae. Si no, el release que
+    contiene más ISRC del producto y, entre los que empatan, el de tamaño más
+    parecido: un single de un tema y el álbum de doce contienen los dos al
+    tema, pero sólo uno es este producto.
+    """
+    isrcs = {(t.get("isrc") or "").upper().strip() for t in p["tracks"]} - {""}
+    por_album = {}
+    for isrc in isrcs:
+        for ap in indice.get(isrc) or []:
+            por_album.setdefault(ap["album_id"], {})[isrc] = ap
+    if not por_album:
+        return None
+    upc = _digitos(p.get("upc"))
+    if upc:
+        for album_id, aps in por_album.items():
+            if any(_digitos(a.get("upc")) == upc for a in aps.values()):
+                return album_id
+
+    def cercania(album_id):
+        aps = por_album[album_id]
+        tamano = next(iter(aps.values())).get("album_tracks") or len(aps)
+        return (len(aps), -abs(tamano - p["track_count"]))
+
+    return max(por_album, key=cercania)
+
+
 def matchear_por_isrc(productos: list[Producto], indice, log=print):
     """Cruza el catálogo relevado contra el índice de Tidal por ISRC.
 
-    Como efecto secundario completa el número de track real desde Tidal, que
-    YouTube no da: eso resuelve el orden provisorio de la agrupación.
+    Para bajar el audio sirve cualquier aparición: es la misma grabación. El
+    número de track, el disco y el UPC, en cambio, sólo se toman del release de
+    Tidal que es este producto (`release_de_tidal`), y sólo si ese release trae
+    todos sus tracks: el álbum que tiene dos de los tres temas de un compilado
+    no es el compilado, y sus números no son los de éste.
     """
     hit = miss = sin_isrc = 0
     for p in productos:
         encontrados = 0
+        propio = release_de_tidal(p, indice)
+        suyas = []
         for t in p["tracks"]:
             isrc = (t.get("isrc") or "").upper().strip()
             if not isrc:
                 t["tidal"] = None
                 sin_isrc += 1
                 continue
-            m = indice.get(isrc)
-            t["tidal"] = m
-            if m:
-                hit += 1
-                encontrados += 1
-                if m.get("track_number"):
-                    t["track_number"] = m["track_number"]
-                if m.get("upc") and not p.get("upc"):
-                    p["upc"] = m["upc"]
-            else:
+            apariciones = indice.get(isrc) or []
+            mia = next((a for a in apariciones if a["album_id"] == propio), None)
+            t["tidal"] = mia or (apariciones[0] if apariciones else None)
+            if not t["tidal"]:
                 miss += 1
-        # Si Tidal nos dio el orden real, dejamos de marcarlo como provisorio.
-        cruces = [t.get("tidal") for t in p["tracks"]]
-        if encontrados == p["track_count"] and all(c and c.get("track_number") for c in cruces):
+                continue
+            hit += 1
+            encontrados += 1
+            if mia and mia.get("track_number"):
+                suyas.append((t, mia))
 
-            def _orden(t):
-                c = t.get("tidal") or {}
-                return (c.get("volume_number") or 1, c.get("track_number") or 0)
-
-            p["tracks"].sort(key=_orden)
+        if propio is not None and len(suyas) == p["track_count"]:
+            for t, mia in suyas:
+                # Deezer ya verificó el mismo release: su número se respeta.
+                if t.get("orden_fuente") != "deezer":
+                    t["track_number"] = mia["track_number"]
+                    if mia.get("volume_number"):
+                        t["disc_number"] = mia["volume_number"]
+                    t["orden_fuente"] = "tidal"
+            upc = next((m.get("upc") for _t, m in suyas if m.get("upc")), "")
+            if upc and not p.get("upc"):
+                p["upc"] = upc
+            p["tracks"].sort(key=lambda t: (t.get("disc_number") or 1, t.get("track_number") or 0))
             p["order_unconfirmed"] = False
         p["tidal_cobertura"] = f"{encontrados}/{p['track_count']}"
 
