@@ -116,6 +116,6 @@ página, descripción, topics y textos); N37, el nombre de los binarios hacia
 afuera; N38, dónde se hace una pregunta; N39, firmar y notarizar.
 
 Queda una cosa fuera de este repositorio: la edición de MOJO del migrador es un
-repo aparte, y el arreglo de N01 (el botón «Descargar» que el servidor rechazaba
+repo aparte, y el arreglo de N02 (el botón «Descargar» que el servidor rechazaba
 por falta de token, y `ALLOW_DOWNLOADS` apagado en pywebview) casi seguro hace
 falta también ahí. Los cambios del motor se portan a mano.
