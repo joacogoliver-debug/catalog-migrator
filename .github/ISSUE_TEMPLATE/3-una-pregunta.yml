@@ -1,0 +1,33 @@
+name: Una pregunta / A question
+description: Algo que no sabés si la app hace, o cómo se hace. No hace falta que sea un problema.
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Podés escribir en castellano o en inglés.
+        Feel free to write in Spanish or English.
+
+        Puede que ya esté contestada en las
+        [preguntas frecuentes del README](https://github.com/joacogoliver-debug/catalog-migrator#preguntas-frecuentes):
+        si mi distribuidora sirve, si hay que saber programar, si es legal,
+        adónde van los datos, qué hacer si faltan ISRC o UPC.
+
+  - type: textarea
+    id: pregunta
+    attributes:
+      label: Tu pregunta / Your question
+      placeholder: |
+        ¿La hoja de ingesta sirve para cargar en DistroKid?
+    validations:
+      required: true
+
+  - type: textarea
+    id: contexto
+    attributes:
+      label: Para qué la necesitás / What you need it for
+      description: >
+        Si viene de un caso real, contalo: qué catálogo, a qué distribuidora lo
+        llevás. Ayuda a contestar lo que de verdad te sirve.
+    validations:
+      required: false

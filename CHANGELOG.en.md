@@ -9,6 +9,9 @@ What changed in every published version. The numbers follow
 ## [Unreleased]
 
 ### Added
+- **There is somewhere to ask a question**: an "A question" issue template,
+  for what is neither a bug nor an idea ("does it work with my
+  distributor?"). With blank issues turned off, there was nowhere for it.
 - **The app explains the number one rule of a migration**: keeping the ISRC,
   the UPC and the original date is what joins each new release to the one
   already in stores, with its plays and playlists, and taking the catalog down
@@ -319,6 +322,9 @@ What changed in every published version. The numbers follow
   README say "usually reject" instead of "reject".
 
 ### For developers
+- The "An idea" template set a label the repository does not have, and
+  GitHub dropped it without saying so; it now uses `enhancement`, and a test
+  checks that each template names only labels that exist.
 - **Launch material prepared, not published**: the 1280×640 social image
   (`docs/redes/`, built with `python build/imagen_redes.py` from the app's
   tokens and logo), a GitHub Pages page in `docs/` in both languages, with no

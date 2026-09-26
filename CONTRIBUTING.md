@@ -203,8 +203,9 @@ para publicarlas.
 - **Un problema de seguridad** va en privado, por el formulario de
   [Report a vulnerability](https://github.com/joacogoliver-debug/catalog-migrator/security/advisories/new),
   nunca como issue público. El detalle está en [SECURITY.md](SECURITY.md).
-- **Todo lo demás**, como issue. Hay plantillas, y llenarlas ahorra la ida y
-  vuelta de pedir la versión y el sistema operativo.
+- **Todo lo demás**, como issue. Hay plantillas para un problema, una idea y
+  una pregunta, y llenarlas ahorra la ida y vuelta de pedir la versión y el
+  sistema operativo.
 
 Si la app no abre, `--diagnostico` deja un reporte de qué puede hacer en tu
 máquina, y adjuntarlo suele resolver el issue en un mensaje.

@@ -1,6 +1,6 @@
 name: Una idea / An idea
 description: Algo que la app podría hacer y no hace, o algo que hace y podría hacer mejor.
-labels: ["idea"]
+labels: ["enhancement"]
 body:
   - type: markdown
     attributes:

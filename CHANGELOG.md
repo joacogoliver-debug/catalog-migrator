@@ -9,6 +9,9 @@ Lo que cambió en cada versión publicada. Los números siguen
 ## [Sin publicar]
 
 ### Agregado
+- **Hay dónde hacer una pregunta**: una plantilla de issue «Una pregunta»,
+  para lo que no es un error ni una idea («¿funciona con mi distribuidora?»).
+  Con el issue en blanco apagado, no había ningún lugar para eso.
 - **La app explica la regla número uno de una migración**: conservar el ISRC,
   el UPC y la fecha original es lo que une cada release nuevo al que ya está en
   las tiendas, con sus reproducciones y playlists, y la baja en la distribuidora
@@ -317,6 +320,9 @@ Lo que cambió en cada versión publicada. Los números siguen
   trae. El LEEME y el README dicen «suelen rechazar» en vez de «rechazan».
 
 ### Para quien desarrolla
+- La plantilla «Una idea» ponía una etiqueta que el repositorio no tiene, y
+  GitHub la descartaba sin avisar; ahora usa `enhancement`, y un test controla
+  que cada plantilla nombre sólo etiquetas que existen.
 - **Material de lanzamiento preparado, sin publicar**: la imagen para redes de
   1280×640 (`docs/redes/`, se arma con `python build/imagen_redes.py` a partir
   de los tokens y el logo de la app), una página para GitHub Pages en `docs/` en

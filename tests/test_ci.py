@@ -97,3 +97,31 @@ def test_los_tests_del_build_corren_sin_la_clave(monkeypatch):
     monkeypatch.setattr(build, "paso", lambda *_: None)
     build.probar_tests()
     assert "MIGRADOR_CLAVE_YT" not in visto and "YOUTUBE_API_KEY" not in visto
+
+
+# ============================================================
+# Plantillas de issue
+# ============================================================
+
+PLANTILLAS = os.path.join(RAIZ, ".github", "ISSUE_TEMPLATE")
+# Las etiquetas que existen en el repositorio. Una plantilla que nombra una que
+# no existe no avisa nada: GitHub la ignora y el issue entra sin etiqueta.
+ETIQUETAS_DEL_REPO = {"bug", "enhancement", "question", "documentation", "accessibility"}
+
+
+@pytest.mark.parametrize("nombre", sorted(n for n in os.listdir(PLANTILLAS) if n != "config.yml"))
+def test_cada_plantilla_de_issue_es_un_formulario_valido(nombre):
+    p = _cargar(os.path.join(PLANTILLAS, nombre))
+    assert p["name"] and p["description"] and p["body"]
+    assert set(p.get("labels", [])) <= ETIQUETAS_DEL_REPO, f"{nombre}: etiqueta que el repo no tiene"
+
+
+def test_hay_donde_hacer_una_pregunta():
+    """«¿Funciona con mi distribuidora?» no es un error ni una idea, y con el
+    issue en blanco apagado no había dónde preguntarlo."""
+    preguntas = [
+        n
+        for n in os.listdir(PLANTILLAS)
+        if "question" in (_cargar(os.path.join(PLANTILLAS, n)).get("labels") or [])
+    ]
+    assert preguntas

@@ -200,8 +200,9 @@ them.
 - **A security problem** goes privately, through the
   [Report a vulnerability](https://github.com/joacogoliver-debug/catalog-migrator/security/advisories/new)
   form, never as a public issue. The detail is in [SECURITY.md](SECURITY.md).
-- **Everything else**, as an issue. There are templates, and filling them in
-  saves the round trip of asking for the version and the operating system.
+- **Everything else**, as an issue. There are templates for a problem, an idea
+  and a question, and filling them in saves the round trip of asking for the
+  version and the operating system.
 
 If the app does not open, `--diagnostico` leaves a report of what it can do on
 your machine, and attaching it usually settles the issue in one message.
