@@ -94,3 +94,28 @@ escritura, y no se justifica todavía.
 los años de P y C por separado no salen de ningún lado público. Sumarlas vacías
 agranda la hoja sin sumar información; lo que sí se hace es declararlas en el
 LEEME como campos que la distribuidora puede pedir (N15).
+
+## Cierre del ciclo
+
+Medido sobre la rama `automejora/ciclo-2`, con la verificación completa del
+brief en verde (pytest con cobertura, ruff check y format, pyright, el build y
+las capturas en los dos idiomas) y `build/sin_claves.py` limpio también sobre
+la historia.
+
+| | Al empezar | Al cerrar |
+|---|---|---|
+| Tests de Python | 391 | 797, más 23 de la interfaz con `node --test` |
+| Cobertura | 59,82 % | 81,03 % |
+| `fail_under` | 58 | 75 |
+| pyright | 0 errores en `basic` | 0 errores en `basic` con 34 reglas de `strict` |
+| Ítems | 39 | 35 hechos y 4 bloqueados, cada uno con su commit |
+
+Los cuatro bloqueados esperan una decisión del dueño, y cada uno dice la
+pregunta: N36, publicar el material de lanzamiento que quedó listo (imagen,
+página, descripción, topics y textos); N37, el nombre de los binarios hacia
+afuera; N38, dónde se hace una pregunta; N39, firmar y notarizar.
+
+Queda una cosa fuera de este repositorio: la edición de MOJO del migrador es un
+repo aparte, y el arreglo de N01 (el botón «Descargar» que el servidor rechazaba
+por falta de token, y `ALLOW_DOWNLOADS` apagado en pywebview) casi seguro hace
+falta también ahí. Los cambios del motor se portan a mano.
