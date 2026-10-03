@@ -38,7 +38,7 @@ app = ["openpyxl>=3.1", "pywebview>=5.0"]
 # el PATH, que no es un paquete de pip.
 audio = ["tiddl>=3.4.1", "yt-dlp>=2024.7.1", "imageio-ffmpeg>=0.6"]
 # Las herramientas de quien desarrolla.
-dev = ["pytest>=8.0", "pytest-cov>=5.0", "ruff==0.16.8", "pyright==1.1.414", "pre-commit>=4.0", "pyyaml>=6.0"]
+dev = ["pytest>=8.0", "pytest-cov>=5.0", "ruff==0.16.9", "pyright==1.1.414", "pre-commit>=4.0", "pyyaml>=6.0"]
 
 # Con los nombres que reconocen pip y los índices, no traducidos: son claves,
 # no texto para leer.

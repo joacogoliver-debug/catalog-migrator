@@ -4,4 +4,4 @@
 # Va con versión fija, y no suelto en el workflow, por dos razones: el binario
 # que la gente baja no tiene que depender de lo que PyPI tenga ese día, y así
 # Dependabot la ve y propone la actualización como un cambio más.
-pyinstaller==6.22.0
+pyinstaller==6.22.3
