@@ -16,7 +16,7 @@ pytest-cov>=5.0
 # El linter. La versión va clavada, igual que en el CI, para que una release de
 # ruff no rompa el build un martes y para que la máquina de quien escribe mire
 # exactamente las mismas reglas que GitHub Actions.
-ruff==0.16.8
+ruff==0.16.9
 
 # El verificador de tipos. Va en modo estricto progresivo: la configuración está
 # en pyproject.toml y hoy el repositorio pasa en cero errores. Clavado como ruff:
