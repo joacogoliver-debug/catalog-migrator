@@ -520,6 +520,7 @@ un solo sentido, y por eso el núcleo se puede probar sin levantar un servidor.
 | `src/migrador/version.py` | La versión, escrita en un solo lugar |
 | `src/migrador/contratos.py` | La forma de los datos que viajan entre los módulos |
 | `src/migrador/texto.py` | Normalización de texto y nombres de archivo |
+| `src/migrador/certificados.py` | Certificados de certifi cuando el sistema no tiene (el .app de macOS) |
 | `src/migrador/migrar_core.py` | Orquesta los 4 pasos |
 | `src/migrador/relevar_core.py` | Relevamiento de YouTube + ISRC/UPC por Deezer |
 | `src/migrador/productos.py` | Agrupa tracks en productos y filtra la selección |
@@ -619,6 +620,7 @@ pytest -q --cov
 | `tests/test_nombres_zip.py` | Nombres adentro del ZIP: únicos, cortos y sin salirse de la raíz |
 | `tests/test_migrar_core.py` | Contrato del orquestador |
 | `tests/test_errores_youtube.py` | Traducción de los errores de la YouTube Data API |
+| `tests/test_certificados.py` | Que HTTPS tenga certificados contra qué verificar, también en el .app de macOS |
 | `tests/test_audio_tidal.py` | Contrato con tiddl, se saltea si no está instalado |
 
 CI los corre en cada push, a propósito **sin** instalar `tiddl`/`yt-dlp`/`ffmpeg`,

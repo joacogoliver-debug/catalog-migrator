@@ -64,6 +64,12 @@ What changed in every published version. The numbers follow
   quota.
 
 ### Fixed
+- **On Mac the app could not talk to YouTube**: the .app did not find the
+  system certificates and every request failed with `CERTIFICATE_VERIFY_FAILED`,
+  both when surveying and when testing your own key. It now uses `certifi`'s,
+  bundled inside, when the system has none. And if a certificate is still
+  rejected (an antivirus or an office network), the message says so instead of
+  pointing at the internet connection or blaming the key.
 - **With Tidal connected, an album song could end up with the single's
   number and UPC, and the order marked as confirmed.** The ISRC index kept a
   single appearance of each recording, the one from the last release

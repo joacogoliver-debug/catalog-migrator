@@ -24,3 +24,9 @@ Nada de esto importa nada de `app/`, y esa flecha no se da vuelta.
 # La versión de la aplicación vive en `app/server.py`, que es lo que leen el
 # instalador, el release y la interfaz. No se repite acá para no tener dos
 # números que tarde o temprano digan cosas distintas.
+
+# Antes de cualquier conexión: en macOS el binario no encuentra los certificados
+# del sistema y sin esto ningún pedido HTTPS pasa. Ver `certificados`.
+from migrador import certificados as _certificados  # noqa: E402
+
+_certificados.preparar()

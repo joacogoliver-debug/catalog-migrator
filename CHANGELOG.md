@@ -64,6 +64,12 @@ Lo que cambió en cada versión publicada. Los números siguen
   de cuota.
 
 ### Corregido
+- **En Mac la app no podía hablar con YouTube**: el .app no encontraba los
+  certificados del sistema y toda consulta fallaba con
+  `CERTIFICATE_VERIFY_FAILED`, tanto al relevar como al probar una clave propia.
+  Ahora usa los de `certifi`, que viajan adentro, cuando el sistema no tiene. Y
+  si un certificado se rechaza igual (un antivirus o una red de oficina), el
+  mensaje lo dice en vez de mandar a revisar internet o culpar a la clave.
 - **Con Tidal conectado, un tema del álbum podía quedar con el número y el UPC
   del single, y el orden marcado como confirmado.** El índice por ISRC
   guardaba una sola aparición de cada grabación, la del último release

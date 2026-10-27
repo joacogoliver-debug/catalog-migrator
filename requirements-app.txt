@@ -1,4 +1,4 @@
-# Dependencias de la app de escritorio. Son dos.
+# Dependencias de la app de escritorio. Son tres.
 #
 # El backend usa http.server de la biblioteca estándar a propósito, y el
 # frontend es JavaScript sin frameworks: así el ejecutable queda chico y el
@@ -14,3 +14,8 @@ openpyxl>=3.1
 # Si falta, la app abre igual usando el motor web del sistema en modo aplicación
 # (ventana sin barra de direcciones ni pestañas).
 pywebview>=5.0
+
+# Certificados raíz para verificar las conexiones HTTPS. En macOS el binario no
+# encuentra los del sistema y sin esto la app no puede hablar con YouTube
+# (CERTIFICATE_VERIFY_FAILED). Ver src/migrador/certificados.py.
+certifi>=2024.7.4

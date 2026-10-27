@@ -144,7 +144,10 @@ a = Analysis(
         "migrador.relevar_core", "migrador.productos", "migrador.portadas",
         "migrador.contratos", "migrador.texto", "migrador.validar",
         "migrador.paquete", "migrador.migrar_core", "migrador.audio",
-        "migrador.i18n",
+        "migrador.i18n", "migrador.certificados",
+        # Lo importa `certificados` adentro de una función. El hook de
+        # pyinstaller-hooks-contrib suma el cacert.pem.
+        "certifi",
         # openpyxl carga sus writers de forma perezosa.
         "openpyxl.cell._writer",
         # Ventana nativa propia. Alcanza con nombrar "webview":

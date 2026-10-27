@@ -522,6 +522,7 @@ points one way, which is why the core can be tested without a server.
 | `src/migrador/version.py` | The version, written in a single place |
 | `src/migrador/contratos.py` | The shape of the data that travels between modules |
 | `src/migrador/texto.py` | Text normalization and safe file names |
+| `src/migrador/certificados.py` | certifi's certificates when the system has none (the macOS .app) |
 | `src/migrador/migrar_core.py` | Orchestrates the 4 steps |
 | `src/migrador/relevar_core.py` | YouTube survey + ISRC/UPC via Deezer |
 | `src/migrador/productos.py` | Groups tracks into products and filters the selection |
@@ -621,6 +622,7 @@ pytest -q --cov
 | `tests/test_nombres_zip.py` | Names inside the ZIP: unique, short and never outside the root |
 | `tests/test_migrar_core.py` | Orchestrator contract |
 | `tests/test_errores_youtube.py` | Translation of YouTube Data API errors |
+| `tests/test_certificados.py` | That HTTPS has certificates to verify against, also in the macOS .app |
 | `tests/test_audio_tidal.py` | tiddl contract, skipped when it is not installed |
 
 CI runs them on every push, deliberately **without** installing

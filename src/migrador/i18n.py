@@ -259,6 +259,17 @@ TEXTOS = {
         "es": "No pude hablar con la API de YouTube. Revisá que haya conexión a internet. ({detalle})",
         "en": "Could not reach the YouTube API. Check that there is an internet connection. ({detalle})",
     },
+    "yt.certificado": {
+        "es": (
+            "Hay conexión, pero no pude verificar el certificado de YouTube. Suele pasar con un "
+            "antivirus o una red de oficina que revisa el tráfico seguro: probá desde otra red. ({detalle})"
+        ),
+        "en": (
+            "There is a connection, but YouTube's certificate could not be verified. This usually "
+            "comes from an antivirus or an office network that inspects secure traffic: try another "
+            "network. ({detalle})"
+        ),
+    },
     "yt.sin_respuesta": {
         "es": "No pude hablar con la API de YouTube. ({detalle})",
         "en": "Could not reach the YouTube API. ({detalle})",
@@ -451,6 +462,10 @@ TEXTOS = {
     "srv.clave_no_funciono": {
         "es": "La clave no funcionó. {error}",
         "en": "The key did not work. {error}",
+    },
+    "srv.clave_sin_probar": {
+        "es": "No se pudo probar la clave, así que no la guardé. {error}",
+        "en": "The key could not be tested, so it was not saved. {error}",
     },
     "srv.trabajo_en_curso": {
         "es": "Ya hay un trabajo en curso. Esperá a que termine o cancelalo.",

@@ -659,7 +659,10 @@ def api_guardar_clave(body):
     try:
         R.api_get("channels", {"part": "id", "id": "UC_x5XG1OV2P6uZZ5FSM9Ttw"}, clave)
     except Exception as e:  # noqa: BLE001
-        raise ValueError(T("srv.clave_no_funciono", error=e)) from e
+        # Sólo si YouTube contestó es un problema de la clave. Si ni siquiera se
+        # llegó (sin red, certificado rechazado), la clave no se llegó a probar.
+        sin_probar = getattr(e, "codigo", "") == "red"
+        raise ValueError(T("srv.clave_sin_probar" if sin_probar else "srv.clave_no_funciono", error=e)) from e
     guardar_clave(clave)
     return {"ok": True}
 

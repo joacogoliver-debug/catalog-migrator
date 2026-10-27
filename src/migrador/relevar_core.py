@@ -14,6 +14,7 @@ Función principal: relevar(url, yt_key, with_codes, progress) -> dict.
 import json
 import random
 import re
+import ssl
 import threading
 import time
 import urllib.error
@@ -45,7 +46,7 @@ class RelevarError(Exception):
     `codigo` clasifica el error para que la interfaz pueda ofrecer la salida que
     corresponde en vez de sólo mostrar un texto. Hoy se usa "cuota", que es el
     único caso donde la app puede proponer algo concreto: cargar una clave
-    propia.
+    propia. "red" marca que ni siquiera se llegó a YouTube.
     """
 
     def __init__(self, mensaje, codigo=""):
@@ -99,12 +100,16 @@ def api_get(endpoint, params, key, intentos=3):
         except (urllib.error.URLError, TimeoutError, ValueError) as e:
             # URLError cubre DNS y conexion; ValueError, una respuesta que no es
             # JSON (un portal cautivo devolviendo HTML, por ejemplo).
+            if isinstance(getattr(e, "reason", None), ssl.SSLCertVerificationError):
+                # Hay conexión, lo que falla es la verificación. Reintentar da
+                # lo mismo y "revisá internet" manda a buscar donde no es.
+                raise RelevarError(T("yt.certificado", detalle=e.reason), "red") from e
             ultimo = e
             if intento < intentos - 1:
                 time.sleep(_espera(intento))
                 continue
-            raise RelevarError(T("yt.sin_conexion", detalle=f"{type(e).__name__}: {e}")) from e
-    raise RelevarError(T("yt.sin_respuesta", detalle=ultimo))
+            raise RelevarError(T("yt.sin_conexion", detalle=f"{type(e).__name__}: {e}"), "red") from e
+    raise RelevarError(T("yt.sin_respuesta", detalle=ultimo), "red")
 
 
 # Lo que devuelve Google no está pensado para mostrarse: viene en inglés, con
