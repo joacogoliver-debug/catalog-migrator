@@ -100,7 +100,7 @@ def api_get(endpoint, params, key, intentos=3):
         except (urllib.error.URLError, TimeoutError, ValueError) as e:
             # URLError cubre DNS y conexion; ValueError, una respuesta que no es
             # JSON (un portal cautivo devolviendo HTML, por ejemplo).
-            if isinstance(getattr(e, "reason", None), ssl.SSLCertVerificationError):
+            if isinstance(e, urllib.error.URLError) and isinstance(e.reason, ssl.SSLCertVerificationError):
                 # Hay conexión, lo que falla es la verificación. Reintentar da
                 # lo mismo y "revisá internet" manda a buscar donde no es.
                 raise RelevarError(T("yt.certificado", detalle=e.reason), "red") from e

@@ -48,12 +48,12 @@ jobs:
       - name: Instalar dependencias
         run: |
           python -m pip install --upgrade pip
-          # openpyxl y las herramientas de desarrollo. Los extras de audio
+          # openpyxl, certifi y las herramientas de desarrollo. Los extras de audio
           # (tiddl / yt-dlp / ffmpeg) NO se instalan a propósito: los tests son
           # offline y tienen que pasar sin ellos, lo que además demuestra que la
           # degradación es correcta. El test de contrato con tiddl se saltea
           # solo cuando la librería no está.
-          pip install openpyxl
+          pip install openpyxl certifi
           pip install -r requirements-dev.txt
 
       - name: Estilo y errores comunes (ruff)

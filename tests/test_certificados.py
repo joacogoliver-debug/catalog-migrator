@@ -10,6 +10,7 @@ que si la verificación igual falla el mensaje diga lo que pasa.
 
 import ssl
 import urllib.error
+from types import SimpleNamespace
 
 import certifi
 import pytest
@@ -19,9 +20,8 @@ from migrador import relevar_core as R
 
 
 def _rutas(cafile=None, capath=None):
-    return ssl.DefaultVerifyPaths(
-        cafile, capath, "SSL_CERT_FILE", "/no/existe/cert.pem", "SSL_CERT_DIR", "/no/existe"
-    )
+    """Lo que devuelve `ssl.get_default_verify_paths()`: None si la ruta no existe."""
+    return SimpleNamespace(cafile=cafile, capath=capath)
 
 
 @pytest.fixture
