@@ -6,7 +6,7 @@ Lo que cambió en cada versión publicada. Los números siguen
 [SemVer](https://semver.org/lang/es/), y las descargas están en
 [Releases](https://github.com/joacogoliver-debug/catalog-migrator/releases).
 
-## [Sin publicar]
+## [1.3.3] — 2026-11-17
 
 ### Corregido
 - **En Mac, «Descargar» no hacía nada.** La ventana propia de la app en macOS
@@ -811,6 +811,7 @@ Primera versión pública.
 - Ejecutables para Windows, macOS y Linux compilados en GitHub Actions, con
   SHA256 y atestación de procedencia.
 
+[1.3.3]: https://github.com/joacogoliver-debug/catalog-migrator/releases/tag/v1.3.3
 [1.3.2]: https://github.com/joacogoliver-debug/catalog-migrator/releases/tag/v1.3.2
 [1.3.1]: https://github.com/joacogoliver-debug/catalog-migrator/releases/tag/v1.3.1
 [1.3.0]: https://github.com/joacogoliver-debug/catalog-migrator/releases/tag/v1.3.0
