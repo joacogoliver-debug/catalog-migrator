@@ -337,7 +337,10 @@ def filas_ingesta(productos, artista, incluir_audio=True, incluir_portadas=True)
                 [
                     p.get("upc") or MARCA_COMPLETAR,
                     p.get("title", ""),
-                    artista,
+                    # Un release que sólo está en Deezer puede figurar a nombre
+                    # de otro artista (una colaboración): va a nombre de quien
+                    # figura, no del canal.
+                    (p.get("artist") or artista) if p.get("origen") == "deezer" else artista,
                     p.get("kind", ""),
                     # Nunca la fecha de subida a YouTube ni un 1 de enero
                     # armado con el año: las dos cosas entraban antes, y
@@ -483,7 +486,10 @@ def _bloque_listado(diag) -> list[str]:
         L.append(T("paq.rep_faltan", n=comp["temas"], artista=comp.get("artista_deezer", "")))
         L.extend(T("paq.rep_faltan_nota").split("\n"))
         for f in comp.get("faltan") or []:
-            donde = T("paq.rep_falta_relevado" if f.get("relevado") else "paq.rep_falta_no_relevado")
+            if f.get("sumado"):
+                donde = T("paq.rep_sumado_al_disco" if f.get("relevado") else "paq.rep_sumado_aparte")
+            else:
+                donde = T("paq.rep_falta_relevado" if f.get("relevado") else "paq.rep_falta_no_relevado")
             datos = ", ".join(
                 x for x in (f.get("tipo"), f.get("fecha"), f"UPC {f['upc']}" if f.get("upc") else "") if x
             )
@@ -574,6 +580,11 @@ def reporte_texto(productos: list[Producto], artista, entorno=None, con_tidal=Fa
         faltan = p.get("faltan_temas") or []
         if faltan:
             faltas.append(T("paq.falta_temas", n=len(faltan), temas=" · ".join(faltan)))
+        de_deezer = [t.get("track", "") for t in p["tracks"] if t.get("origen") == "deezer"]
+        if p.get("origen") == "deezer":
+            faltas.append(T("paq.solo_en_deezer"))
+        elif de_deezer:
+            faltas.append(T("paq.temas_de_deezer", n=len(de_deezer), temas=" · ".join(de_deezer)))
         if faltas:
             hay_pendientes = True
             L.append(f"  {p['folder']}")

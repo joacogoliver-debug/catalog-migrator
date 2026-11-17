@@ -328,6 +328,23 @@ def validar(productos: list[Producto], artista="") -> ResultadoValidacion:
         if p.get("order_unconfirmed"):
             out.append(_hallazgo("aviso", "orden_sin_confirmar", T("val.orden_sin_confirmar"), nombre))
 
+        # Lo que no se vio en YouTube y se sumó con los datos de Deezer. Se
+        # puede entregar, pero antes hay que mirarlo: del release entero no se
+        # sabe la distribuidora ni si es del catálogo, y del tema suelto conviene
+        # confirmar que sigue siendo parte del disco.
+        de_deezer = [t.get("track", "") for t in p.get("tracks", []) if t.get("origen") == "deezer"]
+        if p.get("origen") == "deezer":
+            ajeno = p.get("artist") and artista and comparable(p.get("artist")) != comparable(artista)
+            texto = (
+                T("val.solo_en_deezer_ajeno", titular=p.get("artist"), artista=artista)
+                if ajeno
+                else T("val.solo_en_deezer")
+            )
+            out.append(_hallazgo("aviso", "solo_en_deezer", texto, nombre))
+        elif de_deezer:
+            texto = T("val.temas_de_deezer", n=len(de_deezer), temas=" · ".join(de_deezer))
+            out.append(_hallazgo("aviso", "temas_de_deezer", texto, nombre))
+
         # Deezer tiene temas de este disco que no aparecieron en YouTube. Es un
         # aviso y no un error: el disco se puede entregar así, pero incompleto,
         # y eso hay que saberlo antes y no cuando la distribuidora lo publique.

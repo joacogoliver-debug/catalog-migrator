@@ -152,6 +152,10 @@ class Track(TypedDict):
     # El álbum de Deezer en cuyo tracklist se ubicó. Sirve para juntar temas
     # sin fecha que son del mismo release (ver `productos._agrupar_por_release`).
     album_deezer_id: NotRequired[int]
+    # "deezer" cuando el tema no apareció en YouTube y se sumó con los datos de
+    # Deezer (ver `completitud.sumar_de_deezer`). No tiene video, ni vistas, ni
+    # la línea ℗ de YouTube; su `url` es la de Deezer. Ausente en los demás.
+    origen: NotRequired[str]
 
     # Lo pone `audio.matchear_por_isrc`, cruzando el ISRC contra el índice de
     # la discografía en Tidal. `None` significa que se buscó y no apareció.
@@ -218,6 +222,12 @@ class Producto(TypedDict):
     # tiene en Deezer y que no aparecieron en YouTube. Ausente si no falta nada
     # o si no se pudo comparar.
     faltan_temas: NotRequired[list[str]]
+    # Los pone `completitud.marcar`. `de_deezer` es cuántos de sus tracks no
+    # aparecieron en YouTube y se sumaron con los datos de Deezer. `origen` vale
+    # "deezer" cuando son todos: el release entero no apareció en YouTube, y de
+    # él no se sabe qué distribuidora lo tiene hoy.
+    de_deezer: NotRequired[int]
+    origen: NotRequired[str]
 
 
 class Hallazgo(TypedDict):
@@ -319,6 +329,9 @@ class CruceDeezer(TypedDict):
 
     albumes: dict[int, dict[str, Any]]
     verificados: dict[int, list[tuple[str, int, int]]]
+    # Lo pone `completitud.revisar`: el tracklist entero de cada release al que
+    # le falta algo, para poder sumarlo sin volver a pedírselo a Deezer.
+    discografia: NotRequired[dict[int, list["TemaFaltante"]]]
 
 
 class Relevamiento(TypedDict):
@@ -384,6 +397,11 @@ class TemaFaltante(TypedDict):
     titulo: str
     isrc: str
     duracion_s: int
+    # Dónde va en el release, según Deezer. 0 si Deezer no lo dijo.
+    posicion: int
+    disco: int
+    artista: str  # el artista del tema en Deezer
+    deezer_id: int
 
 
 class ReleaseIncompleto(TypedDict):
@@ -402,6 +420,9 @@ class ReleaseIncompleto(TypedDict):
     relevado: bool
     total: int  # cuántos temas tiene el release en Deezer
     temas: list[TemaFaltante]
+    # Lo que faltaba se sumó al catálogo con los datos de Deezer: adentro del
+    # disco si el disco está, o como un release aparte si no apareció.
+    sumado: bool
 
 
 class Completitud(TypedDict):

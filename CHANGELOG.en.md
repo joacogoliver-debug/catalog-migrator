@@ -6,6 +6,22 @@ What changed in every published version. The numbers follow
 [SemVer](https://semver.org/), and the downloads are in
 [Releases](https://github.com/joacogoliver-debug/catalog-migrator/releases).
 
+## [Unreleased]
+
+### Added
+- **What is only on Deezer goes into the catalog.** The previous version said
+  which recordings Deezer had that did not show up on YouTube, and they had to
+  be added by hand. Now they come in on their own, with their ISRC, UPC and
+  order. If the release is in the catalog and was missing a track, the track
+  goes into the release in its place, provided the release was verified against
+  Deezer and its order is confirmed. If the whole release did not show up, it
+  is built from Deezer's tracklist, flagged "Deezer only" and **not selected by
+  default**: its distributor is unknown, and it may be a collaboration that
+  sits on another artist's channel. In that case it is credited to whoever
+  Deezer credits, and the validation says so. On the catalog this was measured
+  on, 3 tracks went into their releases and 6 releases came in separately, 4 of
+  them collaborations.
+
 ## [1.2.0] — 2026-11-16
 
 ### Added

@@ -293,8 +293,10 @@ report:
   releases, two releases almost entirely and three singles. That they are
   missing does not say why: search may not have returned them, they may sit on
   another artist's channel, as collaborations do, or they may never have been
-  delivered to YouTube. The app does not add them to the package, because it
-  does not know their distributor.
+  delivered to YouTube. The app adds them to the catalog with Deezer's data: a
+  track missing from a release goes into that release, in its place, and a
+  release that did not show up is flagged "Deezer only" and left unselected,
+  because its distributor is not known.
 
 Surveying the same link again within the hour does not spend quota again: what
 YouTube answered stays in memory, never written to disk, and only the codes are
@@ -343,10 +345,11 @@ every fifty tracks use 100 of the key's 10,000 daily units, so a 300-track
 catalog uses about 600. The catalog screen says how much each survey used. It
 is explained under [Where the data comes from](#where-the-data-comes-from).
 
-**The app says Deezer has recordings that did not show up. What do I do?** Look
-at the list: it gives the title and UPC of each release. If they are yours, add
-them to the migration by hand and ask your current distributor for the codes.
-If they are collaborations, they usually sit on the other artist's channel.
+**The app says Deezer has recordings that did not show up. What do I do?** They
+are already in the table, with their codes. Releases flagged "Deezer only" are
+not selected by default: check one by one whether they are yours before
+selecting them. Those "credited to" another artist are collaborations, and most
+likely not part of your catalog.
 
 **I am missing ISRCs or UPCs. What do I do?** Ask your current distributor for
 them before accepting new codes: a new code is a new release, which starts

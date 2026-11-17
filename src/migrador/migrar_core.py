@@ -72,8 +72,11 @@ def relevar_catalogo(
             avance=(lambda h, t: fraccion(0.96 + 0.03 * h / t)) if fraccion else None,
         )
 
+    # Lo que falta y se puede sumar entra al catálogo con los datos de Deezer:
+    # adentro de su disco, o como un release aparte que queda sin elegir.
+    tracks = tracks + completitud_mod.sumar_de_deezer(tracks, comp, res["cruce"])
     prods = productos_mod.group_products(tracks, artist=artista)
-    completitud_mod.marcar(prods, comp)
+    completitud_mod.marcar(prods, comp, res["cruce"])
     log(T("mig.agrupados", productos=len(prods), tracks=len(tracks)))
 
     # Diagnóstico del canal: si no trae descripciones auto-generadas, el
@@ -97,7 +100,8 @@ def relevar_catalogo(
         "unidades": int(res.get("unidades") or 0),
         "reusado": bool(res.get("reusado")),
         "sin_distribuidora": int(res.get("sin_distribuidora") or 0),
-        "temas": len(tracks),
+        # Los que se vieron en YouTube, sin los que se sumaron de Deezer.
+        "temas": len(res["tracks"]),
         "completitud": comp,
     }
     if diag["via_topic"]:
@@ -105,7 +109,7 @@ def relevar_catalogo(
     if diag["descartados"]:
         log(T("mig.descartados", n=diag["descartados"]))
     if diag["cortado_por_cuota"]:
-        log(T("mig.cortado_por_cuota", n=len(tracks)))
+        log(T("mig.cortado_por_cuota", n=diag["temas"]))
     if comp["revisada"] and comp["temas"]:
         log(T("mig.faltan_en_youtube", n=comp["temas"], releases=len(comp["faltan"])))
     return prods, artista, tracks, diag

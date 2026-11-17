@@ -6,6 +6,21 @@ Lo que cambió en cada versión publicada. Los números siguen
 [SemVer](https://semver.org/lang/es/), y las descargas están en
 [Releases](https://github.com/joacogoliver-debug/catalog-migrator/releases).
 
+## [Sin publicar]
+
+### Agregado
+- **Lo que sólo está en Deezer entra al catálogo.** La versión anterior decía
+  qué grabaciones tenía Deezer que no habían aparecido en YouTube, y había que
+  sumarlas a mano. Ahora entran solas, con su ISRC, su UPC y su orden. Si el
+  disco está en el catálogo y le faltaba un tema, el tema entra al disco en su
+  lugar, siempre que el disco se haya verificado contra Deezer y tenga el orden
+  confirmado. Si el disco entero no apareció, se arma con el tracklist de
+  Deezer, queda marcado «sólo en Deezer» y **no se elige solo**: de él no se
+  sabe la distribuidora, y puede ser una colaboración que está en el canal de
+  otro artista. En ese caso queda a nombre de quien figura en Deezer, y la
+  validación lo dice. En el catálogo con que se midió entraron 3 temas a sus
+  discos y 6 lanzamientos aparte, 4 de ellos colaboraciones.
+
 ## [1.2.0] — 2026-11-16
 
 ### Agregado

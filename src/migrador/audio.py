@@ -774,6 +774,11 @@ def fetch_audio(
 
     def _yt(t):
         errs = []
+        if not t.get("video_id"):
+            # Un tema que no apareció en YouTube (se sumó de Deezer): no hay
+            # video del que sacar la referencia.
+            t["audio_error"] = T("aud.sin_video")
+            return t
         ruta, etiqueta, fmt = bajar_referencia_youtube(
             t.get("video_id"), dest_dir, log=lambda *_: None, errores=errs
         )

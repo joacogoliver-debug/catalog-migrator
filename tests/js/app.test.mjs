@@ -413,3 +413,55 @@ test('«Volver a listar» releva el mismo link pidiendo el listado de cero, una 
   ctx.fetch = fetchDeAntes;
   ev(`S.error = ''; S.errorCodigo = ''; S.ocupado = false`);
 });
+
+// ------------------------------------------------------------ lo sumado de Deezer
+
+test('lo que sólo está en Deezer arranca sin elegir, marcado, y a nombre de quien figura', () => {
+  catalogoDeTres();
+  ev(`adoptarCatalogo({ ...S.catalogo, productos: [
+        ...S.catalogo.productos,
+        { id: 'd', titulo: 'Es Mi Culpa', tipo: 'single', anio: 2026, upc: '8', distribuidora: '', tracks: 1, con_isrc: 1,
+          origen: 'deezer', de_deezer: 1, artista: 'Walter <Encina>', detalle: [] },
+        { id: 'e', titulo: 'Propio', tipo: 'single', anio: 2026, upc: '9', distribuidora: '', tracks: 1, con_isrc: 1,
+          origen: 'deezer', de_deezer: 1, artista: 'A', detalle: [] },
+      ] })`);
+  assert.deepEqual([...ev('[...S.seleccion]')], ['a', 'b', 'c'], 'no se eligen solos: no se sabe si son del catálogo');
+  const html = ev('tablaProductos(S.catalogo.productos)');
+  assert.equal(html.split('sólo en Deezer').length - 1, 2);
+  assert.ok(html.includes('a nombre de Walter &lt;Encina&gt;'), 'la colaboración dice de quién es, escapado');
+  assert.equal(html.split('a nombre de').length - 1, 1, 'el propio no lo dice');
+  ev(`S.filtro.faltantes = true`);
+  assert.deepEqual([...ev('productosFiltrados().map((p) => p.id)')], ['b', 'c', 'd', 'e'], 'entran a «algo que completar»');
+  ev(`S.filtro.faltantes = false`);
+});
+
+test('el disco con temas sumados de Deezer lo dice en el badge y en cada tema', () => {
+  catalogoDeTres();
+  ev(`Object.assign(S.catalogo.productos[2], { de_deezer: 1, detalle: [
+        { n: 1, titulo: 'Uno', isrc: 'AR1', duracion: '3:20', views: 5, origen: '' },
+        { n: 2, titulo: 'Dos', isrc: 'AR2', duracion: '3:20', views: 0, origen: 'deezer' }] });
+      S.expandidos.add('c')`);
+  const html = ev('tablaProductos(S.catalogo.productos)');
+  assert.ok(html.includes('1 tema de Deezer'), html);
+  assert.equal(html.split('(de Deezer: no apareció en YouTube)').length - 1, 1, 'sólo en el tema que vino de Deezer');
+  ev(`S.catalogo.productos[2].de_deezer = 3`);
+  assert.ok(ev('tablaProductos(S.catalogo.productos)').includes('3 temas de Deezer'));
+});
+
+test('la lista de lo que faltaba dice qué pasó con cada lanzamiento', () => {
+  const comp = { ...COMP_FALTAN, faltan: [
+    { ...COMP_FALTAN.faltan[0], sumado: true },
+    { ...COMP_FALTAN.faltan[1], sumado: true },
+    { ...COMP_FALTAN.faltan[0], titulo: 'Vuela', sumado: false },
+  ] };
+  catalogoDeTres();
+  ev(`S.catalogo.diagnostico = ${JSON.stringify({ via: 'busqueda', temas: 290, unidades: 607, completitud: comp })}; S.verFaltantes = true`);
+  const html = ev('avisoCanal()');
+  assert.ok(html.includes('sumé al catálogo'), html);
+  assert.ok(html.includes('sumado a su disco') && html.includes('sumado aparte, sin elegir') && html.includes('sin sumar'), html);
+  for (const idioma of ['es', 'en']) {
+    ev(`ponerIdioma('${idioma}')`);
+    assert.ok(!/paso2\.[a-z_]+|tabla\.[a-z_]+/.test(ev('avisoCanal()')), idioma);
+  }
+  ev(`ponerIdioma('es'); S.verFaltantes = false`);
+});

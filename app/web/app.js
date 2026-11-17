@@ -319,7 +319,8 @@ function productosFiltrados() {
  *  el orden sin confirmar. En un catálogo de quinientos productos, «¿qué me
  *  falta?» no se puede contestar scrolleando. */
 function leFaltaAlgo(p) {
-  return !p.upc || p.con_isrc < p.tracks || !!p.orden_estimado || (p.faltan || []).length > 0;
+  return !p.upc || p.con_isrc < p.tracks || !!p.orden_estimado || (p.faltan || []).length > 0
+    || p.origen === 'deezer' || p.de_deezer > 0;
 }
 
 /** Los elegidos que el filtro esconde. No entran al paquete, porque lo que
@@ -677,9 +678,13 @@ function bloqueProgreso(conCancelar = true) {
  *  que mirarla. */
 function avisoFaltantes(comp) {
   if (!comp || !comp.revisada || !comp.temas) return '';
+  const estado = (f) => {
+    if (!f.sumado) return T('paso2.faltan_sin_sumar');
+    return T(f.relevado ? 'paso2.faltan_sumado_disco' : 'paso2.faltan_sumado_aparte');
+  };
   const fila = (f) => `
     <li><strong>${esc(f.titulo)}</strong>
-      <span class="muted">${esc([f.tipo, (f.fecha || '').slice(0, 4), f.upc ? 'UPC ' + f.upc : ''].filter(Boolean).join(', '))}</span>
+      <span class="muted">${esc([f.tipo, (f.fecha || '').slice(0, 4), f.upc ? 'UPC ' + f.upc : '', estado(f)].filter(Boolean).join(', '))}</span>
       <span class="sub">${esc(T(f.temas.length === 1 ? 'paso2.faltan_de_uno' : 'paso2.faltan_de', { n: f.temas.length, total: f.total }))}
         ${esc(f.temas.map((t) => t.titulo).join(' · '))}</span></li>`;
   const grupo = (titulo, items) => (items.length
@@ -936,6 +941,12 @@ function tablaProductos(ps) {
     if (!p.upc) avisos.push(`<span class="badge badge-warn">${esc(T('tabla.sin_upc'))}</span>`);
     if (p.con_isrc < p.tracks) avisos.push(`<span class="badge badge-warn">${esc(T('tabla.isrc_de', { n: p.con_isrc, total: p.tracks }))}</span>`);
     if (p.orden_estimado) avisos.push(`<span class="badge badge-warn">${esc(T('tabla.orden_estimado'))}</span>`);
+    if (p.origen === 'deezer') {
+      avisos.push(`<span class="badge badge-warn">${esc(T('tabla.solo_deezer'))}</span>`);
+    } else if (p.de_deezer) {
+      avisos.push(`<span class="badge badge-warn">${esc(T(p.de_deezer === 1 ? 'tabla.de_deezer_uno' : 'tabla.de_deezer', { n: p.de_deezer }))}</span>`);
+    }
+    const ajeno = p.origen === 'deezer' && p.artista && S.catalogo && p.artista !== S.catalogo.artista;
     const faltan = p.faltan || [];
     if (faltan.length) avisos.push(`<span class="badge badge-warn">${esc(T(faltan.length === 1 ? 'tabla.faltan_temas_uno' : 'tabla.faltan_temas', { n: faltan.length }))}</span>`);
 
@@ -946,7 +957,7 @@ function tablaProductos(ps) {
           <tbody>${p.detalle.map((t) => `
             <tr>
               <td class="mono">${esc(t.n)}</td>
-              <td>${esc(t.titulo)}</td>
+              <td>${esc(t.titulo)}${t.origen === 'deezer' && p.origen !== 'deezer' ? ` <span class="muted">${esc(T('tabla.tema_de_deezer'))}</span>` : ''}</td>
               <td class="mono">${t.isrc ? esc(t.isrc) : `<span class="muted">${esc(T('tabla.sin_isrc'))}</span>`}</td>
               <td class="mono">${esc(t.duracion)}</td>
               <td class="td-num">${num(t.views)}</td>
@@ -969,7 +980,7 @@ function tablaProductos(ps) {
       </td>
       <td>
         <div class="celda-titulo">${esc(p.titulo)}</div>
-        <div class="celda-sub">${esc(T(p.tracks === 1 ? 'comun.n_tracks_uno' : 'comun.n_tracks', { n: p.tracks }))}${p.sello ? ', ' + esc(p.sello) : ''}</div>
+        <div class="celda-sub">${esc(T(p.tracks === 1 ? 'comun.n_tracks_uno' : 'comun.n_tracks', { n: p.tracks }))}${p.sello ? ', ' + esc(p.sello) : ''}${ajeno ? ', ' + esc(T('tabla.a_nombre_de', { artista: p.artista })) : ''}</div>
       </td>
       <td><span class="tipo">${esc(p.tipo)}</span></td>
       <td class="nowrap mono">${esc(p.anio) || `<span class="muted">${esc(T('tabla.sin_fecha'))}</span>`}</td>
@@ -1195,6 +1206,7 @@ const CODIGOS_HALLAZGO = [
   'anio_futuro', 'anio_absurdo', 'anio_invalido', 'producto_sin_titulo', 'track_sin_titulo',
   'texto_como_formula', 'isrc_compartido', 'isrc_match_dudoso', 'upc_no_verificado',
   'upc_mezclado', 'release_en_dos_distribuidoras', 'album_incompleto',
+  'solo_en_deezer', 'temas_de_deezer',
   'artista_no_principal', 'portada_modo_color', 'audio_no_apto', 'isrc_confianza_media',
   'campos_a_completar',
 ];
@@ -1768,7 +1780,9 @@ function actualizarResumenSeleccion() {
  *  obligue a relevar de nuevo, que cuesta cuota de YouTube. */
 function adoptarCatalogo(cat) {
   S.catalogo = cat;
-  S.seleccion = new Set(cat.productos.map((p) => p.id));
+  // Arranca con todo elegido menos lo que sólo está en Deezer: de eso no se
+  // sabe la distribuidora ni si es del catálogo, y lo tiene que elegir alguien.
+  S.seleccion = new Set(cat.productos.filter((p) => p.origen !== 'deezer').map((p) => p.id));
   S.expandidos = new Set();
   S.verFaltantes = false;
   S.filtro = {

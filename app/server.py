@@ -559,6 +559,12 @@ def producto_json(p):
         "con_isrc": sum(1 for t in p.get("tracks", []) if t.get("isrc")),
         # Los temas que este release tiene en Deezer y no aparecieron en YouTube.
         "faltan": list(p.get("faltan_temas") or []),
+        # Lo que no se vio en YouTube y se sumó de Deezer: el release entero
+        # ("deezer") o algunos de sus temas (`de_deezer`). `artista` es a nombre
+        # de quién queda, que en una colaboración no es el del canal.
+        "origen": p.get("origen") or "",
+        "de_deezer": int(p.get("de_deezer") or 0),
+        "artista": p.get("artist") or "",
         "detalle": [
             {
                 "n": t.get("track_number") or "",
@@ -567,6 +573,7 @@ def producto_json(p):
                 "duracion": _mmss(t.get("duration_s")),
                 "views": t.get("views", 0),
                 "url": t.get("url", ""),
+                "origen": t.get("origen") or "",
             }
             for t in p.get("tracks", [])
         ],

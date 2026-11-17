@@ -16,12 +16,14 @@ Lo que se fija acá:
   - si Deezer no contesta, la revisión queda sin hacer y se dice
 """
 
+from typing import Any
+
 import pytest
 
 from migrador import completitud as C
 from migrador import productos as P
 from migrador import relevar_core as R
-from migrador.contratos import Completitud, CruceDeezer, ReleaseIncompleto, TemaFaltante
+from migrador.contratos import Completitud, CruceDeezer, ReleaseIncompleto, TemaFaltante, Track
 
 ARTISTA = 4209085
 
@@ -39,6 +41,7 @@ class FalsoDeezer:
         self.de_otros = de_otros or {}
         self.caidos = set()
         self.pedidos = []
+        self.titulares = {}  # id de álbum -> a nombre de quién figura, si no es el del canal
 
     def __call__(self, ruta):
         self.pedidos.append(ruta)
@@ -56,8 +59,28 @@ class FalsoDeezer:
         if aid in self.caidos:
             return None
         if len(partes) == 3 and partes[2] == "tracks":
-            return {"data": self.discos[aid][3]}
-        return {"id": aid, "upc": f"UPC{aid}", "title": self.discos[aid][0]}
+            # Como contesta Deezer: cada tema con su posición, su disco y su
+            # artista. Lo que el test no diga se completa en orden.
+            return {
+                "data": [
+                    {
+                        "id": aid * 100 + n,
+                        "track_position": n,
+                        "disk_number": 1,
+                        "artist": {"name": self.titulares.get(aid, "Los del Ejemplo")},
+                        **t,
+                    }
+                    for n, t in enumerate(self.discos[aid][3], 1)
+                ]
+            }
+        return {
+            "id": aid,
+            "upc": f"UPC{aid}",
+            "title": self.discos[aid][0],
+            "label": "Sello de Deezer",
+            "release_date": self.discos[aid][2],
+            "artist": {"id": 1, "name": self.titulares.get(aid, "Los del Ejemplo")},
+        }
 
 
 def track(hacer_track, titulo, album, isrc="", dur=200, aid=None, fecha="2020-01-01"):
@@ -412,3 +435,256 @@ def test_los_productos_sin_distribuidora_tienen_su_opcion_en_el_filtro(hacer_tra
     ]
     opciones = P.distributor_options(P.group_products(tracks, "X"))
     assert opciones == [{"name": "", "count": 2}, {"name": "ONErpm", "count": 1}]
+
+
+# ============================================================
+# Sumar al catálogo lo que sólo está en Deezer
+# ============================================================
+#
+# Informar lo que falta dejaba el trabajo a medias: había que sumarlo a mano a
+# la hoja de ingesta, con sus códigos. Deezer ya los tiene, así que entra solo,
+# marcado, y con una regla para cada caso.
+
+
+def ubicado(t, pos, disco=1):
+    """El track ya ubicado en el tracklist de su álbum, como lo deja el cruce."""
+    t["track_number"], t["disc_number"], t["orden_fuente"] = pos, disco, "deezer"
+    return t
+
+
+def _catalogo(hacer_track, deezer, discos, tracks, titulares=None):
+    falso = deezer(discos)
+    falso.titulares.update(titulares or {})
+    datos = cruce(10)
+    comp = C.revisar(tracks, datos, "Los del Ejemplo")
+    todos = tracks + C.sumar_de_deezer(tracks, comp, datos)
+    productos = C.marcar(P.group_products(todos, "Los del Ejemplo"), comp, datos)
+    return {p["title"]: p for p in productos}, comp, falso
+
+
+def test_el_tema_que_faltaba_entra_al_disco_en_su_lugar(hacer_track, deezer):
+    discos = {
+        10: ("Disco", "album", "2020-01-01", [tema("Uno", "AR1"), tema("Dos", "AR2"), tema("Tres", "AR3")])
+    }
+    tracks = [
+        ubicado(track(hacer_track, "Uno", "Disco", isrc="AR1", aid=10), 1),
+        ubicado(track(hacer_track, "Tres", "Disco", isrc="AR3", aid=10), 3),
+    ]
+    for t in tracks:
+        t["upc"], t["distributor"] = "UPC10", "ONErpm"
+    productos, comp, _f = _catalogo(hacer_track, deezer, discos, tracks)
+
+    disco = productos["Disco"]
+    assert [(t.get("track_number"), t["track"]) for t in disco["tracks"]] == [
+        (1, "Uno"),
+        (2, "Dos"),
+        (3, "Tres"),
+    ]
+    nuevo = disco["tracks"][1]
+    assert set(Track.__required_keys__) <= set(nuevo), "con la forma de cualquier track"
+    assert (nuevo.get("origen"), nuevo["isrc"], nuevo["video_id"], nuevo["views"]) == ("deezer", "AR2", "", 0)
+    assert nuevo["url"] == "https://www.deezer.com/track/1002"
+    assert (disco["distributor"], disco["upc"]) == ("ONErpm", "UPC10"), "el disco sigue siendo el mismo"
+    assert disco["order_unconfirmed"] is False
+    assert disco.get("de_deezer") == 1 and "origen" not in disco
+    assert "faltan_temas" not in disco, "ya no falta: está"
+    assert comp["faltan"][0]["sumado"] is True
+
+
+def test_a_un_disco_con_el_orden_estimado_no_se_le_suma_nada(hacer_track, deezer):
+    """Mezclar la posición real de un tema con las estimadas de los demás daría
+    números repetidos. Ahí se avisa, como antes."""
+    discos = {
+        10: ("Disco", "album", "2020-01-01", [tema("Uno", "AR1"), tema("Dos", "AR2"), tema("Tres", "AR3")])
+    }
+    tracks = [
+        ubicado(track(hacer_track, "Uno", "Disco", isrc="AR1", aid=10), 1),
+        track(hacer_track, "Otro Nombre", "Disco"),  # del disco en YouTube, sin ubicar en Deezer
+    ]
+    productos, comp, _f = _catalogo(hacer_track, deezer, discos, tracks)
+    disco = productos["Disco"]
+    assert disco["track_count"] == 2 and "de_deezer" not in disco
+    assert disco.get("faltan_temas") == ["Dos", "Tres"]
+    assert comp["faltan"][0]["sumado"] is False
+
+
+def test_si_el_lugar_del_tema_esta_ocupado_no_se_lo_suma(hacer_track, deezer):
+    discos = {10: ("Disco", "album", "2020-01-01", [tema("Uno", "AR1"), tema("Dos", "AR2")])}
+    # YouTube tiene en el lugar 2 otra cosa, que el cruce ubicó ahí.
+    tracks = [
+        ubicado(track(hacer_track, "Uno", "Disco", isrc="AR1", aid=10), 1),
+        ubicado(track(hacer_track, "Dos (En Vivo)", "Disco", aid=10), 2),
+    ]
+    productos, comp, _f = _catalogo(hacer_track, deezer, discos, tracks)
+    assert productos["Disco"]["track_count"] == 2
+    assert comp["faltan"][0]["sumado"] is False
+
+
+def test_un_disco_que_no_aparecio_se_arma_entero_con_los_datos_de_deezer(hacer_track, deezer):
+    discos = {
+        10: ("Disco", "album", "2020-01-01", [tema("Uno", "AR1")]),
+        30: (
+            "Otro Disco",
+            "album",
+            "2007-06-16",
+            [tema("A", "US1", 181), tema("Uno", "AR1"), tema("C", "US3")],
+        ),
+    }
+    tracks = [ubicado(track(hacer_track, "Uno", "Disco", isrc="AR1", aid=10), 1)]
+    productos, comp, falso = _catalogo(hacer_track, deezer, discos, tracks)
+
+    otro = productos["Otro Disco"]
+    assert otro.get("origen") == "deezer" and otro.get("de_deezer") == 3
+    assert [t["track"] for t in otro["tracks"]] == ["A", "Uno", "C"], (
+        "entero: también el tema que ya estaba en otro disco"
+    )
+    assert (otro["upc"], otro["label"], otro["release_date"], otro["release_year"]) == (
+        "UPC30",
+        "Sello de Deezer",
+        "2007-06-16",
+        2007,
+    )
+    assert otro["distributor"] == "", "la distribuidora sólo la publica YouTube: no se inventa"
+    assert otro["order_unconfirmed"] is False and otro["artist"] == "Los del Ejemplo"
+    assert otro["tracks"][0]["duration_s"] == 181 and otro["tracks"][0]["artists"] == ["Los del Ejemplo"]
+    assert "origen" not in productos["Disco"]
+    assert not [r for r in falso.pedidos if r.startswith("search")], "todo sale de lo que ya se pidió"
+    assert [f["sumado"] for f in comp["faltan"]] == [True]
+
+
+def test_un_single_que_no_aparecio_se_llama_como_su_tema(hacer_track, deezer):
+    discos = {
+        10: ("Disco", "album", "2020-01-01", [tema("Uno", "AR1")]),
+        31: ("Suelto", "single", "2026-03-19", [tema("Suelto", "AR9")]),
+    }
+    tracks = [ubicado(track(hacer_track, "Uno", "Disco", isrc="AR1", aid=10), 1)]
+    productos, _c, _f = _catalogo(hacer_track, deezer, discos, tracks)
+    suelto = productos["Suelto"]
+    assert (suelto["kind"], suelto["track_count"], suelto.get("origen")) == ("single", 1, "deezer")
+    assert suelto["tracks"][0]["album"] == P.SIN_ALBUM
+
+
+def test_una_colaboracion_queda_a_nombre_de_quien_figura(hacer_track, deezer):
+    """Del catálogo real: cuatro de los seis lanzamientos que sólo estaban en
+    Deezer figuraban a nombre de otro artista. Deezer los lista en la
+    discografía de los dos, y adjudicárselos al del canal era regalarle un
+    release ajeno."""
+    from migrador import paquete
+    from migrador import validar as V
+
+    discos = {
+        10: ("Disco", "album", "2020-01-01", [tema("Uno", "AR1")]),
+        31: ("Es Mi Culpa", "single", "2026-03-19", [tema("Es Mi Culpa", "AR9")]),
+        32: ("Propio", "single", "2026-04-01", [tema("Propio", "AR8")]),
+    }
+    tracks = [ubicado(track(hacer_track, "Uno", "Disco", isrc="AR1", aid=10), 1)]
+    productos, _c, _f = _catalogo(hacer_track, deezer, discos, tracks, titulares={31: "Walter Encina"})
+
+    assert productos["Es Mi Culpa"]["artist"] == "Walter Encina"
+    assert productos["Propio"]["artist"] == "Los del Ejemplo"
+
+    avisos = {
+        h["producto"]: h["mensaje"]
+        for h in V.validar(list(productos.values()), "Los del Ejemplo")["hallazgos"]
+        if h["codigo"] == "solo_en_deezer"
+    }
+    assert "a nombre de Walter Encina, no de Los del Ejemplo" in avisos["Es Mi Culpa"]
+    assert "Walter" not in avisos["Propio"] and "no apareció en YouTube" in avisos["Propio"]
+
+    filas = {
+        f[1]: f for f in paquete.filas_ingesta(list(productos.values()), "Los del Ejemplo", False, False)
+    }
+    assert filas["Es Mi Culpa"][2] == "Walter Encina", "en la hoja, a nombre de quien figura"
+    assert filas["Disco"][2] == "Los del Ejemplo" and filas["Propio"][2] == "Los del Ejemplo"
+
+
+def test_la_validacion_y_el_reporte_dicen_que_se_sumo_de_deezer(hacer_track, deezer):
+    from migrador import paquete
+    from migrador import validar as V
+
+    discos = {
+        10: ("Disco", "album", "2020-01-01", [tema("Uno", "AR1"), tema("Dos", "AR2")]),
+        30: ("Otro Disco", "album", "2007-06-16", [tema("A", "US1")]),
+    }
+    tracks = [ubicado(track(hacer_track, "Uno", "Disco", isrc="AR1", aid=10), 1)]
+    productos, comp, _f = _catalogo(hacer_track, deezer, discos, tracks)
+    lista = list(productos.values())
+
+    por_codigo = {h["codigo"]: h for h in V.validar(lista, "Los del Ejemplo")["hallazgos"]}
+    assert (
+        por_codigo["temas_de_deezer"]["producto"] == "Disco"
+        and "(1): Dos." in por_codigo["temas_de_deezer"]["mensaje"]
+    )
+    assert por_codigo["solo_en_deezer"]["nivel"] == "aviso"
+    assert "album_incompleto" not in por_codigo
+
+    diag = {"via": "busqueda", "temas": 1, "unidades": 101, "cortado_por_cuota": False, "completitud": comp}
+    texto = paquete.reporte_texto(lista, "Los del Ejemplo", diag=diag)
+    assert "[sumado a su disco]" in texto and "[sumado como lanzamiento aparte, sólo en Deezer]" in texto
+    assert "sumados con los datos de Deezer (1): Dos" in texto
+    assert "no apareció en YouTube: los datos son de Deezer" in texto
+
+
+def test_un_tema_sin_video_no_va_a_buscar_la_referencia_a_youtube(hacer_track, deezer, monkeypatch, tmp_path):
+    from migrador import audio as A
+
+    discos = {
+        10: ("Disco", "album", "2020-01-01", [tema("Uno", "AR1")]),
+        31: ("Suelto", "single", "2026-03-19", [tema("Suelto", "AR9")]),
+    }
+    tracks = [ubicado(track(hacer_track, "Uno", "Disco", isrc="AR1", aid=10), 1)]
+    productos, _c, _f = _catalogo(hacer_track, deezer, discos, tracks)
+    pedidos = []
+
+    def bajar(video_id, dest_dir, log=print, errores=None):
+        pedidos.append(video_id)
+        return None, None, None
+
+    monkeypatch.setattr(A, "bajar_referencia_youtube", bajar)
+    A.fetch_audio([productos["Suelto"], productos["Disco"]], dest_dir=str(tmp_path), log=lambda *_: None)
+    assert pedidos == [productos["Disco"]["tracks"][0]["video_id"]], "sólo el que tiene video"
+    assert "no apareció en YouTube" in productos["Suelto"]["tracks"][0].get("audio_error", "")
+
+
+def test_la_tabla_recibe_de_donde_salio_cada_cosa(hacer_track, deezer):
+    import server
+
+    discos = {
+        10: ("Disco", "album", "2020-01-01", [tema("Uno", "AR1"), tema("Dos", "AR2")]),
+        31: ("Es Mi Culpa", "single", "2026-03-19", [tema("Es Mi Culpa", "AR9")]),
+    }
+    tracks = [ubicado(track(hacer_track, "Uno", "Disco", isrc="AR1", aid=10), 1)]
+    productos, _c, _f = _catalogo(hacer_track, deezer, discos, tracks, titulares={31: "Walter Encina"})
+
+    disco: dict[str, Any] = server.producto_json(productos["Disco"])
+    assert (disco["origen"], disco["de_deezer"]) == ("", 1)
+    assert [t["origen"] for t in disco["detalle"]] == ["", "deezer"]
+    ajeno = server.producto_json(productos["Es Mi Culpa"])
+    assert (ajeno["origen"], ajeno["de_deezer"], ajeno["artista"]) == ("deezer", 1, "Walter Encina")
+
+
+def test_el_diagnostico_cuenta_los_temas_de_youtube_no_los_sumados(hacer_track, deezer, monkeypatch):
+    """«290 temas, que gastaron 607 unidades» habla de lo que se listó en
+    YouTube: los que se suman de Deezer no gastaron nada y no entran ahí."""
+    from migrador import migrar_core as M
+
+    deezer(
+        {
+            10: ("Disco", "album", "2020-01-01", [tema("Uno", "AR1"), tema("Dos", "AR2")]),
+            30: ("Otro Disco", "album", "2007-06-16", [tema("A", "US1"), tema("B", "US2")]),
+        }
+    )
+    uno = ubicado(track(hacer_track, "Uno", "Disco", isrc="AR1", aid=10), 1)
+    relevado = {
+        "artist": "Los del Ejemplo",
+        "channel_title": "Los del Ejemplo - Topic",
+        "tracks": [uno],
+        "codes": {"isrc": 1, "upc": 1, "matched": 1, "source": "Deezer", "fallas": 0},
+        "cruce": cruce(10),
+        "via": "busqueda",
+        "unidades": 101,
+    }
+    monkeypatch.setattr(M.relevar_core, "relevar", lambda *a, **k: relevado)
+    prods, _artista, todos, diag = M.relevar_catalogo("https://www.youtube.com/@x", "k")
+    assert diag["temas"] == 1 and len(todos) == 4
+    assert {p["title"]: p["track_count"] for p in prods} == {"Disco": 2, "Otro Disco": 2}

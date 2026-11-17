@@ -468,6 +468,10 @@ TEXTOS = {
     },
     "aud.sin_ytdlp": {"es": "yt-dlp no está instalado", "en": "yt-dlp is not installed"},
     "aud.timeout": {"es": "tardó demasiado y se canceló", "en": "it took too long and was cancelled"},
+    "aud.sin_video": {
+        "es": "no apareció en YouTube: no hay video del que sacar la referencia",
+        "en": "it did not show up on YouTube: there is no video to take the reference from",
+    },
     "aud.sin_archivo": {
         "es": "yt-dlp terminó pero no dejó ningún archivo",
         "en": "yt-dlp finished but left no file",
@@ -852,6 +856,40 @@ TEXTOS = {
         "es": "El orden de los tracks es estimado por fecha de subida y no está confirmado.",
         "en": "Track order is estimated from the upload date and is not confirmed.",
     },
+    "val.solo_en_deezer": {
+        "es": (
+            "Este lanzamiento no apareció en YouTube: los datos son de Deezer y no se sabe qué "
+            "distribuidora lo tiene hoy. Puede ser una colaboración que está en el canal de otro "
+            "artista. Confirmá que es parte del catálogo antes de migrarlo."
+        ),
+        "en": (
+            "This release did not show up on YouTube: the data comes from Deezer and its current "
+            "distributor is unknown. It may be a collaboration that sits on another artist's "
+            "channel. Confirm it belongs to the catalog before migrating it."
+        ),
+    },
+    "val.solo_en_deezer_ajeno": {
+        "es": (
+            "Este lanzamiento no apareció en YouTube y en Deezer figura a nombre de {titular}, no "
+            "de {artista}: es una colaboración, y lo más probable es que el master sea del otro "
+            "artista. No lo migres sin confirmar de quién es."
+        ),
+        "en": (
+            "This release did not show up on YouTube, and on Deezer it is credited to {titular}, "
+            "not to {artista}: it is a collaboration, and the master most likely belongs to the "
+            "other artist. Do not migrate it without confirming whose it is."
+        ),
+    },
+    "val.temas_de_deezer": {
+        "es": (
+            "Temas de este disco que no aparecieron en YouTube y se sumaron con los datos de "
+            "Deezer ({n}): {temas}. El disco es el mismo, lo dice el UPC; confirmá que siguen en él."
+        ),
+        "en": (
+            "Tracks on this release that did not show up on YouTube and were added from Deezer "
+            "({n}): {temas}. It is the same release, per its UPC; confirm they are still on it."
+        ),
+    },
     "val.album_incompleto": {
         "es": (
             "Deezer tiene en este disco temas que no aparecieron en YouTube ({n}): {temas}. "
@@ -1080,18 +1118,33 @@ TEXTOS = {
     },
     "paq.rep_faltan_nota": {
         "es": (
-            "No están en este paquete. Puede ser que el buscador no las haya traído,\n"
-            "que estén en el canal de otro artista (colaboraciones) o que nunca se\n"
-            "hayan entregado a YouTube. Si son parte del catálogo, hay que sumarlas a mano."
+            "Puede ser que el buscador no las haya traído, que estén en el canal de\n"
+            "otro artista (colaboraciones) o que nunca se hayan entregado a YouTube.\n"
+            "Las marcadas como sumadas están en el catálogo con los datos de Deezer,\n"
+            "y en este paquete sólo si se eligieron. Las demás hay que sumarlas a mano."
         ),
         "en": (
-            "They are not in this package. Search may not have returned them, they\n"
-            "may sit on another artist's channel (collaborations) or they may never\n"
-            "have been delivered to YouTube. If they belong to the catalog, add them by hand."
+            "Search may not have returned them, they may sit on another artist's\n"
+            "channel (collaborations) or they may never have been delivered to YouTube.\n"
+            "Those flagged as added are in the catalog with Deezer's data, and in this\n"
+            "package only if they were picked. The rest have to be added by hand."
         ),
     },
     "paq.rep_falta_relevado": {"es": "está en el catálogo, incompleto", "en": "in the catalog, incomplete"},
     "paq.rep_falta_no_relevado": {"es": "no apareció en YouTube", "en": "did not show up on YouTube"},
+    "paq.rep_sumado_al_disco": {"es": "sumado a su disco", "en": "added to its release"},
+    "paq.rep_sumado_aparte": {
+        "es": "sumado como lanzamiento aparte, sólo en Deezer",
+        "en": "added as a separate release, on Deezer only",
+    },
+    "paq.solo_en_deezer": {
+        "es": "no apareció en YouTube: los datos son de Deezer y no se sabe su distribuidora",
+        "en": "did not show up on YouTube: the data comes from Deezer and the distributor is unknown",
+    },
+    "paq.temas_de_deezer": {
+        "es": "temas que no aparecieron en YouTube, sumados con los datos de Deezer ({n}): {temas}",
+        "en": "tracks that did not show up on YouTube, added from Deezer ({n}): {temas}",
+    },
     "paq.rep_faltan_parcial": {
         "es": "(la comparación quedó parcial: Deezer no contestó por todos los lanzamientos)",
         "en": "(the comparison is partial: Deezer did not answer for every release)",

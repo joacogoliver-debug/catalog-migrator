@@ -293,8 +293,10 @@ cambia dos cosas, y la app las dice en la pantalla y en el reporte:
   su UPC. En ese mismo catálogo eran 26: temas sueltos de cuatro discos, dos
   discos casi enteros y tres singles. Que falten no dice por qué: puede ser que
   el buscador no las trajo, que estén en el canal de otro artista, como pasa
-  con las colaboraciones, o que nunca se hayan entregado a YouTube. La app no
-  las agrega al paquete, porque de ellas no conoce la distribuidora.
+  con las colaboraciones, o que nunca se hayan entregado a YouTube. La app las
+  suma al catálogo con los datos de Deezer: el tema que faltaba en un disco
+  entra al disco, en su lugar, y el disco que no apareció queda marcado «sólo
+  en Deezer» y sin elegir, porque de él no se conoce la distribuidora.
 
 Relevar de nuevo el mismo link dentro de la hora no vuelve a gastar cuota: lo
 que YouTube contestó queda en memoria, sin escribirse en el disco, y sólo se
@@ -344,9 +346,10 @@ gastó cada relevamiento. Está explicado en
 [De dónde salen los datos](#de-dónde-salen-los-datos).
 
 **La app dice que Deezer tiene grabaciones que no aparecieron. ¿Qué hago?**
-Mirá la lista: trae el título y el UPC de cada lanzamiento. Si son tuyas,
-sumalas a mano a la migración y pedile los códigos a tu distribuidora actual.
-Si son colaboraciones, suelen estar en el canal del otro artista.
+Ya están en la tabla, con sus códigos. Los lanzamientos marcados «sólo en
+Deezer» no vienen elegidos: revisá uno por uno si son tuyos antes de elegirlos.
+Los que dicen «a nombre de» otro artista son colaboraciones, y lo más probable
+es que no sean parte de tu catálogo.
 
 **Me faltan ISRC o UPC. ¿Qué hago?** Pedíselos a tu distribuidora actual antes
 de aceptar códigos nuevos: un código nuevo es un release nuevo, que arranca sin

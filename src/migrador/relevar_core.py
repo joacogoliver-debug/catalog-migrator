@@ -999,6 +999,7 @@ def deezer_albumes(album_ids):
             # artista de Deezer es el del canal, sin adivinarlo por el nombre.
             "artist_id": (a.get("artist") or {}).get("id") or 0,
             "artist_name": (a.get("artist") or {}).get("name") or "",
+            "label": a.get("label", "") or "",
         }
 
     out = {}
