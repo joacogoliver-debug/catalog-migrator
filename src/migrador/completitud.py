@@ -286,6 +286,12 @@ def _ubicar(t: Track, temas: list[TemaFaltante]) -> TemaFaltante | None:
     los títulos a cien caracteres y les pone puntos suspensivos, y el
     enganchado de seis temas de un disco no coincidía nunca con el de Deezer.
     """
+    # Por su ISRC, si lo tiene y está una sola vez en el tracklist: es la
+    # prueba más fuerte, y la única que separa dos temas que se llaman igual.
+    if t.get("isrc"):
+        por_codigo = [x for x in temas if x["isrc"] == t["isrc"]]
+        if len(por_codigo) == 1:
+            return por_codigo[0]
     titulo, duracion = comparable(t["track"]), t.get("duration_s") or 0
     crudo = (t["track"] or "").rstrip()
     cortado = comparable(crudo.rstrip(".…")) if crudo.endswith(("...", "…")) else ""
@@ -315,6 +321,27 @@ def _poner(t: Track, x: TemaFaltante, album_id):
         t["isrc"], t["match"] = x["isrc"], "alta"
 
 
+def _soltar_los_que_chocan(grupo: list[Track]):
+    """Saca de su lugar a los temas de un disco que quedaron en el mismo lugar.
+
+    El cruce ubica por título, y un single trae a veces dos temas que se llaman
+    igual: «One More Time (Radio Edit)» de 236 segundos y de 321, que en Deezer
+    son el «Short Radio Edit» y el «Radio Edit». Los dos caían en el lugar 2, y
+    el disco quedaba con el orden «confirmado» y un número repetido. Se los
+    suelta para volver a ubicarlos por ISRC y duración, que sí los distinguen.
+    """
+    lugares: dict[tuple[int, int | None], list[Track]] = {}
+    for t in grupo:
+        if t.get("orden_fuente"):
+            lugares.setdefault((t.get("disc_number") or 1, t.get("track_number")), []).append(t)
+    for repetidos in lugares.values():
+        if len(repetidos) > 1:
+            for t in repetidos:
+                t.pop("orden_fuente", None)
+                t.pop("disc_number", None)
+                t["track_number"] = None
+
+
 def ubicar_restantes(tracks: list[Track], tracklists) -> int:
     """Ubica en el tracklist de su disco los temas que quedaron sin ubicar.
 
@@ -330,6 +357,7 @@ def ubicar_restantes(tracks: list[Track], tracklists) -> int:
             continue
         album_id = ids.pop()
         temas = tracklists.get(album_id) or []
+        _soltar_los_que_chocan(grupo)
         ocupados = {
             (t.get("disc_number") or 1, t.get("track_number")) for t in grupo if t.get("orden_fuente")
         }

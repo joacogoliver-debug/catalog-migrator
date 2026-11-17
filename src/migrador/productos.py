@@ -188,6 +188,10 @@ def group_products(tracks: list[Track], artist="") -> list[Producto]:
         # mezclar números reales con estimados daría repetidos, y un orden a
         # medias parecería confirmado.
         confirmado = all(t.get("orden_fuente") for t in ts)
+        # Y cada uno en un lugar distinto. Dos temas en el mismo lugar no son
+        # un orden confirmado: son dos temas que el cruce confundió entre sí.
+        lugares = {(t.get("disc_number") or 1, t.get("track_number")) for t in ts}
+        confirmado = confirmado and len(lugares) == len(ts)
         if confirmado:
             ts = sorted(ts, key=lambda x: (x.get("disc_number") or 1, x.get("track_number") or 0))
         else:

@@ -6,6 +6,18 @@ Lo que cambió en cada versión publicada. Los números siguen
 [SemVer](https://semver.org/lang/es/), y las descargas están en
 [Releases](https://github.com/joacogoliver-debug/catalog-migrator/releases).
 
+## [Sin publicar]
+
+### Corregido
+- **Dos temas que se llaman igual ya no quedan en el mismo lugar del disco.** Un
+  single puede traer dos «Radio Edit», de 236 y de 321 segundos, que en Deezer
+  son el «Short Radio Edit» y el «Radio Edit». El cruce ubica por título: los
+  ponía a los dos en el lugar 2, daba el orden por confirmado con un número
+  repetido, y al completar el disco sumaba de Deezer un tema que ya estaba.
+  Ahora se los distingue por su ISRC y su duración, y si no hay con qué, el
+  disco queda con el orden estimado: dos temas en el mismo lugar nunca son un
+  orden confirmado. Se vio al probar contra un segundo catálogo real.
+
 ## [1.3.0] — 2026-11-17
 
 ### Agregado

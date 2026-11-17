@@ -6,6 +6,19 @@ What changed in every published version. The numbers follow
 [SemVer](https://semver.org/), and the downloads are in
 [Releases](https://github.com/joacogoliver-debug/catalog-migrator/releases).
 
+## [Unreleased]
+
+### Fixed
+- **Two tracks with the same name no longer land on the same position.** A
+  single may carry two "Radio Edit" tracks, 236 and 321 seconds long, which on
+  Deezer are the "Short Radio Edit" and the "Radio Edit". The matcher places by
+  title: it put both on position 2, called the order confirmed with a repeated
+  number, and when completing the release it added from Deezer a track that
+  was already there. They are now told apart by ISRC and length, and when there
+  is nothing to go on the release keeps an estimated order: two tracks on the
+  same position are never a confirmed order. This showed up while testing
+  against a second real catalog.
+
 ## [1.3.0] — 2026-11-17
 
 ### Added

@@ -1071,3 +1071,95 @@ def test_el_mismo_disco_escrito_con_otra_mayuscula_se_completa_una_sola_vez(hace
         (2, "Dos"),
         (3, "Tres"),
     ]
+
+
+# ============================================================
+# Dos temas que se llaman igual en el mismo disco
+# ============================================================
+#
+# De un segundo catálogo real: un single con dos «One More Time (Radio Edit)»,
+# de 236 y de 321 segundos. En Deezer son el «Short Radio Edit» y el «Radio
+# Edit». El cruce ubica por título, los ponía a los dos en el lugar 2 y daba el
+# orden por confirmado, con un número repetido.
+
+
+def _radio_edits(hacer_track):
+    corto = ubicado(
+        track(hacer_track, "One More Time (Radio Edit)", "One More Time", isrc="GB54", dur=236, aid=10), 2
+    )
+    largo = ubicado(
+        track(hacer_track, "One More Time (Radio Edit)", "One More Time", isrc="GB50", dur=321, aid=10), 2
+    )
+    corto["video_id"], largo["video_id"] = "corto", "largo"
+    mix = ubicado(
+        track(hacer_track, "One More Time (12 Mix)", "One More Time", isrc="GB51", dur=481, aid=10), 3
+    )
+    return [corto, largo, mix]
+
+
+DISCO_RADIO_EDITS = {
+    10: (
+        "One More Time",
+        "ep",
+        "2000-11-13",
+        [
+            tema("One More Time (Short Radio Edit)", "GB54", 235),
+            tema("One More Time (Radio Edit)", "GB50", 320),
+            tema("One More Time (12 Mix)", "GB51", 480),
+        ],
+    )
+}
+
+
+def test_dos_temas_con_el_mismo_titulo_se_separan_por_su_isrc(hacer_track, deezer):
+    tracks = _radio_edits(hacer_track)
+    productos, comp, _f = _catalogo(hacer_track, deezer, DISCO_RADIO_EDITS, tracks)
+    disco = productos["One More Time"]
+    assert [(t.get("track_number"), t["isrc"], t["duration_s"]) for t in disco["tracks"]] == [
+        (1, "GB54", 236),
+        (2, "GB50", 321),
+        (3, "GB51", 481),
+    ]
+    assert disco["order_unconfirmed"] is False and disco["track_count"] == 3
+    assert "de_deezer" not in disco, "no faltaba ninguno: el «Short Radio Edit» era el de 236 segundos"
+    assert comp["faltan"] == []
+
+
+def test_sin_isrc_dos_temas_con_el_mismo_titulo_se_separan_por_la_duracion(hacer_track, deezer):
+    """Sin código queda la duración: el de 236 segundos es el «Short Radio
+    Edit» de 235, que se llama casi igual, y el de 321 es el «Radio Edit»."""
+    tracks = _radio_edits(hacer_track)
+    for t in tracks:
+        t["isrc"] = ""
+    productos, _c, _f = _catalogo(hacer_track, deezer, DISCO_RADIO_EDITS, tracks)
+    disco = productos["One More Time"]
+    assert [(t.get("track_number"), t["duration_s"], t["isrc"]) for t in disco["tracks"]] == [
+        (1, 236, "GB54"),
+        (2, 321, "GB50"),
+        (3, 481, "GB51"),
+    ], "cada uno en su lugar, y con el código de ese lugar"
+    assert disco["order_unconfirmed"] is False
+
+
+def test_si_no_hay_como_separarlos_el_disco_queda_con_el_orden_estimado(hacer_track, deezer):
+    """Dos temas con el mismo título y la misma duración, sin código: no hay
+    con qué decidir cuál es cuál, y un número repetido no es un orden."""
+    discos = {10: ("Disco", "album", "2020-01-01", [tema("Tema", "AR1", 200), tema("Otro", "AR2", 300)])}
+    tracks = [
+        ubicado(track(hacer_track, "Tema", "Disco", dur=200, aid=10), 1),
+        ubicado(track(hacer_track, "Tema", "Disco", dur=200, aid=10), 1),
+    ]
+    tracks[0]["video_id"], tracks[1]["video_id"] = "uno", "dos"
+    productos, _c, _f = _catalogo(hacer_track, deezer, discos, tracks)
+    disco = productos["Disco"]
+    assert disco["order_unconfirmed"] is True
+    assert disco["track_count"] == 2 and "de_deezer" not in disco, "y no se le suma nada a un disco sin orden"
+
+
+def test_dos_temas_en_el_mismo_lugar_nunca_son_un_orden_confirmado(hacer_track):
+    """La regla vale aunque no se haya podido comparar con Deezer: es de
+    `productos`, y no depende de que alguien haya arreglado el choque antes."""
+    tracks = _radio_edits(hacer_track)
+    (disco,) = P.group_products(tracks, "Daft Punk")
+    assert disco["order_unconfirmed"] is True
+    assert sorted(t.get("track_number") or 0 for t in disco["tracks"]) == [1, 2, 3], "de corrido, estimados"
