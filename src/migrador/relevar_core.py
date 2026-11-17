@@ -20,6 +20,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, timedelta
 from difflib import SequenceMatcher
@@ -832,15 +833,26 @@ class _Fallas:
 
     def __init__(self):
         self.n = 0
+        self.motivos: Counter[str] = Counter()
         self._lock = threading.Lock()
 
-    def sumar(self):
+    def sumar(self, motivo=""):
         with self._lock:
             self.n += 1
+            if motivo:
+                self.motivos[motivo] += 1
 
     def empezar(self):
         with self._lock:
             self.n = 0
+            self.motivos.clear()
+
+    def motivo(self):
+        """Por qué no contestó, la mayoría de las veces: «HTTP 403», «timeout»,
+        un certificado rechazado. Sin esto, «Deezer no respondió» no decía si
+        era la red, un bloqueo o Deezer caído, y no había por dónde empezar."""
+        with self._lock:
+            return self.motivos.most_common(1)[0][0] if self.motivos else ""
 
 
 FALLAS_DEEZER = _Fallas()
@@ -855,9 +867,10 @@ def _deezer_json(path):
     """
     url = f"{DEEZER_API}/{path}"
     for intento in range(6):
+        _ULTIMA_FALLA.motivo = ""
         data = _http_json(url)
         if data is None:
-            FALLAS_DEEZER.sumar()
+            FALLAS_DEEZER.sumar(getattr(_ULTIMA_FALLA, "motivo", ""))
             return None
         err = data.get("error") if isinstance(data, dict) else None
         if not err:
@@ -867,7 +880,7 @@ def _deezer_json(path):
             return None
         if intento < 5:
             time.sleep(_espera(intento, tope=8.0))
-    FALLAS_DEEZER.sumar()
+    FALLAS_DEEZER.sumar("límite de pedidos de Deezer")
     return None
 
 
@@ -904,10 +917,28 @@ def _retry_after(e, por_defecto=2.0):
     return min(max(segundos, 0.5), 30.0)
 
 
+# Por qué falló el último pedido de este hilo. `_http_json` devuelve None y nada
+# más, que es lo que esperan quienes lo llaman; el motivo queda acá para quien
+# quiera decirlo (ver `_deezer_json`).
+_ULTIMA_FALLA = threading.local()
+
+
+def _motivo_de(e):
+    """El error de red en pocas palabras, para mostrarlo."""
+    if isinstance(e, urllib.error.HTTPError):
+        return f"HTTP {e.code}"
+    causa = e.reason if isinstance(e, urllib.error.URLError) else e
+    if isinstance(causa, TimeoutError):
+        return "timeout"
+    return f"{type(causa).__name__}: {causa}"[:140]
+
+
 def _http_json(url, headers=None, retries=3):
     """GET que devuelve JSON, o None si no hubo respuesta. Un 404 es una
     respuesta (no existe), y devuelve {}."""
-    req = urllib.request.Request(url, headers=headers or {})
+    # Con nombre propio: sin esto el pedido sale como «Python-urllib», que es
+    # lo primero que bloquea un filtro de tráfico automático.
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, **(headers or {})})
     for intento in range(retries):
         try:
             with urllib.request.urlopen(req, timeout=25) as r:
@@ -916,8 +947,10 @@ def _http_json(url, headers=None, retries=3):
             if e.code in (429, 500, 502, 503, 504) and intento < retries - 1:
                 time.sleep(_retry_after(e))
                 continue
+            _ULTIMA_FALLA.motivo = _motivo_de(e)
             return {} if e.code == 404 else None
-        except Exception:  # noqa: BLE001 (idem que portadas: red)
+        except Exception as e:  # noqa: BLE001 (idem que portadas: red)
+            _ULTIMA_FALLA.motivo = _motivo_de(e)
             if intento < retries - 1:
                 time.sleep(_espera(intento, tope=8.0))
     return None
@@ -1291,7 +1324,16 @@ def enrich_with_codes(
     upc_n = sum(1 for t in tracks if t["upc"])
     if FALLAS_DEEZER.n:
         log(T("rel.deezer_fallas", n=FALLAS_DEEZER.n))
-    return {"matched": matched, "isrc": isrc_n, "upc": upc_n, "source": "Deezer", "fallas": FALLAS_DEEZER.n}
+        if FALLAS_DEEZER.motivo():
+            log(T("rel.deezer_motivo", motivo=FALLAS_DEEZER.motivo()))
+    return {
+        "matched": matched,
+        "isrc": isrc_n,
+        "upc": upc_n,
+        "source": "Deezer",
+        "fallas": FALLAS_DEEZER.n,
+        "motivo": FALLAS_DEEZER.motivo(),
+    }
 
 
 def _aggregate_distributors(tracks) -> dict[str, ResumenDistribuidora]:

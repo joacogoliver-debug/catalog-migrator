@@ -363,8 +363,8 @@ def test_sin_codigos_la_comparacion_con_deezer_queda_sin_hacer(relevar_doble, mo
 def test_el_diagnostico_distingue_codigos_no_pedidos_de_no_encontrados(relevar_doble):
     """«ISRC 0 de 27» puede ser tres cosas; la interfaz necesita saber cuál."""
     _p, _a, _t, diag = M.relevar_catalogo("https://www.youtube.com/@Test", "clave-falsa")
-    assert diag["codigos"] == {"pedidos": True, "encontrados": 3, "fallas": 0}
+    assert diag["codigos"] == {"pedidos": True, "encontrados": 3, "fallas": 0, "motivo": ""}
 
     relevar_doble["escenario"] = "comun"
     _p, _a, _t, diag = M.relevar_catalogo("https://www.youtube.com/@Test", "clave-falsa")
-    assert diag["codigos"] == {"pedidos": False, "encontrados": 0, "fallas": 0}
+    assert diag["codigos"] == {"pedidos": False, "encontrados": 0, "fallas": 0, "motivo": ""}

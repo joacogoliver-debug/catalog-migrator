@@ -106,6 +106,7 @@ def relevar_catalogo(
             "pedidos": res.get("codes") is not None,
             "encontrados": int((res.get("codes") or {}).get("matched") or 0),
             "fallas": int((res.get("codes") or {}).get("fallas") or 0),
+            "motivo": str((res.get("codes") or {}).get("motivo") or ""),
         },
         "via": res.get("via", "subidas"),
         "total_estimado": int(res.get("total_estimado") or 0),

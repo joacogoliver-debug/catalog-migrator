@@ -359,6 +359,10 @@ TEXTOS = {
     "rel.listando_n": {"es": "Listando videos: {h} de {t}", "en": "Listing videos: {h} of {t}"},
     "rel.metadata_n": {"es": "Metadata: {h} de {t}", "en": "Metadata: {h} of {t}"},
     "rel.codigos_n": {"es": "Códigos: {h} de {t} tracks", "en": "Codes: {h} of {t} tracks"},
+    "rel.deezer_motivo": {
+        "es": "Lo que contestó Deezer: {motivo}",
+        "en": "What Deezer answered: {motivo}",
+    },
     "rel.deezer_fallas": {
         "es": (
             "Deezer no respondió {n} consultas: los códigos que faltan pueden estar ahí. "

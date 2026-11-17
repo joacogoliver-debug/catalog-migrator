@@ -32,6 +32,7 @@ import tempfile
 import threading
 import time
 import zipfile
+from typing import Any
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 for carpeta in ("src", "app"):
@@ -92,6 +93,41 @@ def consultar_fuentes():
     isrc, album_id, confianza = R.deezer_match({"track": "Around the World", "duration_s": 430}, "Daft Punk")
     lineas.append(f"Deezer, búsqueda de un tema: ISRC {isrc!r}, álbum {album_id}, confianza {confianza!r}")
     bien = bien and bool(isrc)
+    # Un lote en paralelo, que es como los pide un relevamiento: seis a la vez.
+    temas = [
+        "One More Time",
+        "Aerodynamic",
+        "Digital Love",
+        "Harder, Better, Faster, Stronger",
+        "Crescendolls",
+    ]
+    temas += [
+        "Nightvision",
+        "Superheroes",
+        "High Life",
+        "Something About Us",
+        "Voyager",
+        "Veridis Quo",
+        "Too Long",
+    ]
+    lote: list[Any] = [
+        {
+            "track": t,
+            "album": "Discovery",
+            "duration_s": 0,
+            "isrc": "",
+            "upc": "",
+            "match": "",
+            "release_date": "",
+        }
+        for t in temas
+    ]
+    cuenta = R.enrich_with_codes(lote, "Daft Punk", log=lambda _m: None)
+    lineas.append(
+        f"Deezer, doce temas en paralelo: {cuenta['isrc']} con ISRC, {cuenta['fallas']} sin respuesta"
+        f" (motivo: {cuenta.get('motivo') or 'ninguno'})"
+    )
+    bien = bien and cuenta["isrc"] >= 10 and not cuenta["fallas"]
     apple = portadas._http_json(f"{portadas.ITUNES_SEARCH}?term=daft+punk+discovery&entity=album&limit=1")
     lineas.append(f"Apple, búsqueda de un álbum: {len((apple or {}).get('results') or [])} resultado(s)")
     bien = bien and bool((apple or {}).get("results"))

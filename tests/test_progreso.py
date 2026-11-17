@@ -18,6 +18,7 @@ from email.message import Message
 import time
 import types
 import urllib.error
+from typing import Any, cast
 
 import pytest
 
@@ -163,6 +164,57 @@ def test_el_limite_de_tasa_se_reintenta_y_despues_se_cuenta(monkeypatch):
 def test_el_limite_de_tasa_pasajero_se_recupera(monkeypatch):
     _deezer_responde(monkeypatch, {"error": {"code": 4}}, {"data": [1]})
     assert R._deezer_json("search?q=x") == {"data": [1]}
+
+
+def _urlopen_que_falla(monkeypatch, error):
+    def urlopen(_req, timeout=0):
+        raise error
+
+    monkeypatch.setattr(R.urllib.request, "urlopen", urlopen)
+
+
+@pytest.mark.parametrize(
+    ("error", "motivo"),
+    [
+        (urllib.error.HTTPError("u", 403, "Forbidden", cast(Any, Message()), None), "HTTP 403"),
+        (urllib.error.URLError(TimeoutError("timed out")), "timeout"),
+        (urllib.error.URLError(OSError(8, "nodename nor servname provided")), "OSError"),
+    ],
+)
+def test_cuando_deezer_no_contesta_queda_dicho_por_que(monkeypatch, error, motivo):
+    """«Deezer no respondió» no decía si era la red, un bloqueo o Deezer
+    caído: a quien le pasó en una Mac no había qué preguntarle."""
+    _urlopen_que_falla(monkeypatch, error)
+    log = []
+    stats = R.enrich_with_codes([_track("Tema")], "A", log=log.append)
+    assert stats["fallas"] > 0 and motivo in stats.get("motivo", "")
+    assert any(motivo in linea for linea in log), log
+
+
+def test_el_limite_de_pedidos_tambien_dice_que_fue(monkeypatch):
+    _deezer_responde(monkeypatch, {"error": {"code": 4}})
+    R.FALLAS_DEEZER.empezar()
+    R._deezer_json("search?q=x")
+    assert R.FALLAS_DEEZER.motivo() == "límite de pedidos de Deezer"
+
+
+def test_un_relevamiento_nuevo_no_hereda_el_motivo_del_anterior(monkeypatch):
+    R.FALLAS_DEEZER.sumar("HTTP 403")
+    _deezer_responde(monkeypatch, {"data": []})
+    stats = R.enrich_with_codes([_track("Tema")], "A", log=lambda _m: None)
+    assert stats["fallas"] == 0 and stats.get("motivo") == ""
+
+
+def test_los_pedidos_a_deezer_salen_con_el_nombre_de_la_app(monkeypatch):
+    vistos = []
+
+    def urlopen(req, timeout=0):
+        vistos.append(req.get_header("User-agent"))
+        raise urllib.error.URLError("x")
+
+    monkeypatch.setattr(R.urllib.request, "urlopen", urlopen)
+    R._http_json("https://api.deezer.com/album/1", retries=1)
+    assert vistos == [R.USER_AGENT]
 
 
 def test_deezer_caido_queda_dicho_en_el_log(monkeypatch):

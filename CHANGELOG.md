@@ -6,6 +6,31 @@ Lo que cambió en cada versión publicada. Los números siguen
 [SemVer](https://semver.org/lang/es/), y las descargas están en
 [Releases](https://github.com/joacogoliver-debug/catalog-migrator/releases).
 
+## [Sin publicar]
+
+### Corregido
+- **En Mac, «Descargar» no hacía nada.** La ventana propia de la app en macOS
+  descarta las descargas sin avisar: la página pedía el paquete, el servidor lo
+  entregaba y el cuadro de «Guardar» nunca se abría. No daba ningún error. Lo
+  avisó la primera persona que usó la app en una Mac, y se reprodujo en las dos
+  Mac del CI (Apple Silicon e Intel). Ahora, en esa ventana, «Descargar» guarda
+  el paquete directo en la carpeta Descargas y muestra dónde quedó, con un
+  botón para verlo en su carpeta. En Windows y en Linux la descarga sigue como
+  antes, y debajo del botón queda la misma salida («¿No se descargó? Guardarlo
+  en la carpeta Descargas») por si la ventana no baja el archivo.
+
+### Agregado
+- **Por qué Deezer no respondió.** Cuando Deezer no contesta, la app lo decía
+  pero no decía qué pasó: si fue un corte, un bloqueo o el límite de pedidos.
+  Ahora el aviso trae lo que contestó («HTTP 403», «timeout», el límite de
+  pedidos), que es por donde se empieza a buscar.
+- **Los pedidos a Deezer salen con el nombre de la app**, y no como un
+  programa genérico, que es lo primero que frena un filtro de tráfico
+  automático.
+- **Una prueba de la ventana de verdad.** `build/prueba_ventana.py` abre la
+  ventana nativa, aprieta «Descargar» y mira que el archivo llegue entero; corre
+  en las Mac del CI, donde nadie del proyecto puede probar a mano.
+
 ## [1.3.2] — 2026-11-17
 
 ### Corregido

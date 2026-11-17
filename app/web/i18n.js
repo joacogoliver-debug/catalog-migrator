@@ -576,6 +576,7 @@ const TEXTOS = {
     es: 'Deezer no respondió {n} consultas, aun después de reintentar. Algunos códigos pueden faltar por eso y no porque no existan: relevar de nuevo más tarde puede completarlos.',
     en: 'Deezer did not answer {n} lookups, even after retrying. Some codes may be missing because of that and not because they do not exist: surveying again later may fill them in.',
   },
+  'paso2.deezer_motivo': { es: 'Lo que contestó: {motivo}.', en: 'What it answered: {motivo}.' },
   'paso2.deezer_no_respondio_uno': {
     es: 'Deezer no respondió una consulta, aun después de reintentar. Algún código puede faltar por eso y no porque no exista: relevar de nuevo más tarde puede completarlo.',
     en: 'Deezer did not answer one lookup, even after retrying. A code may be missing because of that and not because it does not exist: surveying again later may fill it in.',

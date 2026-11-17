@@ -776,7 +776,8 @@ function avisoCanal() {
   if (cod && !cod.pedidos) {
     partes.push(alerta('', 'info', esc(T('paso2.codigos_no_pedidos'))));
   } else if (cod && cod.fallas) {
-    partes.push(alerta('warn', 'alerta', esc(T(cod.fallas === 1 ? 'paso2.deezer_no_respondio_uno' : 'paso2.deezer_no_respondio', { n: num(cod.fallas) }))));
+    const motivo = cod.motivo ? ' ' + T('paso2.deezer_motivo', { motivo: cod.motivo }) : '';
+    partes.push(alerta('warn', 'alerta', esc(T(cod.fallas === 1 ? 'paso2.deezer_no_respondio_uno' : 'paso2.deezer_no_respondio', { n: num(cod.fallas) }) + motivo)));
   } else if (cod && !cod.encontrados && S.catalogo.productos.length) {
     partes.push(alerta('warn', 'alerta', `
       <strong>${esc(T('paso2.no_esta_en_deezer_titulo', { artista: S.catalogo.artista }))}</strong>

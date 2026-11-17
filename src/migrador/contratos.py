@@ -309,6 +309,8 @@ class EstadisticaCodigos(TypedDict):
     upc: int
     source: str
     fallas: int
+    # Por qué no contestó, la mayoría de las veces; vacío si contestó siempre.
+    motivo: NotRequired[str]
 
 
 class Listado(TypedDict):
@@ -402,6 +404,7 @@ class CodigosDelRelevamiento(TypedDict):
     pedidos: bool
     encontrados: int
     fallas: int
+    motivo: NotRequired[str]
 
 
 class TemaFaltante(TypedDict):

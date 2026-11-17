@@ -6,6 +6,30 @@ What changed in every published version. The numbers follow
 [SemVer](https://semver.org/), and the downloads are in
 [Releases](https://github.com/joacogoliver-debug/catalog-migrator/releases).
 
+## [Unreleased]
+
+### Fixed
+- **On a Mac, "Download" did nothing.** The app's own window on macOS drops
+  downloads silently: the page asked for the package, the server delivered it
+  and the "Save" dialog never opened. No error was shown. It was reported by
+  the first person to use the app on a Mac, and reproduced on both CI Macs
+  (Apple Silicon and Intel). Now, in that window, "Download" saves the package
+  straight to the Downloads folder and shows where it went, with a button to
+  reveal it. On Windows and Linux the download works as before, and the same
+  way out sits below the button ("Did it not download? Save it to the
+  Downloads folder") in case the window does not fetch the file.
+
+### Added
+- **Why Deezer did not answer.** When Deezer does not answer, the app said so
+  but not what happened: an outage, a block or the request limit. The notice
+  now carries what it answered ("HTTP 403", "timeout", the request limit),
+  which is where the search starts.
+- **Requests to Deezer carry the app's name**, instead of a generic program
+  name, which is the first thing an automated-traffic filter stops.
+- **A test of the real window.** `build/prueba_ventana.py` opens the native
+  window, presses "Download" and checks the file arrives whole; it runs on the
+  CI Macs, where nobody on the project can test by hand.
+
 ## [1.3.2] — 2026-11-17
 
 ### Fixed
