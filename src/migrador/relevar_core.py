@@ -989,6 +989,7 @@ def deezer_albumes(album_ids):
     def work(aid):
         a = _deezer_json(f"album/{aid}") or {}
         return aid, {
+            "id": aid,
             "upc": a.get("upc", "") or "",
             "title": a.get("title", "") or "",
             "record_type": a.get("record_type", "") or "",
@@ -1020,6 +1021,20 @@ def tracklist_deezer(info):
     tracks = [t for t in info.get("tracks") or [] if t.get("id")]
     if not tracks:
         return []
+    # La ficha de un álbum trae adentro, como mucho, sus primeros veinticinco
+    # temas. Con un disco de cincuenta, del 26 en adelante no estaban en la
+    # lista y nunca se ubicaban: el release quedaba siempre con el orden
+    # estimado, y con los números salteados. Cuando la ficha dice que hay más
+    # de los que trae, se pide la lista entera, que además trae la posición y
+    # el disco de cada uno.
+    if int(info.get("nb_tracks") or 0) > len(tracks) and info.get("id"):
+        todos = (_deezer_json(f"album/{info['id']}/tracks?limit=500") or {}).get("data") or []
+        lista = [
+            (t.get("title", ""), int(t.get("track_position") or 0), int(t.get("disk_number") or 0))
+            for t in todos
+        ]
+        completa = len(lista) >= int(info.get("nb_tracks") or 0)
+        return lista if completa and all(pos and disco for _t, pos, disco in lista) else []
     ultimo = _deezer_json(f"track/{tracks[-1]['id']}") or {}
     if int(ultimo.get("disk_number") or 1) <= 1:
         return [(t.get("title", ""), i, 1) for i, t in enumerate(tracks, 1)]

@@ -50,6 +50,43 @@ def test_tracklist_de_un_solo_disco_pide_un_solo_track(monkeypatch):
     assert pedidos == ["track/102"]
 
 
+def test_un_disco_de_mas_de_veinticinco_temas_se_pide_entero(monkeypatch):
+    """Deezer mete en la ficha del álbum sólo los primeros veinticinco temas.
+    Con el catálogo real, de un compilado de cincuenta nunca se ubicaban los
+    temas 26 y 27, y el disco quedaba con el orden estimado."""
+    titulos = [f"Tema {i}" for i in range(1, 51)]
+    info = _album(*titulos[:25])[10]
+    info["id"], info["nb_tracks"] = 10, 50
+    pedidos = []
+
+    def deezer(path):
+        pedidos.append(path)
+        return {
+            "data": [
+                {"title": t, "track_position": i if i <= 30 else i - 30, "disk_number": 1 if i <= 30 else 2}
+                for i, t in enumerate(titulos, 1)
+            ]
+        }
+
+    monkeypatch.setattr(R, "_deezer_json", deezer)
+    lista = R.tracklist_deezer(info)
+    assert pedidos == ["album/10/tracks?limit=500"], "un solo pedido, y no uno por tema"
+    assert len(lista) == 50
+    assert lista[25] == ("Tema 26", 26, 1) and lista[30] == ("Tema 31", 1, 2), "con el disco de cada uno"
+
+
+def test_si_la_lista_entera_no_llega_el_orden_no_se_confirma(monkeypatch):
+    """Con la mitad de un tracklist no se confirma nada: parecería completo."""
+    info = _album(*[f"Tema {i}" for i in range(1, 26)])[10]
+    info["id"], info["nb_tracks"] = 10, 50
+    monkeypatch.setattr(R, "_deezer_json", lambda path: None)
+    assert R.tracklist_deezer(info) == []
+    monkeypatch.setattr(
+        R, "_deezer_json", lambda path: {"data": [{"title": "Uno", "track_position": 1, "disk_number": 1}]}
+    )
+    assert R.tracklist_deezer(info) == []
+
+
 def test_tracklist_de_dos_discos_numera_por_disco(monkeypatch):
     datos = {"track/100": (1, 1), "track/101": (2, 1), "track/102": (1, 2)}
     monkeypatch.setattr(
