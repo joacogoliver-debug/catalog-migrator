@@ -6,29 +6,6 @@ Lo que cambió en cada versión publicada. Los números siguen
 [SemVer](https://semver.org/lang/es/), y las descargas están en
 [Releases](https://github.com/joacogoliver-debug/catalog-migrator/releases).
 
-## [Sin publicar]
-
-### Corregido
-- **Un disco escrito con distinta mayúscula en dos temas se completaba dos
-  veces.** Para agrupar eran el mismo disco, pero para completarlo eran dos, y
-  el producto podía salir con los lugares repetidos.
-
-### Cambiado
-- **Si la comparación con Deezer falla, el catálogo no se pierde.** Ya se listó
-  y costó cuota: ante un dato de Deezer con una forma que no se previó, se
-  sigue con lo relevado de YouTube y el log lo dice.
-- **El aviso de lo que Deezer tiene de más es más corto.** Con tres avisos
-  arriba, la tabla de productos quedaba fuera de la primera pantalla. Lo
-  esencial queda a la vista y el detalle pasa adentro de «Ver cuáles».
-- Las capturas del README muestran cómo se ve hoy un catálogo recién relevado:
-  listado por el buscador, con la cuota que gastó y lo que se sumó de Deezer.
-
-### Para quien desarrolla
-- **El test de cancelación ya no depende de la suerte.** Su «Deezer lento» no
-  esperaba nada, porque otro ajuste del mismo archivo anula `time.sleep`, y que
-  quedaran consultas sin salir dependía de cómo se repartieran los hilos. Falló
-  una vez, justo en la compilación del release 1.3.0, sin nada roto.
-
 ## [1.3.0] — 2026-11-17
 
 ### Agregado
@@ -105,6 +82,19 @@ Lo que cambió en cada versión publicada. Los números siguen
   Canciones…» por otra eran el mismo release, con el mismo UPC, y no se
   avisaba. Ahora los une el álbum de Deezer donde se ubicaron sus temas, y si
   se eligen los dos el error dice qué hacer: migrar uno solo.
+- **Un disco escrito con distinta mayúscula en dos temas se completaba dos
+  veces.** Para agrupar eran el mismo disco, pero para completarlo eran dos, y
+  el producto podía salir con los lugares repetidos.
+
+### Cambiado
+- **Si la comparación con Deezer falla, el catálogo no se pierde.** Ya se listó
+  y costó cuota: ante un dato de Deezer con una forma que no se previó, se
+  sigue con lo relevado de YouTube y el log lo dice.
+- **El aviso de lo que Deezer tiene de más es más corto.** Con tres avisos
+  arriba, la tabla de productos quedaba fuera de la primera pantalla. Lo
+  esencial queda a la vista y el detalle pasa adentro de «Ver cuáles».
+- Las capturas del README muestran cómo se ve hoy un catálogo recién relevado:
+  listado por el buscador, con la cuota que gastó y lo que se sumó de Deezer.
 
 ### Para quien desarrolla
 - **El listado por buscador tiene su contrato grabado.** Lo que YouTube contesta
@@ -112,6 +102,11 @@ Lo que cambió en cada versión publicada. Los números siguen
   buscador) está en `tests/fixtures/`, grabado con
   `python build/grabar_fixtures.py --youtube-busqueda`. Hasta acá esa vía se
   probaba sólo contra respuestas escritas a mano.
+- **El test de cancelación ya no depende de la suerte.** Su «Deezer lento» no
+  esperaba nada, porque otro ajuste del mismo archivo anula `time.sleep`, y que
+  quedaran consultas sin salir dependía de cómo se repartieran los hilos. Falló
+  al compilar esta versión por primera vez, sin nada roto, y por eso se
+  publicó desde un commit posterior al que se había etiquetado.
 
 ## [1.2.0] — 2026-11-16
 

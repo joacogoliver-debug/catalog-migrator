@@ -6,31 +6,6 @@ What changed in every published version. The numbers follow
 [SemVer](https://semver.org/), and the downloads are in
 [Releases](https://github.com/joacogoliver-debug/catalog-migrator/releases).
 
-## [Unreleased]
-
-### Fixed
-- **A release spelled with different capitalisation on two tracks was
-  completed twice.** For grouping they were the same release, but for
-  completing it they were two, and the release could come out with repeated
-  positions.
-
-### Changed
-- **If the comparison against Deezer fails, the catalog is not lost.** It was
-  already listed and it cost quota: on Deezer data in a shape that was not
-  foreseen, the app carries on with what YouTube gave and the log says so.
-- **The notice about what Deezer has on top is shorter.** With three notices
-  above it, the release table fell below the first screen. The essentials stay
-  in view and the detail moves inside "Show which".
-- The README screenshots show what a freshly surveyed catalog looks like today:
-  listed through search, with the quota it used and what was added from Deezer.
-
-### For developers
-- **The cancellation test no longer depends on luck.** Its "slow Deezer" did
-  not wait at all, because another fixture in the same file disables
-  `time.sleep`, and whether any request was left unsent depended on how the
-  threads were scheduled. It failed once, right in the 1.3.0 release build,
-  with nothing broken.
-
 ## [1.3.0] — 2026-11-17
 
 ### Added
@@ -109,6 +84,20 @@ What changed in every published version. The numbers follow
   nothing was said. They are now tied by the Deezer album their tracks were
   placed on, and if both are selected the error says what to do: migrate just
   one.
+- **A release spelled with different capitalisation on two tracks was
+  completed twice.** For grouping they were the same release, but for
+  completing it they were two, and the release could come out with repeated
+  positions.
+
+### Changed
+- **If the comparison against Deezer fails, the catalog is not lost.** It was
+  already listed and it cost quota: on Deezer data in a shape that was not
+  foreseen, the app carries on with what YouTube gave and the log says so.
+- **The notice about what Deezer has on top is shorter.** With three notices
+  above it, the release table fell below the first screen. The essentials stay
+  in view and the detail moves inside "Show which".
+- The README screenshots show what a freshly surveyed catalog looks like today:
+  listed through search, with the quota it used and what was added from Deezer.
 
 ### For developers
 - **Listing through search has its recorded contract.** What YouTube answers
@@ -116,6 +105,12 @@ What changed in every published version. The numbers follow
   of search) is in `tests/fixtures/`, recorded with
   `python build/grabar_fixtures.py --youtube-busqueda`. Until now that path was
   only tested against hand-written answers.
+- **The cancellation test no longer depends on luck.** Its "slow Deezer" did
+  not wait at all, because another fixture in the same file disables
+  `time.sleep`, and whether any request was left unsent depended on how the
+  threads were scheduled. It failed the first time this version was built,
+  with nothing broken, which is why it was published from a later commit than
+  the one first tagged.
 
 ## [1.2.0] — 2026-11-16
 
