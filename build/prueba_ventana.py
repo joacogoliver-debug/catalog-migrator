@@ -40,9 +40,8 @@ APRETAR = """
   try {
     S.resultado = { descarga: '/api/descargar/%s', archivo: '%s', bytes: 1 };
     await ACCIONES.descargar();
-    window.__prueba = { error: S.errorDescarga || '' };
   } catch (e) {
-    window.__prueba = { error: String((e && e.message) || e) };
+    console.error(e);
   }
 })()
 """ % (TRABAJO, ARCHIVO)
@@ -105,8 +104,15 @@ def probar_descarga():
     backend.ESTADO.registrar_zip(TRABAJO, origen)
     destino = os.path.join(carpeta, "bajado.zip")
 
-    pedidos = []
+    pedidos, tickets = [], []
     descargar = backend.Handler._descargar
+    emitir = backend.ESTADO.emitir_ticket
+
+    def emitir_y_anotar(job_id, *a, **k):
+        tickets.append(job_id)
+        return emitir(job_id, *a, **k)
+
+    backend.ESTADO.emitir_ticket = emitir_y_anotar
 
     def espia(self, job_id):
         pedidos.append(job_id)
@@ -138,12 +144,14 @@ def probar_descarga():
     def correr():
         try:
             time.sleep(8)  # que la página termine de cargar
-            ventana.evaluate_js(APRETAR)
+            # `run_js` y no `evaluate_js`: el segundo envuelve el código en un
+            # `eval`, y la página lo prohíbe con su Content-Security-Policy.
+            ventana.run_js(APRETAR)
             for _ in range(20):
                 time.sleep(1)
                 if os.path.exists(destino) and os.path.getsize(destino) == os.path.getsize(origen):
                     break
-            lineas.append(f"lo que dijo la página: {ventana.evaluate_js('window.__prueba || null')}")
+            lineas.append(f"tickets de descarga que pidió la página: {len(tickets)}")
             lineas.append(f"pedidos del ZIP que llegaron al servidor: {len(pedidos)}")
             if en_mac:
                 llego = os.path.exists(destino)
