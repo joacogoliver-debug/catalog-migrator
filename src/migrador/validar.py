@@ -16,11 +16,12 @@ que la interfaz los agrupa y el test los busca.
 """
 
 import re
+from difflib import SequenceMatcher
 from datetime import date
 
 from .contratos import FORMATOS_LOSSLESS, Hallazgo, NivelHallazgo, Producto, ResultadoValidacion
 from .i18n import T
-from .texto import comparable, parece_formula
+from .texto import comparable, misma_version, parece_formula
 
 # ISRC: CC-XXX-YY-NNNNN (12 caracteres sin guiones).
 #   CC     país (2 letras; incluye códigos especiales como QM/QZ que usan varios
@@ -430,18 +431,53 @@ def validar(productos: list[Producto], artista="") -> ResultadoValidacion:
 # el álbum la diferencia suele ser de cero a un par de segundos (un silencio al
 # final, un fundido); una versión distinta difiere bastante más.
 TOLERANCIA_MISMA_GRABACION = 3
+# Hasta dónde dos entregas de la misma grabación pueden diferir por el corte: un
+# silencio de más al principio o al final. El cruce de códigos le da a cada
+# tema el ISRC de la grabación de Deezer si dura lo mismo con cuatro segundos de
+# margen, así que dos temas que recibieron el mismo código pueden diferir hasta
+# en ocho entre ellos sin que ninguno de los dos cruces esté mal.
+TOLERANCIA_OTRO_CORTE = 8
+# Parecido mínimo entre dos títulos para tomarlos por el mismo cuando además
+# duran lo mismo: «La Llamada del Amor» y «La Llamada de Amor».
+MIN_SIMILITUD_TITULO = 0.9
 
 
-def _misma_grabacion(a, b):
-    """True si dos tracks con el mismo ISRC parecen ser la misma grabación.
+def _mismo_titulo(a, b, misma_duracion):
+    """Si dos títulos nombran el mismo tema.
 
-    Mismo título, sin acentos ni puntuación, y la misma duración con tolerancia.
+    Iguales sin acentos ni puntuación, o casi iguales cuando además duran lo
+    mismo: una distribuidora escribe «del» donde la otra escribió «de», y eso
+    no es otra grabación. Nunca si cambia la versión o un número: «Parte 1» y
+    «Parte 2» se parecen más de un noventa por ciento.
+    """
+    ta, tb = comparable(a), comparable(b)
+    if ta == tb:
+        return True
+    if not misma_duracion or not misma_version(a or "", b or ""):
+        return False
+    return SequenceMatcher(None, ta, tb).ratio() >= MIN_SIMILITUD_TITULO
+
+
+def _parentesco(a, b):
+    """Qué relación tienen dos tracks que llevan el mismo ISRC.
+
+      - "misma": el mismo título y la misma duración. Es la misma grabación.
+      - "otro_corte": el mismo título y unos segundos de diferencia. Casi
+        siempre es la misma grabación entregada con otro corte, y a veces una
+        regrabación: no se puede saber desde acá, y se avisa.
+      - "otra": cambia el título, o la duración por mucho. El código de uno de
+        los dos viene de un cruce equivocado.
+
     Si a alguno le falta la duración se decide por el título, que es lo que hay.
     """
-    if comparable(a.get("track")) != comparable(b.get("track")):
-        return False
     da, db = int(a.get("duration_s") or 0), int(b.get("duration_s") or 0)
-    return not (da and db) or abs(da - db) <= TOLERANCIA_MISMA_GRABACION
+    diferencia = abs(da - db) if (da and db) else 0
+    dura_igual = bool(da and db) and diferencia <= TOLERANCIA_MISMA_GRABACION
+    if not _mismo_titulo(a.get("track"), b.get("track"), dura_igual):
+        return "otra"
+    if diferencia <= TOLERANCIA_MISMA_GRABACION:
+        return "misma"
+    return "otro_corte" if diferencia <= TOLERANCIA_OTRO_CORTE else "otra"
 
 
 def _duplicados(productos):
@@ -483,9 +519,14 @@ def _duplicados(productos):
             elif isrc in vistos_isrc:
                 p0, t0 = vistos_isrc[isrc]
                 uno = f"{p0.get('title', '')} / {t0.get('track', '')}"
-                if _misma_grabacion(t0, t):
+                parentesco = _parentesco(t0, t)
+                if parentesco == "misma":
                     texto = T("val.isrc_compartido", isrc=isrc, uno=uno, otro=donde)
                     out.append(_hallazgo("aviso", "isrc_compartido", texto, titulo, pista))
+                elif parentesco == "otro_corte":
+                    segundos = abs(int(t0.get("duration_s") or 0) - int(t.get("duration_s") or 0))
+                    texto = T("val.isrc_otro_corte", isrc=isrc, uno=uno, otro=donde, n=segundos)
+                    out.append(_hallazgo("aviso", "isrc_otro_corte", texto, titulo, pista))
                 else:
                     texto = T("val.isrc_match_dudoso", isrc=isrc, uno=uno, otro=donde)
                     out.append(_hallazgo("error", "isrc_match_dudoso", texto, titulo, pista))
@@ -499,16 +540,23 @@ def _duplicados(productos):
         if not upc:
             continue
         if upc in vistos_upc:
+            p0 = vistos_upc[upc]
+            # Si los dos son el mismo release en dos distribuidoras, el UPC
+            # repetido no es un código mal puesto: es que se eligieron los dos.
+            # Sigue siendo un error, porque no se puede entregar dos veces el
+            # mismo release, pero el arreglo es otro y hay que decirlo.
+            mismo = p0.get("distributor") in (p.get("tambien_en") or [])
+            clave = "val.upc_duplicado_mismo_release" if mismo else "val.upc_duplicado"
             out.append(
                 _hallazgo(
                     "error",
                     "upc_duplicado",
-                    T("val.upc_duplicado", upc=upc, uno=vistos_upc[upc], otro=p.get("title", "")),
+                    T(clave, upc=upc, uno=p0.get("title", ""), otro=p.get("title", "")),
                     p.get("title", ""),
                 )
             )
         else:
-            vistos_upc[upc] = p.get("title", "")
+            vistos_upc[upc] = p
 
     return out
 

@@ -353,3 +353,100 @@ def test_catalogo_vacio():
     res = V.validar([])
     assert res["apto"] is True
     assert res["hallazgos"] == []
+
+
+# ============================================================
+# El mismo ISRC con unos segundos de diferencia, y el mismo release dos veces
+# ============================================================
+#
+# Del catálogo real con que se probó la 1.2.0: de sus diez «errores de rechazo»,
+# siete eran el mismo tema entregado por dos distribuidoras con cuatro o cinco
+# segundos de diferencia, y uno era un disco que estaba dos veces.
+
+
+def test_el_mismo_tema_con_otro_corte_es_un_aviso_y_no_un_error():
+    """El cruce le da a cada tema el ISRC de Deezer con cuatro segundos de
+    margen, así que dos temas con el mismo código pueden diferir en ocho sin
+    que ningún cruce esté mal. La validación pedía tres, y marcaba como error
+    lo que el propio cruce había dado por bueno."""
+    res = V.validar(
+        [
+            _prod(title="Apasionados", tracks=[_track("Oro", "ARF060701590", 191)]),
+            _prod(title="20 Grandes Exitos", tracks=[_track("Oro", "ARF060701590", 195)]),
+        ]
+    )
+    assert codigos(res, "error") == [] and res["apto"] is True
+    (aviso,) = [h for h in res["hallazgos"] if h["codigo"] == "isrc_otro_corte"]
+    assert aviso["nivel"] == "aviso"
+    assert "4 segundos" in aviso["mensaje"] and "regrabación" in aviso["mensaje"]
+    assert "isrc_compartido" not in codigos(res), "no se afirma que sea la misma: se pregunta"
+
+
+def test_mas_alla_del_margen_del_cruce_sigue_siendo_un_error():
+    res = V.validar(
+        [
+            _prod(title="A", tracks=[_track("Tema", "ARABC2000001", 200)]),
+            _prod(title="B", tracks=[_track("Tema", "ARABC2000001", 209)]),
+        ]
+    )
+    assert "isrc_match_dudoso" in codigos(res, "error")
+
+
+def test_un_titulo_escrito_apenas_distinto_que_dura_lo_mismo_es_la_misma_grabacion():
+    """«La Llamada Del Amor» en un disco y «La Llamada de Amor» en otro, 196
+    segundos los dos: una distribuidora lo tipeó distinto."""
+    res = V.validar(
+        [
+            _prod(title="Las 50", tracks=[_track("La Llamada Del Amor", "ARG992043108", 196)]),
+            _prod(title="La Llamada", tracks=[_track("La Llamada de Amor", "ARG992043108", 196)]),
+        ]
+    )
+    assert codigos(res, "error") == []
+    assert "isrc_compartido" in codigos(res, "aviso")
+
+
+@pytest.mark.parametrize(
+    ("uno", "otro"),
+    [
+        ("Tema (Parte 1)", "Tema (Parte 2)"),  # se parecen más de un noventa por ciento
+        ("Tema", "Tema (En Vivo)"),
+        ("La Llamada del Amor", "La Llama del Amor Eterno"),
+    ],
+)
+def test_un_titulo_parecido_no_alcanza_si_es_otra_cosa(uno, otro):
+    res = V.validar(
+        [
+            _prod(title="A", tracks=[_track(uno, "ARABC2000001", 200)]),
+            _prod(title="B", tracks=[_track(otro, "ARABC2000001", 200)]),
+        ]
+    )
+    assert "isrc_match_dudoso" in codigos(res, "error")
+
+
+def test_un_titulo_parecido_con_otra_duracion_no_es_el_mismo_tema():
+    """El parecido sólo vale con la misma duración: con otra, son dos señales
+    de que no es la misma grabación, no una."""
+    res = V.validar(
+        [
+            _prod(title="A", tracks=[_track("La Llamada Del Amor", "ARABC2000001", 196)]),
+            _prod(title="B", tracks=[_track("La Llamada de Amor", "ARABC2000001", 201)]),
+        ]
+    )
+    assert "isrc_match_dudoso" in codigos(res, "error")
+
+
+def test_el_mismo_release_en_dos_distribuidoras_elegido_dos_veces_dice_que_hacer():
+    uno = _prod(title="Las 50 Mejores", upc="036000291452", tracks=[_track("T1", "ARABC2000001")])
+    dos = _prod(title="Los 50 Mejores", upc="036000291452", tracks=[_track("T2", "ARABC2000002")])
+    uno["distributor"], dos["distributor"] = "PURO Music", "Puro Digital"
+    uno["tambien_en"], dos["tambien_en"] = ["Puro Digital"], ["PURO Music"]
+
+    (error,) = [h for h in V.validar([uno, dos])["hallazgos"] if h["codigo"] == "upc_duplicado"]
+    assert error["nivel"] == "error", "no se puede entregar dos veces: sigue siendo un error"
+    assert "mismo release en dos distribuidoras" in error["mensaje"] and "uno solo" in error["mensaje"]
+
+    # Sin esa relación es el caso de siempre: un código repetido por error.
+    uno.pop("tambien_en")
+    dos.pop("tambien_en")
+    (error,) = [h for h in V.validar([uno, dos])["hallazgos"] if h["codigo"] == "upc_duplicado"]
+    assert "está repetido" in error["mensaje"]

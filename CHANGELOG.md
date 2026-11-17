@@ -21,6 +21,25 @@ Lo que cambió en cada versión publicada. Los números siguen
   validación lo dice. En el catálogo con que se midió entraron 3 temas a sus
   discos y 6 lanzamientos aparte, 4 de ellos colaboraciones.
 
+### Corregido
+- **El mismo tema entregado por dos distribuidoras ya no es un «error de
+  rechazo».** El cruce le da a cada tema el ISRC de Deezer si dura lo mismo con
+  cuatro segundos de margen, pero la validación exigía tres entre dos temas con
+  el mismo código: marcaba como error lo que el propio cruce había dado por
+  bueno. Con el mismo título y hasta ocho segundos de diferencia ahora es un
+  aviso, que dice que suele ser la misma grabación con otro corte y a veces una
+  regrabación. Más allá de eso, o con otro título, sigue siendo error. En el
+  catálogo con que se midió, los errores bajaron de 9 a 1.
+- **Un título escrito apenas distinto ya no hace dos grabaciones.** «La Llamada
+  Del Amor» en un disco y «La Llamada de Amor» en otro, con la misma duración y
+  el mismo ISRC, son el mismo tema. No vale si cambia la versión o un número:
+  «Parte 1» y «Parte 2» siguen siendo dos.
+- **El mismo disco en dos distribuidoras se reconoce aunque el título no
+  coincida.** «Las 50 Mejores Canciones…» por una y «Los 50 Mejores
+  Canciones…» por otra eran el mismo release, con el mismo UPC, y no se
+  avisaba. Ahora los une el álbum de Deezer donde se ubicaron sus temas, y si
+  se eligen los dos el error dice qué hacer: migrar uno solo.
+
 ## [1.2.0] — 2026-11-16
 
 ### Agregado

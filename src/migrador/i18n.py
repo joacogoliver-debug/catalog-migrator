@@ -947,6 +947,18 @@ TEXTOS = {
             "code, it is what preserves its history."
         ),
     },
+    "val.isrc_otro_corte": {
+        "es": (
+            "El ISRC {isrc} está en '{uno}' y en '{otro}', con el mismo título y {n} segundos de "
+            "diferencia. Suele ser la misma grabación entregada con otro corte, y entonces el "
+            "código se conserva; si es una regrabación, lleva otro. Confirmalo antes de entregar."
+        ),
+        "en": (
+            "ISRC {isrc} is in '{uno}' and in '{otro}', with the same title and {n} seconds apart. "
+            "It is usually the same recording delivered with a different trim, and then the code "
+            "is kept; if it is a re-recording, it takes another one. Confirm before delivering."
+        ),
+    },
     "val.isrc_match_dudoso": {
         "es": (
             "El ISRC {isrc} aparece en '{uno}' y en '{otro}', que no parecen la misma grabación "
@@ -957,6 +969,16 @@ TEXTOS = {
             "ISRC {isrc} shows up in '{uno}' and in '{otro}', which do not look like the same "
             "recording (the title or the length differ). Most likely one of them comes from a "
             "wrong match: check it before delivering."
+        ),
+    },
+    "val.upc_duplicado_mismo_release": {
+        "es": (
+            "'{uno}' y '{otro}' son el mismo release en dos distribuidoras, con el mismo UPC "
+            "({upc}). No se puede entregar dos veces: elegí uno solo de los dos."
+        ),
+        "en": (
+            "'{uno}' and '{otro}' are the same release at two distributors, with the same UPC "
+            "({upc}). It cannot be delivered twice: pick just one of the two."
         ),
     },
     "val.upc_duplicado": {

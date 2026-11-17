@@ -79,3 +79,33 @@ def test_con_dos_releases_con_fecha_el_sin_fecha_no_se_adivina():
 def test_los_singles_siguen_siendo_uno_por_video():
     ps = P.group_products([_track("Tema", year=2020, vid="a"), _track("Tema", year=2020, vid="b")])
     assert len(ps) == 2
+
+
+def test_el_mismo_disco_con_el_titulo_escrito_distinto_en_cada_distribuidora():
+    """Del catálogo real: «Las 50 Mejores Canciones…» por una distribuidora y
+    «Los 50 Mejores Canciones…» por otra, el mismo día y con el mismo UPC. Como
+    el título no coincidía letra por letra, no se avisaba que era el mismo
+    release. Lo que los une es el álbum de Deezer donde se ubicaron sus temas."""
+    tracks = [
+        _t("Uno", 2026, "2026-02-27", dist="PURO Music", album="Las 50 Mejores Canciones"),
+        _t("Dos", 2026, "2026-02-27", dist="PURO Music", album="Las 50 Mejores Canciones"),
+        _t("Uno", 2026, "2026-02-27", dist="Puro Digital", album="Los 50 Mejores Canciones"),
+        _t("Suelto", 2026, "2026-02-27", dist="Otra", album="Otro Disco"),
+    ]
+    for t in tracks[:3]:
+        t["album_deezer_id"] = 928746941
+    ps = {p["title"]: p for p in P.group_products(tracks)}
+    assert ps["Las 50 Mejores Canciones"].get("tambien_en") == ["Puro Digital"]
+    assert ps["Los 50 Mejores Canciones"].get("tambien_en") == ["PURO Music"]
+    assert "tambien_en" not in ps["Otro Disco"]
+
+
+def test_un_release_que_solo_esta_en_deezer_no_cuenta_como_otra_distribuidora():
+    """No tiene distribuidora: no hay dos de las que avisar."""
+    tracks = [
+        _t("Uno", 2020, "2020-03-01", dist="ONErpm", album="Disco"),
+        _t("Uno", 2020, "2020-03-01", dist=P.SIN_DATOS, album="Disco (Edición)"),
+    ]
+    for t in tracks:
+        t["album_deezer_id"] = 10
+    assert not any("tambien_en" in p for p in P.group_products(tracks))

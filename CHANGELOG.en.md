@@ -22,6 +22,26 @@ What changed in every published version. The numbers follow
   on, 3 tracks went into their releases and 6 releases came in separately, 4 of
   them collaborations.
 
+### Fixed
+- **The same track delivered by two distributors is no longer a "rejection
+  error".** The matcher gives each track Deezer's ISRC when the length agrees
+  within four seconds, but the validation demanded three between two tracks
+  sharing a code: it flagged as an error what the matcher itself had accepted.
+  With the same title and up to eight seconds apart it is now a notice, which
+  says it is usually the same recording with a different trim and sometimes a
+  re-recording. Beyond that, or with another title, it is still an error. On
+  the catalog this was measured on, errors went from 9 to 1.
+- **A title typed slightly differently no longer makes two recordings.** "La
+  Llamada Del Amor" on one release and "La Llamada de Amor" on another, with
+  the same length and ISRC, are the same track. Not when the version or a
+  number changes: "Part 1" and "Part 2" are still two.
+- **The same release at two distributors is recognised even when the titles do
+  not match.** "Las 50 Mejores Canciones…" from one and "Los 50 Mejores
+  Canciones…" from the other were the same release, with the same UPC, and
+  nothing was said. They are now tied by the Deezer album their tracks were
+  placed on, and if both are selected the error says what to do: migrate just
+  one.
+
 ## [1.2.0] — 2026-11-16
 
 ### Added

@@ -161,11 +161,19 @@ def _marcar_duplicados_entre_distribuidoras(productos):
         if len(p["tracks"]) and (p["tracks"][0].get("album") or SIN_ALBUM) != SIN_ALBUM:
             clave = (_norm(p["title"]), p["release_date"] or str(p["release_year"] or ""))
             por_release.setdefault(clave, []).append(p)
+        # Y por el álbum de Deezer en cuyo tracklist se ubicaron sus temas. Dos
+        # distribuidoras no siempre escriben igual el título: «Las 50 Mejores
+        # Canciones…» y «Los 50 Mejores Canciones…» eran el mismo disco, con el
+        # mismo UPC, y como el título no coincidía no se avisaba nada.
+        for album_id in {t.get("album_deezer_id") for t in p["tracks"]} - {None}:
+            por_release.setdefault(("deezer", album_id), []).append(p)
     for mismos in por_release.values():
         distribuidoras = {p["distributor"] for p in mismos if p["distributor"]}
         if len(distribuidoras) > 1:
             for p in mismos:
-                p["tambien_en"] = sorted(distribuidoras - {p["distributor"]})
+                if p["distributor"]:
+                    otras = set(p.get("tambien_en") or []) | (distribuidoras - {p["distributor"]})
+                    p["tambien_en"] = sorted(otras)
 
 
 def group_products(tracks: list[Track], artist="") -> list[Producto]:
