@@ -6,7 +6,7 @@ What changed in every published version. The numbers follow
 [SemVer](https://semver.org/), and the downloads are in
 [Releases](https://github.com/joacogoliver-debug/catalog-migrator/releases).
 
-## [Unreleased]
+## [1.3.0] — 2026-11-17
 
 ### Added
 - **What is only on Deezer goes into the catalog.** The previous version said
@@ -712,6 +712,7 @@ First public version.
 - Executables for Windows, macOS and Linux compiled in GitHub Actions, with
   SHA256 and a build provenance attestation.
 
+[1.3.0]: https://github.com/joacogoliver-debug/catalog-migrator/releases/tag/v1.3.0
 [1.2.0]: https://github.com/joacogoliver-debug/catalog-migrator/releases/tag/v1.2.0
 [1.1.0]: https://github.com/joacogoliver-debug/catalog-migrator/releases/tag/v1.1.0
 [1.0.2]: https://github.com/joacogoliver-debug/catalog-migrator/releases/tag/v1.0.2
