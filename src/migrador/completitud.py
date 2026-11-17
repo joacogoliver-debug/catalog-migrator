@@ -61,6 +61,7 @@ def completitud_vacia() -> Completitud:
         "releases": 0,
         "temas": 0,
         "sin_respuesta": 0,
+        "isrc_completados": 0,
         "recortada": False,
         "faltan": [],
     }
@@ -124,6 +125,44 @@ def _temas_de(album_id) -> list[TemaFaltante] | None:
         }
         for x in datos.get("data") or []
     ]
+
+
+def completar_isrc(tracks: list[Track], tracklists) -> int:
+    """Les pone ISRC a los temas que no lo consiguieron, desde la discografía.
+
+    El cruce de códigos busca cada tema por texto, y la búsqueda de Deezer
+    devuelve pocos resultados: un tema con un título común, o que está en
+    varios discos, puede no salir entre ellos aunque Deezer lo tenga. La
+    discografía del artista ya está bajada entera para comparar, y ahí el tema
+    se encuentra sin buscar nada.
+
+    Es tan conservador como el cruce: el mismo título, la misma versión y la
+    misma duración, con las dos duraciones a la vista. Y si con eso quedan dos
+    códigos distintos, no se elige: son dos grabaciones que se llaman y duran
+    igual, y no hay cómo saber cuál es. Los cortes de un megamix, que se llaman
+    como el tema pero duran un tercio, quedan en blanco, que es lo correcto.
+
+    Devuelve cuántos completó.
+    """
+    por_titulo: dict[str, list[TemaFaltante]] = {}
+    for temas in tracklists:
+        for x in temas or []:
+            if x["isrc"] and x["duracion_s"]:
+                por_titulo.setdefault(comparable(x["titulo"]), []).append(x)
+    completados = 0
+    for t in tracks:
+        duracion = t.get("duration_s") or 0
+        if t.get("isrc") or not duracion:
+            continue
+        codigos = {
+            x["isrc"]
+            for x in por_titulo.get(comparable(t["track"]), [])
+            if abs(x["duracion_s"] - duracion) <= MARGEN_DURACION and misma_version(x["titulo"], t["track"])
+        }
+        if len(codigos) == 1:
+            t["isrc"], t["match"] = codigos.pop(), "alta"
+            completados += 1
+    return completados
 
 
 class _Relevado:
@@ -224,7 +263,6 @@ def revisar(tracks: list[Track], cruce: CruceDeezer, artista, avance=None) -> Co
     if not discos:
         return res
 
-    relevado = _Relevado(tracks)
     verificados = set(cruce.get("verificados") or {}) | {
         t.get("album_deezer_id") for t in tracks if t.get("album_deezer_id")
     }
@@ -235,6 +273,11 @@ def revisar(tracks: list[Track], cruce: CruceDeezer, artista, avance=None) -> Co
             temas_por_disco.append(temas)
             if avance:
                 avance(i, len(discos))
+
+    # Antes de ver qué falta: un tema que consigue acá su código deja de
+    # depender del título para que se lo reconozca.
+    res["isrc_completados"] = completar_isrc(tracks, temas_por_disco)
+    relevado = _Relevado(tracks)
 
     candidatos: list[ReleaseIncompleto] = []
     tracklists: dict[int, list[TemaFaltante]] = {}

@@ -438,6 +438,9 @@ class Completitud(TypedDict):
     releases: int  # cuántos releases tiene el artista en Deezer
     temas: int  # grabaciones distintas que faltan
     sin_respuesta: int  # releases que Deezer no contestó
+    # ISRC que la búsqueda por texto no había encontrado y que salieron de la
+    # discografía, por título y duración (ver `completitud.completar_isrc`).
+    isrc_completados: int
     recortada: bool  # la discografía superó el tope y se revisó una parte
     faltan: list[ReleaseIncompleto]
 

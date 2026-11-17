@@ -21,6 +21,13 @@ What changed in every published version. The numbers follow
   Deezer credits, and the validation says so. On the catalog this was measured
   on, 3 tracks went into their releases and 6 releases came in separately, 4 of
   them collaborations.
+- **More ISRCs, without searching more.** The artist's discography is already
+  fetched whole for the comparison, and it holds tracks that Deezer's text
+  search had not returned. Tracks left without a code get the one from the
+  discography when title, version and length agree, and only if that leaves a
+  single code. On the catalog this was measured on, tracks without an ISRC went
+  from 53 to 41; those still empty are cuts from a megamix, named like the song
+  and a third as long.
 
 ### Fixed
 - **The same track delivered by two distributors is no longer a "rejection

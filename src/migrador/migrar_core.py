@@ -110,6 +110,8 @@ def relevar_catalogo(
         log(T("mig.descartados", n=diag["descartados"]))
     if diag["cortado_por_cuota"]:
         log(T("mig.cortado_por_cuota", n=diag["temas"]))
+    if comp["isrc_completados"]:
+        log(T("mig.isrc_de_discografia", n=comp["isrc_completados"]))
     if comp["revisada"] and comp["temas"]:
         log(T("mig.faltan_en_youtube", n=comp["temas"], releases=len(comp["faltan"])))
     return prods, artista, tracks, diag

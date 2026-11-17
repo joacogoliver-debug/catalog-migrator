@@ -688,3 +688,86 @@ def test_el_diagnostico_cuenta_los_temas_de_youtube_no_los_sumados(hacer_track, 
     prods, _artista, todos, diag = M.relevar_catalogo("https://www.youtube.com/@x", "k")
     assert diag["temas"] == 1 and len(todos) == 4
     assert {p["title"]: p["track_count"] for p in prods} == {"Disco": 2, "Otro Disco": 2}
+
+
+# ============================================================
+# Los ISRC que la búsqueda no encontró, desde la discografía
+# ============================================================
+#
+# En el catálogo real quedaban 53 temas sin ISRC. Doce estaban en la
+# discografía que ya se baja para comparar, con su título y su duración: la
+# búsqueda por texto de Deezer, que devuelve cinco resultados, no los había
+# traído. Los otros eran cortes de un megamix, y esos tienen que seguir vacíos.
+
+
+def test_un_tema_sin_isrc_lo_consigue_de_la_discografia(hacer_track, deezer):
+    deezer({10: ("Disco", "album", "2020-01-01", [tema("Uno", "AR1", 200), tema("Dos", "AR2", 215)])})
+    tracks = [
+        track(hacer_track, "Uno", "Disco", isrc="AR1", dur=200, aid=10),
+        track(hacer_track, "Dos", "Disco", dur=213),  # la búsqueda no lo encontró
+    ]
+    res = C.revisar(tracks, cruce(10), "Los del Ejemplo")
+    assert (tracks[1]["isrc"], tracks[1]["match"]) == ("AR2", "alta")
+    assert res["isrc_completados"] == 1
+    assert res["faltan"] == [], "y con su código, ya no figura como faltante"
+
+
+@pytest.mark.parametrize(
+    ("titulo", "duracion", "motivo"),
+    [
+        ("Dos", 72, "el corte de un megamix se llama igual y dura un tercio"),
+        ("Dos (En Vivo)", 215, "es otra versión"),
+        ("Dos", 0, "sin la duración no hay con qué confirmarlo"),
+        ("Otro Tema", 215, "no está en la discografía"),
+    ],
+)
+def test_ante_la_duda_el_isrc_queda_en_blanco(hacer_track, deezer, titulo, duracion, motivo):
+    deezer({10: ("Disco", "album", "2020-01-01", [tema("Uno", "AR1", 200), tema("Dos", "AR2", 215)])})
+    tracks = [
+        track(hacer_track, "Uno", "Disco", isrc="AR1", dur=200, aid=10),
+        track(hacer_track, titulo, "Megamix", dur=duracion),
+    ]
+    res = C.revisar(tracks, cruce(10), "Los del Ejemplo")
+    assert tracks[1]["isrc"] == "", motivo
+    assert res["isrc_completados"] == 0
+
+
+def test_dos_grabaciones_que_se_llaman_y_duran_igual_no_se_eligen(hacer_track, deezer):
+    """La de estudio y una regrabación, las dos de 215 segundos, con códigos
+    distintos: no hay cómo saber cuál es la de YouTube."""
+    deezer(
+        {
+            10: ("Disco", "album", "2020-01-01", [tema("Uno", "AR1", 200), tema("Dos", "AR2", 215)]),
+            11: ("Regrabado", "album", "2024-01-01", [tema("Dos", "AR9", 216)]),
+        }
+    )
+    tracks = [
+        track(hacer_track, "Uno", "Disco", isrc="AR1", dur=200, aid=10),
+        track(hacer_track, "Dos", "Otro", dur=215),
+    ]
+    C.revisar(tracks, cruce(10), "Los del Ejemplo")
+    assert tracks[1]["isrc"] == ""
+
+
+def test_la_misma_grabacion_en_dos_discos_no_es_ambigua(hacer_track, deezer):
+    """El mismo código en el disco y en el compilado es un solo código."""
+    deezer(
+        {
+            10: ("Disco", "album", "2020-01-01", [tema("Uno", "AR1", 200), tema("Dos", "AR2", 215)]),
+            11: ("Grandes Éxitos", "album", "2024-01-01", [tema("Dos", "AR2", 217)]),
+        }
+    )
+    tracks = [
+        track(hacer_track, "Uno", "Disco", isrc="AR1", dur=200, aid=10),
+        track(hacer_track, "Dos", "Otro", dur=216),
+    ]
+    C.revisar(tracks, cruce(10), "Los del Ejemplo")
+    assert tracks[1]["isrc"] == "AR2"
+
+
+def test_un_isrc_que_ya_estaba_no_se_toca(hacer_track, deezer):
+    deezer({10: ("Disco", "album", "2020-01-01", [tema("Uno", "AR1", 200)])})
+    tracks = [track(hacer_track, "Uno", "Disco", isrc="XX9", dur=200, aid=10)]
+    tracks[0]["match"] = "media"
+    C.revisar(tracks, cruce(10), "Los del Ejemplo")
+    assert (tracks[0]["isrc"], tracks[0]["match"]) == ("XX9", "media")

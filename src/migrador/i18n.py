@@ -398,6 +398,10 @@ TEXTOS = {
         "es": "La cuota de YouTube se acabó a mitad del listado: el catálogo quedó incompleto, con {n} temas",
         "en": "The YouTube quota ran out mid-listing: the catalog is incomplete, with {n} tracks",
     },
+    "mig.isrc_de_discografia": {
+        "es": "La discografía de Deezer completó ISRC que la búsqueda no había encontrado: {n}",
+        "en": "The Deezer discography filled in ISRCs the search had not found: {n}",
+    },
     "mig.faltan_en_youtube": {
         "es": "Deezer tiene {n} grabaciones, en {releases} lanzamientos, que no aparecieron en YouTube",
         "en": "Deezer has {n} recordings, across {releases} releases, that did not show up on YouTube",

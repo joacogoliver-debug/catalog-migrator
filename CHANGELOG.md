@@ -20,6 +20,13 @@ Lo que cambió en cada versión publicada. Los números siguen
   otro artista. En ese caso queda a nombre de quien figura en Deezer, y la
   validación lo dice. En el catálogo con que se midió entraron 3 temas a sus
   discos y 6 lanzamientos aparte, 4 de ellos colaboraciones.
+- **Más ISRC, sin buscar más.** La discografía del artista ya se baja entera
+  para comparar, y ahí están temas que la búsqueda por texto de Deezer no
+  había traído. A los que quedaron sin código se les pone el de la discografía
+  cuando coinciden el título, la versión y la duración, y sólo si con eso queda
+  un único código. En el catálogo con que se midió, los temas sin ISRC bajaron
+  de 53 a 41; los que siguen vacíos son cortes de un megamix, que se llaman
+  como el tema y duran un tercio.
 
 ### Corregido
 - **El mismo tema entregado por dos distribuidoras ya no es un «error de
