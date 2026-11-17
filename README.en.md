@@ -427,6 +427,10 @@ what it detected, and it does not include your key.
 - **The catalog is not stored.** It lives in memory while the app is open.
 - Deezer and iTunes are queried with public catalog data (artist name, title,
   duration).
+- **It does not check for updates on its own.** Only when you press "Check
+  for updates", at the foot of the window, does it ask GitHub which is the
+  latest published version. That request carries nothing of yours or of your
+  catalog.
 - There is no telemetry of any kind.
 
 ## Terms of use

@@ -35,6 +35,8 @@ Endpoints:
   GET  /                      la interfaz
   GET  /<archivo>             estáticos (js, css, fuentes, assets)
   GET  /api/config            capacidades del entorno y estado de la clave
+  GET  /api/actualizacion     si hay una versión más nueva publicada
+  POST /api/actualizacion/abrir  abre la página de descargas en el navegador
   POST /api/terminos          aceptación de los términos de uso
   POST /api/clave             guardar la clave de YouTube
   POST /api/relevar           {url, con_codigos, de_cero} -> {job}    (asincrónico)
@@ -1011,6 +1013,48 @@ def api_tidal_desconectar():
     return {"ok": True}
 
 
+# Dónde se publican las versiones. La página es la que se le abre a quien
+# quiere bajar la nueva: ahí están los archivos y cuál elegir para cada sistema.
+PAGINA_VERSIONES = "https://github.com/joacogoliver-debug/catalog-migrator/releases/latest"
+API_ULTIMA_VERSION = "https://api.github.com/repos/joacogoliver-debug/catalog-migrator/releases/latest"
+
+
+def _numeros_de_version(texto):
+    """«v1.3.10» -> (1, 3, 10), para comparar versiones como números y no
+    como texto, donde «1.3.10» queda antes que «1.3.9»."""
+    return tuple(int(n) for n in re.findall(r"\d+", str(texto or ""))[:3])
+
+
+def api_actualizacion():
+    """Si hay una versión más nueva publicada que la que está corriendo.
+
+    Existe porque la app no se actualiza sola y nadie sabía con qué versión
+    estaba probando: la primera pregunta de cada consulta era «¿cuándo la
+    bajaste?». Se le pregunta a GitHub por la última versión publicada, sólo
+    cuando alguien toca el botón: la app no llama a ningún lado por su cuenta.
+    El pedido no lleva nada del usuario ni de su catálogo.
+    """
+    datos = R._http_json(API_ULTIMA_VERSION, headers={"Accept": "application/vnd.github+json"}, retries=1)
+    ultima = str((datos or {}).get("tag_name") or "").lstrip("vV")
+    if not _numeros_de_version(ultima):
+        raise ValueError(T("srv.actualizacion_sin_respuesta"))
+    return {
+        "actual": VERSION,
+        "ultima": ultima,
+        "hay": _numeros_de_version(ultima) > _numeros_de_version(VERSION),
+    }
+
+
+def api_abrir_versiones():
+    """Abre la página de descargas en el navegador del sistema. Lo hace el
+    servidor y no un enlace de la página, porque la ventana propia no siempre
+    saca un enlace hacia afuera. La dirección es fija: no la elige la página."""
+    import webbrowser
+
+    webbrowser.open(PAGINA_VERSIONES)
+    return {"ok": True}
+
+
 def api_latido():
     """La ventana avisa que sigue abierta.
 
@@ -1036,6 +1080,7 @@ RUTAS_POST = {
 }
 RUTAS_POST_SIN_BODY = {
     "/api/latido": api_latido,
+    "/api/actualizacion/abrir": api_abrir_versiones,
     "/api/tidal/iniciar": api_tidal_iniciar,
     "/api/tidal/desconectar": api_tidal_desconectar,
 }
@@ -1236,6 +1281,12 @@ class Handler(BaseHTTPRequestHandler):
 
             if ruta == "/api/config":
                 return self._json(api_config())
+
+            if ruta == "/api/actualizacion":
+                try:
+                    return self._json(api_actualizacion())
+                except ValueError as e:
+                    return self._error(e, HTTPStatus.BAD_GATEWAY)
 
             if ruta == "/api/catalogo":
                 # Permite recuperar el catálogo si se recarga la página: el

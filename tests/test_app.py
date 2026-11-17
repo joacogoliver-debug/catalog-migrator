@@ -647,6 +647,66 @@ def test_el_ticket_no_saltea_el_control_de_host(cliente, paquete_listo):
     assert _sin_cabeceras(cliente, res["url"])[0] == 200
 
 
+# --- Buscar actualizaciones ------------------------------------------------
+#
+# La app no se actualiza sola. El botón del pie le pregunta a GitHub cuál es la
+# última versión publicada, y sólo cuando se lo toca.
+
+
+@pytest.mark.parametrize(
+    ("publicada", "hay"),
+    [
+        ("v99.0.0", True),
+        (f"v{backend.VERSION}", False),
+        ("v0.9.0", False),
+    ],
+)
+def test_la_busqueda_dice_si_hay_una_version_mas_nueva(cliente, monkeypatch, publicada, hay):
+    pedidos = []
+
+    def github(url, headers=None, retries=3):
+        pedidos.append(url)
+        return {"tag_name": publicada}
+
+    monkeypatch.setattr(backend.R, "_http_json", github)
+    cod, cuerpo, _cab = cliente.get("/api/actualizacion")
+    res = json.loads(cuerpo)
+    assert cod == 200
+    assert res == {"actual": backend.VERSION, "ultima": publicada.lstrip("v"), "hay": hay}
+    assert pedidos == [backend.API_ULTIMA_VERSION], "un solo pedido, y a la dirección fija"
+
+
+def test_las_versiones_se_comparan_como_numeros():
+    assert backend._numeros_de_version("v1.3.10") > backend._numeros_de_version("1.3.9")
+    assert backend._numeros_de_version("") == ()
+
+
+@pytest.mark.parametrize("respuesta", [None, {}, {"tag_name": "nightly"}, {"message": "rate limit"}])
+def test_si_github_no_contesta_la_busqueda_lo_dice_y_no_rompe(cliente, monkeypatch, respuesta):
+    monkeypatch.setattr(backend.R, "_http_json", lambda *a, **k: respuesta)
+    cod, cuerpo, _cab = cliente.get("/api/actualizacion")
+    assert cod == 502 and json.loads(cuerpo)["error"]
+
+
+def test_bajar_la_version_abre_la_pagina_fija_y_exige_el_token(cliente, monkeypatch):
+    import webbrowser
+
+    abiertas = []
+    monkeypatch.setattr(webbrowser, "open", abiertas.append)
+    assert cliente.crudo("POST", "/api/actualizacion/abrir", datos=b"{}") == 403
+    assert abiertas == []
+    assert cliente.post("/api/actualizacion/abrir", {})[0] == 200
+    assert abiertas == [backend.PAGINA_VERSIONES]
+
+
+def test_la_app_no_busca_actualizaciones_sin_que_se_lo_pidan():
+    """Es lo que dice el README en Privacidad: la consulta sale sólo del botón."""
+    with open(os.path.join(backend.WEB_DIR, "app.js"), encoding="utf-8") as f:
+        js = f.read()
+    assert js.count("api('/api/actualizacion')") == 1
+    assert "async 'buscar-actualizacion'()" in js
+
+
 # --- Guardar el paquete en la carpeta Descargas -----------------------------
 #
 # La ventana propia de macOS descarta las descargas sin avisar: la página pedía

@@ -94,6 +94,11 @@ const TEXTOS = {
   'cabecera.ir_a_oscuro': { es: 'Cambiar a modo oscuro', en: 'Switch to dark mode' },
   'pie.hecho_por': { es: 'Hecho por', en: 'Made by' },
   'pie.terminos': { es: 'Términos de uso', en: 'Terms of use' },
+  'pie.buscar_actualizacion': { es: 'Buscar actualizaciones', en: 'Check for updates' },
+  'pie.buscando_actualizacion': { es: 'Buscando…', en: 'Checking…' },
+  'pie.al_dia': { es: 'Tenés la última versión', en: 'You have the latest version' },
+  'pie.hay_version': { es: 'Hay una versión nueva: bajar la {version}', en: 'New version available: get {version}' },
+  'pie.actualizacion_fallo': { es: 'No se pudo consultar; reintentar', en: 'Could not check; retry' },
 
   /* ---------------------------------------------------------- stepper */
   'stepper.paso1': { es: 'Pegá el link', en: 'Paste the link' },

@@ -377,6 +377,9 @@ button.step.activo:hover .step-num { background: var(--acento-fuerte); border-co
 }
 .link-inline { color: var(--texto-acento); text-decoration: underline; text-underline-offset: 3px; }
 .link-pie:hover, .link-inline:hover { color: var(--texto-acento); }
+/* Cuando hay una versión nueva el botón del pie deja de ser discreto. */
+.footer .link-pie.hay-version { color: var(--texto-acento); text-decoration: underline; text-underline-offset: 3px; }
+.link-pie:disabled { cursor: default; opacity: 0.7; }
 
 /* ---------------------------------------------------------- campos */
 

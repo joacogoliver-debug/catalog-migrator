@@ -6,6 +6,15 @@ What changed in every published version. The numbers follow
 [SemVer](https://semver.org/), and the downloads are in
 [Releases](https://github.com/joacogoliver-debug/catalog-migrator/releases).
 
+## [Unreleased]
+
+### Added
+- **A button to check for updates**, at the foot of the window, next to the
+  version number. The app does not update itself and nobody knew which version
+  they were testing. Pressing it asks GitHub which is the latest published
+  one: if it is yours, it says so; if there is a newer one, the same button
+  opens the page to get it. It only checks when you press it.
+
 ## [1.3.3] — 2026-11-17
 
 ### Fixed

@@ -614,6 +614,10 @@ TEXTOS = {
         "es": "No se pudo abrir la carpeta: {detalle}",
         "en": "The folder could not be opened: {detalle}",
     },
+    "srv.actualizacion_sin_respuesta": {
+        "es": "No se pudo consultar cuál es la última versión. Revisá la conexión y probá de nuevo.",
+        "en": "Could not check which version is the latest. Check your connection and try again.",
+    },
     "srv.trabajo_no_existe": {"es": "Ese trabajo ya no existe.", "en": "That job no longer exists."},
     "srv.rechazado": {"es": "Pedido rechazado.", "en": "Request rejected."},
     "srv.rechazado_token": {

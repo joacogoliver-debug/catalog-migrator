@@ -37,6 +37,7 @@ const S = {
   errorCampo: '',           // error de validacion del link, va bajo el campo
   errorDescarga: '',        // el ZIP ya no está (vence a la hora): aviso en la misma pantalla
   guardado: null,           // { ruta, archivo } del paquete copiado a la carpeta Descargas
+  actualizacion: null,      // lo que contestó la búsqueda de versiones: { hay, ultima } | { buscando } | { error }
   guardando: false,
   entrando: false,          // el proximo render es un cambio de vista: anima la entrada
   // Lo que se escribió en el paso 1. Cada render() reemplaza el formulario
@@ -433,6 +434,12 @@ function dibujar() {
   S.entrando = false;
   const v = $('#version');
   if (v) v.textContent = S.config ? 'v' + S.config.version : '';
+  const act = $('#actualizacion');
+  if (act) {
+    act.textContent = S.config ? textoActualizacion() : '';
+    act.classList.toggle('hay-version', !!(S.actualizacion && S.actualizacion.hay));
+    act.disabled = !!(S.actualizacion && S.actualizacion.buscando);
+  }
 
   if (S.fatal) { pantalla().innerHTML = vistaFatal(); return; }
   if (!S.config) { pantalla().innerHTML = vistaEsqueleto(); return; }
@@ -1187,6 +1194,15 @@ function vistaPaso4() {
   </div>`;
 }
 
+/** Lo que dice el botón de actualizaciones del pie, según lo que se sabe. */
+function textoActualizacion() {
+  const a = S.actualizacion;
+  if (!a) return T('pie.buscar_actualizacion');
+  if (a.buscando) return T('pie.buscando_actualizacion');
+  if (a.error) return T('pie.actualizacion_fallo');
+  return a.hay ? T('pie.hay_version', { version: a.ultima }) : T('pie.al_dia');
+}
+
 /** Si «Descargar» guarda el paquete directo en la carpeta Descargas, sin
  *  pasar por la descarga de la ventana. Es el caso de la ventana propia en
  *  macOS, que descarta las descargas sin avisar: se apretaba el botón y no
@@ -1432,6 +1448,23 @@ const ACCIONES = {
       S.errorDescarga = e.message;
       render();
     }
+  },
+
+  /** El botón del pie. La primera vez pregunta si hay una versión más nueva;
+   *  si la hay, el mismo botón pasa a abrir la página para bajarla. */
+  async 'buscar-actualizacion'() {
+    if (S.actualizacion && S.actualizacion.hay) {
+      try { await api('/api/actualizacion/abrir', {}); } catch (_) { /* queda el aviso a la vista */ }
+      return;
+    }
+    S.actualizacion = { buscando: true };
+    render();
+    try {
+      S.actualizacion = await api('/api/actualizacion');
+    } catch (e) {
+      S.actualizacion = { error: e.message };
+    }
+    render();
   },
 
   'ver-terminos'() { S.vista = 'terminos'; S.entrando = true; render(); arriba(); },

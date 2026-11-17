@@ -6,6 +6,15 @@ Lo que cambió en cada versión publicada. Los números siguen
 [SemVer](https://semver.org/lang/es/), y las descargas están en
 [Releases](https://github.com/joacogoliver-debug/catalog-migrator/releases).
 
+## [Sin publicar]
+
+### Agregado
+- **Un botón para buscar actualizaciones**, en el pie de la ventana, al lado
+  del número de versión. La app no se actualiza sola y nadie sabía con qué
+  versión estaba probando. Al tocarlo le pregunta a GitHub cuál es la última
+  publicada: si es la que tenés, lo dice; si hay una más nueva, el mismo botón
+  abre la página para bajarla. Sólo consulta cuando lo tocás.
+
 ## [1.3.3] — 2026-11-17
 
 ### Corregido

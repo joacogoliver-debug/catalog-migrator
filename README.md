@@ -425,6 +425,9 @@ y no incluye tu clave.
 - **No se guarda el catálogo.** Vive en memoria mientras la app está abierta.
 - Deezer e iTunes se consultan con datos públicos del catálogo (nombre de
   artista, título, duración).
+- **No busca actualizaciones por su cuenta.** Sólo cuando tocás «Buscar
+  actualizaciones», en el pie de la ventana, le pregunta a GitHub cuál es la
+  última versión publicada. Ese pedido no lleva nada tuyo ni de tu catálogo.
 - No hay telemetría de ningún tipo.
 
 ## Términos de uso
