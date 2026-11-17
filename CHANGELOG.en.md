@@ -6,7 +6,7 @@ What changed in every published version. The numbers follow
 [SemVer](https://semver.org/), and the downloads are in
 [Releases](https://github.com/joacogoliver-debug/catalog-migrator/releases).
 
-## [Unreleased]
+## [1.2.0] — 2026-11-16
 
 ### Added
 - **The app says what the catalog is missing.** YouTube search does not
@@ -639,6 +639,7 @@ First public version.
 - Executables for Windows, macOS and Linux compiled in GitHub Actions, with
   SHA256 and a build provenance attestation.
 
+[1.2.0]: https://github.com/joacogoliver-debug/catalog-migrator/releases/tag/v1.2.0
 [1.1.0]: https://github.com/joacogoliver-debug/catalog-migrator/releases/tag/v1.1.0
 [1.0.2]: https://github.com/joacogoliver-debug/catalog-migrator/releases/tag/v1.0.2
 [1.0.1]: https://github.com/joacogoliver-debug/catalog-migrator/releases/tag/v1.0.1
