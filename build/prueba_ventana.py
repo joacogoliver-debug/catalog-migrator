@@ -51,19 +51,24 @@ class PanelQueAcepta:
     """Reemplazo del panel «Guardar como» de macOS: acepta solo, en `destino`."""
 
     destino = ""
+    llamadas: list[str] = []  # qué le pidieron, en orden: dice por qué camino vino
 
     @classmethod
     def savePanel(cls):  # noqa: N802 (el nombre es el de AppKit)
+        cls.llamadas.append("savePanel")
         return cls()
 
     def __getattr__(self, nombre):
         # setTitle_, setDirectoryURL_, setNameFieldStringValue_ y compañía.
+        self.llamadas.append(nombre)
         return lambda *a, **k: None
 
     def runModal(self):  # noqa: N802
+        self.llamadas.append("runModal")
         return 1  # NSFileHandlingPanelOKButton
 
     def filename(self):
+        self.llamadas.append("filename")
         return self.destino
 
 
@@ -95,6 +100,7 @@ def probar_descarga():
 
     lineas = [f"pywebview {getattr(webview, '__version__', '?')}"]
     logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
+    logging.getLogger("pywebview").setLevel(logging.DEBUG)
 
     carpeta = tempfile.mkdtemp(prefix="prueba-ventana-")
     origen = os.path.join(carpeta, "origen", ARCHIVO)
@@ -154,6 +160,8 @@ def probar_descarga():
             lineas.append(f"tickets de descarga que pidió la página: {len(tickets)}")
             lineas.append(f"pedidos del ZIP que llegaron al servidor: {len(pedidos)}")
             if en_mac:
+                lineas.append(f"lo que se le pidió al panel de guardar: {PanelQueAcepta.llamadas}")
+                lineas.append(f"archivos en la carpeta de la prueba: {sorted(os.listdir(carpeta))}")
                 llego = os.path.exists(destino)
                 tam = os.path.getsize(destino) if llego else 0
                 lineas.append(f"archivo guardado: {llego}, {tam} de {os.path.getsize(origen)} bytes")
