@@ -62,19 +62,31 @@ def relevar_catalogo(
     # cruzaron códigos, porque es de ese cruce de donde sale qué artista de
     # Deezer es. No cuesta cuota de YouTube.
     comp = completitud_mod.completitud_vacia()
+    sumados: list[Track] = []
     if res.get("codes") is not None:
         if progress:
             progress(T("mig.comparando_deezer"), 0.96)
-        comp = completitud_mod.revisar(
-            tracks,
-            res["cruce"],
-            artista,
-            avance=(lambda h, t: fraccion(0.96 + 0.03 * h / t)) if fraccion else None,
-        )
+        # La comparación mejora el catálogo, pero el catálogo ya está: se listó
+        # y costó cuota. Si Deezer devuelve algo con una forma que no se previó,
+        # se sigue con lo relevado y se dice, en vez de perderlo entero. Se
+        # atrapan los errores de datos y no todo: una cancelación tiene que
+        # seguir de largo.
+        try:
+            comp = completitud_mod.revisar(
+                tracks,
+                res["cruce"],
+                artista,
+                avance=(lambda h, t: fraccion(0.96 + 0.03 * h / t)) if fraccion else None,
+            )
+            # Lo que falta y se puede sumar entra al catálogo con los datos de
+            # Deezer: adentro de su disco, o como un release aparte que queda
+            # sin elegir.
+            sumados = completitud_mod.sumar_de_deezer(tracks, comp, res["cruce"], artista)
+        except (KeyError, TypeError, ValueError, AttributeError, IndexError) as e:
+            comp, sumados = completitud_mod.completitud_vacia(), []
+            log(T("mig.comparacion_fallo", detalle=f"{type(e).__name__}: {e}"))
 
-    # Lo que falta y se puede sumar entra al catálogo con los datos de Deezer:
-    # adentro de su disco, o como un release aparte que queda sin elegir.
-    tracks = tracks + completitud_mod.sumar_de_deezer(tracks, comp, res["cruce"], artista)
+    tracks = tracks + sumados
     prods = productos_mod.group_products(tracks, artist=artista)
     completitud_mod.marcar(prods, comp, res["cruce"])
     log(T("mig.agrupados", productos=len(prods), tracks=len(tracks)))

@@ -9,6 +9,9 @@ Lo que cambió en cada versión publicada. Los números siguen
 ## [Sin publicar]
 
 ### Cambiado
+- **Si la comparación con Deezer falla, el catálogo no se pierde.** Ya se listó
+  y costó cuota: ante un dato de Deezer con una forma que no se previó, se
+  sigue con lo relevado de YouTube y el log lo dice.
 - **El aviso de lo que Deezer tiene de más es más corto.** Con tres avisos
   arriba, la tabla de productos quedaba fuera de la primera pantalla. Lo
   esencial queda a la vista y el detalle pasa adentro de «Ver cuáles».

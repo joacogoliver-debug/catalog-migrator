@@ -9,6 +9,9 @@ What changed in every published version. The numbers follow
 ## [Unreleased]
 
 ### Changed
+- **If the comparison against Deezer fails, the catalog is not lost.** It was
+  already listed and it cost quota: on Deezer data in a shape that was not
+  foreseen, the app carries on with what YouTube gave and the log says so.
 - **The notice about what Deezer has on top is shorter.** With three notices
   above it, the release table fell below the first screen. The essentials stay
   in view and the detail moves inside "Show which".

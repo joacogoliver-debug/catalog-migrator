@@ -398,6 +398,10 @@ TEXTOS = {
         "es": "La cuota de YouTube se acabó a mitad del listado: el catálogo quedó incompleto, con {n} temas",
         "en": "The YouTube quota ran out mid-listing: the catalog is incomplete, with {n} tracks",
     },
+    "mig.comparacion_fallo": {
+        "es": "No pude comparar con la discografía de Deezer; sigo con lo relevado de YouTube. ({detalle})",
+        "en": "Could not compare against the Deezer discography; carrying on with YouTube's data. ({detalle})",
+    },
     "mig.verificados_por_tracklist": {
         "es": "Discos verificados contra Deezer por su lista de temas: {n}",
         "en": "Releases verified against Deezer by their tracklist: {n}",

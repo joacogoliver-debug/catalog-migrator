@@ -303,6 +303,38 @@ def test_el_diagnostico_cuenta_como_se_listo_y_cuanto_costo(relevar_doble):
     assert any("incompleto" in a for a in avisos), "un catálogo cortado se dice en el log"
 
 
+def test_si_la_comparacion_con_deezer_falla_el_catalogo_no_se_pierde(relevar_doble, monkeypatch):
+    """El catálogo ya se listó y costó cuota. Un dato de Deezer con una forma
+    que no se previó no puede tirar eso: se sigue con lo relevado y se dice."""
+    from migrador import completitud
+
+    def rota(*a, **k):
+        raise KeyError("track_position")
+
+    monkeypatch.setattr(completitud, "revisar", rota)
+    avisos = []
+    prods, _a, tracks, diag = M.relevar_catalogo(
+        "https://www.youtube.com/@Test", "clave-falsa", progress=lambda m, f=None: avisos.append(m)
+    )
+    assert len(prods) == 2 and len(tracks) == 3
+    assert diag["completitud"]["revisada"] is False
+    assert any("No pude comparar" in a and "track_position" in a for a in avisos)
+
+
+def test_una_cancelacion_durante_la_comparacion_no_se_traga(relevar_doble, monkeypatch):
+    from migrador import completitud
+
+    class Cancelado(Exception):
+        pass
+
+    def cancelada(*a, **k):
+        raise Cancelado
+
+    monkeypatch.setattr(completitud, "revisar", cancelada)
+    with pytest.raises(Cancelado):
+        M.relevar_catalogo("https://www.youtube.com/@Test", "clave-falsa")
+
+
 def test_el_pedido_de_listar_de_cero_llega_al_motor(relevar_doble):
     M.relevar_catalogo("https://www.youtube.com/@Test", "clave-falsa")
     assert relevar_doble["reusar"] is True, "por defecto se reusa lo ya listado"
