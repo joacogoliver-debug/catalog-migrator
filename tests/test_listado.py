@@ -407,3 +407,86 @@ def test_un_canal_sin_el_campo_de_la_lista_no_revienta(monkeypatch):
     )
     assert R.resolve_channel(URL, "k") == (CANAL, "", "X - Topic")
     assert R.canal_uploads_por_id(CANAL, "k") == ("", "X - Topic")
+
+
+# ============================================================
+# Lo ya listado en la sesión no se vuelve a pagar
+# ============================================================
+
+
+def test_relevar_el_mismo_link_de_nuevo_no_le_pide_nada_a_youtube(api):
+    """La app manda a relevar de nuevo cuando no se pidieron los códigos o
+    cuando Deezer no contestó. Ninguna de las dos cosas es de YouTube, y cada
+    reintento volvía a pagar el listado entero."""
+    falsa = api(n=120)
+    primero = R.relevar(URL, "k", with_codes=False)
+    assert primero["reusado"] is False and primero["unidades"] == 303
+    pedidos = len(falsa.llamadas)
+
+    avisos = []
+    segundo = R.relevar(URL, "k", with_codes=False, progress=lambda m, f: avisos.append((m, f)))
+    assert len(falsa.llamadas) == pedidos, "ni un pedido más"
+    assert segundo["reusado"] is True and segundo["unidades"] == 0
+    assert [t["video_id"] for t in segundo["tracks"]] == [t["video_id"] for t in primero["tracks"]]
+    assert (segundo["via"], segundo["total_estimado"], segundo["channel_id"]) == ("busqueda", 120, CANAL)
+    assert any("sin gastar cuota" in m for m, _f in avisos), "se dice que se reusó"
+    assert [f for _m, f in avisos] == sorted(f for _m, f in avisos)
+
+
+def test_lo_reusado_son_los_videos_no_el_resultado(api):
+    """Los tracks se arman de nuevo cada vez: los códigos que una corrida les
+    puso a los suyos no aparecen en la siguiente, que los tiene que buscar."""
+    api(n=3)
+    primero = R.relevar(URL, "k", with_codes=False)
+    primero["tracks"][0]["isrc"] = "AR0000000001"
+    segundo = R.relevar(URL, "k", with_codes=False)
+    assert segundo["tracks"][0]["isrc"] == ""
+    assert segundo["tracks"][0] is not primero["tracks"][0]
+
+
+def test_se_puede_pedir_el_listado_de_cero(api):
+    falsa = api(n=60)
+    R.relevar(URL, "k", with_codes=False)
+    falsa.n = 110  # el canal sumó temas
+    assert len(R.relevar(URL, "k", with_codes=False)["tracks"]) == 60, "reusado: no los ve"
+
+    de_cero = R.relevar(URL, "k", with_codes=False, reusar=False)
+    assert de_cero["reusado"] is False and len(de_cero["tracks"]) == 110
+    assert len(R.relevar(URL, "k", with_codes=False)["tracks"]) == 110, "y lo nuevo queda guardado"
+
+
+def test_un_listado_cortado_por_la_cuota_no_se_guarda(api):
+    falsa = api(n=400, cuota_en_pagina=3)
+    assert R.relevar(URL, "k", with_codes=False)["cortado_por_cuota"] is True
+    falsa.cuota_en_pagina = None
+    falsa.llamadas.clear()
+    entero = R.relevar(URL, "k", with_codes=False)
+    assert entero["reusado"] is False and len(entero["tracks"]) == 400, "se lista de nuevo, entero"
+
+
+def test_un_listado_guardado_vence(api, monkeypatch):
+    falsa = api(n=10)
+    R.relevar(URL, "k", with_codes=False)
+    monkeypatch.setattr(R, "VIGENCIA_LISTADO", -1)
+    assert R.relevar(URL, "k", with_codes=False)["reusado"] is False
+    assert falsa.cuantas("search") == 2
+
+
+def test_cada_link_tiene_su_listado(api):
+    api(n=10)
+    R.relevar(URL, "k", with_codes=False)
+    otro = R.relevar(URL + "/", "k", with_codes=False)
+    assert otro["reusado"] is False, "otro link es otro pedido, aunque lleve al mismo canal"
+
+
+def test_un_canal_sin_lanzamientos_no_se_vuelve_a_pagar_para_fallar_igual(api):
+    """Que el canal no tenga lanzamientos no depende de YouTube ni cambia al
+    reintentar: el segundo intento da el mismo error sin gastar nada."""
+    falsa = api(n=5, desc=lambda i: DESC_A_MANO)
+    with pytest.raises(R.RelevarError):
+        R.relevar(URL, "k", with_codes=False)
+    pedidos = len(falsa.llamadas)
+    with pytest.raises(R.RelevarError) as e:
+        R.relevar(URL, "k", with_codes=False)
+    assert "5 videos" in str(e.value)
+    assert len(falsa.llamadas) == pedidos

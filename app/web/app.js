@@ -27,6 +27,7 @@ const S = {
   seleccion: new Set(),
   expandidos: new Set(),
   verFaltantes: false,      // la lista de lo que Deezer tiene y YouTube no trajo, desplegada
+  deCero: false,            // el próximo relevamiento vuelve a listar el canal, sin reusar
   filtro: { modo: 'manual', anioDesde: null, anioHasta: null, distribs: new Set(), texto: '', faltantes: false },
   opciones: { planilla: true, portadas: true, audio: false },
   job: null,
@@ -724,11 +725,21 @@ function avisoCanal() {
   // Cómo se listó. Desde fines de 2026 un canal Topic sólo se puede listar por
   // el buscador, que cuesta cien veces más cuota y no garantiza traer todo: las
   // dos cosas se dicen, con el número.
+  // El listado es el de un relevamiento anterior de esta sesión. Se dice, con
+  // la forma de pedirlo de nuevo: quien sabe que el canal cambió no tiene por
+  // qué cerrar la app para verlo.
+  if (d.reusado) {
+    partes.push(alerta('', 'info', `${esc(T('paso2.reusado'))}
+      <button type="button" class="link-inline" data-accion="relistar">${esc(T('paso2.relistar'))}</button>`));
+  }
+
   if (d.via === 'busqueda') {
-    const frases = [T('paso2.por_buscador', {
-      n: `<strong>${num(d.temas || 0)}</strong>`,
-      unidades: `<strong>${num(d.unidades || 0)}</strong>`,
-    })];
+    const frases = [d.reusado
+      ? T('paso2.por_buscador_reusado', { n: `<strong>${num(d.temas || 0)}</strong>` })
+      : T('paso2.por_buscador', {
+        n: `<strong>${num(d.temas || 0)}</strong>`,
+        unidades: `<strong>${num(d.unidades || 0)}</strong>`,
+      })];
     if (comp.revisada && !comp.temas) {
       frases.push(esc(T('paso2.buscador_completo', { artista: comp.artista_deezer, n: num(comp.releases) })));
     } else if (!comp.revisada) {
@@ -1372,6 +1383,9 @@ const ACCIONES = {
   'ver-terminos'() { S.vista = 'terminos'; S.entrando = true; render(); arriba(); },
   'ver-clave'() { S.vista = 'clave'; S.entrando = true; render(); arriba(); },
   'ver-faltantes'() { S.verFaltantes = !S.verFaltantes; render(); },
+  // Vuelve al paso 1, que es donde está el campo y la barra de avance, y
+  // releva el mismo link pidiendo el listado de cero.
+  relistar() { S.paso = 1; S.deCero = true; S.error = ''; S.errorCodigo = ''; render(); return ACCIONES.relevar(); },
   'cerrar-vista'() { S.vista = null; S.entrando = true; render(); arriba(); },
 
   async 'aceptar-terminos'() {
@@ -1415,8 +1429,14 @@ const ACCIONES = {
 
   async relevar() {
     const campo = $('#url');
-    const url = campo ? campo.value.trim() : '';
+    // Sin el campo a la vista (cuando se pide desde el paso 2), vale el link
+    // que ya se había pegado.
+    const url = campo ? campo.value.trim() : (S.url || '');
     S.url = url;
+    // «Volver a listar» pide el listado de cero; un relevamiento común reusa
+    // el de esta sesión si lo hay. Vale para un solo pedido.
+    const deCero = S.deCero;
+    S.deCero = false;
     if (!url) {
       S.errorCampo = T('paso1.falta_link'); render();
       const c = $('#url'); if (c) c.focus();
@@ -1426,7 +1446,7 @@ const ACCIONES = {
     if (casilla) S.conCodigos = casilla.checked;
     S.error = ''; S.errorCodigo = ''; S.errorCampo = ''; S.ocupado = true; S.job = null; render();
     try {
-      const { job } = await api('/api/relevar', { url, con_codigos: S.conCodigos });
+      const { job } = await api('/api/relevar', { url, con_codigos: S.conCodigos, de_cero: deCero });
       const cat = await esperarJob(job, () => actualizarProgreso());
       await cierreDelTrabajo();
       adoptarCatalogo(cat);          // arranca con todo elegido

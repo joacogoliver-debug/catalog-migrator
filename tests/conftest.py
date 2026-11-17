@@ -61,6 +61,21 @@ def idioma_castellano():
     i18n.poner_idioma("es")
 
 
+@pytest.fixture(autouse=True)
+def sin_listados_guardados():
+    """Cada test arranca sin nada listado de antes.
+
+    `relevar_core` guarda en memoria lo que ya listó de cada link, para no
+    volver a gastar cuota. Es estado del módulo: sin esto, un test recibiría
+    los videos que listó otro con el mismo link.
+    """
+    from migrador import relevar_core
+
+    relevar_core.LISTADOS.olvidar()
+    yield
+    relevar_core.LISTADOS.olvidar()
+
+
 # ============================================================
 # Catálogo de ejemplo
 # ============================================================

@@ -381,3 +381,35 @@ test('los avisos del listado están en los dos idiomas', () => {
   }
   ev(`ponerIdioma('es'); S.verFaltantes = false`);
 });
+
+// ------------------------------------------------------------ listado reusado
+
+test('un listado reusado se dice, sin hablar de cuota gastada, y ofrece listar de nuevo', () => {
+  const html = avisoCon({ via: 'busqueda', reusado: true, temas: 290, unidades: 0, completitud: COMP_VACIA });
+  assert.ok(html.includes('no gasté cuota de YouTube'), html);
+  assert.ok(html.includes('data-accion="relistar"'), 'con la salida para quien sabe que el canal cambió');
+  assert.ok(!html.includes('de las 10.000'), 'no dice que gastó cero unidades: no gastó');
+  assert.ok(html.includes('<strong>290</strong> temas'));
+  assert.ok(!avisoCon({ via: 'busqueda', temas: 290, unidades: 607, completitud: COMP_VACIA }).includes('relistar'));
+});
+
+test('«Volver a listar» releva el mismo link pidiendo el listado de cero, una sola vez', async () => {
+  const cuerpos = [];
+  const fetchDeAntes = ctx.fetch;
+  ctx.fetch = async (ruta, opciones) => {
+    if (ruta === '/api/relevar') cuerpos.push(JSON.parse(opciones.body));
+    return { ok: false, status: 400, json: async () => ({ error: 'hasta acá llega la prueba' }) };
+  };
+  catalogoDeTres();
+  ev(`S.url = 'https://www.youtube.com/channel/UCx'; S.error = ''`);
+  await ev(`ACCIONES.relistar()`);
+  assert.equal(cuerpos.length, 1);
+  assert.equal(cuerpos[0].de_cero, true);
+  assert.equal(cuerpos[0].url, 'https://www.youtube.com/channel/UCx', 'el link sale del que ya se había pegado');
+  assert.equal(ev('S.paso'), 1, 'vuelve al paso 1, que es donde está la barra de avance');
+
+  await ev(`ACCIONES.relevar()`);
+  assert.equal(cuerpos[1].de_cero, false, 'el pedido vale para una vez: el siguiente relevamiento reusa');
+  ctx.fetch = fetchDeAntes;
+  ev(`S.error = ''; S.errorCodigo = ''; S.ocupado = false`);
+});

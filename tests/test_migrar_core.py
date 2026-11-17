@@ -13,6 +13,7 @@ que devuelve exactamente la forma real, con las mismas claves, sin tocar la red.
 
 import inspect
 import os
+from typing import Any
 
 import pytest
 
@@ -73,6 +74,7 @@ def _respuesta_topic():
         "total_estimado": 4,
         "cortado_por_cuota": False,
         "unidades": 102,
+        "reusado": False,
         "sin_distribuidora": 0,
         "cruce": {"albumes": {}, "verificados": {}},
     }
@@ -109,6 +111,7 @@ def _respuesta_canal_comun():
         "total_estimado": 0,
         "cortado_por_cuota": True,
         "unidades": 3,
+        "reusado": True,
         "sin_distribuidora": 3,
         "cruce": {"albumes": {}, "verificados": {}},
     }
@@ -121,10 +124,11 @@ def relevar_doble(monkeypatch):
     Devuelve un dict de control. `escenario` elige qué respuesta dar, `llamadas`
     guarda los argumentos que recibió.
     """
-    control = {"escenario": "topic", "llamadas": {}}
+    control: dict[str, Any] = {"escenario": "topic", "llamadas": {}}
 
-    def doble(url, yt_key, with_codes=True, progress=None, use_musicbrainz=False, fraccion=None):
+    def doble(url, yt_key, with_codes=True, progress=None, use_musicbrainz=False, fraccion=None, reusar=True):
         control["llamadas"] = {"url": url, "yt_key": yt_key, "with_codes": with_codes}
+        control["reusar"] = reusar
         if progress:
             progress("probando el callback", 0.5)
         if control["escenario"] == "topic":
@@ -297,6 +301,14 @@ def test_el_diagnostico_cuenta_como_se_listo_y_cuanto_costo(relevar_doble):
     )
     assert diag["cortado_por_cuota"] is True and diag["sin_distribuidora"] == 3
     assert any("incompleto" in a for a in avisos), "un catálogo cortado se dice en el log"
+
+
+def test_el_pedido_de_listar_de_cero_llega_al_motor(relevar_doble):
+    M.relevar_catalogo("https://www.youtube.com/@Test", "clave-falsa")
+    assert relevar_doble["reusar"] is True, "por defecto se reusa lo ya listado"
+    _p, _a, _t, diag = M.relevar_catalogo("https://www.youtube.com/@Test", "clave-falsa", reusar=False)
+    assert relevar_doble["reusar"] is False
+    assert diag["reusado"] is False
 
 
 def test_sin_codigos_la_comparacion_con_deezer_queda_sin_hacer(relevar_doble, monkeypatch):

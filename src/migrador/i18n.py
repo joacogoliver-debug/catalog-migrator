@@ -339,6 +339,10 @@ TEXTOS = {
             "which costs 100 quota units per 50 tracks."
         ),
     },
+    "rel.listado_reusado": {
+        "es": "Este canal ya se listó en esta sesión: uso ese listado, sin gastar cuota de YouTube.",
+        "en": "This channel was already listed in this session: reusing that, at no YouTube quota.",
+    },
     "rel.bajando_metadata": {
         "es": "Bajando metadata de {n} productos…",
         "en": "Fetching metadata for {n} releases…",

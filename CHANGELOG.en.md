@@ -24,6 +24,12 @@ What changed in every published version. The numbers follow
   hundred times more than before: a 290-track catalog used 607. The number is
   on screen and in the report, and the key help no longer says a channel costs
   "one per 25 songs".
+- **Surveying the same channel again no longer spends quota again.** The app
+  tells you to survey again when the codes were not requested or when Deezer
+  did not answer, and neither has anything to do with YouTube: each retry paid
+  for the whole listing again. Now what YouTube answered stays in memory for an
+  hour, never written to disk, and the retry reuses it. The screen says so, and
+  has "List it again" for when you know the channel changed.
 - **If the quota runs out halfway through the listing, what was already fetched
   is not lost.** The catalog is shown flagged as incomplete, with the button to
   add your own key, instead of failing outright after spending the quota.

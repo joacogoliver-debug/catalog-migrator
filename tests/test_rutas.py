@@ -45,6 +45,54 @@ def test_relevar_termina_y_deja_el_catalogo(monkeypatch):
     assert backend.ESTADO.artista == "Fulano"
 
 
+def test_relevar_reusa_lo_listado_salvo_que_se_pida_de_cero(monkeypatch):
+    """«Volver a listar» manda `de_cero`; un relevamiento común no, y reusa lo
+    que ya se listó en la sesión para no gastar cuota de nuevo."""
+    monkeypatch.setattr(backend, "leer_clave", lambda: "clave-de-prueba")
+    pedidos = []
+
+    def relevar(url, clave, **kw):
+        pedidos.append(kw["reusar"])
+        return [_producto(title="Disco")], "Fulano", [], {}
+
+    monkeypatch.setattr(backend.M, "relevar_catalogo", relevar)
+    _terminar(backend.api_relevar({"url": "https://www.youtube.com/@fulano"})["job"])
+    _terminar(backend.api_relevar({"url": "https://www.youtube.com/@fulano", "de_cero": True})["job"])
+    assert pedidos == [True, False]
+
+
+def test_el_reporte_del_paquete_lleva_el_diagnostico_del_relevamiento(monkeypatch):
+    """Sin esto el reporte del ZIP salía sin decir cómo se listó el catálogo ni
+    qué le falta, aunque la pantalla lo dijera."""
+    diag = {"via": "busqueda", "temas": 1, "unidades": 101}
+    monkeypatch.setattr(backend, "leer_clave", lambda: "clave-de-prueba")
+    monkeypatch.setattr(
+        backend.M,
+        "relevar_catalogo",
+        lambda url, clave, **kw: ([_producto(title="Disco")], "Fulano", [], diag),
+    )
+    relevado = _terminar(backend.api_relevar({"url": "https://www.youtube.com/@fulano"})["job"])
+    recibido = {}
+
+    def empaquetar(seleccion, artista, **kw):
+        recibido.update(kw)
+        with open(kw["out_path"], "wb") as f:
+            f.write(b"zip")
+        return kw["out_path"], 3
+
+    monkeypatch.setattr(backend.M, "empaquetar", empaquetar)
+    cuerpo = {
+        "catalogo_id": relevado.resultado["catalogo_id"],
+        "ids": [p["id"] for p in relevado.resultado["productos"]],
+        "planilla": True,
+        "portadas": False,
+        "audio": False,
+    }
+    trabajo = _terminar(backend.api_preparar(cuerpo)["job"])
+    assert trabajo.estado == "listo", trabajo.error
+    assert recibido["diag"] == diag
+
+
 def test_un_error_del_relevamiento_llega_con_su_codigo(monkeypatch):
     monkeypatch.setattr(backend, "leer_clave", lambda: "clave-de-prueba")
 

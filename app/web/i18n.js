@@ -491,6 +491,15 @@ const TEXTOS = {
     es: 'YouTube dejó de publicar la lista de videos de los canales Topic, así que este se listó por su buscador: {n} temas, que gastaron {unidades} de las 10.000 unidades diarias de la clave.',
     en: 'YouTube stopped publishing the list of videos of Topic channels, so this one was listed through search: {n} tracks, which used {unidades} of the key\'s 10,000 daily units.',
   },
+  'paso2.por_buscador_reusado': {
+    es: 'YouTube dejó de publicar la lista de videos de los canales Topic, así que este se listó por su buscador: {n} temas.',
+    en: 'YouTube stopped publishing the list of videos of Topic channels, so this one was listed through search: {n} tracks.',
+  },
+  'paso2.reusado': {
+    es: 'Este canal ya se había listado en esta sesión, hace menos de una hora, así que usé ese listado y no gasté cuota de YouTube. Los códigos sí se buscaron de nuevo.',
+    en: 'This channel had already been listed in this session, less than an hour ago, so I reused that listing at no YouTube quota. The codes were looked up again.',
+  },
+  'paso2.relistar': { es: 'Volver a listar', en: 'List it again' },
   'paso2.buscador_completo': {
     es: 'El buscador no garantiza traer todo, así que lo comparé con la discografía de {artista} en Deezer, que tiene {n} lanzamientos: no falta ninguna grabación.',
     en: 'Search does not guarantee a full listing, so I compared it against {artista}\'s discography on Deezer, which has {n} releases: no recording is missing.',

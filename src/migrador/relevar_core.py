@@ -29,6 +29,7 @@ from .contratos import (
     CruceDeezer,
     DescripcionParseada,
     EstadisticaCodigos,
+    Listado,
     Relevamiento,
     ResumenDistribuidora,
     Track,
@@ -1275,7 +1276,7 @@ def slugify(name):
 
 
 def relevar(
-    url, yt_key, with_codes=True, progress=None, use_musicbrainz=False, fraccion=None
+    url, yt_key, with_codes=True, progress=None, use_musicbrainz=False, fraccion=None, reusar=True
 ) -> Relevamiento:
     """Releva el catálogo completo de un canal.
 
@@ -1283,6 +1284,8 @@ def relevar(
     lento opcional. progress(msg, frac): callback de avance (0.0-1.0).
     fraccion(frac): avance sin línea de log, para las fases de muchos pasos
     chicos; mueve la barra y deja cancelar sin llenar el log.
+    reusar: si este link ya se listó en esta sesión, usar ese listado en vez de
+    volver a pedírselo a YouTube (ver `_Listados`). Con False se lista de cero.
     Devuelve un `Relevamiento`: artist, channel_title, tracks, distribs, total_views, codes.
     Lanza RelevarError ante problemas mostrables al usuario.
     """
@@ -1295,61 +1298,22 @@ def relevar(
         raise RelevarError(T("yt.falta_clave"), "clave")
 
     CUOTA.empezar()
-    step(T("rel.resolviendo"), 0.05)
-    ch_id, uploads, title = resolve_channel(url, yt_key)
-    canal_pedido = title
-
-    # Si lo que pegaron NO es un canal Topic (típicamente un OAC), buscamos su
-    # Topic y relevamos ese. El Topic es el único que trae las descripciones
-    # auto-generadas con distribuidora, álbum, año y sello; un OAC tiene videos
-    # subidos a mano y de ahí no sale metadata. Encontrar el Topic a mano suele
-    # ser molesto, así que lo hace la app.
-    via_topic = False
-    if not es_canal_topic(title):
-        step(T("rel.buscando_topic"), 0.10)
-        hallado = buscar_canal_topic(title, yt_key)
-        if hallado:
-            t_uploads, t_title = canal_uploads_por_id(hallado[0], yt_key)
-            # Se exige el título: es de donde sale el nombre del artista, y
-            # cambiar de canal con el título vacío deja el catálogo entero a
-            # nombre de nadie. La lista de subidas ya no se exige, porque la de
-            # un Topic puede no existir y se lista por el buscador.
-            if t_title:
-                ch_id, uploads, title, via_topic = hallado[0], t_uploads or "", t_title, True
-                step(T("rel.uso_topic", canal=t_title), 0.12)
-
-    step(T("rel.listando"), 0.15)
-
-    # La barra de esta fase se arma con un total que en el buscador es una
-    # estimación y puede crecer de una página a la otra: se guarda el máximo
-    # para que nunca vaya para atrás.
-    tope = [0.15]
-
-    def avance_listado(h, t):
-        tope[0] = max(tope[0], 0.15 + 0.15 * h / max(t, 1))
-        step(T("rel.listando_n", h=h, t=t), tope[0])
-
-    # Primero la lista de subidas, que cuesta una unidad cada cincuenta videos.
-    # Si no existe (hoy, la de cualquier canal Topic) o viene vacía, el buscador.
-    via = "subidas"
-    busqueda = {"total_estimado": 0, "paginas": 0, "cortado_por_cuota": False}
-    vids = []
-    try:
-        if uploads:
-            vids = list_video_ids(uploads, yt_key, avance=avance_listado)
-    except RelevarError as e:
-        if e.codigo != "sin_lista":
-            raise
-    if not vids:
-        via = "busqueda"
-        step(T("rel.por_buscador"), tope[0])
-        vids, busqueda = buscar_videos_del_canal(ch_id, yt_key, avance=avance_listado)
-    if not vids:
-        raise RelevarError(T("yt.canal_vacio"))
-
-    step(T("rel.bajando_metadata", n=len(vids)), 0.30)
-    videos = fetch_videos(
-        vids, yt_key, avance=lambda h, t: step(T("rel.metadata_n", h=h, t=t), 0.30 + 0.15 * h / t)
+    listado = LISTADOS.buscar(url) if reusar else None
+    reusado = listado is not None
+    if listado is None:
+        listado = _listar_canal(url, yt_key, step)
+        # Un listado cortado por la cuota no se guarda: está incompleto, y
+        # reusarlo sería dar por bueno un catálogo al que le faltan temas.
+        if not listado["busqueda"]["cortado_por_cuota"]:
+            LISTADOS.guardar(url, listado)
+    else:
+        step(T("rel.listado_reusado"), 0.45)
+    ch_id, title, canal_pedido = listado["ch_id"], listado["title"], listado["canal_pedido"]
+    via_topic, via, busqueda, videos = (
+        listado["via_topic"],
+        listado["via"],
+        listado["busqueda"],
+        listado["videos"],
     )
 
     # Nos quedamos SÓLO con los lanzamientos: los que traen la descripción que
@@ -1415,6 +1379,132 @@ def relevar(
         "total_estimado": int(busqueda["total_estimado"]),
         "cortado_por_cuota": bool(busqueda["cortado_por_cuota"]),
         "unidades": CUOTA.n,
+        "reusado": reusado,
         "sin_distribuidora": sum(1 for t in tracks if t["distributor"] == SIN_DATOS),
         "cruce": cruce,
+    }
+
+
+# Cuánto vale un listado guardado. Una hora: lo mismo que vive el ZIP armado, y
+# poco para que un lanzamiento nuevo quede sin verse.
+VIGENCIA_LISTADO = 3600
+
+
+class _Listados:
+    """Lo que ya se listó de YouTube en esta sesión, por link pegado.
+
+    Listar un canal Topic cuesta hoy cien unidades de cuota cada cincuenta
+    temas, y la propia app manda a relevar de nuevo en dos casos que no tienen
+    nada que ver con YouTube: cuando no se pidieron los códigos y cuando Deezer
+    no contestó. Sin esto, cada uno de esos reintentos volvía a pagar el
+    listado entero, de una cuota que en la variante completa es de todos.
+
+    Vive en memoria y se va al cerrar la app: no se escribe nada en el disco.
+    Lo que se guarda es lo que contestó YouTube (los videos), no el resultado,
+    así los códigos se vuelven a buscar cada vez.
+    """
+
+    def __init__(self):
+        self._por_link: dict[str, tuple[float, Listado]] = {}
+        self._lock = threading.Lock()
+
+    @staticmethod
+    def _clave(link) -> str:
+        return (link or "").strip()
+
+    def buscar(self, link) -> Listado | None:
+        with self._lock:
+            guardado = self._por_link.get(self._clave(link))
+            if not guardado:
+                return None
+            cuando, listado = guardado
+            if time.monotonic() - cuando > VIGENCIA_LISTADO:
+                del self._por_link[self._clave(link)]
+                return None
+            return listado
+
+    def guardar(self, link, listado: Listado):
+        with self._lock:
+            self._por_link[self._clave(link)] = (time.monotonic(), listado)
+
+    def olvidar(self):
+        with self._lock:
+            self._por_link.clear()
+
+
+LISTADOS = _Listados()
+
+
+def _listar_canal(url, yt_key, step) -> Listado:
+    """Todo lo que se le pide a YouTube: el canal, sus videos y su metadata.
+
+    Devuelve un diccionario con el canal que se relevó de verdad (`ch_id`,
+    `title`), el que se pegó (`canal_pedido`, `via_topic`), cómo se listó
+    (`via`, `busqueda`) y los videos tal como los devolvió la API.
+    """
+    step(T("rel.resolviendo"), 0.05)
+    ch_id, uploads, title = resolve_channel(url, yt_key)
+    canal_pedido = title
+
+    # Si lo que pegaron NO es un canal Topic (típicamente un OAC), buscamos su
+    # Topic y relevamos ese. El Topic es el único que trae las descripciones
+    # auto-generadas con distribuidora, álbum, año y sello; un OAC tiene videos
+    # subidos a mano y de ahí no sale metadata. Encontrar el Topic a mano suele
+    # ser molesto, así que lo hace la app.
+    via_topic = False
+    if not es_canal_topic(title):
+        step(T("rel.buscando_topic"), 0.10)
+        hallado = buscar_canal_topic(title, yt_key)
+        if hallado:
+            t_uploads, t_title = canal_uploads_por_id(hallado[0], yt_key)
+            # Se exige el título: es de donde sale el nombre del artista, y
+            # cambiar de canal con el título vacío deja el catálogo entero a
+            # nombre de nadie. La lista de subidas ya no se exige, porque la de
+            # un Topic puede no existir y se lista por el buscador.
+            if t_title:
+                ch_id, uploads, title, via_topic = hallado[0], t_uploads or "", t_title, True
+                step(T("rel.uso_topic", canal=t_title), 0.12)
+
+    step(T("rel.listando"), 0.15)
+
+    # La barra de esta fase se arma con un total que en el buscador es una
+    # estimación y puede crecer de una página a la otra: se guarda el máximo
+    # para que nunca vaya para atrás.
+    tope = [0.15]
+
+    def avance_listado(h, t):
+        tope[0] = max(tope[0], 0.15 + 0.15 * h / max(t, 1))
+        step(T("rel.listando_n", h=h, t=t), tope[0])
+
+    # Primero la lista de subidas, que cuesta una unidad cada cincuenta videos.
+    # Si no existe (hoy, la de cualquier canal Topic) o viene vacía, el buscador.
+    via = "subidas"
+    busqueda = {"total_estimado": 0, "paginas": 0, "cortado_por_cuota": False}
+    vids = []
+    try:
+        if uploads:
+            vids = list_video_ids(uploads, yt_key, avance=avance_listado)
+    except RelevarError as e:
+        if e.codigo != "sin_lista":
+            raise
+    if not vids:
+        via = "busqueda"
+        step(T("rel.por_buscador"), tope[0])
+        vids, busqueda = buscar_videos_del_canal(ch_id, yt_key, avance=avance_listado)
+    if not vids:
+        raise RelevarError(T("yt.canal_vacio"))
+
+    step(T("rel.bajando_metadata", n=len(vids)), 0.30)
+    videos = fetch_videos(
+        vids, yt_key, avance=lambda h, t: step(T("rel.metadata_n", h=h, t=t), 0.30 + 0.15 * h / t)
+    )
+
+    return {
+        "ch_id": ch_id,
+        "title": title,
+        "canal_pedido": canal_pedido,
+        "via_topic": via_topic,
+        "via": via,
+        "busqueda": busqueda,
+        "videos": videos,
     }

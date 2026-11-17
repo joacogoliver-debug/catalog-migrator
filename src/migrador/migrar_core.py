@@ -35,11 +35,13 @@ from .i18n import T
 
 
 def relevar_catalogo(
-    url, yt_key, with_codes=True, progress=None, use_musicbrainz=False, fraccion=None
+    url, yt_key, with_codes=True, progress=None, use_musicbrainz=False, fraccion=None, reusar=True
 ) -> tuple[list[Producto], str, list[Track], Diagnostico]:
     """Releva el catálogo y lo devuelve ya agrupado en productos.
 
     Devuelve (productos, artista, tracks_planos, diagnostico_del_canal).
+    `reusar=False` vuelve a listar el canal aunque ya se haya listado en esta
+    sesión (ver `relevar_core._Listados`).
     """
     log = progress or (lambda *_: None)
     # relevar_core.relevar() devuelve un DICT, no una tupla: desempaquetarlo como
@@ -51,6 +53,7 @@ def relevar_catalogo(
         progress=progress,
         use_musicbrainz=use_musicbrainz,
         fraccion=fraccion,
+        reusar=reusar,
     )
     tracks = res["tracks"]
     artista = res["artist"]
@@ -92,6 +95,7 @@ def relevar_catalogo(
         "total_estimado": int(res.get("total_estimado") or 0),
         "cortado_por_cuota": bool(res.get("cortado_por_cuota")),
         "unidades": int(res.get("unidades") or 0),
+        "reusado": bool(res.get("reusado")),
         "sin_distribuidora": int(res.get("sin_distribuidora") or 0),
         "temas": len(tracks),
         "completitud": comp,

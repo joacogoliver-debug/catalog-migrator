@@ -37,7 +37,7 @@ Endpoints:
   GET  /api/config            capacidades del entorno y estado de la clave
   POST /api/terminos          aceptación de los términos de uso
   POST /api/clave             guardar la clave de YouTube
-  POST /api/relevar           {url, con_codigos} -> {job}    (asincrónico)
+  POST /api/relevar           {url, con_codigos, de_cero} -> {job}    (asincrónico)
   POST /api/validar           {ids} -> hallazgos               (sincrónico)
   POST /api/preparar          {ids, opciones} -> {job}        (asincrónico)
   GET  /api/job/<id>          estado del trabajo
@@ -716,6 +716,9 @@ def api_relevar(body):
     if not clave:
         raise ValueError(T("srv.falta_clave"))
     con_codigos = bool(body.get("con_codigos", True))
+    # Volver a listar el canal aunque ya se haya listado en esta sesión. Lo
+    # pide el botón «Volver a listar», para quien sabe que el canal cambió.
+    de_cero = bool(body.get("de_cero", False))
 
     def trabajo(job):
         prods, artista, _, diag = M.relevar_catalogo(
@@ -724,6 +727,7 @@ def api_relevar(body):
             with_codes=con_codigos,
             progress=lambda m, f=None: job.avance(m, f),
             fraccion=job.fraccion,
+            reusar=not de_cero,
         )
         ESTADO.guardar_catalogo(prods, artista, diag)
         texto = "srv.productos_encontrados_uno" if len(prods) == 1 else "srv.productos_encontrados"

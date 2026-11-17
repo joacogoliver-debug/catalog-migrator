@@ -296,8 +296,10 @@ report:
   delivered to YouTube. The app does not add them to the package, because it
   does not know their distributor.
 
-If the quota runs out halfway through the listing, what was already fetched is
-not lost: the catalog is shown flagged as incomplete. And if YouTube publishes
+Surveying the same link again within the hour does not spend quota again: what
+YouTube answered stays in memory, never written to disk, and only the codes are
+looked up again. If the quota runs out halfway through the listing, what was
+already fetched is not lost: the catalog is shown flagged as incomplete. And if YouTube publishes
 the uploads list again, the app uses it on its own, with no change needed.
 
 Deezer finds the recording, and the same recording is on the single, on the

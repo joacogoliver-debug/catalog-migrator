@@ -24,6 +24,13 @@ Lo que cambió en cada versión publicada. Los números siguen
   más que antes: un catálogo de 290 temas gastó 607. El número está en la
   pantalla y en el reporte, y la ayuda de la clave dejó de decir que un canal
   gasta «una por cada 25 temas».
+- **Relevar el mismo canal de nuevo no vuelve a gastar cuota.** La app manda a
+  relevar otra vez cuando no se pidieron los códigos o cuando Deezer no
+  contestó, y ninguna de las dos cosas es de YouTube: cada reintento volvía a
+  pagar el listado entero. Ahora lo que YouTube contestó queda en memoria
+  durante una hora, sin escribirse en el disco, y el reintento lo reusa. La
+  pantalla lo dice, y trae «Volver a listar» para quien sabe que el canal
+  cambió.
 - **Si la cuota se acaba a mitad del listado, lo que ya se trajo no se pierde.**
   El catálogo se muestra marcado como incompleto, con el botón para cargar una
   clave propia, en vez de fallar entero después de haber gastado la cuota.

@@ -291,6 +291,23 @@ class EstadisticaCodigos(TypedDict):
     fallas: int
 
 
+class Listado(TypedDict):
+    """Lo que se le pidió a YouTube de un canal, antes de interpretarlo.
+
+    Es lo que `relevar_core` guarda en memoria para no volver a listar el mismo
+    link en la sesión: los videos tal como los devolvió la API, y lo que hace
+    falta para contar cómo se llegó a ellos.
+    """
+
+    ch_id: str  # el canal que se relevó de verdad
+    title: str
+    canal_pedido: str  # el título del canal que se pegó
+    via_topic: bool
+    via: str  # "subidas" o "busqueda"
+    busqueda: dict[str, Any]  # total_estimado, paginas, cortado_por_cuota
+    videos: list[dict[str, Any]]
+
+
 class CruceDeezer(TypedDict):
     """Lo que el cruce de códigos aprendió de Deezer y `completitud` reutiliza.
 
@@ -340,6 +357,9 @@ class Relevamiento(TypedDict):
     cortado_por_cuota: bool
     # Unidades de cuota de YouTube gastadas hasta acá.
     unidades: int
+    # El listado es el de un relevamiento anterior de esta sesión: no se le
+    # volvió a pedir a YouTube y no gastó cuota.
+    reusado: bool
     # Lanzamientos cuya descripción no declara distribuidora.
     sin_distribuidora: int
     cruce: CruceDeezer
@@ -415,6 +435,7 @@ class Diagnostico(TypedDict):
     total_estimado: int
     cortado_por_cuota: bool
     unidades: int
+    reusado: bool
     sin_distribuidora: int
     temas: int  # cuántos lanzamientos quedaron
     completitud: Completitud

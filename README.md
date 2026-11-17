@@ -296,8 +296,10 @@ cambia dos cosas, y la app las dice en la pantalla y en el reporte:
   con las colaboraciones, o que nunca se hayan entregado a YouTube. La app no
   las agrega al paquete, porque de ellas no conoce la distribuidora.
 
-Si la cuota se acaba a mitad del listado, lo que ya se trajo no se pierde: el
-catálogo se muestra marcado como incompleto. Y si YouTube vuelve a publicar la
+Relevar de nuevo el mismo link dentro de la hora no vuelve a gastar cuota: lo
+que YouTube contestó queda en memoria, sin escribirse en el disco, y sólo se
+vuelven a buscar los códigos. Si la cuota se acaba a mitad del listado, lo que
+ya se trajo no se pierde: el catálogo se muestra marcado como incompleto. Y si YouTube vuelve a publicar la
 lista de subidas, la app la usa sola, sin cambiar nada.
 
 Deezer encuentra la grabación, y la misma grabación está en el single, en el
