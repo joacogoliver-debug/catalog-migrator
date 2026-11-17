@@ -1207,7 +1207,7 @@ const CODIGOS_HALLAZGO = [
   'anio_futuro', 'anio_absurdo', 'anio_invalido', 'producto_sin_titulo', 'track_sin_titulo',
   'texto_como_formula', 'isrc_compartido', 'isrc_match_dudoso', 'upc_no_verificado',
   'upc_mezclado', 'release_en_dos_distribuidoras', 'album_incompleto',
-  'solo_en_deezer', 'temas_de_deezer', 'isrc_otro_corte', 'upc_por_tracklist',
+  'solo_en_deezer', 'temas_de_deezer', 'isrc_otro_corte', 'upc_por_tracklist', 'fecha_de_deezer',
   'artista_no_principal', 'portada_modo_color', 'audio_no_apto', 'isrc_confianza_media',
   'campos_a_completar',
 ];

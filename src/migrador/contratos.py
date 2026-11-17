@@ -142,6 +142,9 @@ class Track(TypedDict):
     # álbum con exactamente los mismos temas pero otra fecha de lanzamiento:
     # guarda el título y la fecha de ese álbum, para que la validación lo diga.
     upc_por_tracklist: NotRequired[str]
+    # La fecha de lanzamiento del álbum de Deezer contra el que se verificó el
+    # release, para los temas de los que YouTube no publica la suya.
+    fecha_deezer: NotRequired[str]
 
     # El número de track. Lo pone `relevar_core.enrich_with_codes` con el real,
     # del tracklist de Deezer, cuando el álbum se verificó como este release; si
@@ -231,6 +234,9 @@ class Producto(TypedDict):
     # "deezer" cuando son todos: el release entero no apareció en YouTube, y de
     # él no se sabe qué distribuidora lo tiene hoy.
     de_deezer: NotRequired[int]
+    # "deezer" cuando la fecha no la publicó YouTube y es la del álbum de
+    # Deezer contra el que se verificó el release.
+    fecha_fuente: NotRequired[str]
     origen: NotRequired[str]
 
 

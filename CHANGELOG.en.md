@@ -6,6 +6,41 @@ What changed in every published version. The numbers follow
 [SemVer](https://semver.org/), and the downloads are in
 [Releases](https://github.com/joacogoliver-debug/catalog-migrator/releases).
 
+## [Unreleased]
+
+### Fixed
+- **A record is no longer verified against the wrong edition.** YouTube shows
+  a record's title without its version: it calls the 31-track anniversary
+  edition "Homework". The search for its best-known tracks lands on the
+  original 16-track "Homework", so the record ended up with the original's
+  UPC, 13 tracks without a position and an estimated order, while the
+  anniversary edition came in separately, whole, as a release that "is only on
+  Deezer". Now, when a record does not fit entirely in the album it was
+  verified against, the discography is searched for the edition whose
+  tracklist holds every track, each on a different position, and the record
+  moves to that one: with its UPC, its order and the tracks YouTube did not
+  show. If YouTube publishes the record's date, the edition has to share that
+  date or have exactly the same tracks; and between a record and its edition,
+  the one named as on YouTube wins. When the UPC comes from the tracklist and
+  not from the date, the validation says so.
+- **The same goes for records that could not be verified** because their
+  Deezer title carries an addition ("… (Original Motion Picture Soundtrack)",
+  "… (Radio Edit)"). On the second real catalog used for testing, records with
+  a UPC went from 22 to 29 out of 42, and those with a confirmed order from 18
+  to 22.
+- **The same track with an addition in its title is no longer a "doubtful
+  match".** On the soundtrack it is "Overture (From "TRON: Legacy"/Score)" and
+  on its complete edition, "Overture": same ISRC, same length. It showed up as
+  a rejection error, once per track.
+
+### Added
+- **The release date, when YouTube does not publish it.** On an old catalog,
+  more than half of the records carry no date on YouTube, and the ingestion
+  sheet left it to be filled in by hand. If the record is verified against a
+  Deezer album by its UPC, it takes that album's date, and the validation says
+  how many records took it from there. YouTube's date is never overwritten. On
+  the test catalog, undated records went from 22 to 2.
+
 ## [1.3.1] — 2026-11-17
 
 ### Fixed

@@ -21,7 +21,7 @@ from datetime import date
 
 from .contratos import FORMATOS_LOSSLESS, Hallazgo, NivelHallazgo, Producto, ResultadoValidacion
 from .i18n import T
-from .texto import comparable, misma_version, parece_formula
+from .texto import comparable, misma_version, parece_formula, sin_decorado
 
 # ISRC: CC-XXX-YY-NNNNN (12 caracteres sin guiones).
 #   CC     país (2 letras; incluye códigos especiales como QM/QZ que usan varios
@@ -419,6 +419,13 @@ def validar(productos: list[Producto], artista="") -> ResultadoValidacion:
 
     out.extend(_duplicados(productos))
 
+    # De dónde salió la fecha, dicho una vez: es un dato de la hoja que no
+    # viene de YouTube, y en un catálogo viejo son la mitad de los discos.
+    con_fecha_de_deezer = sum(1 for p in productos if p.get("fecha_fuente") == "deezer")
+    if con_fecha_de_deezer:
+        texto = T("val.fecha_de_deezer", n=con_fecha_de_deezer)
+        out.append(_hallazgo("aviso", "fecha_de_deezer", texto, ""))
+
     # Lo que la hoja no puede traer nunca, dicho una vez para todo el catálogo:
     # sin esto, «sin errores» se leía como «lista para cargar».
     if productos:
@@ -468,6 +475,11 @@ def _mismo_titulo(a, b, misma_duracion):
         return True
     if not misma_duracion or not misma_version(a or "", b or ""):
         return False
+    # El mismo tema con un agregado entre paréntesis que no es una versión: en
+    # la banda de sonido es «Overture (From "TRON: Legacy"/Score)» y en su
+    # edición completa, «Overture».
+    if comparable(sin_decorado(a or "")) == comparable(sin_decorado(b or "")):
+        return True
     return SequenceMatcher(None, ta, tb).ratio() >= MIN_SIMILITUD_TITULO
 
 

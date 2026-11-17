@@ -203,6 +203,14 @@ def group_products(tracks: list[Track], artist="") -> list[Producto]:
         lanzamientos = [t.get("release_date") for t in ts if t.get("release_date")]
         subidas = [t.get("upload_date") for t in ts if t.get("upload_date")]
 
+        # Cuando YouTube no publica la fecha, la del álbum de Deezer contra el
+        # que se verificó el release (ver `completitud.fechar_desde_deezer`).
+        # Sólo si todos los temas que llevan el UPC del producto dicen la misma.
+        upc = _mode(t.get("upc") for t in ts)
+        de_deezer = {t.get("fecha_deezer") or "" for t in ts if upc and t.get("upc") == upc}
+        fecha_deezer = de_deezer.pop() if not lanzamientos and len(de_deezer) == 1 else ""
+        fecha = min(lanzamientos) if lanzamientos else fecha_deezer
+
         if not confirmado:
             for i, t in enumerate(ts, 1):
                 # Orden provisorio por fecha de subida; se marca como no confirmado.
@@ -221,13 +229,13 @@ def group_products(tracks: list[Track], artist="") -> list[Producto]:
                 # El año del release es el de su lanzamiento, cuando se sabe.
                 # El año ℗ es de cada grabación: una edición aniversario de 2023
                 # trae temas de ℗ 2013, y salía fechada en 2013.
-                "release_year": int(min(lanzamientos)[:4]) if lanzamientos else (min(años) if años else ""),
-                "release_date": min(lanzamientos) if lanzamientos else "",
+                "release_year": int(fecha[:4]) if fecha else (min(años) if años else ""),
+                "release_date": fecha,
                 "upload_date": min(subidas) if subidas else "",
                 "label": _mode(t.get("label") for t in ts),
                 "p_line": _mode(t.get("p_line") for t in ts),
                 "distributor": _mode(t.get("distributor") for t in ts),
-                "upc": _mode(t.get("upc") for t in ts),
+                "upc": upc,
                 "tracks": ts,
                 "track_count": len(ts),
                 "total_views": sum(int(t.get("views") or 0) for t in ts),
@@ -235,6 +243,8 @@ def group_products(tracks: list[Track], artist="") -> list[Producto]:
                 "order_unconfirmed": len(ts) > 1 and not confirmado,
             }
         )
+        if fecha_deezer:
+            productos[-1]["fecha_fuente"] = "deezer"
 
     _marcar_duplicados_entre_distribuidoras(productos)
 

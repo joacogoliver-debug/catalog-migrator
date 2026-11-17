@@ -807,6 +807,7 @@ const TEXTOS = {
   'hallazgo.isrc_confianza_media': { es: 'ISRC de confianza media', en: 'Medium-confidence ISRC' },
   'hallazgo.campos_a_completar': { es: 'Campos a completar', en: 'Fields to fill in' },
   'hallazgo.artista_no_principal': { es: 'Otro artista principal', en: 'Another main artist' },
+  'hallazgo.fecha_de_deezer': { es: 'Fecha tomada de Deezer', en: 'Date taken from Deezer' },
   'hallazgo.upc_por_tracklist': { es: 'UPC verificado por la lista de temas', en: 'UPC verified by the tracklist' },
   'hallazgo.isrc_otro_corte': { es: 'Mismo ISRC, otra duración', en: 'Same ISRC, different length' },
   'hallazgo.solo_en_deezer': { es: 'Lanzamiento que sólo está en Deezer', en: 'Release found on Deezer only' },

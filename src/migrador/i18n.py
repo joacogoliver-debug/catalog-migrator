@@ -760,6 +760,16 @@ TEXTOS = {
             "what your current distributor has."
         ),
     },
+    "val.fecha_de_deezer": {
+        "es": (
+            "Lanzamientos con la fecha tomada de Deezer: {n}. YouTube no publica la fecha de "
+            "esos discos; es la del álbum de Deezer contra el que se verificó cada uno, por su UPC."
+        ),
+        "en": (
+            "Releases dated from Deezer: {n}. YouTube does not publish the date of those "
+            "records; it is the date of the Deezer album each one was verified against, by its UPC."
+        ),
+    },
     "val.campos_a_completar": {
         "es": (
             "La hoja de ingesta trae campos que no salen de ninguna fuente pública (género, "

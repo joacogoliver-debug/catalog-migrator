@@ -6,6 +6,40 @@ Lo que cambió en cada versión publicada. Los números siguen
 [SemVer](https://semver.org/lang/es/), y las descargas están en
 [Releases](https://github.com/joacogoliver-debug/catalog-migrator/releases).
 
+## [Sin publicar]
+
+### Corregido
+- **Un disco ya no queda verificado contra la edición equivocada.** YouTube
+  muestra el título de un disco sin su versión: llama «Homework» a la edición
+  aniversario, de 31 temas. La búsqueda de sus temas más conocidos cae en el
+  «Homework» original, de 16, y el disco quedaba con el UPC del original, 13
+  temas sin ubicar y el orden estimado; la edición aniversario entraba aparte,
+  entera, como un release que «sólo está en Deezer». Ahora, cuando un disco no
+  queda entero en el álbum contra el que se verificó, se busca en la
+  discografía la edición en cuya lista de temas están todos, cada uno en un
+  lugar distinto, y el disco pasa a ésa: con su UPC, su orden y los temas que
+  YouTube no mostró. Si YouTube publica la fecha del disco, la edición tiene
+  que ser de esa fecha o tener exactamente los mismos temas; y entre el disco
+  y su edición vale el que se llama como en YouTube. Cuando el UPC sale de la
+  lista de temas y no de la fecha, la validación lo dice.
+- **Lo mismo para los discos que no se habían podido verificar** porque en
+  Deezer llevan un agregado en el título («… (Original Motion Picture
+  Soundtrack)», «… (Radio Edit)»). En el segundo catálogo real con que se
+  probó, los discos con UPC pasaron de 22 a 29 de 42, y los que tienen el
+  orden confirmado, de 18 a 22.
+- **El mismo tema con un agregado en el título ya no es un «cruce dudoso».**
+  En la banda de sonido es «Overture (From "TRON: Legacy"/Score)» y en su
+  edición completa, «Overture»: el mismo ISRC y la misma duración. Salía como
+  error de rechazo, una vez por tema.
+
+### Agregado
+- **La fecha de lanzamiento, cuando YouTube no la publica.** En un catálogo
+  viejo, más de la mitad de los discos no traen fecha en YouTube y en la hoja
+  de ingesta quedaba para completar a mano. Si el disco está verificado contra
+  un álbum de Deezer por su UPC, lleva la fecha de ese álbum, y la validación
+  dice cuántos discos la tomaron de ahí. La fecha de YouTube nunca se pisa. En
+  el catálogo de prueba, los discos sin fecha pasaron de 22 a 2.
+
 ## [1.3.1] — 2026-11-17
 
 ### Corregido

@@ -270,6 +270,7 @@ check digit for UPC-A and EAN-13.
 |---|---|---|
 | Catalog, distributor, label, year, plays | YouTube Data API | yes |
 | ISRC and UPC | [Deezer](https://developers.deezer.com/api) | no |
+| Release date, when YouTube does not publish it | [Deezer](https://developers.deezer.com/api) | no |
 | Which of the artist's recordings did not show up on YouTube | [Deezer](https://developers.deezer.com/api) | no |
 | Artwork | [iTunes Search API](https://performance-partners.apple.com/search-api) | no |
 
@@ -314,6 +315,13 @@ album and on every compilation. That is why the UPC is only accepted when the
 Deezer album is the same release as the product: otherwise it stays blank and
 the validation says which other release it was found on, instead of delivering
 another release's code.
+
+YouTube shows a record's title without its version: the anniversary edition is
+named like the original. When a record's tracks do not all fit in the Deezer
+album with the same name, the app searches the discography for the edition
+that holds them all and uses that one, and says so in the validation. And if
+YouTube does not publish the date of a verified record, it takes the date of
+its Deezer album.
 
 Artwork is requested at 3000×3000, but **the resolution Apple actually returned
 is the one reported**, not the one requested: Apple serves the largest it has for

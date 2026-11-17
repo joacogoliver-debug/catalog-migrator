@@ -87,6 +87,7 @@ def relevar_catalogo(
             log(T("mig.comparacion_fallo", detalle=f"{type(e).__name__}: {e}"))
 
     tracks = tracks + sumados
+    completitud_mod.fechar_desde_deezer(tracks, res["cruce"])
     prods = productos_mod.group_products(tracks, artist=artista)
     completitud_mod.marcar(prods, comp, res["cruce"])
     log(T("mig.agrupados", productos=len(prods), tracks=len(tracks)))

@@ -458,6 +458,7 @@ def _catalogo(hacer_track, deezer, discos, tracks, titulares=None):
     datos = cruce(10)
     comp = C.revisar(tracks, datos, "Los del Ejemplo")
     todos = tracks + C.sumar_de_deezer(tracks, comp, datos, "Los del Ejemplo")
+    C.fechar_desde_deezer(todos, datos)
     productos = C.marcar(P.group_products(todos, "Los del Ejemplo"), comp, datos)
     return {p["title"]: p for p in productos}, comp, falso
 
@@ -1163,3 +1164,171 @@ def test_dos_temas_en_el_mismo_lugar_nunca_son_un_orden_confirmado(hacer_track):
     (disco,) = P.group_products(tracks, "Daft Punk")
     assert disco["order_unconfirmed"] is True
     assert sorted(t.get("track_number") or 0 for t in disco["tracks"]) == [1, 2, 3], "de corrido, estimados"
+
+
+# ============================================================
+# La edición del disco, y su fecha
+# ============================================================
+#
+# De un segundo catálogo real. YouTube llama «Homework» a la edición aniversario,
+# de 31 temas, y no publica su fecha. La búsqueda de los 16 temas originales cae
+# en el «Homework» de 1997: el disco quedaba con ese UPC, 13 temas sin ubicar y
+# el orden estimado, y la edición aniversario entraba aparte, entera, como un
+# release que «sólo está en Deezer».
+
+
+def _tarea(hacer_track, fecha=""):
+    """Un disco con dos temas ubicados en la edición original y dos remixes que
+    sólo están en la edición aniversario."""
+    uno = ubicado(track(hacer_track, "Uno", "Tarea", isrc="AR1", dur=200, aid=10, fecha=fecha), 1)
+    dos = ubicado(track(hacer_track, "Dos", "Tarea", isrc="AR2", dur=210, aid=10, fecha=fecha), 2)
+    uno["upc"] = dos["upc"] = "UPC10"
+    remix_uno = track(hacer_track, "Uno (Remix)", "Tarea", dur=301, fecha=fecha)
+    remix_dos = track(hacer_track, "Dos (Remix)", "Tarea", dur=310, fecha=fecha)
+    remix_uno["upc_descartado"] = "Tarea (Edición 25 Aniversario)"
+    return [uno, dos, remix_uno, remix_dos]
+
+
+def _ediciones(fecha_aniversario="1997-01-20"):
+    originales = [tema("Uno", "AR1", 200), tema("Dos", "AR2", 210)]
+    remixes = [
+        tema("Uno (Remix)", "AR3", 300),
+        tema("Dos (Remix)", "AR4", 310),
+        tema("Tres (Remix)", "AR5", 320),
+    ]
+    return {
+        10: ("Tarea", "album", "1997-01-16", originales),
+        20: ("Tarea (Edición 25 Aniversario)", "album", fecha_aniversario, originales + remixes),
+    }
+
+
+def test_un_disco_a_medio_ubicar_pasa_a_la_edicion_que_tiene_todos_sus_temas(hacer_track, deezer):
+    from migrador import validar as V
+
+    productos, comp, _f = _catalogo(hacer_track, deezer, _ediciones(), _tarea(hacer_track))
+
+    assert comp["verificados_por_tracklist"] == 1
+    assert list(productos) == ["Tarea"], "la edición aniversario no entra aparte: es este disco"
+    disco = productos["Tarea"]
+    assert disco["upc"] == "UPC20" and disco["order_unconfirmed"] is False
+    assert [(t.get("track_number"), t["track"], t["isrc"], t.get("origen", "")) for t in disco["tracks"]] == [
+        (1, "Uno", "AR1", ""),
+        (2, "Dos", "AR2", ""),
+        (3, "Uno (Remix)", "AR3", ""),
+        (4, "Dos (Remix)", "AR4", ""),
+        (5, "Tres (Remix)", "AR5", "deezer"),
+    ], "ordenado por la edición aniversario, con sus códigos y el tema que YouTube no mostró"
+    assert not any("upc_descartado" in t for t in disco["tracks"])
+    (aviso,) = [
+        h for h in V.validar([disco], "Los del Ejemplo")["hallazgos"] if h["codigo"] == "upc_por_tracklist"
+    ]
+    assert "Tarea (Edición 25 Aniversario) (1997-01-20)" in aviso["mensaje"], (
+        "y se dice de dónde salió el UPC"
+    )
+
+
+def test_con_fecha_en_youtube_no_se_pasa_a_una_edicion_de_otra_fecha(hacer_track, deezer):
+    """La fecha de YouTube es un dato: una edición que salió otro día y tiene
+    temas de más es otro release, aunque le entren todos los del disco."""
+    tracks = _tarea(hacer_track, fecha="1997-01-16")
+    productos, comp, _f = _catalogo(hacer_track, deezer, _ediciones("2022-02-22"), tracks)
+    assert comp["verificados_por_tracklist"] == 0
+    assert [t["upc"] for t in tracks] == ["UPC10", "UPC10", "", ""], "queda como estaba"
+    assert productos["Tarea"]["order_unconfirmed"] is True
+
+
+def test_entre_el_disco_y_su_edicion_vale_el_que_se_llama_igual(hacer_track, deezer):
+    """Sin fecha en YouTube y con los temas en los dos, no hay motivo para
+    creer que es la edición: YouTube lo llama como el original."""
+    discos = _ediciones()
+    tracks = [
+        _base(hacer_track),
+        track(hacer_track, "Uno", "Tarea", dur=200, fecha=""),
+        track(hacer_track, "Dos", "Tarea", dur=210, fecha=""),
+    ]
+    discos[30] = ("Verificado", "album", "2020-01-01", [tema("Base", "AR0")])
+    falso = deezer(discos)
+    datos = cruce(30)
+    tracks[0]["album_deezer_id"] = 30
+    comp = C.revisar(tracks, datos, "Los del Ejemplo")
+    assert comp["verificados_por_tracklist"] == 1 and falso
+    assert {t["upc"] for t in tracks[1:]} == {"UPC10"}
+
+
+@pytest.mark.parametrize(
+    ("de_youtube", "de_deezer", "es_edicion"),
+    [
+        ("Homework", "Homework (25th Anniversary Edition)", True),
+        ("TRON: Legacy - The Complete Edition", "TRON: Legacy - The Complete Edition (Original Score)", True),
+        ("Tarea", "Tarea - Edición Aniversario", True),
+        ("Tarea", "TAREA [Deluxe] (Remasterizado)", True),
+        ("Tarea", "Tarea", False),
+        ("Tarea", "Tareas", False),
+        ("Tarea", "Tarea 2", False),
+        ("Tarea", "Tarea para el Hogar", False),
+        ("Tarea (En Vivo)", "Tarea", False),
+        ("", "(Edición Aniversario)", False),
+    ],
+)
+def test_que_es_una_edicion_del_disco(de_youtube, de_deezer, es_edicion):
+    assert C._es_edicion_de(de_youtube, de_deezer) is es_edicion
+
+
+def test_sin_fecha_en_youtube_el_disco_lleva_la_de_su_album_de_deezer(hacer_track, deezer):
+    from migrador import validar as V
+
+    productos, _c, _f = _catalogo(hacer_track, deezer, _ediciones(), _tarea(hacer_track))
+    disco = productos["Tarea"]
+    assert (disco["release_date"], disco["release_year"], disco.get("fecha_fuente")) == (
+        "1997-01-20",
+        1997,
+        "deezer",
+    )
+    (aviso,) = [
+        h for h in V.validar([disco], "Los del Ejemplo")["hallazgos"] if h["codigo"] == "fecha_de_deezer"
+    ]
+    assert aviso["nivel"] == "aviso" and ": 1." in aviso["mensaje"]
+
+
+def test_la_fecha_de_youtube_no_se_pisa_con_la_de_deezer(hacer_track):
+    con_fecha = ubicado(track(hacer_track, "Uno", "Disco", aid=10, fecha="2019-03-22"), 1)
+    con_fecha["upc"] = "UPC10"
+    datos = cruce(10, otros={})
+    datos["albumes"][10]["release_date"] = "1992-01-04"
+    assert C.fechar_desde_deezer([con_fecha], datos) == 0
+    (disco,) = P.group_products([con_fecha], "Los del Ejemplo")
+    assert disco["release_date"] == "2019-03-22" and "fecha_fuente" not in disco
+
+
+@pytest.mark.parametrize(
+    ("fecha_deezer", "upc", "motivo"),
+    [
+        ("0000-00-00", "UPC10", "Deezer no sabe la fecha"),
+        ("", "UPC10", "Deezer no trae fecha"),
+        ("1992-01-04", "", "el disco no se verificó: no lleva el UPC de ese álbum"),
+        ("1992-01-04", "OTRO", "lleva el UPC de otro álbum"),
+    ],
+)
+def test_sin_fecha_confiable_el_disco_queda_sin_fecha(hacer_track, fecha_deezer, upc, motivo):
+    t = ubicado(track(hacer_track, "Uno", "Disco", aid=10, fecha=""), 1)
+    t["upc"] = upc
+    datos = cruce(10)
+    datos["albumes"][10]["release_date"] = fecha_deezer
+    assert C.fechar_desde_deezer([t], datos) == 0, motivo
+    (disco,) = P.group_products([t], "Los del Ejemplo")
+    assert disco["release_date"] == "" and "fecha_fuente" not in disco, motivo
+
+
+def test_el_mismo_tema_con_un_agregado_en_el_titulo_no_es_un_cruce_dudoso(hacer_track):
+    """En la banda de sonido es «Overture (From "TRON: Legacy"/Score)» y en su
+    edición completa, «Overture»: el mismo ISRC, la misma duración. Salía como
+    error «no parecen la misma grabación», veintidós veces en un catálogo."""
+    from migrador import validar as V
+
+    a = hacer_track('Overture (From "TRON: Legacy"/Score)', "Banda", 2010, dur=149)
+    b = hacer_track("Overture", "Edición Completa", 2020, dur=148)
+    assert V._parentesco(a, b) == "misma"
+    b["duration_s"] = 190
+    assert V._parentesco(a, b) == "otra", "con otra duración sigue siendo otra grabación"
+    vivo = hacer_track("Overture (En Vivo)", "Vivo", 2021, dur=149)
+    assert V._parentesco(a, vivo) == "otra", "y una versión declarada, también"

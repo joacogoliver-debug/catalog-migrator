@@ -28,6 +28,7 @@ unidades de cuota por release y en el catálogo real con que se midió no recupe
 nada dentro del canal: lo que faltaba no estaba ahí. Por eso no se hace solo.
 """
 
+import re
 from collections import Counter
 from typing import Any
 from concurrent.futures import ThreadPoolExecutor
@@ -372,40 +373,81 @@ def ubicar_restantes(tracks: list[Track], tracklists) -> int:
     return ubicados
 
 
+# Lo que una edición le agrega al título de un disco: uno o más paréntesis, o
+# algo después de un guion o de dos puntos.
+_RE_AGREGADO = re.compile(r"(\s*[(\[][^)\]]*[)\]])+|\s*[-–:]\s+.+")
+
+
+def _es_edicion_de(album, titulo_deezer) -> bool:
+    """Si el título de Deezer es el de YouTube con algo agregado al final.
+
+    YouTube muestra el título del disco sin su versión: «Homework» para la
+    «Homework (25th Anniversary Edition)», o «TRON: Legacy - The Complete
+    Edition» para la que en Deezer sigue con «(Original Motion Picture
+    Soundtrack)». El título solo no alcanza para decir que son el mismo
+    release, y por eso esto no lo usa el cruce: lo usa quien además tiene a la
+    vista el tracklist (ver `verificar_por_tracklist`).
+    """
+    a, b = plegado(album).strip(), plegado(titulo_deezer).strip()
+    if not comparable(a) or not b.startswith(a):
+        return False
+    return bool(_RE_AGREGADO.fullmatch(b[len(a) :]))
+
+
 def verificar_por_tracklist(tracks: list[Track], discos, tracklists, cruce: CruceDeezer) -> int:
-    """Verifica contra la discografía los discos que el cruce no pudo verificar.
+    """Verifica contra la discografía los discos que el cruce no dejó enteros.
 
     El cruce verifica un disco cuando la búsqueda de alguno de sus temas cae en
-    ese álbum de Deezer. Si ninguna cae ahí, porque cada tema está también en
-    un compilado y la búsqueda devuelve ése, el disco queda sin UPC y con el
-    orden estimado aunque Deezer lo tenga. Con la discografía entera se lo
-    busca al revés: el álbum que se llama igual y en cuyo tracklist están
-    TODOS los temas del disco, cada uno en un lugar distinto, por título y
-    duración.
+    un álbum de Deezer que se llama igual. Hay dos formas de que eso salga mal:
 
-    Dos formas de aceptarlo, de más a menos segura:
+      - Ninguna búsqueda cae ahí, porque cada tema está también en un compilado
+        y la búsqueda devuelve ése. El disco queda sin UPC y con el orden
+        estimado aunque Deezer lo tenga.
+      - Cae en otra edición del disco. YouTube llama «Homework» a la edición
+        aniversario, de 31 temas, y la búsqueda de sus temas más conocidos cae
+        en el «Homework» original, de 16. El disco quedaba con el UPC del
+        original, 13 temas sin ubicar y el orden estimado; y la edición
+        aniversario entraba aparte, entera, como si no estuviera en YouTube.
+
+    Con la discografía entera se lo busca al revés: el álbum que se llama
+    igual, o igual con una edición agregada al título, y en cuyo tracklist
+    están TODOS los temas del disco, cada uno en un lugar distinto, por ISRC o
+    por título y duración. Sólo se miran los discos que no quedaron enteros en
+    un álbum: uno ya verificado y con todos sus temas ubicados no se toca.
+
+    Tres formas de aceptarlo, de más a menos segura:
 
       - Coincide además la fecha de lanzamiento. Es el mismo release, y puede
         tener más temas de los que YouTube muestra.
       - La fecha no coincide, pero el tracklist es exactamente el mismo: los
         mismos temas, ni uno más. Suele ser el mismo release con la fecha
-        original de un lado y la de la edición digital del otro. Se acepta, y
-        queda anotado (`upc_por_tracklist`) para que la validación lo diga.
+        original de un lado y la de la edición digital del otro.
+      - YouTube no publica la fecha del disco, así que no hay fecha que lo
+        contradiga, y el álbum tiene todos sus temas y alguno más.
 
-    En los dos casos tiene que haber un solo candidato. Con dos ediciones que
-    calzan igual no se elige. Devuelve cuántos discos verificó.
+    Las dos últimas quedan anotadas (`upc_por_tracklist`) para que la
+    validación lo diga. En cada forma tiene que haber un solo candidato; si hay
+    varios, vale el que se llama igual que en YouTube antes que su edición, y
+    con dos que calzan igual no se elige. Devuelve cuántos discos verificó.
     """
     verificados = 0
     for (_album, _dist, fecha), grupo in _grupos(tracks).items():
-        if any(t.get("album_deezer_id") for t in grupo):
+        actuales = {t.get("album_deezer_id") for t in grupo} - {None}
+        if len(actuales) == 1 and all(t.get("orden_fuente") for t in grupo):
             continue
         # El título como lo escribe YouTube, y no el normalizado de la clave:
         # los paréntesis dicen qué versión es («(En Vivo)»), y ahí se pierden.
         album = grupo[0]["album"]
-        misma_fecha, exactos = [], []
+        formas: dict[str, list[tuple[bool, dict[str, Any], list[TemaFaltante | None]]]] = {
+            "fecha": [],
+            "exacto": [],
+            "sin_fecha": [],
+        }
         for a in discos:
+            titulo = a.get("title") or ""
+            mismo_titulo = R.album_coincide(album, titulo)
             temas = tracklists.get(int(a["id"])) or []
-            if not temas or not R.album_coincide(album, a.get("title") or ""):
+            if not temas or not (mismo_titulo or _es_edicion_de(album, titulo)):
                 continue
             lugares = [_ubicar(t, temas) for t in grupo]
             if not all(x and x["posicion"] for x in lugares):
@@ -414,23 +456,34 @@ def verificar_por_tracklist(tracks: list[Track], discos, tracklists, cruce: Cruc
                 continue
             fecha_dz = a.get("release_date") or ""
             if fecha and fecha_dz and R.fechas_cercanas(fecha, fecha_dz):
-                misma_fecha.append((a, lugares))
+                forma = "fecha"
             elif len(temas) == len(grupo):
-                exactos.append((a, lugares))
-        candidatos = misma_fecha or exactos
+                forma = "exacto"
+            elif not fecha:
+                forma = "sin_fecha"
+            else:
+                continue
+            formas[forma].append((mismo_titulo, a, lugares))
+        forma, candidatos = next(((f, c) for f, c in formas.items() if c), ("", []))
+        if any(mismo for mismo, _a, _lugares in candidatos):
+            candidatos = [c for c in candidatos if c[0]]
         if len(candidatos) != 1:
             continue
-        a, lugares = candidatos[0]
+        _mismo, a, lugares = candidatos[0]
         album_id = int(a["id"])
         info = R.deezer_albumes([album_id]).get(album_id) or {}
+        if actuales and not info.get("upc"):
+            # El disco ya tiene un UPC, de otro álbum. Sin el de éste no se lo
+            # cambia: quedaría ordenado por un álbum y con el código de otro.
+            continue
         cruce.setdefault("albumes", {})[album_id] = info
         for t, x in zip(grupo, lugares, strict=True):
             if x is None:  # ya se comprobó arriba que están todos
                 continue
             _poner(t, x, album_id)
-            t["upc"] = info.get("upc", "") or t["upc"]
+            t["upc"] = info.get("upc", "") or ("" if actuales else t["upc"])
             t.pop("upc_descartado", None)
-            if not misma_fecha:
+            if forma != "fecha":
                 t["upc_por_tracklist"] = f"{a.get('title') or ''} ({a.get('release_date') or ''})"
         verificados += 1
     return verificados
@@ -539,6 +592,34 @@ def revisar(tracks: list[Track], cruce: CruceDeezer, artista, avance=None) -> Co
         recortada=recortada,
     )
     return res
+
+
+def fechar_desde_deezer(tracks: list[Track], cruce: CruceDeezer) -> int:
+    """Le anota a cada tema sin fecha la de su disco en Deezer (`fecha_deezer`).
+
+    YouTube publica la fecha de lanzamiento de un disco en cada tema, pero no
+    siempre: en un catálogo real, más de la mitad de los discos no la traían,
+    y en la hoja de ingesta la fecha quedaba para completar a mano aunque el
+    disco estuviera verificado contra Deezer, que la tiene.
+
+    Sólo para los temas ubicados en un álbum cuyo UPC es el que llevan: es la
+    fecha de ESE release, no la de un álbum que se llama parecido. No pisa la
+    fecha de YouTube, y va en un campo aparte para que se sepa de dónde salió
+    (ver `productos.group_products`). Devuelve a cuántos temas se la anotó.
+    """
+    albumes = cruce.get("albumes") or {}
+    anotados = 0
+    for t in tracks:
+        info = albumes.get(t.get("album_deezer_id") or 0) or {}
+        fecha = info.get("release_date") or ""
+        if t.get("release_date") or not t.get("upc") or t["upc"] != info.get("upc"):
+            continue
+        # Deezer devuelve «0000-00-00» cuando no sabe la fecha.
+        anio = _anio(fecha)
+        if isinstance(anio, int) and anio >= 1900:
+            t["fecha_deezer"] = fecha
+            anotados += 1
+    return anotados
 
 
 URL_DEEZER = "https://www.deezer.com/track/{id}"

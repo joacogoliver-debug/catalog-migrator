@@ -268,6 +268,7 @@ dígito verificador GTIN de UPC-A y EAN-13.
 |---|---|---|
 | Catálogo, distribuidora, sello, año, reproducciones | YouTube Data API | sí |
 | ISRC y UPC | [Deezer](https://developers.deezer.com/api) | no |
+| Fecha de lanzamiento, cuando YouTube no la publica | [Deezer](https://developers.deezer.com/api) | no |
 | Qué grabaciones del artista no aparecieron en YouTube | [Deezer](https://developers.deezer.com/api) | no |
 | Portadas | [iTunes Search API](https://performance-partners.apple.com/search-api) | no |
 
@@ -314,6 +315,13 @@ Deezer encuentra la grabación, y la misma grabación está en el single, en el
 Deezer es el mismo release que el producto: si no, queda en blanco y la
 validación dice en qué otro release lo encontró, en vez de entregar el código
 de otro producto.
+
+YouTube muestra el título de un disco sin su versión: la edición aniversario
+se llama igual que el original. Cuando los temas de un disco no entran todos
+en el álbum de Deezer que se llama igual, la app busca en la discografía la
+edición que los tiene a todos y usa ésa, y lo avisa en la validación. Y si
+YouTube no publica la fecha de un disco verificado, lleva la de su álbum de
+Deezer.
 
 Las portadas se piden en 3000×3000, pero **se reporta la resolución que Apple
 efectivamente devolvió**, no la que pedimos: Apple sirve el máximo que tiene para
