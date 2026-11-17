@@ -328,6 +328,14 @@ def validar(productos: list[Producto], artista="") -> ResultadoValidacion:
         if p.get("order_unconfirmed"):
             out.append(_hallazgo("aviso", "orden_sin_confirmar", T("val.orden_sin_confirmar"), nombre))
 
+        # Deezer tiene temas de este disco que no aparecieron en YouTube. Es un
+        # aviso y no un error: el disco se puede entregar así, pero incompleto,
+        # y eso hay que saberlo antes y no cuando la distribuidora lo publique.
+        faltan = p.get("faltan_temas") or []
+        if faltan:
+            texto = T("val.album_incompleto", n=len(faltan), temas=" · ".join(faltan))
+            out.append(_hallazgo("aviso", "album_incompleto", texto, nombre))
+
         out.extend(validar_portada(p))
 
         # --- por track ---

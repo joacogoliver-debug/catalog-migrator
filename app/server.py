@@ -552,6 +552,8 @@ def producto_json(p):
         "views": p.get("total_views", 0),
         "orden_estimado": bool(p.get("order_unconfirmed")),
         "con_isrc": sum(1 for t in p.get("tracks", []) if t.get("isrc")),
+        # Los temas que este release tiene en Deezer y no aparecieron en YouTube.
+        "faltan": list(p.get("faltan_temas") or []),
         "detalle": [
             {
                 "n": t.get("track_number") or "",
@@ -773,6 +775,9 @@ def api_preparar(body):
     _revisar_espacio(quiere_audio)
 
     artista = ESTADO.artista
+    # El diagnóstico se toma ahora y no al empaquetar: si mientras tanto se
+    # releva otro canal, el reporte tiene que hablar de éste.
+    diagnostico = ESTADO.diagnostico
     ses = ESTADO.tidal if quiere_audio else None
 
     def trabajo(job):
@@ -849,6 +854,7 @@ def api_preparar(body):
                 incluir_portadas=quiere_portadas,
                 log=avance_preparar,
                 avance=en_tramo(0.9, 0.99),
+                diag=diagnostico,
             )
         except BaseException:
             # Si el armado falla o lo cancelan, la carpeta del ZIP a medio

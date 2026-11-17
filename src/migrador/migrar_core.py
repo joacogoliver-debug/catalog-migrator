@@ -20,6 +20,7 @@ import shutil
 import tempfile
 
 from . import audio as audio_mod
+from . import completitud as completitud_mod
 from . import paquete
 from . import portadas as portadas_mod
 from . import productos as productos_mod
@@ -53,7 +54,23 @@ def relevar_catalogo(
     )
     tracks = res["tracks"]
     artista = res["artist"]
+
+    # Qué tiene Deezer de este artista que no apareció en YouTube. Sólo si se
+    # cruzaron códigos, porque es de ese cruce de donde sale qué artista de
+    # Deezer es. No cuesta cuota de YouTube.
+    comp = completitud_mod.completitud_vacia()
+    if res.get("codes") is not None:
+        if progress:
+            progress(T("mig.comparando_deezer"), 0.96)
+        comp = completitud_mod.revisar(
+            tracks,
+            res["cruce"],
+            artista,
+            avance=(lambda h, t: fraccion(0.96 + 0.03 * h / t)) if fraccion else None,
+        )
+
     prods = productos_mod.group_products(tracks, artist=artista)
+    completitud_mod.marcar(prods, comp)
     log(T("mig.agrupados", productos=len(prods), tracks=len(tracks)))
 
     # Diagnóstico del canal: si no trae descripciones auto-generadas, el
@@ -71,11 +88,22 @@ def relevar_catalogo(
             "encontrados": int((res.get("codes") or {}).get("matched") or 0),
             "fallas": int((res.get("codes") or {}).get("fallas") or 0),
         },
+        "via": res.get("via", "subidas"),
+        "total_estimado": int(res.get("total_estimado") or 0),
+        "cortado_por_cuota": bool(res.get("cortado_por_cuota")),
+        "unidades": int(res.get("unidades") or 0),
+        "sin_distribuidora": int(res.get("sin_distribuidora") or 0),
+        "temas": len(tracks),
+        "completitud": comp,
     }
     if diag["via_topic"]:
         log(T("mig.via_topic", pedido=diag["canal_pedido"], topic=diag["canal"]))
     if diag["descartados"]:
         log(T("mig.descartados", n=diag["descartados"]))
+    if diag["cortado_por_cuota"]:
+        log(T("mig.cortado_por_cuota", n=len(tracks)))
+    if comp["revisada"] and comp["temas"]:
+        log(T("mig.faltan_en_youtube", n=comp["temas"], releases=len(comp["faltan"])))
     return prods, artista, tracks, diag
 
 
@@ -167,8 +195,12 @@ def empaquetar(
     incluir_portadas=True,
     log=print,
     avance=None,
+    diag=None,
 ):
-    """Arma el ZIP del entregable. Devuelve (ruta, tamaño_bytes)."""
+    """Arma el ZIP del entregable. Devuelve (ruta, tamaño_bytes).
+
+    `diag` es el diagnóstico que devolvió `relevar_catalogo`: con él, el reporte
+    del paquete dice cómo se listó el catálogo y qué le falta."""
     if out_path is None:
         out_path = os.path.join(
             tempfile.mkdtemp(prefix="migrador_zip_"),
@@ -185,6 +217,7 @@ def empaquetar(
         incluir_portadas=incluir_portadas,
         log=log,
         avance=avance,
+        diag=diag,
     )
 
 
@@ -214,7 +247,7 @@ def migrar(
     log=print,
 ) -> ResultadoMigracion:
     """Corre los 4 pasos de una. Devuelve dict con el resultado."""
-    prods, artista, _, _diag = relevar_catalogo(url, yt_key, progress=log)
+    prods, artista, _, diag = relevar_catalogo(url, yt_key, progress=log)
     seleccion = productos_mod.filter_products(
         prods,
         ids=ids,
@@ -246,6 +279,7 @@ def migrar(
         incluir_audio=quiere_audio,
         incluir_portadas=quiere_portadas,
         log=log,
+        diag=diag,
     )
     limpiar(dir_audio)
     return {

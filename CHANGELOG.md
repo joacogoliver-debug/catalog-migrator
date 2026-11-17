@@ -9,6 +9,24 @@ Lo que cambió en cada versión publicada. Los números siguen
 ## [Sin publicar]
 
 ### Agregado
+- **La app dice qué le falta al catálogo.** El buscador de YouTube no garantiza
+  traer todo y no avisa cuando no lo trae, así que lo relevado se compara contra
+  la discografía del artista en Deezer. El artista sale de los álbumes que ya se
+  verificaron como releases del catálogo, no de buscar su nombre, que es como se
+  termina con la discografía de un homónimo. La pantalla del catálogo, la
+  validación y el reporte del ZIP dicen qué grabaciones tiene Deezer que no
+  aparecieron: las de discos que sí están, marcadas en cada disco, y los
+  lanzamientos que no aparecieron, con su UPC. En el catálogo con que se midió
+  eran 26. No se agregan al paquete, porque de ellas no se conoce la
+  distribuidora.
+- **La app dice cómo listó el catálogo y cuánta cuota gastó.** Por el buscador,
+  cada cincuenta temas cuestan 100 unidades de las 10.000 diarias, cien veces
+  más que antes: un catálogo de 290 temas gastó 607. El número está en la
+  pantalla y en el reporte, y la ayuda de la clave dejó de decir que un canal
+  gasta «una por cada 25 temas».
+- **Si la cuota se acaba a mitad del listado, lo que ya se trajo no se pierde.**
+  El catálogo se muestra marcado como incompleto, con el botón para cargar una
+  clave propia, en vez de fallar entero después de haber gastado la cuota.
 - **Hay dónde hacer una pregunta**: una plantilla de issue «Una pregunta»,
   para lo que no es un error ni una idea («¿funciona con mi distribuidora?»).
   Con el issue en blanco apagado, no había ningún lugar para eso.
@@ -64,6 +82,22 @@ Lo que cambió en cada versión publicada. Los números siguen
   de cuota.
 
 ### Corregido
+- **La app no podía relevar ningún canal Topic.** Entre fines de septiembre y
+  noviembre de 2026 YouTube dejó de publicar la lista de subidas de los canales
+  Topic: la API contesta que la lista no existe, aunque los temas siguen ahí.
+  Como era la única forma en que la app listaba un canal, todo relevamiento
+  terminaba en «YouTube respondió un error (404)». Ahora, si la lista no está,
+  el canal se lista por el buscador de YouTube, página por página y más allá de
+  su tope de unos quinientos resultados. Si YouTube vuelve a publicar la lista,
+  la app la usa sola.
+- **Los lanzamientos sin la línea «Provided to YouTube by» se descartaban** como
+  si fueran videoclips. Son entregas viejas, con la misma descripción generada
+  por YouTube pero sin esa primera línea: en el catálogo con que se encontró
+  eran dos discos enteros, diecisiete temas. Ahora entran, con su álbum, su ℗,
+  su fecha y sus créditos, y con la distribuidora vacía, que es lo que YouTube
+  dice de ellos. El filtro por distribuidora tiene una casilla para verlos.
+- **Pegar un canal común no cambiaba al Topic** si el Topic no tenía lista de
+  subidas, que hoy es siempre.
 - **En Mac la app no podía hablar con YouTube**: el .app no encontraba los
   certificados del sistema y toda consulta fallaba con
   `CERTIFICATE_VERIFY_FAILED`, tanto al relevar como al probar una clave propia.

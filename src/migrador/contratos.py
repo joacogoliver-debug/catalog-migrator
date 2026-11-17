@@ -26,7 +26,7 @@ Este módulo no importa nada del proyecto, a propósito, para que cualquiera pue
 importarlo sin arrastrar dependencias ni armar un ciclo.
 """
 
-from typing import Literal, NotRequired, TypedDict
+from typing import Any, Literal, NotRequired, TypedDict
 
 # Los formatos aptos para entrega, o sea lossless de verdad. Vive acá y no en
 # `audio.py` porque es parte del contrato de lo que significa
@@ -214,6 +214,11 @@ class Producto(TypedDict):
     # distribuidora: sus nombres. La validación lo convierte en aviso.
     tambien_en: NotRequired[list[str]]
 
+    # Lo pone `completitud.marcar`: los títulos de los temas que este release
+    # tiene en Deezer y que no aparecieron en YouTube. Ausente si no falta nada
+    # o si no se pudo comparar.
+    faltan_temas: NotRequired[list[str]]
+
 
 class Hallazgo(TypedDict):
     """Un problema encontrado por la validación pre-entrega.
@@ -286,6 +291,19 @@ class EstadisticaCodigos(TypedDict):
     fallas: int
 
 
+class CruceDeezer(TypedDict):
+    """Lo que el cruce de códigos aprendió de Deezer y `completitud` reutiliza.
+
+    Son datos de trabajo, no para mostrar: `albumes` trae cada álbum que se
+    pidió, por id, y `verificados` el tracklist (título, posición, disco) de los
+    que se comprobaron como releases de este catálogo. Guardarlos evita volver a
+    pedirle a Deezer lo que ya contestó.
+    """
+
+    albumes: dict[int, dict[str, Any]]
+    verificados: dict[int, list[tuple[str, int, int]]]
+
+
 class Relevamiento(TypedDict):
     """Lo que devuelve `relevar_core.relevar`.
 
@@ -308,6 +326,24 @@ class Relevamiento(TypedDict):
     canal_pedido: str
     descartados: int
 
+    # El canal que se relevó de verdad (el Topic, si se cambió a él).
+    channel_id: str
+    # Por dónde se listaron los videos: "subidas" (la lista de subidas, una
+    # unidad de cuota cada cincuenta) o "busqueda" (el buscador, cien cada
+    # cincuenta, y sin garantía de traer todo). Ver
+    # `relevar_core.buscar_videos_del_canal`.
+    via: str
+    # Cuántos videos dice YouTube que hay, cuando se listó por el buscador. Es
+    # una estimación suya; 0 si se listó por las subidas.
+    total_estimado: int
+    # La cuota se acabó a mitad del listado: el catálogo está incompleto.
+    cortado_por_cuota: bool
+    # Unidades de cuota de YouTube gastadas hasta acá.
+    unidades: int
+    # Lanzamientos cuya descripción no declara distribuidora.
+    sin_distribuidora: int
+    cruce: CruceDeezer
+
 
 class CodigosDelRelevamiento(TypedDict):
     """Qué pasó con la búsqueda de códigos, para decirlo con palabras.
@@ -322,6 +358,49 @@ class CodigosDelRelevamiento(TypedDict):
     fallas: int
 
 
+class TemaFaltante(TypedDict):
+    """Una grabación que Deezer tiene y no apareció en lo relevado de YouTube."""
+
+    titulo: str
+    isrc: str
+    duracion_s: int
+
+
+class ReleaseIncompleto(TypedDict):
+    """Un release de Deezer al que le faltan grabaciones en lo relevado.
+
+    `relevado` separa los dos casos, que piden cosas distintas: si es verdadero,
+    el disco está en el catálogo y le faltan temas; si es falso, el disco entero
+    no apareció en YouTube.
+    """
+
+    deezer_id: int
+    titulo: str
+    tipo: str  # "album", "ep" o "single", como lo declara Deezer
+    fecha: str
+    upc: str
+    relevado: bool
+    total: int  # cuántos temas tiene el release en Deezer
+    temas: list[TemaFaltante]
+
+
+class Completitud(TypedDict):
+    """Lo que devuelve `completitud.revisar`.
+
+    `revisada` es falso cuando no se pudo comparar (no se pidieron códigos, el
+    artista no está en Deezer o Deezer no contestó), y entonces el resto no
+    dice nada: «no falta nada» y «no se revisó» no son lo mismo.
+    """
+
+    revisada: bool
+    artista_deezer: str
+    releases: int  # cuántos releases tiene el artista en Deezer
+    temas: int  # grabaciones distintas que faltan
+    sin_respuesta: int  # releases que Deezer no contestó
+    recortada: bool  # la discografía superó el tope y se revisó una parte
+    faltan: list[ReleaseIncompleto]
+
+
 class Diagnostico(TypedDict):
     """El subconjunto del relevamiento que `migrar_core` le pasa a la interfaz."""
 
@@ -331,6 +410,14 @@ class Diagnostico(TypedDict):
     canal_pedido: str
     descartados: int
     codigos: CodigosDelRelevamiento
+    # Cómo se listó el canal y cuánto costó. Ver `Relevamiento`.
+    via: str
+    total_estimado: int
+    cortado_por_cuota: bool
+    unidades: int
+    sin_distribuidora: int
+    temas: int  # cuántos lanzamientos quedaron
+    completitud: Completitud
 
 
 class InfoPortada(TypedDict):

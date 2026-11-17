@@ -270,7 +270,35 @@ check digit for UPC-A and EAN-13.
 |---|---|---|
 | Catalog, distributor, label, year, plays | YouTube Data API | yes |
 | ISRC and UPC | [Deezer](https://developers.deezer.com/api) | no |
+| Which of the artist's recordings did not show up on YouTube | [Deezer](https://developers.deezer.com/api) | no |
 | Artwork | [iTunes Search API](https://performance-partners.apple.com/search-api) | no |
+
+**How the catalog is listed, and how much quota it costs.** Until September
+2026 a Topic channel was listed from its uploads list, at one quota unit per
+fifty tracks. Since then YouTube has stopped publishing that list for Topic
+channels: the API answers that it does not exist, although the tracks are still
+there. The app tries the list first and, if it is gone, lists the channel
+through YouTube search, the only door of the official API that still shows
+them. That changes two things, and the app says both on screen and in the
+report:
+
+- **It costs a hundred times more.** Each page of fifty tracks uses 100 of the
+  10,000 daily units. The catalog this was measured on, with 290 tracks, used
+  607. With the shared key of the full variant, that quota belongs to everyone
+  using it; with your own key it is yours.
+- **It does not guarantee a full listing.** Search is an index, not a list. So
+  the app compares what it returned against the artist's discography on Deezer
+  and says which recordings Deezer has that did not show up, release by release
+  and with the UPC. On that same catalog there were 26: single tracks from four
+  releases, two releases almost entirely and three singles. That they are
+  missing does not say why: search may not have returned them, they may sit on
+  another artist's channel, as collaborations do, or they may never have been
+  delivered to YouTube. The app does not add them to the package, because it
+  does not know their distributor.
+
+If the quota runs out halfway through the listing, what was already fetched is
+not lost: the catalog is shown flagged as incomplete. And if YouTube publishes
+the uploads list again, the app uses it on its own, with no change needed.
 
 Deezer finds the recording, and the same recording is on the single, on the
 album and on every compilation. That is why the UPC is only accepted when the
@@ -307,6 +335,16 @@ create.
 **Where does my data go?** To no server of the author's: there is none. The app
 queries YouTube with your key, and Deezer and Apple with public data. It is in
 [Privacy](#privacy).
+
+**How many catalogs can I survey per day?** It depends on their size: today
+every fifty tracks use 100 of the key's 10,000 daily units, so a 300-track
+catalog uses about 600. The catalog screen says how much each survey used. It
+is explained under [Where the data comes from](#where-the-data-comes-from).
+
+**The app says Deezer has recordings that did not show up. What do I do?** Look
+at the list: it gives the title and UPC of each release. If they are yours, add
+them to the migration by hand and ask your current distributor for the codes.
+If they are collaborations, they usually sit on the other artist's channel.
 
 **I am missing ISRCs or UPCs. What do I do?** Ask your current distributor for
 them before accepting new codes: a new code is a new release, which starts
@@ -525,6 +563,7 @@ points one way, which is why the core can be tested without a server.
 | `src/migrador/certificados.py` | certifi's certificates when the system has none (the macOS .app) |
 | `src/migrador/migrar_core.py` | Orchestrates the 4 steps |
 | `src/migrador/relevar_core.py` | YouTube survey + ISRC/UPC via Deezer |
+| `src/migrador/completitud.py` | What the Deezer discography has that did not show up on YouTube |
 | `src/migrador/productos.py` | Groups tracks into products and filters the selection |
 | `src/migrador/validar.py` | Pre-delivery validation |
 | `src/migrador/portadas.py` | Artwork via the iTunes Search API |
@@ -606,6 +645,8 @@ pytest -q --cov
 | `tests/test_textos_fijos.py` | That no user-facing text is written outside the translation catalogs |
 | `tests/test_concurrencia.py` | One job at a time for real, an identified catalog and no leftover temp files |
 | `tests/test_progreso.py` | Real progress, a cancel that responds and retries only where they help |
+| `tests/test_listado.py` | How a channel is listed: through search when YouTube does not publish the uploads list, with its cap, its quota and the releases with no distributor |
+| `tests/test_completitud.py` | What is missing against the Deezer discography: whose it is, what counts as the same recording and how far the notice reaches |
 | `tests/test_ci.py` | The CI's supply chain rules: actions pinned by SHA, permissions, timeouts, auditing |
 | `tests/test_secretos.py` | That the key does not leave where it belongs: header, permissions, history |
 | `tests/test_validacion_honesta.py` | That the validation says what it looks at and what it does not: noise, codes, color, missing warnings |

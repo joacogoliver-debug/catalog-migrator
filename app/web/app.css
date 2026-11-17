@@ -827,6 +827,14 @@ details.acordeon > summary .cuenta.negativo { color: var(--negativo); }
   }
 }
 
+/* ---------------------------------------------------------- lo que falta */
+/* La lista de lo que Deezer tiene y YouTube no trajo, dentro de su aviso, y la
+   nota del mismo dato al pie de los tracks de un producto. */
+.lista-faltan { margin: var(--e-2) 0 0; padding-left: var(--e-5); font-size: var(--t-micro); line-height: var(--i-micro); }
+.lista-faltan li { margin-bottom: var(--e-2); }
+.lista-faltan .sub { display: block; color: var(--texto-2); }
+.nota-faltan { margin: var(--e-3) 0 0; color: var(--texto-2); }
+
 /* ---------------------------------------------------------- ventana angosta */
 /* Esto es una app de escritorio: no hay versión para teléfono, y la única
    razón por la que el ancho baja es que alguien achicó la ventana. Lo que hace

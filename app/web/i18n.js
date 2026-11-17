@@ -341,8 +341,8 @@ const TEXTOS = {
     en: 'Create an <em>API key</em> and paste it below.',
   },
   'clave.gratis': {
-    es: 'Es gratis. Google da 10.000 unidades por día; relevar un canal Topic gasta una por cada 25 temas, más poco, y pegar un canal común suma unas 100 por la búsqueda del Topic.',
-    en: 'It is free. Google gives 10,000 units a day; surveying a Topic channel costs one per 25 songs, plus a little, and pasting a regular channel adds about 100 for the Topic lookup.',
+    es: 'Es gratis. Google da 10.000 unidades por día. Desde fines de 2026 YouTube obliga a listar los canales Topic por su buscador, que gasta 100 unidades cada 50 temas: un catálogo de 300 temas usa unas 600, y pegar un canal común suma 100 por la búsqueda del Topic.',
+    en: 'It is free. Google gives 10,000 units a day. Since late 2026 YouTube only lets Topic channels be listed through search, which costs 100 units per 50 songs: a 300-song catalog uses about 600, and pasting a regular channel adds 100 for the Topic lookup.',
   },
   'clave.rotulo': { es: 'Clave de la API de YouTube', en: 'YouTube API key' },
   'clave.ayuda': {
@@ -479,6 +479,63 @@ const TEXTOS = {
     es: 'El Topic es el que YouTube genera solo con el catálogo distribuido, y es el único que trae distribuidora, álbum, año y sello.',
     en: 'The Topic channel is the one YouTube builds on its own from the distributed catalog, and the only one carrying distributor, album, year and label.',
   },
+  'paso2.cortado_titulo': {
+    es: 'Este catálogo está incompleto: la cuota de YouTube se acabó a mitad del listado.',
+    en: 'This catalog is incomplete: the YouTube quota ran out halfway through the listing.',
+  },
+  'paso2.cortado_cuerpo': {
+    es: 'Llegué a traer {n} temas y no se pierden, pero faltan los más viejos. Para tenerlo entero, relevá de nuevo mañana, cuando la cuota se renueva, o cargá tu propia clave.',
+    en: 'I got {n} tracks and they are not lost, but the oldest ones are missing. To get all of it, survey again tomorrow, when the quota resets, or add your own key.',
+  },
+  'paso2.por_buscador': {
+    es: 'YouTube dejó de publicar la lista de videos de los canales Topic, así que este se listó por su buscador: {n} temas, que gastaron {unidades} de las 10.000 unidades diarias de la clave.',
+    en: 'YouTube stopped publishing the list of videos of Topic channels, so this one was listed through search: {n} tracks, which used {unidades} of the key\'s 10,000 daily units.',
+  },
+  'paso2.buscador_completo': {
+    es: 'El buscador no garantiza traer todo, así que lo comparé con la discografía de {artista} en Deezer, que tiene {n} lanzamientos: no falta ninguna grabación.',
+    en: 'Search does not guarantee a full listing, so I compared it against {artista}\'s discography on Deezer, which has {n} releases: no recording is missing.',
+  },
+  'paso2.buscador_sin_comparar': {
+    es: 'El buscador no garantiza traer todo, y esta vez no pude compararlo contra la discografía de Deezer: puede faltar algún tema sin que se note.',
+    en: 'Search does not guarantee a full listing, and this time I could not compare it against the Deezer discography: a track may be missing without it showing.',
+  },
+  'paso2.faltan_titulo': {
+    es: 'Deezer tiene {n} grabaciones de {artista} que no aparecieron en YouTube.',
+    en: 'Deezer has {n} recordings by {artista} that did not show up on YouTube.',
+  },
+  'paso2.faltan_titulo_uno': {
+    es: 'Deezer tiene una grabación de {artista} que no apareció en YouTube.',
+    en: 'Deezer has one recording by {artista} that did not show up on YouTube.',
+  },
+  'paso2.faltan_cuerpo': {
+    es: 'No están en este catálogo. Puede ser que el buscador de YouTube no las haya traído, que estén en el canal de otro artista, como pasa con las colaboraciones, o que nunca se hayan entregado a YouTube. Si son tuyas, sumalas a mano a la migración: acá van el título y el UPC de cada lanzamiento.',
+    en: 'They are not in this catalog. YouTube search may not have returned them, they may sit on another artist\'s channel, as collaborations do, or they may never have been delivered to YouTube. If they are yours, add them to the migration by hand: each release is listed with its title and UPC.',
+  },
+  'paso2.faltan_parcial': {
+    es: 'La comparación quedó parcial, porque Deezer no contestó por todos los lanzamientos.',
+    en: 'The comparison is partial, because Deezer did not answer for every release.',
+  },
+  'paso2.faltan_ver': { es: 'Ver cuáles', en: 'Show which' },
+  'paso2.faltan_ocultar': { es: 'Ocultar la lista', en: 'Hide the list' },
+  'paso2.faltan_relevados': {
+    es: 'Discos que sí están en el catálogo, a los que les faltan temas',
+    en: 'Releases that are in the catalog but are missing tracks',
+  },
+  'paso2.faltan_no_relevados': {
+    es: 'Lanzamientos que no aparecieron en YouTube',
+    en: 'Releases that did not show up on YouTube',
+  },
+  'paso2.faltan_de': { es: 'Faltan {n} de {total}:', en: '{n} of {total} missing:' },
+  'paso2.faltan_de_uno': { es: 'Falta {n} de {total}:', en: '{n} of {total} missing:' },
+  'paso2.sin_distribuidora': {
+    es: '{n} temas no declaran distribuidora en YouTube: son entregas viejas, que no traen esa línea. Están en el catálogo, con la distribuidora vacía.',
+    en: '{n} tracks do not state a distributor on YouTube: they are old deliveries, which lack that line. They are in the catalog, with the distributor left empty.',
+  },
+  'paso2.sin_distribuidora_uno': {
+    es: 'Un tema no declara distribuidora en YouTube: es una entrega vieja, que no trae esa línea. Está en el catálogo, con la distribuidora vacía.',
+    en: 'One track does not state a distributor on YouTube: it is an old delivery, which lacks that line. It is in the catalog, with the distributor left empty.',
+  },
+  'paso2.sin_distribuidora_opcion': { es: 'Sin distribuidora declarada', en: 'No distributor stated' },
   'paso2.descartados_uno': {
     es: 'Dejé afuera {n} video que no es un lanzamiento, como un videoclip, un vivo o una entrevista. Sin la descripción auto-generada de YouTube no tiene álbum ni códigos, así que no sirve para una migración.',
     en: 'I left out {n} video that is not a release, such as a music video, a live set or an interview. Without YouTube\'s auto-generated description it carries no album and no codes, so it is no use for a migration.',
@@ -522,6 +579,12 @@ const TEXTOS = {
   'tabla.sin_fecha': { es: 'sin fecha', en: 'no date' },
   'tabla.isrc_de': { es: 'ISRC {n} de {total}', en: 'ISRC {n} of {total}' },
   'tabla.orden_estimado': { es: 'orden estimado', en: 'order estimated' },
+  'tabla.faltan_temas': { es: 'faltan {n} temas', en: '{n} tracks missing' },
+  'tabla.faltan_temas_uno': { es: 'falta {n} tema', en: '{n} track missing' },
+  'tabla.faltan_detalle': {
+    es: 'En Deezer este disco tiene además:',
+    en: 'On Deezer this release also has:',
+  },
   'tabla.completo': { es: 'completo', en: 'complete' },
   'tabla.aria_elegir': { es: 'Elegir {titulo}', en: 'Select {titulo}' },
   'tabla.aria_ver_tracks': { es: 'Ver los tracks de {titulo}', en: 'Show the tracks of {titulo}' },
@@ -723,6 +786,7 @@ const TEXTOS = {
   'hallazgo.isrc_confianza_media': { es: 'ISRC de confianza media', en: 'Medium-confidence ISRC' },
   'hallazgo.campos_a_completar': { es: 'Campos a completar', en: 'Fields to fill in' },
   'hallazgo.artista_no_principal': { es: 'Otro artista principal', en: 'Another main artist' },
+  'hallazgo.album_incompleto': { es: 'Disco al que le faltan temas', en: 'Release missing tracks' },
   'hallazgo.release_en_dos_distribuidoras': { es: 'Release en dos distribuidoras', en: 'Release at two distributors' },
   'hallazgo.upc_no_verificado': { es: 'UPC de otro release, descartado', en: 'Another release\'s UPC, dropped' },
   'hallazgo.upc_mezclado': { es: 'UPC distintos en un producto', en: 'Different UPCs in one release' },

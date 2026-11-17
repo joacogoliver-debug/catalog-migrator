@@ -9,6 +9,24 @@ What changed in every published version. The numbers follow
 ## [Unreleased]
 
 ### Added
+- **The app says what the catalog is missing.** YouTube search does not
+  guarantee a full listing and does not say when it falls short, so what was
+  surveyed is compared against the artist's discography on Deezer. The artist
+  comes from the albums already verified as releases of the catalog, not from
+  searching the name, which is how you end up with a namesake's discography.
+  The catalog screen, the validation and the ZIP report say which recordings
+  Deezer has that did not show up: those on releases that are in the catalog,
+  flagged on each release, and the releases that did not show up, with their
+  UPC. On the catalog this was measured on there were 26. They are not added to
+  the package, because their distributor is not known.
+- **The app says how it listed the catalog and how much quota it used.**
+  Through search, every fifty tracks cost 100 of the 10,000 daily units, a
+  hundred times more than before: a 290-track catalog used 607. The number is
+  on screen and in the report, and the key help no longer says a channel costs
+  "one per 25 songs".
+- **If the quota runs out halfway through the listing, what was already fetched
+  is not lost.** The catalog is shown flagged as incomplete, with the button to
+  add your own key, instead of failing outright after spending the quota.
 - **There is somewhere to ask a question**: an "A question" issue template,
   for what is neither a bug nor an idea ("does it work with my
   distributor?"). With blank issues turned off, there was nowhere for it.
@@ -64,6 +82,23 @@ What changed in every published version. The numbers follow
   quota.
 
 ### Fixed
+- **The app could not survey any Topic channel.** Between late September and
+  November 2026 YouTube stopped publishing the uploads list of Topic channels:
+  the API answers that the list does not exist, although the tracks are still
+  there. As that was the only way the app listed a channel, every survey ended
+  in "YouTube answered with an error (404)". Now, if the list is gone, the
+  channel is listed through YouTube search, page by page and past its cap of
+  about five hundred results. If YouTube publishes the list again, the app uses
+  it on its own.
+- **Releases without the "Provided to YouTube by" line were dropped** as if
+  they were music videos. They are old deliveries, with the same
+  YouTube-generated description but without that first line: on the catalog
+  where this was found they were two whole albums, seventeen tracks. They now
+  come in, with their album, ℗, date and credits, and with the distributor left
+  empty, which is what YouTube says about them. The distributor filter has a
+  box to show them.
+- **Pasting a regular channel did not switch to the Topic** when the Topic had
+  no uploads list, which today is always.
 - **On Mac the app could not talk to YouTube**: the .app did not find the
   system certificates and every request failed with `CERTIFICATE_VERIFY_FAILED`,
   both when surveying and when testing your own key. It now uses `certifi`'s,

@@ -26,6 +26,7 @@ from difflib import SequenceMatcher
 
 from .contratos import (
     Creditos,
+    CruceDeezer,
     DescripcionParseada,
     EstadisticaCodigos,
     Relevamiento,
@@ -46,7 +47,9 @@ class RelevarError(Exception):
     `codigo` clasifica el error para que la interfaz pueda ofrecer la salida que
     corresponde en vez de sólo mostrar un texto. Hoy se usa "cuota", que es el
     único caso donde la app puede proponer algo concreto: cargar una clave
-    propia. "red" marca que ni siquiera se llegó a YouTube.
+    propia. "red" marca que ni siquiera se llegó a YouTube. "sin_lista" es que
+    la lista de subidas del canal no existe, y no llega al usuario: `relevar`
+    lo atrapa y lista por el buscador (ver `buscar_videos_del_canal`).
     """
 
     def __init__(self, mensaje, codigo=""):
@@ -71,6 +74,37 @@ def _espera(intento, tope=30.0):
     return min(tope, 1.5 * (2**intento)) + random.uniform(0, 0.5)
 
 
+# Lo que cuesta cada pedido, en unidades de la cuota diaria. Casi todo cuesta
+# una; el buscador cuesta cien, y desde que es la única forma de listar un canal
+# Topic (ver `buscar_videos_del_canal`) es lo que decide cuántos catálogos se
+# pueden relevar por día. Por eso se cuenta y se muestra.
+CUOTA_DIARIA = 10000
+COSTO_UNIDADES = {"search": 100}
+
+
+class _Cuota:
+    """Las unidades de cuota de YouTube que gastó este relevamiento.
+
+    Un contador del módulo, como `FALLAS_DEEZER`: el servidor no deja correr
+    dos relevamientos a la vez, justamente para no gastar cuota por duplicado.
+    """
+
+    def __init__(self):
+        self.n = 0
+        self._lock = threading.Lock()
+
+    def sumar(self, endpoint):
+        with self._lock:
+            self.n += COSTO_UNIDADES.get(endpoint, 1)
+
+    def empezar(self):
+        with self._lock:
+            self.n = 0
+
+
+CUOTA = _Cuota()
+
+
 def api_get(endpoint, params, key, intentos=3):
     """GET a la YouTube Data API, con reintento ante fallas pasajeras.
 
@@ -89,7 +123,11 @@ def api_get(endpoint, params, key, intentos=3):
         req = urllib.request.Request(url, headers={"Accept": "application/json", "X-Goog-Api-Key": key})
         try:
             with urllib.request.urlopen(req, timeout=30) as resp:
-                return json.loads(resp.read().decode("utf-8"))
+                datos = json.loads(resp.read().decode("utf-8"))
+            # Se cuenta lo que se contestó. Un pedido rechazado también puede
+            # costar, pero Google no dice cuánto: esto es un piso, no la factura.
+            CUOTA.sumar(endpoint)
+            return datos
         except urllib.error.HTTPError as e:
             body = e.read().decode("utf-8", "ignore")
             pasajero = e.code in _HTTP_REINTENTABLE or any(m in body for m in _MOTIVOS_PASAJEROS)
@@ -127,6 +165,9 @@ _MOTIVOS_YOUTUBE = {
     "accessNotConfigured": ("clave", "yt.api_sin_habilitar"),
     "ipRefererBlocked": ("clave", "yt.clave_restringida"),
     "forbidden": ("", "yt.prohibido"),
+    # La lista de subidas no existe. Desde fines de 2026 es lo que contesta
+    # YouTube para TODOS los canales Topic, y `relevar` sigue por el buscador.
+    "playlistNotFound": ("sin_lista", "yt.sin_lista"),
 }
 
 
@@ -237,11 +278,17 @@ def resolve_channel(url, key):
     if not items:
         raise RelevarError(T("yt.canal_no_encontrado", canal=handle), "url")
     ch = items[0]
-    return (
-        ch["id"],
-        ch["contentDetails"]["relatedPlaylists"]["uploads"],
-        ch["snippet"]["title"],
-    )
+    return ch["id"], _lista_de_subidas(ch), ch["snippet"]["title"]
+
+
+def _lista_de_subidas(canal):
+    """El id de la lista de subidas de un canal, o "" si la API no lo trae.
+
+    Para un canal Topic el id viene, pero la lista ya no existe (ver
+    `buscar_videos_del_canal`). Se lee sin dar por hecho que está: si un día
+    YouTube deja de mandar el campo, eso no puede ser un KeyError.
+    """
+    return (((canal.get("contentDetails") or {}).get("relatedPlaylists")) or {}).get("uploads") or ""
 
 
 RE_TOPIC = re.compile(r"\s*-\s*Topic$", re.I)
@@ -269,13 +316,14 @@ def es_canal_topic(titulo):
 
 
 def canal_uploads_por_id(channel_id, key):
-    """(uploads_playlist_id, titulo) de un channel_id, o (None, None)."""
+    """(uploads_playlist_id, titulo) de un channel_id, o (None, None). La lista
+    puede venir vacía ("") aunque el canal exista."""
     data = api_get("channels", {"part": "snippet,contentDetails", "id": channel_id}, key)
     items = data.get("items") or []
     if not items:
         return None, None
     ch = items[0]
-    return ch["contentDetails"]["relatedPlaylists"]["uploads"], ch["snippet"]["title"]
+    return _lista_de_subidas(ch), ch["snippet"]["title"]
 
 
 def buscar_canal_topic(titulo_canal, key):
@@ -347,6 +395,106 @@ def list_video_ids(uploads_playlist, key, avance=None):
         if not page:
             break
     return ids
+
+
+# El buscador de YouTube no entrega más de unos 500 resultados por consulta,
+# aunque haya más. Si una pasada devuelve cerca de eso, se asume que quedó
+# cortada y se sigue con otra consulta desde la fecha del más viejo que se vio.
+TOPE_BUSQUEDA = 450
+MAX_PASADAS_BUSQUEDA = 40  # 40 pasadas de ~500: unos 20.000 temas
+
+
+def buscar_videos_del_canal(channel_id, key, avance=None, consulta=""):
+    """Los ids de los videos de un canal, sacados del BUSCADOR de YouTube.
+
+    Existe porque YouTube dejó de publicar la lista de subidas de los canales
+    Topic: entre fines de septiembre y noviembre de 2026 `channels.list` empezó
+    a informar `videoCount: 0` para todos ellos y su lista de subidas pasó a
+    contestar 404, aunque los temas siguen estando. El buscador, filtrado por
+    canal, es la única puerta de la API oficial que los sigue mostrando.
+
+    Tiene dos costos que la lista de subidas no tenía, y la app los dice en vez
+    de esconderlos:
+
+      - **Cuota.** Cada página de 50 resultados cuesta 100 unidades de las
+        10.000 diarias (la lista de subidas costaba 1). Un catálogo de 300 temas
+        gasta unas 600.
+      - **No es exhaustivo.** El buscador es un índice, no un listado: puede
+        saltearse algún video que existe. En el catálogo real con que se probó
+        devolvió 290 temas de «unos 312». Por eso `relevar` informa por qué vía
+        se listó, y `completitud` compara contra la discografía de Deezer y
+        vuelve a buscar, por nombre, lo que falte.
+
+    Se pide en orden de fecha para poder seguir más allá del tope de ~500 de una
+    consulta: cuando una pasada llega al tope, la siguiente arranca en la fecha
+    del video más viejo que se vio (`publishedBefore`).
+
+    Si la cuota se acaba en el medio NO se tira lo que ya se pagó: devuelve lo
+    que alcanzó a listar y lo marca en `info["cortado_por_cuota"]`.
+
+    `consulta` acota la búsqueda a un texto (el título de un álbum): es lo que
+    usa `completitud` para ir a buscar un release puntual que no apareció. Con
+    consulta no se ordena por fecha, se deja el orden por relevancia.
+
+    Devuelve (ids, info), con info = {total_estimado, paginas, cortado_por_cuota}.
+    `avance(hechos, total_estimado)` se llama después de cada página; si lanza
+    (una cancelación), corta.
+    """
+    vistos = {}  # video_id -> publishedAt, en orden de llegada
+    info = {"total_estimado": 0, "paginas": 0, "cortado_por_cuota": False}
+    antes = None
+
+    for _ in range(MAX_PASADAS_BUSQUEDA):
+        en_pasada, nuevos, mas_viejo = 0, 0, None
+        page = None
+        while True:
+            params = {"part": "snippet", "channelId": channel_id, "type": "video", "maxResults": 50}
+            if consulta:
+                params["q"] = consulta
+            else:
+                params["order"] = "date"
+            if antes:
+                params["publishedBefore"] = antes
+            if page:
+                params["pageToken"] = page
+            try:
+                data = api_get("search", params, key)
+            except RelevarError as e:
+                if e.codigo == "cuota" and vistos:
+                    info["cortado_por_cuota"] = True
+                    return list(vistos), info
+                raise
+            info["paginas"] += 1
+            if not antes:
+                # Es una estimación de YouTube, no un conteo: sirve para mostrar
+                # avance y para comparar contra lo que efectivamente llegó.
+                estimado = int((data.get("pageInfo") or {}).get("totalResults") or 0)
+                info["total_estimado"] = max(info["total_estimado"], estimado)
+            for it in data.get("items", []):
+                vid = (it.get("id") or {}).get("videoId")
+                if not vid:
+                    continue
+                en_pasada += 1
+                fecha = (it.get("snippet") or {}).get("publishedAt") or ""
+                if fecha and (mas_viejo is None or fecha < mas_viejo):
+                    mas_viejo = fecha
+                if vid not in vistos:
+                    vistos[vid] = fecha
+                    nuevos += 1
+            if avance:
+                avance(len(vistos), max(info["total_estimado"], len(vistos), 1))
+            page = data.get("nextPageToken")
+            if not page:
+                break
+
+        # Otra pasada sólo si ésta parece cortada por el tope del buscador y
+        # trajo algo nuevo. Si no, sería gastar 100 unidades para confirmar nada.
+        # Una búsqueda por texto nunca sigue: es puntual por definición.
+        if consulta or en_pasada < TOPE_BUSQUEDA or not nuevos or not mas_viejo:
+            break
+        antes = mas_viejo
+
+    return list(vistos), info
 
 
 def fetch_videos(video_ids, key, avance=None):
@@ -470,6 +618,29 @@ def _creditos(bloques) -> Creditos:
     }
 
 
+_PREFIJO_DISTRIBUIDORA = "provided to youtube by "
+_FIRMA_AUTOGENERADA = "auto-generated by youtube"
+
+
+def es_art_track(desc):
+    """Si la descripción es la que YouTube genera sola para un lanzamiento.
+
+    La señal de siempre es la primera línea, «Provided to YouTube by
+    <distribuidora>». Pero hay lanzamientos cuya descripción NO trae esa línea y
+    arranca directo en «Tema · Artista»: son entregas viejas, igual de
+    auto-generadas (cierran con «Auto-generated by YouTube.») y con su álbum, su
+    ℗ y su fecha. Filtrar sólo por la primera línea las tiraba como si fueran
+    videoclips o entrevistas: en el catálogo real con que se encontró esto se
+    perdían dos álbumes enteros, diecisiete temas.
+    """
+    if not desc:
+        return False
+    d = desc.strip().lower()
+    if d.startswith(_PREFIJO_DISTRIBUIDORA):
+        return True
+    return d.rstrip(". ").endswith(_FIRMA_AUTOGENERADA) and " · " in desc.strip().splitlines()[0]
+
+
 def parse_description(desc) -> DescripcionParseada:
     """Extrae distribuidor, álbum, año y sello de una descripción auto-generada."""
     res: DescripcionParseada = {
@@ -494,20 +665,29 @@ def parse_description(desc) -> DescripcionParseada:
     #   [0] Provided to YouTube by X / [1] Track · Artista / [2] Álbum
     # En singles/EP no hay bloque de álbum y el [2] es la línea ℗ (o "Released
     # on:"): no es un álbum, así que lo descartamos y queda en SIN_ALBUM.
+    #
+    # Cuando la descripción no trae la línea de la distribuidora (ver
+    # `es_art_track`) todo está corrido un lugar: [0] Track · Artista / [1] Álbum.
+    # `titulo` es el índice del bloque «Track · Artista», o None si la
+    # descripción no es auto-generada y de ahí no se saca nada de esto.
     blocks = [b.strip() for b in re.split(r"\n\s*\n", desc) if b.strip()]
+    titulo = None
+    if blocks and blocks[0].lower().startswith(prefix):
+        titulo = 1
+    elif es_art_track(desc):
+        titulo = 0
 
-    # Los artistas: el segundo bloque es «Título · Artista · Otro · Otro». Es lo
-    # que trae los invitados y los coautores, que antes se perdían y la hoja
+    # Los artistas: el bloque del título es «Título · Artista · Otro · Otro». Es
+    # lo que trae los invitados y los coautores, que antes se perdían y la hoja
     # ponía el nombre del canal como artista de todos los temas.
-    if len(blocks) >= 2 and blocks[0].lower().startswith(prefix) and " · " in blocks[1]:
-        partes = [x.strip() for x in blocks[1].splitlines()[0].split(" · ")]
+    if titulo is not None and len(blocks) > titulo and " · " in blocks[titulo]:
+        partes = [x.strip() for x in blocks[titulo].splitlines()[0].split(" · ")]
         res["artists"] = [x for x in partes[1:] if x]
     # Los créditos van después del bloque ℗, nunca en los dos primeros.
-    if len(blocks) >= 3 and blocks[0].lower().startswith(prefix):
-        res["credits"] = _creditos(blocks[3:])
-    if len(blocks) >= 3 and blocks[0].lower().startswith(prefix):
-        cand = blocks[2].splitlines()[0].strip()
-        if cand and not cand.startswith("℗") and not cand.lower().startswith("released on:"):
+    if titulo is not None and len(blocks) > titulo + 1:
+        res["credits"] = _creditos(blocks[titulo + 2 :])
+        cand = blocks[titulo + 1].splitlines()[0].strip()
+        if cand and not cand.lower().startswith(("℗", "released on:", _FIRMA_AUTOGENERADA)):
             res["album"] = cand
 
     # Año + sello, de la línea ℗.
@@ -544,6 +724,11 @@ def parse_description(desc) -> DescripcionParseada:
     return res
 
 
+def lanzamientos(videos):
+    """Los videos que son lanzamientos (Art Tracks), de una lista de videos."""
+    return [v for v in videos if es_art_track((v.get("snippet") or {}).get("description") or "")]
+
+
 def build_tracks(videos) -> list[Track]:
     tracks = []
     for v in videos:
@@ -559,11 +744,12 @@ def build_tracks(videos) -> list[Track]:
                 "video_id": v.get("id") or "",
                 "track": sn.get("title") or "",
                 # OJO: estos dos son CENTINELAS, no texto para mostrar, y por eso
-                # no se traducen: `relevar()` filtra por SIN_DATOS y `productos`
-                # agrupa por SIN_ALBUM, así que traducirlos rompería el filtrado y
-                # la agrupación en silencio. Ninguno llega a la pantalla: los tracks
-                # sin distribuidora se descartan, y a los que no tienen álbum el
-                # producto los titula con el nombre del track.
+                # no se traducen: `relevar()` cuenta por SIN_DATOS y `productos`
+                # agrupa por SIN_ALBUM, así que traducirlos rompería la cuenta y
+                # la agrupación en silencio. Ninguno llega a la pantalla: un
+                # release sin distribuidora declarada queda con la distribuidora
+                # vacía y la interfaz lo dice con sus palabras, y a los que no
+                # tienen álbum el producto los titula con el nombre del track.
                 "album": meta["album"] or SIN_ALBUM,
                 "distributor": meta["distributor"] or SIN_DATOS,
                 "label": meta["label"] or "",
@@ -808,6 +994,10 @@ def deezer_albumes(album_ids):
             "release_date": a.get("release_date", "") or "",
             "nb_tracks": a.get("nb_tracks") or 0,
             "tracks": ((a.get("tracks") or {}).get("data")) or [],
+            # De quién es el álbum en Deezer. Con esto `completitud` sabe qué
+            # artista de Deezer es el del canal, sin adivinarlo por el nombre.
+            "artist_id": (a.get("artist") or {}).get("id") or 0,
+            "artist_name": (a.get("artist") or {}).get("name") or "",
         }
 
     out = {}
@@ -954,8 +1144,16 @@ def musicbrainz_isrc(t, artist):
     return ""
 
 
-def enrich_with_codes(tracks, artist, log=print, use_musicbrainz=False, avance=None) -> EstadisticaCodigos:
+def enrich_with_codes(
+    tracks, artist, log=print, use_musicbrainz=False, avance=None, cruce=None
+) -> EstadisticaCodigos:
     """Completa isrc/upc/match en los tracks. Deezer principal + MB opcional.
+
+    `cruce`, si se pasa, es un diccionario donde queda lo que este cruce
+    aprendió de Deezer y que después usa `completitud`: los álbumes que se
+    pidieron (`albumes`, por id) y cuáles se verificaron como releases de este
+    catálogo (`verificados`, id -> tracklist). Va aparte del valor de retorno
+    para no mezclar datos de trabajo con las estadísticas que se muestran.
 
     `avance(hechos, total)` se llama al terminar cada track. Es la fase más
     larga del relevamiento y no avisaba nada: la barra quedaba clavada y
@@ -1016,6 +1214,10 @@ def enrich_with_codes(tracks, artist, log=print, use_musicbrainz=False, avance=N
             if lugar:
                 t["track_number"], t["disc_number"], t["orden_fuente"] = lugar[0], lugar[1], "deezer"
                 t["album_deezer_id"] = aid
+        if cruce is not None and verificados:
+            cruce.setdefault("verificados", {})[aid] = lista
+    if cruce is not None:
+        cruce.setdefault("albumes", {}).update(albumes)
 
     # Segunda pasada. Un tema que Deezer no encontró, o que encontró en otro
     # release (su propio single), igual es parte de este release en YouTube, y
@@ -1092,8 +1294,9 @@ def relevar(
     if not yt_key:
         raise RelevarError(T("yt.falta_clave"), "clave")
 
+    CUOTA.empezar()
     step(T("rel.resolviendo"), 0.05)
-    _ch_id, uploads, title = resolve_channel(url, yt_key)
+    ch_id, uploads, title = resolve_channel(url, yt_key)
     canal_pedido = title
 
     # Si lo que pegaron NO es un canal Topic (típicamente un OAC), buscamos su
@@ -1107,17 +1310,40 @@ def relevar(
         hallado = buscar_canal_topic(title, yt_key)
         if hallado:
             t_uploads, t_title = canal_uploads_por_id(hallado[0], yt_key)
-            # Se exigen los dos y no sólo la playlist: el título es de donde sale
-            # el nombre del artista, y cambiar de canal con el título vacío deja
-            # el catálogo entero a nombre de nadie.
-            if t_uploads and t_title:
-                uploads, title, via_topic = t_uploads, t_title, True
+            # Se exige el título: es de donde sale el nombre del artista, y
+            # cambiar de canal con el título vacío deja el catálogo entero a
+            # nombre de nadie. La lista de subidas ya no se exige, porque la de
+            # un Topic puede no existir y se lista por el buscador.
+            if t_title:
+                ch_id, uploads, title, via_topic = hallado[0], t_uploads or "", t_title, True
                 step(T("rel.uso_topic", canal=t_title), 0.12)
 
     step(T("rel.listando"), 0.15)
-    vids = list_video_ids(
-        uploads, yt_key, avance=lambda h, t: step(T("rel.listando_n", h=h, t=t), 0.15 + 0.15 * h / t)
-    )
+
+    # La barra de esta fase se arma con un total que en el buscador es una
+    # estimación y puede crecer de una página a la otra: se guarda el máximo
+    # para que nunca vaya para atrás.
+    tope = [0.15]
+
+    def avance_listado(h, t):
+        tope[0] = max(tope[0], 0.15 + 0.15 * h / max(t, 1))
+        step(T("rel.listando_n", h=h, t=t), tope[0])
+
+    # Primero la lista de subidas, que cuesta una unidad cada cincuenta videos.
+    # Si no existe (hoy, la de cualquier canal Topic) o viene vacía, el buscador.
+    via = "subidas"
+    busqueda = {"total_estimado": 0, "paginas": 0, "cortado_por_cuota": False}
+    vids = []
+    try:
+        if uploads:
+            vids = list_video_ids(uploads, yt_key, avance=avance_listado)
+    except RelevarError as e:
+        if e.codigo != "sin_lista":
+            raise
+    if not vids:
+        via = "busqueda"
+        step(T("rel.por_buscador"), tope[0])
+        vids, busqueda = buscar_videos_del_canal(ch_id, yt_key, avance=avance_listado)
     if not vids:
         raise RelevarError(T("yt.canal_vacio"))
 
@@ -1126,17 +1352,16 @@ def relevar(
         vids, yt_key, avance=lambda h, t: step(T("rel.metadata_n", h=h, t=t), 0.30 + 0.15 * h / t)
     )
 
-    # Nos quedamos SÓLO con los lanzamientos: los que tienen distribuidora
-    # parseada de "Provided to YouTube by". Los demás (vlogs, vivos, videoclips,
-    # entrevistas) no son productos de catálogo y sin metadata sólo ensucian el
-    # resultado: sin este filtro, un canal común devolvía cientos de "productos"
-    # sin álbum ni códigos.
-    todos = build_tracks(videos)
-    tracks = [t for t in todos if t["distributor"] != SIN_DATOS]
-    descartados = len(todos) - len(tracks)
+    # Nos quedamos SÓLO con los lanzamientos: los que traen la descripción que
+    # YouTube genera sola (ver `es_art_track`). Los demás (vlogs, vivos,
+    # videoclips, entrevistas) no son productos de catálogo y sin metadata sólo
+    # ensucian el resultado: sin este filtro, un canal común devolvía cientos de
+    # "productos" sin álbum ni códigos.
+    tracks = build_tracks(lanzamientos(videos))
+    descartados = len(videos) - len(tracks)
 
     if not tracks:
-        raise RelevarError(T("yt.sin_lanzamientos", n=len(todos)))
+        raise RelevarError(T("yt.sin_lanzamientos", n=len(videos)))
 
     if descartados:
         step(T("rel.descartados", n=descartados), 0.45)
@@ -1146,6 +1371,7 @@ def relevar(
     es_topic = es_canal_topic(title)
 
     codes_stats: EstadisticaCodigos | None = None
+    cruce: CruceDeezer = {"albumes": {}, "verificados": {}}
     if with_codes:
         step(T("rel.buscando_codigos"), 0.55)
 
@@ -1164,6 +1390,7 @@ def relevar(
             log=lambda m: step(m, 0.90),
             use_musicbrainz=use_musicbrainz,
             avance=avance_codigos,
+            cruce=cruce,
         )
 
     step(T("rel.armando_excel"), 0.95)
@@ -1180,4 +1407,14 @@ def relevar(
         "via_topic": via_topic,
         "canal_pedido": canal_pedido,
         "descartados": descartados,
+        # Cómo se listó y cuánto costó. Desde que los canales Topic se listan
+        # por el buscador, ni el costo ni la exhaustividad son los de antes, y
+        # el usuario tiene que poder verlo.
+        "channel_id": ch_id,
+        "via": via,
+        "total_estimado": int(busqueda["total_estimado"]),
+        "cortado_por_cuota": bool(busqueda["cortado_por_cuota"]),
+        "unidades": CUOTA.n,
+        "sin_distribuidora": sum(1 for t in tracks if t["distributor"] == SIN_DATOS),
+        "cruce": cruce,
     }

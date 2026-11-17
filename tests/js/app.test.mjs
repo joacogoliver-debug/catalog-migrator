@@ -283,3 +283,101 @@ test('la página late contra /api/latido, con el token, y un latido que falla no
   ctx.fetch = async () => { throw new Error('sin red'); };
   await ev('latir()');
 });
+
+// ------------------------------------------------------------ cómo se listó
+
+const COMP_VACIA = { revisada: false, artista_deezer: '', releases: 0, temas: 0, sin_respuesta: 0, recortada: false, faltan: [] };
+const COMP_FALTAN = {
+  revisada: true, artista_deezer: 'Los <b>Ejemplo</b>', releases: 36, temas: 3, sin_respuesta: 0, recortada: false,
+  faltan: [
+    { deezer_id: 1, titulo: 'En Vivo', tipo: 'album', fecha: '2020-04-17', upc: '018736719585', relevado: true, total: 20,
+      temas: [{ titulo: 'Voy a Morirme <i>de</i> Amor', isrc: 'USANG2074245', duracion_s: 62 }] },
+    { deezer_id: 2, titulo: 'Un Sentimiento Vigente', tipo: 'album', fecha: '2007-06-16', upc: '018736381966', relevado: false, total: 12,
+      temas: [{ titulo: 'Golpes Bajos', isrc: 'US3DF2007213', duracion_s: 232 }, { titulo: 'No Puedo', isrc: '', duracion_s: 221 }] },
+  ],
+};
+
+function avisoCon(diag) {
+  catalogoDeTres();
+  ev(`S.catalogo.diagnostico = ${JSON.stringify({ codigos: { pedidos: true, encontrados: 3, fallas: 0 }, ...diag })}`);
+  return ev('avisoCanal()');
+}
+
+test('un Topic listado por el buscador lo dice, con los temas y la cuota que gastó', () => {
+  const html = avisoCon({ via: 'busqueda', temas: 290, unidades: 607, completitud: { ...COMP_VACIA, revisada: true, artista_deezer: 'A', releases: 36 } });
+  assert.ok(html.includes('se listó por su buscador'), html);
+  assert.ok(html.includes('<strong>290</strong> temas') && html.includes('<strong>607</strong> de las 10.000'), html);
+  assert.ok(html.includes('no falta ninguna grabación'), 'comparado con Deezer y completo: se dice');
+  assert.equal(avisoCon({ via: 'subidas', temas: 290, unidades: 12, completitud: COMP_VACIA }), '',
+    'por la lista de subidas no hay nada que avisar');
+});
+
+test('si no se pudo comparar con Deezer, el aviso del buscador no promete que esté todo', () => {
+  const html = avisoCon({ via: 'busqueda', temas: 290, unidades: 607, completitud: COMP_VACIA });
+  assert.ok(html.includes('no pude compararlo'), html);
+  assert.ok(!html.includes('no falta ninguna'), html);
+});
+
+test('un catálogo cortado por la cuota va primero y ofrece cargar una clave', () => {
+  const html = avisoCon({ via: 'busqueda', temas: 150, unidades: 300, cortado_por_cuota: true, completitud: COMP_VACIA });
+  assert.ok(html.indexOf('incompleto') < html.indexOf('se listó por su buscador'), 'el corte se lee antes que nada');
+  assert.ok(html.includes('data-accion="ver-clave"'), 'tiene que ofrecer la salida');
+});
+
+test('lo que Deezer tiene y YouTube no trajo se avisa, y la lista se despliega a pedido', () => {
+  const diag = { via: 'busqueda', temas: 290, unidades: 607, completitud: COMP_FALTAN };
+  let html = avisoCon(diag);
+  assert.ok(html.includes('Deezer tiene 3 grabaciones de Los &lt;b&gt;Ejemplo&lt;/b&gt;'), html);
+  assert.ok(html.includes('data-accion="ver-faltantes"') && html.includes('aria-expanded="false"'));
+  assert.ok(!html.includes('Golpes Bajos'), 'plegada, la lista no ocupa lugar');
+
+  ev(`ACCIONES['ver-faltantes']()`);
+  html = ev('avisoCanal()');
+  assert.ok(html.includes('aria-expanded="true"'));
+  assert.ok(html.indexOf('En Vivo') < html.indexOf('Un Sentimiento Vigente'), 'primero los discos que sí están');
+  assert.ok(html.includes('Faltan 2 de 12:') && html.includes('Golpes Bajos · No Puedo'), html);
+  assert.ok(html.includes('Falta 1 de 20:'), 'el singular concuerda');
+  assert.ok(html.includes('UPC 018736381966'), 'con el UPC, para ir a buscarlo');
+  assert.ok(html.includes('Voy a Morirme &lt;i&gt;de&lt;/i&gt; Amor'), 'los títulos de Deezer llegan escapados');
+
+  // Otro catálogo arranca con la lista plegada.
+  catalogoDeTres();
+  assert.equal(ev('S.verFaltantes'), false);
+});
+
+test('el disco al que le faltan temas lleva su badge, entra al filtro de faltantes y lo detalla', () => {
+  catalogoDeTres();
+  ev(`S.catalogo.productos[0].faltan = ['Dos <b>', 'Tres']`);
+  let html = ev('tablaProductos(S.catalogo.productos)');
+  assert.ok(html.includes('faltan 2 temas'), html);
+  ev(`S.filtro.faltantes = true`);
+  assert.deepEqual([...ev('productosFiltrados().map((p) => p.id)')], ['a', 'b', 'c']);
+  ev(`S.filtro.faltantes = false; S.expandidos.add('a')`);
+  html = ev('tablaProductos(S.catalogo.productos)');
+  assert.ok(html.includes('En Deezer este disco tiene además:') && html.includes('Dos &lt;b&gt; · Tres'), html);
+  ev(`S.catalogo.productos[0].faltan = ['Uno']`);
+  assert.ok(ev('tablaProductos(S.catalogo.productos)').includes('falta 1 tema'));
+});
+
+test('los temas sin distribuidora declarada se avisan y tienen su casilla en el filtro', () => {
+  const html = avisoCon({ via: 'subidas', sin_distribuidora: 17, completitud: COMP_VACIA });
+  assert.ok(html.includes('17 temas no declaran distribuidora'), html);
+  ev(`S.catalogo.filtros.distribuidoras = [{ name: '', count: 2 }, { name: 'X', count: 1 }];
+      S.catalogo.productos[0].distribuidora = '';
+      S.filtro.modo = 'distribuidora'; S.filtro.distribs = new Set([''])`);
+  assert.ok(ev('panelFiltro()').includes('Sin distribuidora declarada'));
+  assert.deepEqual([...ev('productosFiltrados().map((p) => p.id)')], ['a']);
+  ev(`S.filtro.modo = 'manual'`);
+});
+
+test('los avisos del listado están en los dos idiomas', () => {
+  for (const idioma of ['es', 'en']) {
+    ev(`ponerIdioma('${idioma}')`);
+    ev('S.verFaltantes = true');
+    const html = avisoCon({ via: 'busqueda', temas: 150, unidades: 300, cortado_por_cuota: true, sin_distribuidora: 1,
+      completitud: { ...COMP_FALTAN, sin_respuesta: 2 } })
+      + avisoCon({ via: 'busqueda', temas: 1, unidades: 101, sin_distribuidora: 2, completitud: COMP_VACIA });
+    assert.ok(!/paso2\.[a-z_]+/.test(html), `${idioma}: quedó una clave sin texto en ${html}`);
+  }
+  ev(`ponerIdioma('es'); S.verFaltantes = false`);
+});

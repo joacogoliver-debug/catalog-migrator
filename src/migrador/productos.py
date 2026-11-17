@@ -319,8 +319,14 @@ def filter_products(
 
 
 def distributor_options(productos) -> list[OpcionDistribuidora]:
-    """Distribuidoras presentes, con su conteo, para armar el filtro en la UI."""
-    c = Counter(p["distributor"] for p in productos if p.get("distributor"))
+    """Distribuidoras presentes, con su conteo, para armar el filtro en la UI.
+
+    Los productos sin distribuidora declarada van como una opción más, de
+    nombre vacío, que la interfaz rotula con sus palabras. Sin ella, al filtrar
+    por distribuidora esos productos no tenían casilla y no había forma de
+    volver a verlos.
+    """
+    c = Counter(p.get("distributor") or "" for p in productos)
     return [{"name": n, "count": k} for n, k in c.most_common()]
 
 

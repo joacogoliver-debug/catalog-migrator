@@ -251,6 +251,10 @@ TEXTOS = {
         "es": "YouTube no permitió la consulta con esta clave.",
         "en": "YouTube did not allow the request with this key.",
     },
+    "yt.sin_lista": {
+        "es": "YouTube no publica la lista de videos de este canal.",
+        "en": "YouTube does not publish this channel's list of videos.",
+    },
     "yt.error_generico": {
         "es": "YouTube respondió un error ({codigo}). {mensaje}",
         "en": "YouTube answered with an error ({codigo}). {mensaje}",
@@ -325,6 +329,16 @@ TEXTOS = {
     },
     "rel.uso_topic": {"es": "Uso el canal Topic: {canal}", "en": "Using the Topic channel: {canal}"},
     "rel.listando": {"es": "Listando productos…", "en": "Listing releases…"},
+    "rel.por_buscador": {
+        "es": (
+            "YouTube no publica la lista de este canal: lo listo por el buscador, "
+            "que gasta 100 unidades de cuota cada 50 temas."
+        ),
+        "en": (
+            "YouTube does not publish this channel's list: listing it through search, "
+            "which costs 100 quota units per 50 tracks."
+        ),
+    },
     "rel.bajando_metadata": {
         "es": "Bajando metadata de {n} productos…",
         "en": "Fetching metadata for {n} releases…",
@@ -371,6 +385,18 @@ TEXTOS = {
     "mig.descartados": {
         "es": "Quedaron afuera {n} videos que no son lanzamientos",
         "en": "{n} videos were left out because they are not releases",
+    },
+    "mig.comparando_deezer": {
+        "es": "Comparando con la discografía del artista en Deezer…",
+        "en": "Comparing against the artist's discography on Deezer…",
+    },
+    "mig.cortado_por_cuota": {
+        "es": "La cuota de YouTube se acabó a mitad del listado: el catálogo quedó incompleto, con {n} temas",
+        "en": "The YouTube quota ran out mid-listing: the catalog is incomplete, with {n} tracks",
+    },
+    "mig.faltan_en_youtube": {
+        "es": "Deezer tiene {n} grabaciones, en {releases} lanzamientos, que no aparecieron en YouTube",
+        "en": "Deezer has {n} recordings, across {releases} releases, that did not show up on YouTube",
     },
     "mig.seleccionados": {
         "es": "Seleccionados {n} de {total} productos",
@@ -822,6 +848,16 @@ TEXTOS = {
         "es": "El orden de los tracks es estimado por fecha de subida y no está confirmado.",
         "en": "Track order is estimated from the upload date and is not confirmed.",
     },
+    "val.album_incompleto": {
+        "es": (
+            "Deezer tiene {n} temas de este disco que no aparecieron en YouTube: {temas}. "
+            "No están en el paquete. Revisá si son parte del disco antes de entregarlo."
+        ),
+        "en": (
+            "Deezer has {n} tracks on this release that did not show up on YouTube: {temas}. "
+            "They are not in the package. Check whether they belong to the release before delivering it."
+        ),
+    },
     "val.track_sin_titulo": {"es": "El track no tiene título.", "en": "The track has no title."},
     "val.isrc_falta": {
         "es": "Sin ISRC. La distribuidora va a asignar uno nuevo y se pierde el historial de la grabación.",
@@ -998,6 +1034,67 @@ TEXTOS = {
             "  version of those recordings. They are marked as lossy and are NOT\n"
             "  fit for delivery; ask the label or artist for the master."
         ),
+    },
+    "paq.rep_listado": {"es": "CÓMO SE LISTÓ EL CATÁLOGO", "en": "HOW THE CATALOG WAS LISTED"},
+    "paq.rep_por_buscador": {
+        "es": (
+            "Por el buscador de YouTube: {n} temas, {unidades} unidades de cuota.\n"
+            "YouTube ya no publica la lista de videos de los canales Topic, y su\n"
+            "buscador no garantiza traer todo."
+        ),
+        "en": (
+            "Through YouTube search: {n} tracks, {unidades} quota units.\n"
+            "YouTube no longer publishes the list of videos of Topic channels, and\n"
+            "its search does not guarantee a full listing."
+        ),
+    },
+    "paq.rep_por_subidas": {
+        "es": "Por la lista de subidas del canal: {n} temas, {unidades} unidades de cuota.",
+        "en": "From the channel's uploads list: {n} tracks, {unidades} quota units.",
+    },
+    "paq.rep_cortado": {
+        "es": (
+            "ATENCIÓN: la cuota de YouTube se acabó a mitad del listado.\n"
+            "Este catálogo está INCOMPLETO: faltan los temas más viejos."
+        ),
+        "en": (
+            "WARNING: the YouTube quota ran out halfway through the listing.\n"
+            "This catalog is INCOMPLETE: the oldest tracks are missing."
+        ),
+    },
+    "paq.rep_sin_comparar": {
+        "es": "No se comparó contra la discografía de Deezer: puede faltar algún tema sin que se note.",
+        "en": "Not compared against the Deezer discography: a track may be missing without it showing.",
+    },
+    "paq.rep_completo": {
+        "es": "Comparado con la discografía de {artista} en Deezer ({n} lanzamientos): no falta nada.",
+        "en": "Compared against {artista}'s discography on Deezer ({n} releases): no recording is missing.",
+    },
+    "paq.rep_faltan": {
+        "es": "EN DEEZER Y NO EN YOUTUBE: {n} grabaciones de {artista}",
+        "en": "ON DEEZER BUT NOT ON YOUTUBE: {n} recordings by {artista}",
+    },
+    "paq.rep_faltan_nota": {
+        "es": (
+            "No están en este paquete. Puede ser que el buscador no las haya traído,\n"
+            "que estén en el canal de otro artista (colaboraciones) o que nunca se\n"
+            "hayan entregado a YouTube. Si son parte del catálogo, hay que sumarlas a mano."
+        ),
+        "en": (
+            "They are not in this package. Search may not have returned them, they\n"
+            "may sit on another artist's channel (collaborations) or they may never\n"
+            "have been delivered to YouTube. If they belong to the catalog, add them by hand."
+        ),
+    },
+    "paq.rep_falta_relevado": {"es": "está en el catálogo, incompleto", "en": "in the catalog, incomplete"},
+    "paq.rep_falta_no_relevado": {"es": "no apareció en YouTube", "en": "did not show up on YouTube"},
+    "paq.rep_faltan_parcial": {
+        "es": "(la comparación quedó parcial: Deezer no contestó por todos los lanzamientos)",
+        "en": "(the comparison is partial: Deezer did not answer for every release)",
+    },
+    "paq.falta_temas": {
+        "es": "faltan {n} temas que Deezer tiene en este disco: {temas}",
+        "en": "{n} tracks Deezer has on this release are missing: {temas}",
     },
     "paq.rep_pendientes": {"es": "PENDIENTES POR PRODUCTO", "en": "OPEN ITEMS BY RELEASE"},
     "paq.rep_sin_pendientes": {

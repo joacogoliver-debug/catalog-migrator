@@ -458,9 +458,52 @@ def planilla_producto_bytes(p, artista, incluir_audio=True):
 # ============================================================
 
 
-def reporte_texto(productos: list[Producto], artista, entorno=None, con_tidal=False):
+def _bloque_listado(diag) -> list[str]:
+    """Cómo se listó el catálogo y qué le falta, para el reporte.
+
+    Va en el reporte y no sólo en la pantalla porque el paquete viaja: quien lo
+    recibe no vio el aviso, y tiene que saber que el listado salió del buscador
+    de YouTube, que no garantiza traer todo, y qué grabaciones tiene Deezer que
+    no aparecieron.
+    """
+    if not diag or not diag.get("via"):
+        return []
+    L = [T("paq.rep_listado"), "-" * 68]
+    clave = "paq.rep_por_buscador" if diag["via"] == "busqueda" else "paq.rep_por_subidas"
+    L.extend(T(clave, n=diag.get("temas", 0), unidades=diag.get("unidades", 0)).split("\n"))
+    if diag.get("cortado_por_cuota"):
+        L.extend(T("paq.rep_cortado").split("\n"))
+    comp = diag.get("completitud") or {}
+    if not comp.get("revisada"):
+        L.extend(T("paq.rep_sin_comparar").split("\n"))
+    elif not comp.get("temas"):
+        L.append(T("paq.rep_completo", artista=comp.get("artista_deezer", ""), n=comp.get("releases", 0)))
+    else:
+        L.append("")
+        L.append(T("paq.rep_faltan", n=comp["temas"], artista=comp.get("artista_deezer", "")))
+        L.extend(T("paq.rep_faltan_nota").split("\n"))
+        for f in comp.get("faltan") or []:
+            donde = T("paq.rep_falta_relevado" if f.get("relevado") else "paq.rep_falta_no_relevado")
+            datos = ", ".join(
+                x for x in (f.get("tipo"), f.get("fecha"), f"UPC {f['upc']}" if f.get("upc") else "") if x
+            )
+            L.append(f"  {f.get('titulo', '')} ({datos}) [{donde}]")
+            for x in f.get("temas") or []:
+                isrc = f"  {x['isrc']}" if x.get("isrc") else ""
+                L.append(f"      - {x.get('titulo', '')}{isrc}")
+        if comp.get("sin_respuesta") or comp.get("recortada"):
+            L.append("  " + T("paq.rep_faltan_parcial"))
+    L.append("")
+    return L
+
+
+def reporte_texto(productos: list[Producto], artista, entorno=None, con_tidal=False, diag=None):
     """Reporte honesto de qué se pudo migrar y qué no. Es la pieza que evita
-    sorpresas: dice producto por producto qué falta y por qué."""
+    sorpresas: dice producto por producto qué falta y por qué.
+
+    `diag` es el diagnóstico del relevamiento. Con él, el reporte dice además
+    cómo se listó el catálogo y qué tiene Deezer que no apareció en YouTube.
+    """
     L = []
     tracks = [t for p in productos for t in p["tracks"]]
     aptos = [t for t in tracks if (t.get("audio_format") or "") in FORMATOS_LOSSLESS]
@@ -496,6 +539,8 @@ def reporte_texto(productos: list[Producto], artista, entorno=None, con_tidal=Fa
         L.extend(T("paq.rep_algunos_aac").split("\n"))
         L.append("")
 
+    L.extend(_bloque_listado(diag))
+
     L.append(T("paq.rep_pendientes"))
     L.append("-" * 68)
     hay_pendientes = False
@@ -526,6 +571,9 @@ def reporte_texto(productos: list[Producto], artista, entorno=None, con_tidal=Fa
             faltas.append(T("paq.falta_isrc", n=len(sin_isrc)))
         if p.get("order_unconfirmed"):
             faltas.append(T("paq.falta_orden"))
+        faltan = p.get("faltan_temas") or []
+        if faltan:
+            faltas.append(T("paq.falta_temas", n=len(faltan), temas=" · ".join(faltan)))
         if faltas:
             hay_pendientes = True
             L.append(f"  {p['folder']}")
@@ -655,8 +703,12 @@ def build_zip(
     incluir_portadas=True,
     log=print,
     avance=None,
+    diag=None,
 ):
     """Arma el ZIP del entregable en `out_path`. Devuelve (ruta, bytes).
+
+    `diag` es el diagnóstico del relevamiento, para el reporte (ver
+    `_bloque_listado`). Sin él, el reporte sale como siempre.
 
     `avance(hechos, total)` se llama después de cada producto, para la barra.
 
@@ -672,7 +724,7 @@ def build_zip(
         z.writestr(entrada_zip(raiz, F["leeme"]), leeme().encode("utf-8-sig"))
         z.writestr(
             entrada_zip(raiz, F["reporte"]),
-            reporte_texto(productos, artista, entorno, con_tidal).encode("utf-8-sig"),
+            reporte_texto(productos, artista, entorno, con_tidal, diag).encode("utf-8-sig"),
         )
 
         # La validación va siempre: es lo que evita que la entrega se rechace.

@@ -26,6 +26,7 @@ const S = {
   catalogo: null,
   seleccion: new Set(),
   expandidos: new Set(),
+  verFaltantes: false,      // la lista de lo que Deezer tiene y YouTube no trajo, desplegada
   filtro: { modo: 'manual', anioDesde: null, anioHasta: null, distribs: new Set(), texto: '', faltantes: false },
   opciones: { planilla: true, portadas: true, audio: false },
   job: null,
@@ -317,7 +318,7 @@ function productosFiltrados() {
  *  el orden sin confirmar. En un catálogo de quinientos productos, «¿qué me
  *  falta?» no se puede contestar scrolleando. */
 function leFaltaAlgo(p) {
-  return !p.upc || p.con_isrc < p.tracks || !!p.orden_estimado;
+  return !p.upc || p.con_isrc < p.tracks || !!p.orden_estimado || (p.faltan || []).length > 0;
 }
 
 /** Los elegidos que el filtro esconde. No entran al paquete, porque lo que
@@ -667,9 +668,48 @@ function bloqueProgreso(conCancelar = true) {
 
 /* ------------------------------------------------------------ paso 2 */
 
+/** Lo que Deezer tiene de este artista y no apareció en YouTube.
+ *
+ *  El buscador de YouTube, que hoy es la única forma de listar un canal Topic,
+ *  no garantiza traer todo y no avisa cuando no lo trae. Esto es lo único que
+ *  lo deja ver. La lista va plegada: el titular alcanza para decidir si hay
+ *  que mirarla. */
+function avisoFaltantes(comp) {
+  if (!comp || !comp.revisada || !comp.temas) return '';
+  const fila = (f) => `
+    <li><strong>${esc(f.titulo)}</strong>
+      <span class="muted">${esc([f.tipo, (f.fecha || '').slice(0, 4), f.upc ? 'UPC ' + f.upc : ''].filter(Boolean).join(', '))}</span>
+      <span class="sub">${esc(T(f.temas.length === 1 ? 'paso2.faltan_de_uno' : 'paso2.faltan_de', { n: f.temas.length, total: f.total }))}
+        ${esc(f.temas.map((t) => t.titulo).join(' · '))}</span></li>`;
+  const grupo = (titulo, items) => (items.length
+    ? `<p class="small mt-3"><strong>${esc(titulo)}</strong></p><ul class="lista-faltan">${items.map(fila).join('')}</ul>`
+    : '');
+  const lista = S.verFaltantes ? `
+      ${grupo(T('paso2.faltan_relevados'), comp.faltan.filter((f) => f.relevado))}
+      ${grupo(T('paso2.faltan_no_relevados'), comp.faltan.filter((f) => !f.relevado))}` : '';
+  return alerta('warn', 'alerta', `
+    <strong>${esc(T(comp.temas === 1 ? 'paso2.faltan_titulo_uno' : 'paso2.faltan_titulo', { n: num(comp.temas), artista: comp.artista_deezer }))}</strong>
+    ${esc(T('paso2.faltan_cuerpo'))}
+    ${comp.sin_respuesta || comp.recortada ? esc(T('paso2.faltan_parcial')) : ''}
+    <button type="button" class="link-inline" data-accion="ver-faltantes" aria-expanded="${!!S.verFaltantes}">${esc(T(S.verFaltantes ? 'paso2.faltan_ocultar' : 'paso2.faltan_ver'))}</button>
+    ${lista}`);
+}
+
 function avisoCanal() {
   const d = (S.catalogo && S.catalogo.diagnostico) || {};
+  const comp = d.completitud || {};
   const partes = [];
+
+  // La cuota se acabó a mitad del listado. Va primero: todo lo demás se lee
+  // sobre un catálogo que está incompleto.
+  if (d.cortado_por_cuota) {
+    partes.push(alerta('warn', 'alerta', `
+      <strong>${esc(T('paso2.cortado_titulo'))}</strong>
+      ${esc(T('paso2.cortado_cuerpo', { n: num(d.temas || 0) }))}
+      <div class="row mt-3">
+        <button class="btn btn-secondary btn-sm" data-accion="ver-clave">${esc(T('paso1.cargar_clave'))}</button>
+      </div>`));
+  }
 
   // Caso habitual y bueno: pegaron un canal común y la app encontró el Topic sola.
   if (d.via_topic && d.canal) {
@@ -679,6 +719,30 @@ function avisoCanal() {
         topic: `<strong>${esc(d.canal)}</strong>`,
       })}
       <span class="small">${esc(T('paso2.que_es_topic'))}</span>`));
+  }
+
+  // Cómo se listó. Desde fines de 2026 un canal Topic sólo se puede listar por
+  // el buscador, que cuesta cien veces más cuota y no garantiza traer todo: las
+  // dos cosas se dicen, con el número.
+  if (d.via === 'busqueda') {
+    const frases = [T('paso2.por_buscador', {
+      n: `<strong>${num(d.temas || 0)}</strong>`,
+      unidades: `<strong>${num(d.unidades || 0)}</strong>`,
+    })];
+    if (comp.revisada && !comp.temas) {
+      frases.push(esc(T('paso2.buscador_completo', { artista: comp.artista_deezer, n: num(comp.releases) })));
+    } else if (!comp.revisada) {
+      frases.push(esc(T('paso2.buscador_sin_comparar')));
+    }
+    partes.push(alerta('', 'info', frases.join(' ')));
+  }
+
+  partes.push(avisoFaltantes(comp));
+
+  if (d.sin_distribuidora) {
+    partes.push(alerta('', 'info', esc(T(d.sin_distribuidora === 1 ? 'paso2.sin_distribuidora_uno' : 'paso2.sin_distribuidora', {
+      n: num(d.sin_distribuidora),
+    }))));
   }
 
   if (d.descartados) {
@@ -838,7 +902,7 @@ function panelFiltro() {
     const items = c.filtros.distribuidoras.map((d) => `
       <label class="check check-suelto">
         <input type="checkbox" data-distrib="${esc(d.name)}" ${f.distribs.has(d.name) ? 'checked' : ''} />
-        <span class="check-texto"><strong>${esc(d.name)}</strong><span class="sub">${esc(T(d.count === 1 ? 'comun.n_productos_uno' : 'comun.n_productos', { n: d.count }))}</span></span>
+        <span class="check-texto"><strong>${esc(d.name || T('paso2.sin_distribuidora_opcion'))}</strong><span class="sub">${esc(T(d.count === 1 ? 'comun.n_productos_uno' : 'comun.n_productos', { n: d.count }))}</span></span>
       </label>`).join('');
     return `
     <div class="panel mb-4">
@@ -861,6 +925,8 @@ function tablaProductos(ps) {
     if (!p.upc) avisos.push(`<span class="badge badge-warn">${esc(T('tabla.sin_upc'))}</span>`);
     if (p.con_isrc < p.tracks) avisos.push(`<span class="badge badge-warn">${esc(T('tabla.isrc_de', { n: p.con_isrc, total: p.tracks }))}</span>`);
     if (p.orden_estimado) avisos.push(`<span class="badge badge-warn">${esc(T('tabla.orden_estimado'))}</span>`);
+    const faltan = p.faltan || [];
+    if (faltan.length) avisos.push(`<span class="badge badge-warn">${esc(T(faltan.length === 1 ? 'tabla.faltan_temas_uno' : 'tabla.faltan_temas', { n: faltan.length }))}</span>`);
 
     const detalle = abierto ? `
       <tr class="fila-detalle"><td colspan="7"><div class="detalle-inner">
@@ -876,6 +942,7 @@ function tablaProductos(ps) {
             </tr>`).join('')}
           </tbody>
         </table>
+        ${faltan.length ? `<p class="small nota-faltan"><strong>${esc(T('tabla.faltan_detalle'))}</strong> ${esc(faltan.join(' · '))}</p>` : ''}
       </div></td></tr>` : '';
 
     return `
@@ -1116,7 +1183,7 @@ const CODIGOS_HALLAZGO = [
   'duracion_falta', 'isrc_invalido', 'upc_invalido', 'isrc_duplicado', 'upc_duplicado',
   'anio_futuro', 'anio_absurdo', 'anio_invalido', 'producto_sin_titulo', 'track_sin_titulo',
   'texto_como_formula', 'isrc_compartido', 'isrc_match_dudoso', 'upc_no_verificado',
-  'upc_mezclado', 'release_en_dos_distribuidoras',
+  'upc_mezclado', 'release_en_dos_distribuidoras', 'album_incompleto',
   'artista_no_principal', 'portada_modo_color', 'audio_no_apto', 'isrc_confianza_media',
   'campos_a_completar',
 ];
@@ -1304,6 +1371,7 @@ const ACCIONES = {
 
   'ver-terminos'() { S.vista = 'terminos'; S.entrando = true; render(); arriba(); },
   'ver-clave'() { S.vista = 'clave'; S.entrando = true; render(); arriba(); },
+  'ver-faltantes'() { S.verFaltantes = !S.verFaltantes; render(); },
   'cerrar-vista'() { S.vista = null; S.entrando = true; render(); arriba(); },
 
   async 'aceptar-terminos'() {
@@ -1682,6 +1750,7 @@ function adoptarCatalogo(cat) {
   S.catalogo = cat;
   S.seleccion = new Set(cat.productos.map((p) => p.id));
   S.expandidos = new Set();
+  S.verFaltantes = false;
   S.filtro = {
     modo: 'manual',
     anioDesde: cat.filtros.anio_min,

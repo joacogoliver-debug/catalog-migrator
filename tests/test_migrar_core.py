@@ -68,6 +68,13 @@ def _respuesta_topic():
         "via_topic": False,
         "canal_pedido": "Artista Doble - Topic",
         "descartados": 0,
+        "channel_id": "UC" + "d" * 22,
+        "via": "busqueda",
+        "total_estimado": 4,
+        "cortado_por_cuota": False,
+        "unidades": 102,
+        "sin_distribuidora": 0,
+        "cruce": {"albumes": {}, "verificados": {}},
     }
 
 
@@ -97,6 +104,13 @@ def _respuesta_canal_comun():
         "via_topic": True,
         "canal_pedido": "Artista Doble Oficial",
         "descartados": 7,
+        "channel_id": "UC" + "d" * 22,
+        "via": "subidas",
+        "total_estimado": 0,
+        "cortado_por_cuota": True,
+        "unidades": 3,
+        "sin_distribuidora": 3,
+        "cruce": {"albumes": {}, "verificados": {}},
     }
 
 
@@ -258,12 +272,48 @@ def test_el_diagnostico_es_un_subconjunto_del_relevamiento(relevar_doble):
     vacío en la pantalla.
     """
     # `canal` y `codigos` se arman en migrar_core: el primero es el título del
-    # canal y el segundo resume `codes`, que viene con otra forma.
-    propias = set(Diagnostico.__annotations__) - {"canal", "codigos"}
+    # canal y el segundo resume `codes`, que viene con otra forma. `temas` es
+    # la cuenta de los tracks, y `completitud` la comparación con Deezer, que
+    # corre después de relevar.
+    propias = set(Diagnostico.__annotations__) - {"canal", "codigos", "temas", "completitud"}
     assert propias <= set(Relevamiento.__annotations__)
 
     _p, _a, _t, diag = M.relevar_catalogo("https://www.youtube.com/@Test", "clave-falsa")
     assert set(diag) == set(Diagnostico.__annotations__)
+
+
+def test_el_diagnostico_cuenta_como_se_listo_y_cuanto_costo(relevar_doble):
+    """Desde que un Topic se lista por el buscador, la vía y el costo son parte
+    de lo que hay que mostrar: no es lo mismo una unidad que cien."""
+    _p, _a, tracks, diag = M.relevar_catalogo("https://www.youtube.com/@Test", "clave-falsa")
+    assert (diag["via"], diag["unidades"], diag["total_estimado"]) == ("busqueda", 102, 4)
+    assert diag["temas"] == len(tracks)
+    assert diag["cortado_por_cuota"] is False
+
+    relevar_doble["escenario"] = "comun"
+    avisos = []
+    _p, _a, _t, diag = M.relevar_catalogo(
+        "https://www.youtube.com/@Test", "clave-falsa", progress=lambda m, f=None: avisos.append(m)
+    )
+    assert diag["cortado_por_cuota"] is True and diag["sin_distribuidora"] == 3
+    assert any("incompleto" in a for a in avisos), "un catálogo cortado se dice en el log"
+
+
+def test_sin_codigos_la_comparacion_con_deezer_queda_sin_hacer(relevar_doble, monkeypatch):
+    """Y se dice que no se hizo, que no es lo mismo que «no falta nada»."""
+    from migrador import completitud
+
+    llamadas = []
+    monkeypatch.setattr(
+        completitud, "revisar", lambda *a, **k: llamadas.append(a) or completitud.completitud_vacia()
+    )
+    relevar_doble["escenario"] = "comun"  # `codes` es None: no se pidieron
+    _p, _a, _t, diag = M.relevar_catalogo("https://www.youtube.com/@Test", "clave-falsa")
+    assert llamadas == [] and diag["completitud"]["revisada"] is False
+
+    relevar_doble["escenario"] = "topic"
+    M.relevar_catalogo("https://www.youtube.com/@Test", "clave-falsa")
+    assert len(llamadas) == 1
 
 
 def test_el_diagnostico_distingue_codigos_no_pedidos_de_no_encontrados(relevar_doble):

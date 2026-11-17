@@ -268,11 +268,37 @@ dígito verificador GTIN de UPC-A y EAN-13.
 |---|---|---|
 | Catálogo, distribuidora, sello, año, reproducciones | YouTube Data API | sí |
 | ISRC y UPC | [Deezer](https://developers.deezer.com/api) | no |
+| Qué grabaciones del artista no aparecieron en YouTube | [Deezer](https://developers.deezer.com/api) | no |
 | Portadas | [iTunes Search API](https://performance-partners.apple.com/search-api) | no |
 
 Los términos de uso nombran también a MusicBrainz: el código tiene un respaldo
 que lo consulta, pero viene apagado y la app no lo ofrece, así que hoy no se le
 manda nada.
+
+**Cómo se lista el catálogo, y cuánta cuota gasta.** Hasta septiembre de 2026 un
+canal Topic se listaba por su lista de subidas, a una unidad de cuota cada
+cincuenta temas. Desde entonces YouTube dejó de publicar esa lista para los
+canales Topic: la API contesta que no existe, aunque los temas siguen ahí. La
+app prueba primero la lista y, si no está, lista el canal por el buscador de
+YouTube, que es la única puerta de la API oficial que los sigue mostrando. Eso
+cambia dos cosas, y la app las dice en la pantalla y en el reporte:
+
+- **Cuesta cien veces más.** Cada página de cincuenta temas gasta 100 unidades
+  de las 10.000 diarias. El catálogo con que se midió, de 290 temas, gastó 607.
+  Con la clave compartida de la variante completa, ese cupo es de todos los que
+  la usan; con tu propia clave es tuyo.
+- **No garantiza traer todo.** El buscador es un índice, no un listado. Por eso
+  la app compara lo que trajo contra la discografía del artista en Deezer y
+  dice qué grabaciones tiene Deezer que no aparecieron, disco por disco y con
+  su UPC. En ese mismo catálogo eran 26: temas sueltos de cuatro discos, dos
+  discos casi enteros y tres singles. Que falten no dice por qué: puede ser que
+  el buscador no las trajo, que estén en el canal de otro artista, como pasa
+  con las colaboraciones, o que nunca se hayan entregado a YouTube. La app no
+  las agrega al paquete, porque de ellas no conoce la distribuidora.
+
+Si la cuota se acaba a mitad del listado, lo que ya se trajo no se pierde: el
+catálogo se muestra marcado como incompleto. Y si YouTube vuelve a publicar la
+lista de subidas, la app la usa sola, sin cambiar nada.
 
 Deezer encuentra la grabación, y la misma grabación está en el single, en el
 álbum y en cada compilado. Por eso el UPC se acepta sólo cuando el álbum de
@@ -308,6 +334,17 @@ cuenta de Tidal.
 **¿Adónde van mis datos?** A ningún servidor del autor: no hay. La app consulta
 YouTube con tu clave, y Deezer y Apple con datos públicos. Está en
 [Privacidad](#privacidad).
+
+**¿Cuántos catálogos puedo relevar por día?** Depende del tamaño: hoy cada
+cincuenta temas gastan 100 de las 10.000 unidades diarias de la clave, así que
+un catálogo de 300 temas usa unas 600. La pantalla del catálogo dice cuánto
+gastó cada relevamiento. Está explicado en
+[De dónde salen los datos](#de-dónde-salen-los-datos).
+
+**La app dice que Deezer tiene grabaciones que no aparecieron. ¿Qué hago?**
+Mirá la lista: trae el título y el UPC de cada lanzamiento. Si son tuyas,
+sumalas a mano a la migración y pedile los códigos a tu distribuidora actual.
+Si son colaboraciones, suelen estar en el canal del otro artista.
 
 **Me faltan ISRC o UPC. ¿Qué hago?** Pedíselos a tu distribuidora actual antes
 de aceptar códigos nuevos: un código nuevo es un release nuevo, que arranca sin
@@ -523,6 +560,7 @@ un solo sentido, y por eso el núcleo se puede probar sin levantar un servidor.
 | `src/migrador/certificados.py` | Certificados de certifi cuando el sistema no tiene (el .app de macOS) |
 | `src/migrador/migrar_core.py` | Orquesta los 4 pasos |
 | `src/migrador/relevar_core.py` | Relevamiento de YouTube + ISRC/UPC por Deezer |
+| `src/migrador/completitud.py` | Qué tiene la discografía de Deezer que no apareció en YouTube |
 | `src/migrador/productos.py` | Agrupa tracks en productos y filtra la selección |
 | `src/migrador/validar.py` | Validación pre-entrega |
 | `src/migrador/portadas.py` | Portadas vía iTunes Search API |
@@ -604,6 +642,8 @@ pytest -q --cov
 | `tests/test_textos_fijos.py` | Que ningún texto para el usuario se escriba fuera de los catálogos de traducción |
 | `tests/test_concurrencia.py` | Un trabajo por vez de verdad, catálogo identificado y temporales que no quedan |
 | `tests/test_progreso.py` | Avance real, cancelación que responde y reintentos sólo donde sirven |
+| `tests/test_listado.py` | Cómo se lista un canal: por el buscador cuando YouTube no publica la lista de subidas, con su tope, su cuota y los lanzamientos sin distribuidora |
+| `tests/test_completitud.py` | Qué falta respecto de la discografía de Deezer: de quién es, qué cuenta como la misma grabación y hasta dónde llega el aviso |
 | `tests/test_ci.py` | Las reglas de supply chain del CI: acciones por SHA, permisos, timeouts, auditoría |
 | `tests/test_secretos.py` | Que la clave no salga de donde tiene que estar: cabecera, permisos, historia |
 | `tests/test_validacion_honesta.py` | Que la validación diga lo que mira y lo que no: ruido, códigos, color, avisos que faltaban |
