@@ -62,6 +62,11 @@ No son casos borde: son la mitad del producto.
   clave propia. El error tiene que ofrecerla, no sólo informarla.
 - **El artista no está en la fuente.** Si Deezer no lo tiene, no hay códigos, y
   eso no es una falla de la app. Hay que decirlo con esas palabras.
+- **YouTube no muestra el catálogo entero.** No publica la lista de un canal
+  Topic, su buscador puede no traer un tema, y no repite en un disco la
+  grabación que ya tiene en otro. Lo que falta sale de la discografía de Deezer
+  y entra marcado. Lo que no se sabe si es del catálogo, como un lanzamiento
+  que sólo está en Deezer, queda sin elegir: lo elige una persona.
 - **Vacío por filtro.** Se filtró de más y no queda nada.
 - **Primera vez.** Términos de uso, y la clave de la API si esta copia no trae
   una.

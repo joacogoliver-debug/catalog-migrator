@@ -64,6 +64,12 @@ These are not edge cases: they are half the product.
   key. The error has to offer that, not merely report the problem.
 - **The artist is not in the source.** If Deezer does not have them, there are no
   codes, and that is not a failure of the app. It has to be said in those words.
+- **YouTube does not show the whole catalog.** It does not publish a Topic
+  channel's list, its search may not return a track, and it does not repeat on
+  one release a recording it already has on another. What is missing comes from
+  the Deezer discography and goes in flagged. What may not belong to the
+  catalog, such as a release found on Deezer only, is left unselected: a person
+  picks it.
 - **Empty because of a filter.** Too much was filtered out and nothing is left.
 - **First time.** Terms of use, and the API key if this copy does not carry one.
 
