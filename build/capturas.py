@@ -426,6 +426,7 @@ def resultado_demo() -> PaqueteListo:
         "archivo": f"delta-serrano-{sufijo}.zip",
         "bytes": 1_284_003_112,
         "descarga": "#",
+        "guardar": "/api/guardar/demo",
         "productos": 4,
         "portadas": 3,
         "validacion": {

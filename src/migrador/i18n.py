@@ -598,6 +598,18 @@ TEXTOS = {
         "es": "El paquete ya no está disponible. Generalo de nuevo.",
         "en": "The package is no longer available. Build it again.",
     },
+    "srv.no_se_pudo_guardar": {
+        "es": "No se pudo guardar el paquete en la carpeta Descargas: {detalle}",
+        "en": "The package could not be saved to the Downloads folder: {detalle}",
+    },
+    "srv.guardado_no_esta": {
+        "es": "Ese archivo ya no está donde se guardó.",
+        "en": "That file is no longer where it was saved.",
+    },
+    "srv.no_se_pudo_mostrar": {
+        "es": "No se pudo abrir la carpeta: {detalle}",
+        "en": "The folder could not be opened: {detalle}",
+    },
     "srv.trabajo_no_existe": {"es": "Ese trabajo ya no existe.", "en": "That job no longer exists."},
     "srv.rechazado": {"es": "Pedido rechazado.", "en": "Request rejected."},
     "srv.rechazado_token": {

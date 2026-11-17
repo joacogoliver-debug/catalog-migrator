@@ -36,6 +36,8 @@ const S = {
   errorCodigo: '',
   errorCampo: '',           // error de validacion del link, va bajo el campo
   errorDescarga: '',        // el ZIP ya no está (vence a la hora): aviso en la misma pantalla
+  guardado: null,           // { ruta, archivo } del paquete copiado a la carpeta Descargas
+  guardando: false,
   entrando: false,          // el proximo render es un cambio de vista: anima la entrada
   // Lo que se escribió en el paso 1. Cada render() reemplaza el formulario
   // entero, y un campo sin `value` volvía vacío: al fallar, el error quedaba
@@ -1166,18 +1168,30 @@ function vistaPaso4() {
     ${queSigue()}
 
     ${S.errorDescarga ? alerta('danger', 'error', esc(S.errorDescarga)) : ''}
+    ${S.guardado ? alerta('', 'ok', `${esc(T('paso4.guardado'))} <span class="mono">${esc(S.guardado.ruta)}</span>
+      <button class="btn btn-ghost" data-accion="mostrar-guardado">${esc(T('paso4.mostrar'))}</button>`, 'status') : ''}
 
     <div class="barra-accion">
       <div class="resumen">${esc(T('paso4.zip_disponible'))}</div>
       <div class="acciones">
         <button class="btn btn-ghost" data-accion="volver-1">${esc(T('paso2.otro_artista'))}</button>
         <button class="btn btn-secondary" data-accion="volver-2">${esc(T('paso4.otros_productos'))}</button>
-        <button class="btn btn-primary" data-accion="descargar">
-          ${ico('descargar')} ${esc(T('paso4.descargar', { peso: pesoLegible(r.bytes) }))}
+        <button class="btn btn-primary" data-accion="descargar" ${S.guardando ? 'disabled' : ''}>
+          ${ico('descargar')} ${esc(T(S.guardando ? 'paso4.guardando' : 'paso4.descargar', { peso: pesoLegible(r.bytes) }))}
         </button>
       </div>
     </div>
+    ${guardaSola() || !r.guardar ? '' : `<p class="muted nota-descarga">${esc(T('paso4.no_bajo'))}
+      <button class="btn-enlace" data-accion="guardar-en-descargas">${esc(T('paso4.guardar_en_descargas'))}</button></p>`}
   </div>`;
+}
+
+/** Si «Descargar» guarda el paquete directo en la carpeta Descargas, sin
+ *  pasar por la descarga de la ventana. Es el caso de la ventana propia en
+ *  macOS, que descarta las descargas sin avisar: se apretaba el botón y no
+ *  pasaba nada. En un navegador común la descarga funciona y se deja como está. */
+function guardaSola() {
+  return !!(S.config && S.config.sistema === 'mac' && window.pywebview);
 }
 
 /** Lo que viene después del ZIP. El éxito terminaba en «Descargar» sin decir
@@ -1374,6 +1388,7 @@ const ACCIONES = {
   async descargar() {
     const r = S.resultado;
     if (!r) return;
+    if (guardaSola() && r.guardar) return ACCIONES['guardar-en-descargas']();
     let url;
     try {
       ({ url } = await api(r.descarga, {}));
@@ -1391,6 +1406,31 @@ const ACCIONES = {
     document.body.appendChild(a);
     a.click();
     a.remove();
+  },
+
+  /** Copiar el ZIP a la carpeta Descargas, del lado del servidor. Diez
+   *  minutos de espera: con audio el paquete pesa varios GB. */
+  async 'guardar-en-descargas'() {
+    const r = S.resultado;
+    if (!r || !r.guardar || S.guardando) return;
+    S.guardando = true; S.errorDescarga = ''; render();
+    try {
+      S.guardado = await api(r.guardar, {}, 600000);
+    } catch (e) {
+      S.errorDescarga = e.message;
+    }
+    S.guardando = false;
+    render();
+  },
+
+  async 'mostrar-guardado'() {
+    if (!S.guardado) return;
+    try {
+      await api('/api/mostrar', { ruta: S.guardado.ruta });
+    } catch (e) {
+      S.errorDescarga = e.message;
+      render();
+    }
   },
 
   'ver-terminos'() { S.vista = 'terminos'; S.entrando = true; render(); arriba(); },
@@ -1528,7 +1568,7 @@ const ACCIONES = {
   async generar() {
     const ids = seleccionados().map((p) => p.id);
     if (!ids.length) { S.error = T('paso3.sin_seleccion'); render(); return; }
-    S.error = ''; S.errorCodigo = ''; S.errorDescarga = ''; S.aviso = ''; S.resultado = null; S.ocupado = true; S.paso = 4; S.job = null; render();
+    S.error = ''; S.errorCodigo = ''; S.errorDescarga = ''; S.guardado = null; S.aviso = ''; S.resultado = null; S.ocupado = true; S.paso = 4; S.job = null; render();
     try {
       const { job } = await api('/api/preparar', {
         // Si en otra ventana se relevó otro artista, el servidor lo nota por

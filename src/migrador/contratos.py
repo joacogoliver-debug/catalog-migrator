@@ -523,6 +523,9 @@ class PaqueteListo(TypedDict):
     archivo: str
     bytes: int
     descarga: str
+    # Dónde pedir que el ZIP se copie a la carpeta Descargas, sin pasar por la
+    # descarga de la ventana (ver `server.guardar_en_descargas`).
+    guardar: str
     validacion: ValidacionParaUI
     portadas: int
     productos: int

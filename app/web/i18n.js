@@ -758,6 +758,11 @@ const TEXTOS = {
   },
   'paso4.otros_productos': { es: 'Elegir otros productos', en: 'Pick other releases' },
   'paso4.descargar': { es: 'Descargar el paquete ({peso})', en: 'Download the package ({peso})' },
+  'paso4.guardando': { es: 'Guardando el paquete…', en: 'Saving the package…' },
+  'paso4.guardado': { es: 'El paquete quedó guardado en', en: 'The package was saved to' },
+  'paso4.mostrar': { es: 'Mostrar en la carpeta', en: 'Show in folder' },
+  'paso4.no_bajo': { es: '¿No se descargó?', en: 'Did it not download?' },
+  'paso4.guardar_en_descargas': { es: 'Guardarlo en la carpeta Descargas', en: 'Save it to the Downloads folder' },
 
   /* ---------------------------------------------------------- validación */
   'validacion.titulo': { es: 'Validación previa', en: 'Pre-delivery validation' },

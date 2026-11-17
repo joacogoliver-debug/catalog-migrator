@@ -45,6 +45,8 @@ Endpoints:
   POST /api/descargar/<id>    pide un ticket de un solo uso para bajar el ZIP
   GET  /api/descargar/<id>    baja el ZIP (streaming), con la cabecera del token
   GET  /descargar/<ticket>    baja el ZIP con el ticket: es lo que usa el botón
+  POST /api/guardar/<id>      copia el ZIP a la carpeta Descargas (ventana de macOS)
+  POST /api/mostrar           muestra en su carpeta un paquete ya guardado
   POST /api/tidal/...         conexión opcional de Tidal
 """
 
@@ -56,6 +58,7 @@ import re
 import secrets
 import shutil
 import socket
+import subprocess
 import sys
 import tempfile
 import threading
@@ -434,6 +437,7 @@ class Estado:
         # error de tipos. Se escribe suelto para no importar `audio` acá.
         self.tidal: "audio_mod.TidalSession | None" = None
         self.zips = {}  # job_id -> ruta del zip
+        self.guardados = set()  # rutas de los paquetes guardados en Descargas
         self.tickets = {}  # ticket -> (job_id, vence), ver emitir_ticket
         self.temporales = []
         # Cuándo latió por última vez alguna ventana (`time.monotonic()`), o None
@@ -599,6 +603,74 @@ def catalogo_json(productos, artista, diag=None):
 # ============================================================
 # Handlers de la API
 # ============================================================
+
+
+def carpeta_descargas():
+    """La carpeta de descargas del usuario, o su carpeta personal si no la hay."""
+    casa = os.path.expanduser("~")
+    for nombre in ("Downloads", "Descargas"):
+        ruta = os.path.join(casa, nombre)
+        if os.path.isdir(ruta):
+            return ruta
+    return casa
+
+
+def guardar_en_descargas(ruta_zip):
+    """Copia el paquete a la carpeta de descargas y devuelve dónde quedó.
+
+    Existe porque bajar un archivo depende de la ventana, y la de macOS
+    descarta la descarga sin avisar: la página pedía el ZIP, el servidor lo
+    entregaba y no pasaba nada, ni un cuadro de «Guardar». La app corre en la
+    máquina del usuario, así que el servidor puede dejar el archivo en su lugar
+    sin pasar por la ventana.
+
+    Nunca pisa un archivo: si el nombre está tomado, le agrega un número.
+    """
+    carpeta = carpeta_descargas()
+    base, ext = os.path.splitext(os.path.basename(ruta_zip))
+    destino, n = os.path.join(carpeta, base + ext), 1
+    while os.path.exists(destino):
+        n += 1
+        destino = os.path.join(carpeta, f"{base} ({n}){ext}")
+    # A un nombre provisorio y después al definitivo: si la copia se corta, no
+    # queda en Descargas un ZIP a medias con el nombre del paquete.
+    parcial = destino + ".parcial"
+    try:
+        shutil.copyfile(ruta_zip, parcial)
+        os.replace(parcial, destino)
+    except OSError:
+        if os.path.exists(parcial):
+            os.remove(parcial)
+        raise
+    with ESTADO.lock:
+        ESTADO.guardados.add(destino)
+    return destino
+
+
+def mostrar_en_carpeta(ruta):
+    """Abre el administrador de archivos con ese archivo a la vista."""
+    if sys.platform == "darwin":
+        orden = ["open", "-R", ruta]
+    elif sys.platform.startswith("win"):
+        orden = ["explorer", f"/select,{ruta}"]
+    else:
+        orden = ["xdg-open", os.path.dirname(ruta)]
+    subprocess.Popen(orden, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)  # noqa: S603
+
+
+def api_mostrar(body):
+    """Muestra en su carpeta un paquete que esta sesión guardó. Sólo ésos: la
+    ruta viene de la página, y no se abre cualquier cosa que ella pida."""
+    ruta = str((body or {}).get("ruta") or "")
+    with ESTADO.lock:
+        propio = ruta in ESTADO.guardados
+    if not propio or not os.path.exists(ruta):
+        raise ValueError(T("srv.guardado_no_esta"))
+    try:
+        mostrar_en_carpeta(ruta)
+    except OSError as e:
+        raise ValueError(T("srv.no_se_pudo_mostrar", detalle=e)) from e
+    return {"ok": True}
 
 
 def sistema():
@@ -890,6 +962,7 @@ def api_preparar(body):
             "archivo": os.path.basename(ruta),
             "bytes": tam,
             "descarga": f"/api/descargar/{job.id}",
+            "guardar": f"/api/guardar/{job.id}",
             "validacion": {"apto": val["apto"], "resumen": val["resumen"], "hallazgos": val["hallazgos"]},
             "portadas": sum(1 for p in copias if p.get("cover_bytes")),
             "productos": len(copias),
@@ -959,6 +1032,7 @@ RUTAS_POST = {
     "/api/validar": api_validar,
     "/api/preparar": api_preparar,
     "/api/tidal/confirmar": api_tidal_confirmar,
+    "/api/mostrar": api_mostrar,
 }
 RUTAS_POST_SIN_BODY = {
     "/api/latido": api_latido,
@@ -1333,6 +1407,19 @@ class Handler(BaseHTTPRequestHandler):
                 if not ruta_zip or not os.path.exists(ruta_zip):
                     return self._error(T("srv.zip_vencido"), HTTPStatus.NOT_FOUND)
                 return self._json({"url": f"/descargar/{ESTADO.emitir_ticket(m.group(1))}"})
+
+            m = re.fullmatch(r"/api/guardar/([0-9a-f]{6,32})", ruta)
+            if m:
+                ruta_zip = ESTADO.zip_de(m.group(1))
+                if not ruta_zip or not os.path.exists(ruta_zip):
+                    return self._error(T("srv.zip_vencido"), HTTPStatus.NOT_FOUND)
+                try:
+                    destino = guardar_en_descargas(ruta_zip)
+                except OSError as e:
+                    return self._error(
+                        T("srv.no_se_pudo_guardar", detalle=e), HTTPStatus.INTERNAL_SERVER_ERROR
+                    )
+                return self._json({"ruta": destino, "archivo": os.path.basename(destino)})
 
             m = re.fullmatch(r"/api/job/([0-9a-f]{6,32})/cancelar", ruta)
             if m:

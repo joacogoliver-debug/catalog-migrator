@@ -647,6 +647,69 @@ def test_el_ticket_no_saltea_el_control_de_host(cliente, paquete_listo):
     assert _sin_cabeceras(cliente, res["url"])[0] == 200
 
 
+# --- Guardar el paquete en la carpeta Descargas -----------------------------
+#
+# La ventana propia de macOS descarta las descargas sin avisar: la página pedía
+# el ZIP, el servidor lo entregaba y el cuadro de «Guardar» nunca se abría. Ahí
+# el botón le pide al servidor que copie el paquete a Descargas.
+
+
+@pytest.fixture
+def descargas(tmp_path, monkeypatch):
+    carpeta = tmp_path / "Descargas"
+    carpeta.mkdir()
+    monkeypatch.setattr(backend, "carpeta_descargas", lambda: str(carpeta))
+    return carpeta
+
+
+def test_el_paquete_se_guarda_entero_en_descargas(cliente, paquete_listo, descargas):
+    cod, res = cliente.post(paquete_listo["resultado"]["guardar"], {})
+    assert cod == 200
+    assert os.path.dirname(res["ruta"]) == str(descargas)
+    assert res["archivo"] == paquete_listo["resultado"]["archivo"]
+    assert zipfile.ZipFile(res["ruta"]).testzip() is None
+    assert [p.name for p in descargas.iterdir()] == [res["archivo"]], "sin restos de la copia"
+
+
+def test_guardar_dos_veces_no_pisa_el_archivo_anterior(cliente, paquete_listo, descargas):
+    _c, primero = cliente.post(paquete_listo["resultado"]["guardar"], {})
+    _c, segundo = cliente.post(paquete_listo["resultado"]["guardar"], {})
+    assert primero["ruta"] != segundo["ruta"] and segundo["archivo"].endswith(" (2).zip")
+    assert os.path.exists(primero["ruta"]) and os.path.exists(segundo["ruta"])
+
+
+def test_guardar_exige_el_token_y_un_paquete_que_exista(cliente, paquete_listo, descargas):
+    assert cliente.crudo("POST", paquete_listo["resultado"]["guardar"], datos=b"{}") == 403
+    assert cliente.post("/api/guardar/deadbeef", {})[0] == 404
+    assert list(descargas.iterdir()) == []
+
+
+def test_si_no_se_puede_escribir_en_descargas_se_dice(cliente, paquete_listo, monkeypatch, tmp_path):
+    monkeypatch.setattr(backend, "carpeta_descargas", lambda: str(tmp_path / "no-existe"))
+    cod, res = cliente.post(paquete_listo["resultado"]["guardar"], {})
+    assert cod == 500 and "Descargas" in res["error"]
+
+
+def test_mostrar_en_la_carpeta_solo_abre_lo_que_la_app_guardo(cliente, paquete_listo, descargas, monkeypatch):
+    abiertos = []
+    monkeypatch.setattr(backend, "mostrar_en_carpeta", abiertos.append)
+    ajeno = descargas / "ajeno.zip"
+    ajeno.write_bytes(b"x")
+    assert cliente.post("/api/mostrar", {"ruta": str(ajeno)})[0] == 400
+    _c, res = cliente.post(paquete_listo["resultado"]["guardar"], {})
+    assert cliente.post("/api/mostrar", {"ruta": res["ruta"]})[0] == 200
+    assert abiertos == [res["ruta"]]
+
+
+def test_en_la_ventana_de_mac_el_boton_guarda_en_vez_de_descargar():
+    """El contrato entre la página y el servidor: en macOS, con la ventana
+    propia, «Descargar» va por /api/guardar y no por el enlace."""
+    with open(os.path.join(backend.WEB_DIR, "app.js"), encoding="utf-8") as f:
+        js = f.read()
+    assert "S.config.sistema === 'mac' && window.pywebview" in js
+    assert "if (guardaSola() && r.guardar) return ACCIONES['guardar-en-descargas']();" in js
+
+
 def test_sin_zip_no_se_emite_ticket(cliente):
     assert cliente.post("/api/descargar/deadbeef", {})[0] == 404
 

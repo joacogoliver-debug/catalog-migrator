@@ -9,9 +9,14 @@ persona que usó la app en una Mac no pudo bajar el paquete.
 
 Qué hace. Levanta el servidor con un ZIP de prueba ya registrado, abre la
 ventana nativa y aprieta «Descargar» desde la página, con el mismo código que
-corre el botón. En macOS reemplaza el panel de «Guardar como», que es modal y
-en una máquina de CI no tiene quién lo acepte, por uno que contesta solo con
-una ruta temporal. Después mira si el archivo llegó entero.
+corre el botón, y mira si el archivo llegó entero.
+
+En macOS la ventana descarta las descargas sin avisar (se probó acá mismo: el
+servidor entregaba el ZIP y el cuadro de «Guardar» nunca se abría), así que
+ahí el botón le pide al servidor que copie el paquete a la carpeta Descargas.
+La prueba apunta esa carpeta a una temporal y busca el archivo ahí. El panel
+de «Guardar como» igual se reemplaza por uno que contesta solo: si alguna vez
+la ventana vuelve a usarlo, la prueba no queda colgada esperando un clic.
 
 Además consulta a Deezer y a Apple con el código de la app, porque de ahí
 salen los ISRC, los UPC y las portadas, y eso tampoco se probaba en macOS.
@@ -38,13 +43,13 @@ ARCHIVO = "prueba-paquete.zip"
 APRETAR = """
 (async () => {
   try {
-    S.resultado = { descarga: '/api/descargar/%s', archivo: '%s', bytes: 1 };
+    S.resultado = { descarga: '/api/descargar/%s', guardar: '/api/guardar/%s', archivo: '%s', bytes: 1 };
     await ACCIONES.descargar();
   } catch (e) {
     console.error(e);
   }
 })()
-""" % (TRABAJO, ARCHIVO)
+""" % (TRABAJO, TRABAJO, ARCHIVO)
 
 
 class PanelQueAcepta:
@@ -131,6 +136,7 @@ def probar_descarga():
     url = f"http://127.0.0.1:{srv.server_address[1]}"
 
     en_mac = sys.platform == "darwin"
+    backend.carpeta_descargas = lambda: carpeta
     if en_mac:
         # El módulo de pywebview para macOS llama a `AppKit.NSSavePanel`; se
         # le cambia ese nombre en el propio AppKit, que es el que él importó.
@@ -152,24 +158,36 @@ def probar_descarga():
             time.sleep(8)  # que la página termine de cargar
             # `run_js` y no `evaluate_js`: el segundo envuelve el código en un
             # `eval`, y la página lo prohíbe con su Content-Security-Policy.
+            guardado = os.path.join(carpeta, ARCHIVO)
+            if not en_mac:
+                # Fuera de macOS se prueba primero la salida de emergencia, que
+                # es el mismo guardado que en macOS hace el botón. Primero,
+                # porque después el diálogo de «Guardar» de la descarga deja la
+                # ventana ocupada.
+                ventana.run_js(APRETAR.replace("ACCIONES.descargar()", "ACCIONES['guardar-en-descargas']()"))
+                for _ in range(15):
+                    time.sleep(1)
+                    if os.path.exists(guardado):
+                        break
             ventana.run_js(APRETAR)
             for _ in range(20):
                 time.sleep(1)
-                if os.path.exists(destino) and os.path.getsize(destino) == os.path.getsize(origen):
+                if (en_mac and os.path.exists(guardado)) or pedidos:
                     break
             lineas.append(f"tickets de descarga que pidió la página: {len(tickets)}")
             lineas.append(f"pedidos del ZIP que llegaron al servidor: {len(pedidos)}")
             if en_mac:
                 lineas.append(f"lo que se le pidió al panel de guardar: {PanelQueAcepta.llamadas}")
-                lineas.append(f"archivos en la carpeta de la prueba: {sorted(os.listdir(carpeta))}")
-                llego = os.path.exists(destino)
-                tam = os.path.getsize(destino) if llego else 0
-                lineas.append(f"archivo guardado: {llego}, {tam} de {os.path.getsize(origen)} bytes")
-                resultado["anduvo"] = llego and tam == os.path.getsize(origen)
+                por_la_ventana = True
             else:
-                # Fuera de macOS el diálogo de guardar no se reemplaza: alcanza
+                # El diálogo de guardar no se reemplaza: de la descarga alcanza
                 # con que el pedido del ZIP haya salido de la ventana.
-                resultado["anduvo"] = len(pedidos) == 1
+                por_la_ventana = len(pedidos) == 1
+            llego = os.path.exists(guardado)
+            tam = os.path.getsize(guardado) if llego else 0
+            lineas.append(f"archivos en la carpeta de la prueba: {sorted(os.listdir(carpeta))}")
+            lineas.append(f"archivo guardado: {llego}, {tam} de {os.path.getsize(origen)} bytes")
+            resultado["anduvo"] = por_la_ventana and llego and tam == os.path.getsize(origen)
         except Exception as e:  # noqa: BLE001 (es un informe: se anota y se sigue)
             lineas.append(f"la prueba se cortó: {e!r}")
         finally:
