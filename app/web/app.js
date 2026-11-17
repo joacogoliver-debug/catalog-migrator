@@ -691,6 +691,7 @@ function avisoFaltantes(comp) {
     ? `<p class="small mt-3"><strong>${esc(titulo)}</strong></p><ul class="lista-faltan">${items.map(fila).join('')}</ul>`
     : '');
   const lista = S.verFaltantes ? `
+      <p class="small mt-3">${esc(T('paso2.faltan_detalle'))}</p>
       ${grupo(T('paso2.faltan_relevados'), comp.faltan.filter((f) => f.relevado))}
       ${grupo(T('paso2.faltan_no_relevados'), comp.faltan.filter((f) => !f.relevado))}` : '';
   return alerta('warn', 'alerta', `

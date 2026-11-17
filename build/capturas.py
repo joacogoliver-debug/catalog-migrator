@@ -242,6 +242,10 @@ def catalogo_demo() -> dict[str, Any]:
             "sello": "Cerro Bayo",
             "distribuidora": "DistroKid",
             "tracks": 5,
+            # Uno de sus temas no apareció en YouTube y entró de Deezer.
+            "de_deezer": 1,
+            "origen": "",
+            "artista": "Delta Serrano",
             "views": 188_402,
             "orden_estimado": False,
             "con_isrc": 3,
@@ -308,6 +312,53 @@ def catalogo_demo() -> dict[str, Any]:
             # Como los manda el backend: con códigos pedidos y encontrados no
             # hay aviso, que es el caso de las capturas.
             "codigos": {"pedidos": True, "encontrados": 13, "fallas": 0},
+            # Cómo se lista hoy un canal Topic, y lo que eso deja a la vista:
+            # el buscador, su costo, y lo que Deezer tiene de más. Es lo primero
+            # que ve quien releva un catálogo, así que va en la captura.
+            "via": "busqueda",
+            "temas": 26,
+            "unidades": 203,
+            "total_estimado": 27,
+            "cortado_por_cuota": False,
+            "reusado": False,
+            "sin_distribuidora": 0,
+            "completitud": {
+                "revisada": True,
+                "artista_deezer": "Delta Serrano",
+                "releases": 6,
+                "temas": 3,
+                "sin_respuesta": 0,
+                "isrc_completados": 2,
+                "verificados_por_tracklist": 1,
+                "recortada": False,
+                "faltan": [
+                    {
+                        "deezer_id": 1,
+                        "titulo": "Ducha fría",
+                        "tipo": "ep",
+                        "fecha": "2022-09-02",
+                        "upc": "0885012345685",
+                        "relevado": True,
+                        "total": 5,
+                        "sumado": True,
+                        "temas": [{"titulo": "Vapor", "isrc": "ARCB22400004", "duracion_s": 201}],
+                    },
+                    {
+                        "deezer_id": 2,
+                        "titulo": "Mapa de sal",
+                        "tipo": "single",
+                        "fecha": "2023-03-10",
+                        "upc": "0885012345722",
+                        "relevado": False,
+                        "total": 2,
+                        "sumado": True,
+                        "temas": [
+                            {"titulo": "Mapa de sal", "isrc": "ARCB52300001", "duracion_s": 188},
+                            {"titulo": "Mapa de sal (Acústico)", "isrc": "ARCB52300002", "duracion_s": 204},
+                        ],
+                    },
+                ],
+            },
         },
         "productos": productos,
         "resumen": {"products": 4, "tracks": 27, "with_upc": 3, "with_isrc": 13, "views": 1_428_516},

@@ -517,8 +517,12 @@ const TEXTOS = {
     en: 'Deezer has one recording by {artista} that did not show up on YouTube.',
   },
   'paso2.faltan_cuerpo': {
-    es: 'Las que pude las sumé al catálogo con los datos de Deezer. Las que faltaban en un disco quedaron adentro del disco, en su lugar. Los lanzamientos que no aparecieron están en la tabla marcados «sólo en Deezer» y sin elegir: de ellos no se sabe la distribuidora, y varios pueden ser colaboraciones que están en el canal de otro artista. Revisalos antes de elegirlos.',
-    en: 'Those I could, I added to the catalog with Deezer\'s data. The ones missing from a release went into that release, in their place. Releases that did not show up are in the table flagged "Deezer only" and not selected: their distributor is unknown, and several may be collaborations that sit on another artist\'s channel. Review them before selecting them.',
+    es: 'Las que pude las sumé al catálogo con los datos de Deezer. Lo marcado «sólo en Deezer» quedó sin elegir: revisalo antes de elegirlo.',
+    en: 'Those I could, I added to the catalog with Deezer\'s data. What is flagged "Deezer only" was left unselected: review it before selecting it.',
+  },
+  'paso2.faltan_detalle': {
+    es: 'Lo que faltaba en un disco quedó adentro del disco, en su lugar. De los lanzamientos que no aparecieron no se sabe la distribuidora, y varios pueden ser colaboraciones que están en el canal de otro artista.',
+    en: 'What was missing from a release went into that release, in its place. For releases that did not show up the distributor is unknown, and several may be collaborations that sit on another artist\'s channel.',
   },
   'paso2.faltan_sumado_disco': { es: 'sumado a su disco', en: 'added to its release' },
   'paso2.faltan_sumado_aparte': { es: 'sumado aparte, sin elegir', en: 'added separately, not selected' },

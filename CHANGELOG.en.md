@@ -6,6 +6,15 @@ What changed in every published version. The numbers follow
 [SemVer](https://semver.org/), and the downloads are in
 [Releases](https://github.com/joacogoliver-debug/catalog-migrator/releases).
 
+## [Unreleased]
+
+### Changed
+- **The notice about what Deezer has on top is shorter.** With three notices
+  above it, the release table fell below the first screen. The essentials stay
+  in view and the detail moves inside "Show which".
+- The README screenshots show what a freshly surveyed catalog looks like today:
+  listed through search, with the quota it used and what was added from Deezer.
+
 ## [1.3.0] — 2026-11-17
 
 ### Added

@@ -6,6 +6,15 @@ Lo que cambió en cada versión publicada. Los números siguen
 [SemVer](https://semver.org/lang/es/), y las descargas están en
 [Releases](https://github.com/joacogoliver-debug/catalog-migrator/releases).
 
+## [Sin publicar]
+
+### Cambiado
+- **El aviso de lo que Deezer tiene de más es más corto.** Con tres avisos
+  arriba, la tabla de productos quedaba fuera de la primera pantalla. Lo
+  esencial queda a la vista y el detalle pasa adentro de «Ver cuáles».
+- Las capturas del README muestran cómo se ve hoy un catálogo recién relevado:
+  listado por el buscador, con la cuota que gastó y lo que se sumó de Deezer.
+
 ## [1.3.0] — 2026-11-17
 
 ### Agregado
