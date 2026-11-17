@@ -26,6 +26,19 @@ sumado va marcado, y el release que no apareció queda sin elegir.
 Se probó ir a buscar a YouTube, por nombre, cada release faltante. Cuesta 100
 unidades de cuota por release y en el catálogo real con que se midió no recuperó
 nada dentro del canal: lo que faltaba no estaba ahí. Por eso no se hace solo.
+
+También se midió la otra fuente posible, las listas de álbum que el canal
+muestra en su página («Albums & Singles»), mirándolas con un navegador en dos
+catálogos reales. No sirven para listar. La página pública trae sólo las doce
+primeras; el resto sale de la interfaz interna de la web, que no es la API
+oficial. Y lo que traen no es el catálogo: YouTube pone en cada lugar el video
+que prefiere, que muchas veces es el videoclip del canal oficial o la subida de
+un tercero, sin la línea de la distribuidora. En un catálogo, 102 de los 166
+videos de las listas eran de esos; en el otro, 64 de 272. De los temas del
+propio canal que el buscador no había traído, casi todos eran grabaciones que
+ya estaban con otro video o sumadas desde Deezer: en total aparecieron dos
+grabaciones nuevas sobre más de cuatrocientas. El buscador más la discografía
+de Deezer cubre lo mismo sin salir de las fuentes oficiales.
 """
 
 import re
