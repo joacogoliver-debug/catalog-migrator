@@ -141,3 +141,105 @@ def test_desde_un_canal_comun_cambia_al_topic(youtube_grabado, monkeypatch):
     res = R.relevar("https://www.youtube.com/@daftpunk", "k", with_codes=False)
     assert res["via_topic"] is True
     assert res["channel_title"] == "Daft Punk - Topic"
+
+
+# ============================================================
+# Cómo contesta YouTube hoy por un canal Topic
+# ============================================================
+#
+# Las respuestas de arriba se grabaron en septiembre de 2026, cuando un canal
+# Topic todavía publicaba su lista de subidas. Éstas son del mismo canal dos
+# meses después, grabadas con `build/grabar_fixtures.py --youtube-busqueda`: la
+# lista ya no existe, y el canal se lista por el buscador. Hasta acá eso estaba
+# probado sólo contra respuestas escritas a mano.
+
+
+def _grabada_con_estado(nombre):
+    with open(os.path.join(FIXTURES, nombre), encoding="utf-8") as f:
+        datos = json.load(f)
+    return datos["_grabado"]["estado_http"], datos["respuesta"]
+
+
+def test_la_lista_de_subidas_de_un_topic_contesta_que_no_existe():
+    estado, cuerpo = _grabada_con_estado("youtube_playlist_no_existe.json")
+    assert estado == 404
+    error = R._error_de_youtube(estado, json.dumps(cuerpo))
+    assert error.codigo == "sin_lista", "de este código depende que el canal se liste por el buscador"
+    assert "<code>" not in str(error) and "playlist" not in str(error).lower()
+
+
+def test_la_busqueda_por_canal_trae_lo_que_el_listado_necesita():
+    estado, pagina = _grabada_con_estado("youtube_search_canal.json")
+    assert estado == 200
+    assert pagina["pageInfo"]["totalResults"] > len(pagina["items"]), (
+        "el total es una estimación del canal entero"
+    )
+    assert pagina.get("nextPageToken"), "y hay más páginas"
+    for item in pagina["items"]:
+        assert item["id"]["kind"] == "youtube#video" and len(item["id"]["videoId"]) == 11
+        assert item["snippet"]["channelId"] == TOPIC
+        # De la fecha depende seguir más allá del tope de quinientos resultados.
+        assert item["snippet"]["publishedAt"].endswith("Z")
+    fechas = [i["snippet"]["publishedAt"] for i in pagina["items"]]
+    dias = [f[:10] for f in fechas]
+    assert dias == sorted(dias, reverse=True), "`order=date` devuelve del día más nuevo al más viejo"
+    # Y adentro de un día, mezclados: los temas de un disco se publican con
+    # minutos de diferencia y no llegan en ese orden. De esto depende
+    # `_proximo_corte`: si un día esto deja de ser así, el corte por día sobra.
+    assert fechas != sorted(fechas, reverse=True), "adentro de un mismo día no vienen ordenados"
+
+
+@pytest.fixture
+def topic_de_hoy(monkeypatch):
+    """`api_get` contesta como contesta hoy YouTube por el canal Topic grabado."""
+    estado_404, cuerpo_404 = _grabada_con_estado("youtube_playlist_no_existe.json")
+    _estado, pagina = _grabada_con_estado("youtube_search_canal.json")
+    pedidos = []
+
+    def api_get(endpoint, params, key, intentos=3):
+        pedidos.append((endpoint, dict(params)))
+        if endpoint == "channels":
+            return _respuesta_grabada("youtube_channels.json")
+        if endpoint == "playlistItems":
+            raise R._error_de_youtube(estado_404, json.dumps(cuerpo_404))
+        if endpoint == "search":
+            # La segunda página grabada sería otra; alcanza con ver que el token
+            # se sigue y que lo repetido no se cuenta dos veces.
+            if params.get("pageToken"):
+                ultima = dict(pagina)
+                ultima.pop("nextPageToken", None)
+                return ultima
+            return pagina
+        if endpoint == "videos":
+            return _respuesta_grabada("youtube_videos.json")
+        raise AssertionError(f"pedido inesperado: {endpoint}")
+
+    monkeypatch.setattr(R, "api_get", api_get)
+    return pedidos
+
+
+def test_el_listado_por_buscador_contra_la_respuesta_real(topic_de_hoy):
+    _estado, pagina = _grabada_con_estado("youtube_search_canal.json")
+    ids, info = R.buscar_videos_del_canal(TOPIC, "k")
+    assert ids == [i["id"]["videoId"] for i in pagina["items"]], "en el orden en que llegan y sin repetir"
+    assert info["total_estimado"] == pagina["pageInfo"]["totalResults"]
+    assert info["paginas"] == 2 and info["cortado_por_cuota"] is False
+    busquedas = [p for e, p in topic_de_hoy if e == "search"]
+    assert busquedas[0]["channelId"] == TOPIC and busquedas[0]["order"] == "date"
+    assert busquedas[1]["pageToken"] == pagina["nextPageToken"]
+
+
+def test_relevar_un_topic_de_punta_a_punta_como_contesta_hoy(topic_de_hoy):
+    """El mismo canal que `test_relevar_de_punta_a_punta`, dos meses después: la
+    lista de subidas contesta 404 y el catálogo sale igual, por el buscador."""
+    res = R.relevar(f"https://www.youtube.com/channel/{TOPIC}", "k", with_codes=False)
+    assert set(res) == set(Relevamiento.__annotations__)
+    assert (res["via"], res["channel_id"], res["artist"]) == ("busqueda", TOPIC, "Daft Punk")
+    assert (
+        res["total_estimado"]
+        == _grabada_con_estado("youtube_search_canal.json")[1]["pageInfo"]["totalResults"]
+    )
+    assert len(res["tracks"]) == len(_respuesta_grabada("youtube_videos.json")["items"])
+    assert [e for e, _p in topic_de_hoy][:3] == ["channels", "playlistItems", "search"], (
+        "primero la lista, que es la barata, y recién después el buscador"
+    )

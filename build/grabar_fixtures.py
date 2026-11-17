@@ -4,6 +4,8 @@ tests de contrato.
 
     python build/grabar_fixtures.py              Deezer e iTunes
     python build/grabar_fixtures.py --youtube    la YouTube Data API
+    python build/grabar_fixtures.py --youtube-busqueda
+                                                 cómo se lista hoy un canal Topic
 
 Esto es lo ÚNICO del repositorio que toca la red. Los tests no: leen los
 archivos que este script deja en `tests/fixtures/` y no salen a ningún lado.
@@ -44,6 +46,7 @@ import json
 import os
 import sys
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -79,7 +82,21 @@ def pedir(url, user_agent, cabeceras=None):
         return json.loads(r.read().decode("utf-8"))
 
 
-def guardar(nombre, url, datos):
+def pedir_con_estado(url, user_agent, cabeceras=None):
+    """Como `pedir`, pero un error HTTP no es una falla: es la respuesta.
+
+    Devuelve (código HTTP, cuerpo). Hace falta para grabar lo que YouTube
+    contesta cuando la lista de subidas de un canal Topic no existe.
+    """
+    req = urllib.request.Request(url, headers={"User-Agent": user_agent, **(cabeceras or {})})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return r.status, json.loads(r.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        return e.code, json.loads(e.read().decode("utf-8"))
+
+
+def guardar(nombre, url, datos, estado=None):
     """Deja el JSON con una cabecera que dice de dónde salió y cuándo."""
     os.makedirs(DESTINO, exist_ok=True)
     ruta = os.path.join(DESTINO, nombre)
@@ -91,6 +108,8 @@ def guardar(nombre, url, datos):
         },
         "respuesta": datos,
     }
+    if estado is not None:
+        envoltorio["_grabado"]["estado_http"] = estado
     with open(ruta, "w", encoding="utf-8", newline="\n") as f:
         json.dump(envoltorio, f, ensure_ascii=False, indent=1, sort_keys=False)
         f.write("\n")
@@ -144,8 +163,59 @@ def grabar_youtube():
     yt("youtube_channels_vacio.json", "channels", part="snippet,contentDetails", id="UC" + "0" * 22)
 
 
+def grabar_youtube_busqueda():
+    """Cómo se lista un canal Topic desde fines de 2026.
+
+    YouTube dejó de publicar la lista de subidas de los canales Topic: la API
+    contesta 404 `playlistNotFound`, y el canal se lista por el buscador. Se
+    graban las dos cosas, la lista que no existe y una página del buscador, sin
+    tocar las respuestas de `--youtube`, que son de cuando la lista existía y
+    siguen describiendo a un canal común.
+
+    Cuesta unas cien unidades de cuota: el buscador cobra cien por página, sea
+    del tamaño que sea.
+    """
+    clave = (os.environ.get("MIGRADOR_CLAVE_YT") or os.environ.get("YOUTUBE_API_KEY") or "").strip()
+    if not clave:
+        sys.exit("Falta la clave: poné MIGRADOR_CLAVE_YT o YOUTUBE_API_KEY en el entorno.")
+
+    def yt(nombre, endpoint, **params):
+        url = f"{YOUTUBE}/{endpoint}?{urllib.parse.urlencode(params)}"
+        estado, datos = pedir_con_estado(
+            url, UA_DEEZER, {"X-Goog-Api-Key": clave, "Accept": "application/json"}
+        )
+        if clave in url or clave in json.dumps(datos):
+            sys.exit(f"La clave apareció en {nombre}: no lo guardo.")
+        guardar(nombre, url, datos, estado)
+        return estado, datos
+
+    estado, _ = yt(
+        "youtube_playlist_no_existe.json",
+        "playlistItems",
+        part="contentDetails",
+        maxResults=50,
+        playlistId="UU" + TOPIC[2:],
+    )
+    if estado == 200:
+        print("    OJO: la lista de subidas del Topic volvió a existir. Avisar: el listado")
+        print("    por el buscador deja de hacer falta, y estas fixtures dejan de ser ciertas.")
+    yt(
+        "youtube_search_canal.json",
+        "search",
+        part="snippet",
+        channelId=TOPIC,
+        type="video",
+        order="date",
+        maxResults=POR_PAGINA,
+    )
+
+
 def main():
     print(f">>> Grabando fixtures en {os.path.relpath(DESTINO, RAIZ)}")
+    if "--youtube-busqueda" in sys.argv:
+        grabar_youtube_busqueda()
+        print("\n    Listo. Revisá el diff antes de commitear.")
+        return 0
     if "--youtube" in sys.argv:
         grabar_youtube()
         print("\n    Listo. Revisá el diff antes de commitear.")

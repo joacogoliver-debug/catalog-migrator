@@ -49,6 +49,12 @@ What changed in every published version. The numbers follow
   and a third as long.
 
 ### Fixed
+- **On a catalog with more than 500 tracks, videos could be skipped.** YouTube
+  search orders by day, not by second: the tracks of a release, published
+  minutes apart, come back shuffled. When a pass was cut off partway through a
+  day, the next one resumed from the time of the oldest video seen and skipped
+  those from that same day that had not arrived yet. It now resumes from the end
+  of that day. This showed up while recording real search answers for the tests.
 - **A release with more than 25 tracks never had its order confirmed.** Deezer
   embeds only the first twenty-five tracks in the album record, and the order
   was built from that list: from track 26 on, nothing was placed. The whole list
@@ -78,6 +84,13 @@ What changed in every published version. The numbers follow
   nothing was said. They are now tied by the Deezer album their tracks were
   placed on, and if both are selected the error says what to do: migrate just
   one.
+
+### For developers
+- **Listing through search has its recorded contract.** What YouTube answers
+  today for a Topic channel (the uploads list that does not exist and one page
+  of search) is in `tests/fixtures/`, recorded with
+  `python build/grabar_fixtures.py --youtube-busqueda`. Until now that path was
+  only tested against hand-written answers.
 
 ## [1.2.0] — 2026-11-16
 

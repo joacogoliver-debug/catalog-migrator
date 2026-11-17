@@ -21,7 +21,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
-from datetime import date
+from datetime import date, timedelta
 from difflib import SequenceMatcher
 
 from .contratos import (
@@ -405,6 +405,30 @@ TOPE_BUSQUEDA = 450
 MAX_PASADAS_BUSQUEDA = 40  # 40 pasadas de ~500: unos 20.000 temas
 
 
+def _proximo_corte(mas_viejo, mas_nuevo):
+    """Desde qué fecha sigue la próxima pasada del buscador.
+
+    `order=date` ordena por día, no por segundo: los temas de un disco, que se
+    publican con minutos de diferencia, llegan mezclados entre ellos. Si la
+    pasada se corta en la mitad de un día, el más viejo que se vio no es el
+    último de ese día, y seguir desde su hora exacta saltea a los que se
+    publicaron unos minutos después y todavía no habían llegado. Por eso se
+    sigue desde el final de ese día: se repiten unos pocos, que se descartan, y
+    no se pierde ninguno.
+
+    Cuando toda la pasada cayó en un mismo día (un catálogo entero subido de
+    una vez) eso no avanzaría, y se sigue desde la hora exacta, que es lo mejor
+    que hay: lo que se saltee ahí lo muestra la comparación con Deezer.
+    """
+    if mas_nuevo[:10] == mas_viejo[:10]:
+        return mas_viejo
+    try:
+        dia = date.fromisoformat(mas_viejo[:10])
+    except ValueError:
+        return mas_viejo
+    return f"{dia + timedelta(days=1):%Y-%m-%d}T00:00:00Z"
+
+
 def buscar_videos_del_canal(channel_id, key, avance=None, consulta=""):
     """Los ids de los videos de un canal, sacados del BUSCADOR de YouTube.
 
@@ -427,8 +451,8 @@ def buscar_videos_del_canal(channel_id, key, avance=None, consulta=""):
         vuelve a buscar, por nombre, lo que falte.
 
     Se pide en orden de fecha para poder seguir más allá del tope de ~500 de una
-    consulta: cuando una pasada llega al tope, la siguiente arranca en la fecha
-    del video más viejo que se vio (`publishedBefore`).
+    consulta: cuando una pasada llega al tope, la siguiente arranca donde
+    terminó ésta (`publishedBefore`, ver `_proximo_corte`).
 
     Si la cuota se acaba en el medio NO se tira lo que ya se pagó: devuelve lo
     que alcanzó a listar y lo marca en `info["cortado_por_cuota"]`.
@@ -446,7 +470,7 @@ def buscar_videos_del_canal(channel_id, key, avance=None, consulta=""):
     antes = None
 
     for _ in range(MAX_PASADAS_BUSQUEDA):
-        en_pasada, nuevos, mas_viejo = 0, 0, None
+        en_pasada, nuevos, mas_viejo, mas_nuevo = 0, 0, None, ""
         page = None
         while True:
             params = {"part": "snippet", "channelId": channel_id, "type": "video", "maxResults": 50}
@@ -479,6 +503,7 @@ def buscar_videos_del_canal(channel_id, key, avance=None, consulta=""):
                 fecha = (it.get("snippet") or {}).get("publishedAt") or ""
                 if fecha and (mas_viejo is None or fecha < mas_viejo):
                     mas_viejo = fecha
+                mas_nuevo = max(mas_nuevo, fecha)
                 if vid not in vistos:
                     vistos[vid] = fecha
                     nuevos += 1
@@ -493,7 +518,7 @@ def buscar_videos_del_canal(channel_id, key, avance=None, consulta=""):
         # Una búsqueda por texto nunca sigue: es puntual por definición.
         if consulta or en_pasada < TOPE_BUSQUEDA or not nuevos or not mas_viejo:
             break
-        antes = mas_viejo
+        antes = _proximo_corte(mas_viejo, mas_nuevo)
 
     return list(vistos), info
 

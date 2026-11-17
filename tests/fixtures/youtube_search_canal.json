@@ -1,0 +1,548 @@
+{
+ "_grabado": {
+  "url": "https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=UCRr1xG_2WIDs18a6cIiCxeA&type=video&order=date&maxResults=12",
+  "fecha": "2026-11-17",
+  "como": "python build/grabar_fixtures.py",
+  "estado_http": 200
+ },
+ "respuesta": {
+  "kind": "youtube#searchListResponse",
+  "etag": "aZ1oCZ1rvVd99Or_2J75OjLJIWs",
+  "nextPageToken": "CAwQAA",
+  "regionCode": "AR",
+  "pageInfo": {
+   "totalResults": 296,
+   "resultsPerPage": 12
+  },
+  "items": [
+   {
+    "kind": "youtube#searchResult",
+    "etag": "2gBbltcgmI7Z3xNC4iolpPY_F3I",
+    "id": {
+     "kind": "youtube#video",
+     "videoId": "uSFXOBaqiR8"
+    },
+    "snippet": {
+     "publishedAt": "2024-12-12T10:01:48Z",
+     "channelId": "UCRr1xG_2WIDs18a6cIiCxeA",
+     "title": "Veridis Quo (Edit)",
+     "description": "Provided to YouTube by Daft Life Ltd. Veridis Quo (Edit) · Daft Punk Veridis Quo ℗ 2021 ℗ Distributed exclusively by Warner ...",
+     "thumbnails": {
+      "default": {
+       "url": "https://i.ytimg.com/vi/uSFXOBaqiR8/default.jpg",
+       "width": 120,
+       "height": 90
+      },
+      "medium": {
+       "url": "https://i.ytimg.com/vi/uSFXOBaqiR8/mqdefault.jpg",
+       "width": 320,
+       "height": 180
+      },
+      "high": {
+       "url": "https://i.ytimg.com/vi/uSFXOBaqiR8/hqdefault.jpg",
+       "width": 480,
+       "height": 360
+      },
+      "standard": {
+       "url": "https://i.ytimg.com/vi/uSFXOBaqiR8/sddefault.jpg",
+       "width": 640,
+       "height": 480
+      },
+      "maxres": {
+       "url": "https://i.ytimg.com/vi/uSFXOBaqiR8/maxresdefault.jpg",
+       "width": 1280,
+       "height": 720
+      }
+     },
+     "channelTitle": "Daft Punk - Topic",
+     "liveBroadcastContent": "none",
+     "publishTime": "2024-12-12T10:01:48Z"
+    }
+   },
+   {
+    "kind": "youtube#searchResult",
+    "etag": "Hs2fgFYpyHX2gPESI2z7hct6sks",
+    "id": {
+     "kind": "youtube#video",
+     "videoId": "MnP9xZpVZbs"
+    },
+    "snippet": {
+     "publishedAt": "2023-11-16T10:02:41Z",
+     "channelId": "UCRr1xG_2WIDs18a6cIiCxeA",
+     "title": "Motherboard (Drumless Edition)",
+     "description": "Provided to YouTube by Legacy Recordings Motherboard (Drumless Edition) · Daft Punk Random Access Memories (Drumless ...",
+     "thumbnails": {
+      "default": {
+       "url": "https://i.ytimg.com/vi/MnP9xZpVZbs/default.jpg",
+       "width": 120,
+       "height": 90
+      },
+      "medium": {
+       "url": "https://i.ytimg.com/vi/MnP9xZpVZbs/mqdefault.jpg",
+       "width": 320,
+       "height": 180
+      },
+      "high": {
+       "url": "https://i.ytimg.com/vi/MnP9xZpVZbs/hqdefault.jpg",
+       "width": 480,
+       "height": 360
+      },
+      "standard": {
+       "url": "https://i.ytimg.com/vi/MnP9xZpVZbs/sddefault.jpg",
+       "width": 640,
+       "height": 480
+      },
+      "maxres": {
+       "url": "https://i.ytimg.com/vi/MnP9xZpVZbs/maxresdefault.jpg",
+       "width": 1280,
+       "height": 720
+      }
+     },
+     "channelTitle": "Daft Punk - Topic",
+     "liveBroadcastContent": "none",
+     "publishTime": "2023-11-16T10:02:41Z"
+    }
+   },
+   {
+    "kind": "youtube#searchResult",
+    "etag": "UlqNY8Ec-GDRS1ikwyB1uGgR70w",
+    "id": {
+     "kind": "youtube#video",
+     "videoId": "JHh0VzD8ft0"
+    },
+    "snippet": {
+     "publishedAt": "2023-11-16T10:04:26Z",
+     "channelId": "UCRr1xG_2WIDs18a6cIiCxeA",
+     "title": "Lose Yourself to Dance (Drumless Edition) (feat. Pharrell Williams)",
+     "description": "Provided to YouTube by Legacy Recordings Lose Yourself to Dance (Drumless Edition) (feat. Pharrell Williams) · Daft Punk ...",
+     "thumbnails": {
+      "default": {
+       "url": "https://i.ytimg.com/vi/JHh0VzD8ft0/default.jpg",
+       "width": 120,
+       "height": 90
+      },
+      "medium": {
+       "url": "https://i.ytimg.com/vi/JHh0VzD8ft0/mqdefault.jpg",
+       "width": 320,
+       "height": 180
+      },
+      "high": {
+       "url": "https://i.ytimg.com/vi/JHh0VzD8ft0/hqdefault.jpg",
+       "width": 480,
+       "height": 360
+      },
+      "standard": {
+       "url": "https://i.ytimg.com/vi/JHh0VzD8ft0/sddefault.jpg",
+       "width": 640,
+       "height": 480
+      },
+      "maxres": {
+       "url": "https://i.ytimg.com/vi/JHh0VzD8ft0/maxresdefault.jpg",
+       "width": 1280,
+       "height": 720
+      }
+     },
+     "channelTitle": "Daft Punk - Topic",
+     "liveBroadcastContent": "none",
+     "publishTime": "2023-11-16T10:04:26Z"
+    }
+   },
+   {
+    "kind": "youtube#searchResult",
+    "etag": "4DBRP6-tMOkVDETE8izRxjlrjyk",
+    "id": {
+     "kind": "youtube#video",
+     "videoId": "CAoX8vchMqU"
+    },
+    "snippet": {
+     "publishedAt": "2023-11-16T10:04:38Z",
+     "channelId": "UCRr1xG_2WIDs18a6cIiCxeA",
+     "title": "Giorgio by Moroder (Drumless Edition)",
+     "description": "Provided to YouTube by Legacy Recordings Giorgio by Moroder (Drumless Edition) · Daft Punk Random Access Memories ...",
+     "thumbnails": {
+      "default": {
+       "url": "https://i.ytimg.com/vi/CAoX8vchMqU/default.jpg",
+       "width": 120,
+       "height": 90
+      },
+      "medium": {
+       "url": "https://i.ytimg.com/vi/CAoX8vchMqU/mqdefault.jpg",
+       "width": 320,
+       "height": 180
+      },
+      "high": {
+       "url": "https://i.ytimg.com/vi/CAoX8vchMqU/hqdefault.jpg",
+       "width": 480,
+       "height": 360
+      },
+      "standard": {
+       "url": "https://i.ytimg.com/vi/CAoX8vchMqU/sddefault.jpg",
+       "width": 640,
+       "height": 480
+      },
+      "maxres": {
+       "url": "https://i.ytimg.com/vi/CAoX8vchMqU/maxresdefault.jpg",
+       "width": 1280,
+       "height": 720
+      }
+     },
+     "channelTitle": "Daft Punk - Topic",
+     "liveBroadcastContent": "none",
+     "publishTime": "2023-11-16T10:04:38Z"
+    }
+   },
+   {
+    "kind": "youtube#searchResult",
+    "etag": "r6MC_CEn7c_2IwkmfJzmTKhwbD8",
+    "id": {
+     "kind": "youtube#video",
+     "videoId": "nwWVxPaOdN4"
+    },
+    "snippet": {
+     "publishedAt": "2023-11-16T10:02:43Z",
+     "channelId": "UCRr1xG_2WIDs18a6cIiCxeA",
+     "title": "Get Lucky (Drumless Edition) (ft. Pharrell Williams and Nile Rodgers)",
+     "description": "Provided to YouTube by Legacy Recordings Get Lucky (Drumless Edition) (ft. Pharrell Williams and Nile Rodgers) · Daft Punk ...",
+     "thumbnails": {
+      "default": {
+       "url": "https://i.ytimg.com/vi/nwWVxPaOdN4/default.jpg",
+       "width": 120,
+       "height": 90
+      },
+      "medium": {
+       "url": "https://i.ytimg.com/vi/nwWVxPaOdN4/mqdefault.jpg",
+       "width": 320,
+       "height": 180
+      },
+      "high": {
+       "url": "https://i.ytimg.com/vi/nwWVxPaOdN4/hqdefault.jpg",
+       "width": 480,
+       "height": 360
+      },
+      "standard": {
+       "url": "https://i.ytimg.com/vi/nwWVxPaOdN4/sddefault.jpg",
+       "width": 640,
+       "height": 480
+      },
+      "maxres": {
+       "url": "https://i.ytimg.com/vi/nwWVxPaOdN4/maxresdefault.jpg",
+       "width": 1280,
+       "height": 720
+      }
+     },
+     "channelTitle": "Daft Punk - Topic",
+     "liveBroadcastContent": "none",
+     "publishTime": "2023-11-16T10:02:43Z"
+    }
+   },
+   {
+    "kind": "youtube#searchResult",
+    "etag": "3ribTy2MHDhvzeQsgZcj3BUPzsQ",
+    "id": {
+     "kind": "youtube#video",
+     "videoId": "EpZYI2xYwM8"
+    },
+    "snippet": {
+     "publishedAt": "2023-11-16T10:03:25Z",
+     "channelId": "UCRr1xG_2WIDs18a6cIiCxeA",
+     "title": "Instant Crush (Drumless Edition) (feat. Julian Casablancas)",
+     "description": "Provided to YouTube by Legacy Recordings Instant Crush (Drumless Edition) (feat. Julian Casablancas) · Daft Punk · Julian ...",
+     "thumbnails": {
+      "default": {
+       "url": "https://i.ytimg.com/vi/EpZYI2xYwM8/default.jpg",
+       "width": 120,
+       "height": 90
+      },
+      "medium": {
+       "url": "https://i.ytimg.com/vi/EpZYI2xYwM8/mqdefault.jpg",
+       "width": 320,
+       "height": 180
+      },
+      "high": {
+       "url": "https://i.ytimg.com/vi/EpZYI2xYwM8/hqdefault.jpg",
+       "width": 480,
+       "height": 360
+      },
+      "standard": {
+       "url": "https://i.ytimg.com/vi/EpZYI2xYwM8/sddefault.jpg",
+       "width": 640,
+       "height": 480
+      },
+      "maxres": {
+       "url": "https://i.ytimg.com/vi/EpZYI2xYwM8/maxresdefault.jpg",
+       "width": 1280,
+       "height": 720
+      }
+     },
+     "channelTitle": "Daft Punk - Topic",
+     "liveBroadcastContent": "none",
+     "publishTime": "2023-11-16T10:03:25Z"
+    }
+   },
+   {
+    "kind": "youtube#searchResult",
+    "etag": "xYWWHaunGF-ySmazsncmLgxYV64",
+    "id": {
+     "kind": "youtube#video",
+     "videoId": "7R8hVh7wtMQ"
+    },
+    "snippet": {
+     "publishedAt": "2023-11-16T10:03:04Z",
+     "channelId": "UCRr1xG_2WIDs18a6cIiCxeA",
+     "title": "Fragments of Time (Drumless Edition) (feat. Todd Edwards)",
+     "description": "Provided to YouTube by Legacy Recordings Fragments of Time (Drumless Edition) (feat. Todd Edwards) · Daft Punk · Todd ...",
+     "thumbnails": {
+      "default": {
+       "url": "https://i.ytimg.com/vi/7R8hVh7wtMQ/default.jpg",
+       "width": 120,
+       "height": 90
+      },
+      "medium": {
+       "url": "https://i.ytimg.com/vi/7R8hVh7wtMQ/mqdefault.jpg",
+       "width": 320,
+       "height": 180
+      },
+      "high": {
+       "url": "https://i.ytimg.com/vi/7R8hVh7wtMQ/hqdefault.jpg",
+       "width": 480,
+       "height": 360
+      },
+      "standard": {
+       "url": "https://i.ytimg.com/vi/7R8hVh7wtMQ/sddefault.jpg",
+       "width": 640,
+       "height": 480
+      },
+      "maxres": {
+       "url": "https://i.ytimg.com/vi/7R8hVh7wtMQ/maxresdefault.jpg",
+       "width": 1280,
+       "height": 720
+      }
+     },
+     "channelTitle": "Daft Punk - Topic",
+     "liveBroadcastContent": "none",
+     "publishTime": "2023-11-16T10:03:04Z"
+    }
+   },
+   {
+    "kind": "youtube#searchResult",
+    "etag": "fme6LtCxFBrPY-t6YwjLJDqCjQA",
+    "id": {
+     "kind": "youtube#video",
+     "videoId": "AiYkCa8nbj0"
+    },
+    "snippet": {
+     "publishedAt": "2023-11-16T10:01:34Z",
+     "channelId": "UCRr1xG_2WIDs18a6cIiCxeA",
+     "title": "Beyond (Drumless Edition)",
+     "description": "Provided to YouTube by Legacy Recordings Beyond (Drumless Edition) · Daft Punk Random Access Memories (Drumless ...",
+     "thumbnails": {
+      "default": {
+       "url": "https://i.ytimg.com/vi/AiYkCa8nbj0/default.jpg",
+       "width": 120,
+       "height": 90
+      },
+      "medium": {
+       "url": "https://i.ytimg.com/vi/AiYkCa8nbj0/mqdefault.jpg",
+       "width": 320,
+       "height": 180
+      },
+      "high": {
+       "url": "https://i.ytimg.com/vi/AiYkCa8nbj0/hqdefault.jpg",
+       "width": 480,
+       "height": 360
+      },
+      "standard": {
+       "url": "https://i.ytimg.com/vi/AiYkCa8nbj0/sddefault.jpg",
+       "width": 640,
+       "height": 480
+      },
+      "maxres": {
+       "url": "https://i.ytimg.com/vi/AiYkCa8nbj0/maxresdefault.jpg",
+       "width": 1280,
+       "height": 720
+      }
+     },
+     "channelTitle": "Daft Punk - Topic",
+     "liveBroadcastContent": "none",
+     "publishTime": "2023-11-16T10:01:34Z"
+    }
+   },
+   {
+    "kind": "youtube#searchResult",
+    "etag": "XEu60oU6BTC6bDRcAIjU5JVaKSI",
+    "id": {
+     "kind": "youtube#video",
+     "videoId": "gPdua5JqBgw"
+    },
+    "snippet": {
+     "publishedAt": "2023-11-16T10:01:41Z",
+     "channelId": "UCRr1xG_2WIDs18a6cIiCxeA",
+     "title": "Contact (Drumless Edition)",
+     "description": "Provided to YouTube by Legacy Recordings Contact (Drumless Edition) · Daft Punk Random Access Memories (Drumless ...",
+     "thumbnails": {
+      "default": {
+       "url": "https://i.ytimg.com/vi/gPdua5JqBgw/default.jpg",
+       "width": 120,
+       "height": 90
+      },
+      "medium": {
+       "url": "https://i.ytimg.com/vi/gPdua5JqBgw/mqdefault.jpg",
+       "width": 320,
+       "height": 180
+      },
+      "high": {
+       "url": "https://i.ytimg.com/vi/gPdua5JqBgw/hqdefault.jpg",
+       "width": 480,
+       "height": 360
+      },
+      "standard": {
+       "url": "https://i.ytimg.com/vi/gPdua5JqBgw/sddefault.jpg",
+       "width": 640,
+       "height": 480
+      },
+      "maxres": {
+       "url": "https://i.ytimg.com/vi/gPdua5JqBgw/maxresdefault.jpg",
+       "width": 1280,
+       "height": 720
+      }
+     },
+     "channelTitle": "Daft Punk - Topic",
+     "liveBroadcastContent": "none",
+     "publishTime": "2023-11-16T10:01:41Z"
+    }
+   },
+   {
+    "kind": "youtube#searchResult",
+    "etag": "foqs9FXpAyqBfuormR-oHCWN1Q8",
+    "id": {
+     "kind": "youtube#video",
+     "videoId": "1-V7b70sCzQ"
+    },
+    "snippet": {
+     "publishedAt": "2023-11-16T10:01:14Z",
+     "channelId": "UCRr1xG_2WIDs18a6cIiCxeA",
+     "title": "Doin&#39; it Right (Drumless Edition) (feat. Panda Bear)",
+     "description": "Provided to YouTube by Legacy Recordings Doin' it Right (Drumless Edition) (feat. Panda Bear) · Daft Punk · Panda Bear ...",
+     "thumbnails": {
+      "default": {
+       "url": "https://i.ytimg.com/vi/1-V7b70sCzQ/default.jpg",
+       "width": 120,
+       "height": 90
+      },
+      "medium": {
+       "url": "https://i.ytimg.com/vi/1-V7b70sCzQ/mqdefault.jpg",
+       "width": 320,
+       "height": 180
+      },
+      "high": {
+       "url": "https://i.ytimg.com/vi/1-V7b70sCzQ/hqdefault.jpg",
+       "width": 480,
+       "height": 360
+      },
+      "standard": {
+       "url": "https://i.ytimg.com/vi/1-V7b70sCzQ/sddefault.jpg",
+       "width": 640,
+       "height": 480
+      },
+      "maxres": {
+       "url": "https://i.ytimg.com/vi/1-V7b70sCzQ/maxresdefault.jpg",
+       "width": 1280,
+       "height": 720
+      }
+     },
+     "channelTitle": "Daft Punk - Topic",
+     "liveBroadcastContent": "none",
+     "publishTime": "2023-11-16T10:01:14Z"
+    }
+   },
+   {
+    "kind": "youtube#searchResult",
+    "etag": "OwTw3-jHcMht8BHKH9m_Og8o6M4",
+    "id": {
+     "kind": "youtube#video",
+     "videoId": "prmvo0uprc0"
+    },
+    "snippet": {
+     "publishedAt": "2023-11-16T10:02:01Z",
+     "channelId": "UCRr1xG_2WIDs18a6cIiCxeA",
+     "title": "Within (Drumless Edition)",
+     "description": "Provided to YouTube by Legacy Recordings Within (Drumless Edition) · Daft Punk Random Access Memories (Drumless Edition) ...",
+     "thumbnails": {
+      "default": {
+       "url": "https://i.ytimg.com/vi/prmvo0uprc0/default.jpg",
+       "width": 120,
+       "height": 90
+      },
+      "medium": {
+       "url": "https://i.ytimg.com/vi/prmvo0uprc0/mqdefault.jpg",
+       "width": 320,
+       "height": 180
+      },
+      "high": {
+       "url": "https://i.ytimg.com/vi/prmvo0uprc0/hqdefault.jpg",
+       "width": 480,
+       "height": 360
+      },
+      "standard": {
+       "url": "https://i.ytimg.com/vi/prmvo0uprc0/sddefault.jpg",
+       "width": 640,
+       "height": 480
+      },
+      "maxres": {
+       "url": "https://i.ytimg.com/vi/prmvo0uprc0/maxresdefault.jpg",
+       "width": 1280,
+       "height": 720
+      }
+     },
+     "channelTitle": "Daft Punk - Topic",
+     "liveBroadcastContent": "none",
+     "publishTime": "2023-11-16T10:02:01Z"
+    }
+   },
+   {
+    "kind": "youtube#searchResult",
+    "etag": "qsFhVVerAxlRbc26jJf0oLOVx1Y",
+    "id": {
+     "kind": "youtube#video",
+     "videoId": "asPohQE-tB4"
+    },
+    "snippet": {
+     "publishedAt": "2023-11-16T10:01:34Z",
+     "channelId": "UCRr1xG_2WIDs18a6cIiCxeA",
+     "title": "Give Life Back to Music (Drumless Edition)",
+     "description": "Provided to YouTube by Legacy Recordings Give Life Back to Music (Drumless Edition) · Daft Punk Random Access Memories ...",
+     "thumbnails": {
+      "default": {
+       "url": "https://i.ytimg.com/vi/asPohQE-tB4/default.jpg",
+       "width": 120,
+       "height": 90
+      },
+      "medium": {
+       "url": "https://i.ytimg.com/vi/asPohQE-tB4/mqdefault.jpg",
+       "width": 320,
+       "height": 180
+      },
+      "high": {
+       "url": "https://i.ytimg.com/vi/asPohQE-tB4/hqdefault.jpg",
+       "width": 480,
+       "height": 360
+      },
+      "standard": {
+       "url": "https://i.ytimg.com/vi/asPohQE-tB4/sddefault.jpg",
+       "width": 640,
+       "height": 480
+      },
+      "maxres": {
+       "url": "https://i.ytimg.com/vi/asPohQE-tB4/maxresdefault.jpg",
+       "width": 1280,
+       "height": 720
+      }
+     },
+     "channelTitle": "Daft Punk - Topic",
+     "liveBroadcastContent": "none",
+     "publishTime": "2023-11-16T10:01:34Z"
+    }
+   }
+  ]
+ }
+}

@@ -47,6 +47,13 @@ Lo que cambió en cada versión publicada. Los números siguen
   como el tema y duran un tercio.
 
 ### Corregido
+- **En un catálogo de más de 500 temas se podían saltear videos.** El buscador
+  de YouTube ordena por día, no por segundo: los temas de un disco, que se
+  publican con minutos de diferencia, llegan mezclados. Cuando una pasada se
+  cortaba a mitad de un día, la siguiente seguía desde la hora del más viejo
+  que se había visto y se salteaba a los de ese mismo día que todavía no habían
+  llegado. Ahora sigue desde el final de ese día. Se vio al grabar respuestas
+  reales del buscador para los tests.
 - **Un disco de más de 25 temas nunca tenía el orden confirmado.** Deezer mete
   en la ficha del álbum sólo sus primeros veinticinco temas, y el orden se
   armaba con esa lista: del 26 en adelante no se ubicaban. Ahora se pide la
@@ -75,6 +82,13 @@ Lo que cambió en cada versión publicada. Los números siguen
   Canciones…» por otra eran el mismo release, con el mismo UPC, y no se
   avisaba. Ahora los une el álbum de Deezer donde se ubicaron sus temas, y si
   se eligen los dos el error dice qué hacer: migrar uno solo.
+
+### Para quien desarrolla
+- **El listado por buscador tiene su contrato grabado.** Lo que YouTube contesta
+  hoy por un canal Topic (la lista de subidas que no existe y una página del
+  buscador) está en `tests/fixtures/`, grabado con
+  `python build/grabar_fixtures.py --youtube-busqueda`. Hasta acá esa vía se
+  probaba sólo contra respuestas escritas a mano.
 
 ## [1.2.0] — 2026-11-16
 

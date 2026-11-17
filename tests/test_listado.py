@@ -25,7 +25,7 @@ Las respuestas imitan la forma real de la API, tal como contestaba el
 import io
 import json
 import urllib.error
-from typing import Any
+from typing import Any, override
 
 import pytest
 
@@ -245,6 +245,44 @@ def test_el_buscador_sigue_mas_alla_de_su_tope_de_quinientos(api):
     assert cursores[0] is None and len(cursores) == 3, "tres pasadas: 500, 500 y el resto"
     assert all(cursores[1:]), "cada pasada nueva arranca en la fecha del más viejo que se vio"
     assert info["cortado_por_cuota"] is False
+
+
+class FalsaAPIPorDia(FalsaAPI):
+    """Como ordena YouTube de verdad: por día, y adentro del día mezclado.
+
+    Ciento veinte videos por día. Adentro de cada día llegan del más temprano
+    al más tardío, que es al revés de lo que haría un orden estricto por fecha.
+    """
+
+    @override
+    def fecha(self, i):
+        dia, n = 28 - i // 120, i % 120
+        return f"2025-01-{dia:02d}T10:{n // 60:02d}:{n % 60:02d}Z"
+
+
+def test_el_corte_de_una_pasada_no_saltea_los_videos_del_mismo_dia(monkeypatch):
+    """Visto en las respuestas reales: `order=date` ordena por día y adentro del
+    día mezcla. Si la pasada se corta a mitad de un día, seguir desde la hora
+    del más viejo que se vio se saltea a los que se publicaron minutos después
+    y todavía no habían llegado. Acá el corte cae en el video 500, veinte
+    videos adentro de un día de ciento veinte."""
+    falsa = FalsaAPIPorDia(n=700)
+    monkeypatch.setattr(R, "api_get", falsa)
+    ids, _info = R.buscar_videos_del_canal(CANAL, "k")
+    assert len(ids) == 700 and len(set(ids)) == 700, "todos, también los cien que quedaban de ese día"
+    cortes = [p.get("publishedBefore") for _e, p in falsa.llamadas if not p.get("pageToken")]
+    assert cortes == [None, "2025-01-25T00:00:00Z"], (
+        "la segunda pasada arranca al final del día donde cortó la primera"
+    )
+
+
+def test_un_catalogo_subido_en_un_solo_dia_sigue_desde_la_hora(api):
+    """Si toda la pasada cae en un día, cortar por día no avanzaría nunca."""
+    falsa = api(n=1230)  # la de siempre: un video por minuto, todos el mismo día
+    ids, _info = R.buscar_videos_del_canal(CANAL, "k")
+    assert len(ids) == 1230
+    cortes = [p.get("publishedBefore") for _e, p in falsa.llamadas if not p.get("pageToken")]
+    assert all("T00:00:00Z" not in c for c in cortes[1:]), cortes
 
 
 def test_un_catalogo_chico_no_paga_una_pasada_de_mas(api):

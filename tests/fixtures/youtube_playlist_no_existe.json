@@ -1,0 +1,23 @@
+{
+ "_grabado": {
+  "url": "https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails&maxResults=50&playlistId=UURr1xG_2WIDs18a6cIiCxeA",
+  "fecha": "2026-11-17",
+  "como": "python build/grabar_fixtures.py",
+  "estado_http": 404
+ },
+ "respuesta": {
+  "error": {
+   "code": 404,
+   "message": "The playlist identified with the request's <code>playlistId</code> parameter cannot be found.",
+   "errors": [
+    {
+     "message": "The playlist identified with the request's <code>playlistId</code> parameter cannot be found.",
+     "domain": "youtube.playlistItem",
+     "reason": "playlistNotFound",
+     "location": "playlistId",
+     "locationType": "parameter"
+    }
+   ]
+  }
+ }
+}
