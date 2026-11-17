@@ -338,7 +338,7 @@ def test_la_validacion_avisa_del_disco_incompleto_sin_volverlo_error(hacer_track
     res = V.validar(productos, "Los del Ejemplo")
     (aviso,) = [h for h in res["hallazgos"] if h["codigo"] == "album_incompleto"]
     assert aviso["nivel"] == "aviso" and aviso["producto"] == "Disco"
-    assert "Dos" in aviso["mensaje"]
+    assert "(1): Dos." in aviso["mensaje"], "la cuenta va entre paréntesis: no hay «1 temas»"
     assert not [h for h in res["errores"] if h["codigo"] == "album_incompleto"]
 
 
@@ -350,12 +350,13 @@ def test_el_reporte_dice_como_se_listo_y_que_falta(hacer_track, deezer):
     texto = paquete.reporte_texto(productos, "Los del Ejemplo", diag=diag)
 
     assert "CÓMO SE LISTÓ EL CATÁLOGO" in texto
-    assert "buscador de YouTube: 1 temas, 101 unidades" in texto
-    assert "EN DEEZER Y NO EN YOUTUBE: 2 grabaciones" in texto
+    assert "Por el buscador de YouTube. Temas: 1. Unidades de cuota: 101." in texto
+    assert "EN DEEZER Y NO EN YOUTUBE. Grabaciones de Los del Ejemplo: 2" in texto
     assert "Otro Disco (album, 2007-06-16, UPC UPC30) [no apareció en YouTube]" in texto
     assert "      - A  US1" in texto
     assert "Disco (album, 2020-01-01, UPC UPC10) [está en el catálogo, incompleto]" in texto
-    assert "faltan 1 temas que Deezer tiene en este disco: Dos" in texto, "y en los pendientes del producto"
+    pendiente = "temas que Deezer tiene en este disco y no aparecieron en YouTube (1): Dos"
+    assert pendiente in texto, "y en los pendientes del producto"
 
 
 def test_el_reporte_de_un_catalogo_cortado_lo_dice_en_mayusculas(catalogo_ejemplo):
@@ -389,8 +390,8 @@ def test_el_reporte_sale_en_ingles(hacer_track, deezer):
     diag = {"via": "subidas", "temas": 1, "unidades": 2, "cortado_por_cuota": False, "completitud": comp}
     i18n.poner_idioma("en")
     texto = paquete.reporte_texto(productos, "Los del Ejemplo", diag=diag)
-    assert "HOW THE CATALOG WAS LISTED" in texto and "uploads list: 1 tracks, 2 quota units" in texto
-    assert "ON DEEZER BUT NOT ON YOUTUBE: 2 recordings" in texto
+    assert "HOW THE CATALOG WAS LISTED" in texto and "uploads list. Tracks: 1. Quota units: 2." in texto
+    assert "ON DEEZER BUT NOT ON YOUTUBE. Recordings by Los del Ejemplo: 2" in texto
 
 
 def test_la_tabla_recibe_los_temas_que_faltan(hacer_track, deezer):

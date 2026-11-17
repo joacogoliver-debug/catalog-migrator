@@ -55,6 +55,7 @@ import posixpath
 import re
 import secrets
 import shutil
+import socket
 import sys
 import tempfile
 import threading
@@ -143,6 +144,10 @@ def _base_recursos():
 WEB_DIR = os.path.join(_base_recursos(), "web")
 AUDIO_HABILITADO = _audio_habilitado()
 MAX_BODY = 8 * 1024 * 1024  # 8 MB: los payloads son listas de ids
+# Al cerrar una conexión cuyo pedido no se leyó entero, cuánto se espera a que
+# el cliente termine de mandar y cuánto se le descarta (ver `Handler.finish`).
+ESPERA_CIERRE = 0.3  # segundos sin que llegue nada
+TOPE_CIERRE = 2.0  # segundos en total
 
 # Cuánto vale un ticket de descarga. Se pide en el momento del clic, así que un
 # minuto sobra; más largo sólo agranda la ventana en que una URL copiada sirve.
@@ -1005,6 +1010,38 @@ class Handler(BaseHTTPRequestHandler):
             cuerpo["codigo_error"] = marca
         self._json(cuerpo, codigo)
 
+    # El pedido se rechazó sin leer su cuerpo, que sigue en el socket.
+    cuerpo_sin_leer = False
+
+    @override
+    def finish(self):
+        """Cierra la conexión, sin cortarle la respuesta al cliente.
+
+        Cuando un pedido se rechaza sin leer su cuerpo (viene por partes, o es
+        más grande que el tope), lo que el cliente mandó queda en el socket. Si
+        se cierra así, el sistema no cierra: aborta la conexión, y en Windows el
+        cliente recibe un «connection aborted» en vez del 400 que le explicaba
+        qué hizo mal. Pasaba una de cada seis veces, y se veía como un test que
+        fallaba porque sí.
+
+        Lo que se hace es lo que hace cualquier servidor web: se termina de
+        escribir, se avisa que no se va a escribir más y se descarta lo que el
+        cliente siga mandando, un rato corto y acotado. Recién entonces se
+        cierra.
+        """
+        if self.cuerpo_sin_leer:
+            try:
+                self.wfile.flush()
+                self.connection.shutdown(socket.SHUT_WR)
+                self.connection.settimeout(ESPERA_CIERRE)
+                limite = time.monotonic() + TOPE_CIERRE
+                while time.monotonic() < limite:
+                    if not self.connection.recv(65536):
+                        break
+            except OSError:
+                pass  # el cliente ya cortó, o no mandó nada más: no hay qué esperar
+        super().finish()
+
     def _leer_crudo(self):
         """Lee y consume el cuerpo del pedido, sin interpretarlo.
 
@@ -1015,17 +1052,17 @@ class Handler(BaseHTTPRequestHandler):
         siguiente, que es el bug que la lectura obligatoria vino a cortar.
         """
         if self.headers.get("Transfer-Encoding"):
-            self.close_connection = True
+            self.close_connection = self.cuerpo_sin_leer = True
             raise ValueError(T("srv.sin_chunked"))
         try:
             largo = int(self.headers.get("Content-Length") or 0)
         except ValueError:
-            self.close_connection = True
+            self.close_connection = self.cuerpo_sin_leer = True
             raise ValueError(T("srv.content_length")) from None
         if largo <= 0:
             return b""
         if largo > MAX_BODY:
-            self.close_connection = True
+            self.close_connection = self.cuerpo_sin_leer = True
             raise ValueError(T("srv.pedido_grande"))
         crudo = self.rfile.read(largo)
         if len(crudo) < largo:

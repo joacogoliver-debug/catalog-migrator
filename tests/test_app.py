@@ -997,6 +997,63 @@ def test_un_cuerpo_por_partes_se_rechaza_y_cierra(cliente):
     assert cab.get("connection", "").lower() == "close"
 
 
+@pytest.mark.parametrize(
+    ("cabeceras", "cuerpo"),
+    [
+        ({"Transfer-Encoding": "chunked"}, b"2\r\n{}\r\n0\r\n\r\n"),
+        ({"Content-Length": "200000"}, b"x" * 200000),
+    ],
+    # Con nombre: sin él, pytest arma el del test con el cuerpo entero adentro.
+    ids=["por_partes", "demasiado_grande"],
+)
+def test_rechazar_un_cuerpo_sin_leerlo_no_le_corta_la_respuesta_al_cliente(
+    cliente, monkeypatch, cabeceras, cuerpo
+):
+    """El 400 tiene que llegar siempre, no cinco de cada seis veces.
+
+    El cuerpo que no se lee queda en el socket, y cerrar así aborta la conexión
+    en vez de cerrarla: el cliente recibía «connection aborted» en lugar del
+    motivo del rechazo. Era azar, así que se repite hasta que el azar no alcance
+    para pasar.
+    """
+    monkeypatch.setattr(backend, "MAX_BODY", 10)
+    for _ in range(40):
+        cod, cab, respuesta, conn = _pedido(
+            cliente, "POST", "/api/validar", {"X-App-Token": backend.TOKEN, **cabeceras}, cuerpo
+        )
+        conn.close()
+        assert cod == 400
+        assert cab.get("connection", "").lower() == "close"
+        assert json.loads(respuesta)["error"], "con el motivo, que es para lo que sirve el 400"
+
+
+def test_un_cliente_que_no_cierra_no_deja_colgado_al_servidor(cliente, monkeypatch):
+    """El descarte está acotado: si el cliente se queda con la conexión abierta
+    sin mandar nada más, el servidor igual la suelta."""
+    import socket
+    import time
+
+    monkeypatch.setattr(backend, "ESPERA_CIERRE", 0.05)
+    s = socket.create_connection(("127.0.0.1", cliente.puerto), timeout=10)
+    try:
+        pedido = (
+            f"POST /api/validar HTTP/1.1\r\nHost: 127.0.0.1:{cliente.puerto}\r\n"
+            f"X-App-Token: {backend.TOKEN}\r\nTransfer-Encoding: chunked\r\n\r\n2\r\n{{}}\r\n"
+        )
+        s.sendall(pedido.encode())
+        desde = time.monotonic()
+        recibido = b""
+        while True:  # hasta que el servidor cierre, sin que este lado cierre nada
+            datos = s.recv(65536)
+            if not datos:
+                break
+            recibido += datos
+        assert recibido.startswith(b"HTTP/1.1 400")
+        assert time.monotonic() - desde < 5, "no se queda esperando al cliente"
+    finally:
+        s.close()
+
+
 def test_un_token_con_caracteres_raros_es_403_y_no_500(cliente):
     cod, _c, _b, conn = _pedido(
         cliente, "GET", "/api/config", {"X-App-Token": "éé".encode().decode("latin-1")}

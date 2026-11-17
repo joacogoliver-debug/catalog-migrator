@@ -99,6 +99,14 @@ What changed in every published version. The numbers follow
   box to show them.
 - **Pasting a regular channel did not switch to the Topic** when the Topic had
   no uploads list, which today is always.
+- **A request rejected without reading its body dropped the connection**
+  instead of answering. When the local server rejects a request that comes
+  chunked or is over the size limit, what the client sent is left unread, and
+  closing like that aborts the connection: on Windows, one time in six the
+  client got "connection aborted" instead of the 400 with the reason. The
+  server now finishes answering and discards what keeps arriving, for a short,
+  bounded while, before closing. It was also the cause of a test that failed at
+  random.
 - **On Mac the app could not talk to YouTube**: the .app did not find the
   system certificates and every request failed with `CERTIFICATE_VERIFY_FAILED`,
   both when surveying and when testing your own key. It now uses `certifi`'s,

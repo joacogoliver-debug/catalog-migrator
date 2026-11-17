@@ -98,6 +98,13 @@ Lo que cambió en cada versión publicada. Los números siguen
   dice de ellos. El filtro por distribuidora tiene una casilla para verlos.
 - **Pegar un canal común no cambiaba al Topic** si el Topic no tenía lista de
   subidas, que hoy es siempre.
+- **Un pedido rechazado sin leer su cuerpo cortaba la conexión** en vez de
+  contestar. Cuando el servidor local rechaza un pedido que viene por partes o
+  que supera el tope, lo que el cliente mandó queda sin leer, y cerrar así
+  aborta la conexión: en Windows, una de cada seis veces el cliente recibía
+  «connection aborted» en lugar del 400 con el motivo. Ahora el servidor
+  termina de contestar y descarta lo que sigue llegando, un rato corto y
+  acotado, antes de cerrar. Era además la causa de un test que fallaba al azar.
 - **En Mac la app no podía hablar con YouTube**: el .app no encontraba los
   certificados del sistema y toda consulta fallaba con
   `CERTIFICATE_VERIFY_FAILED`, tanto al relevar como al probar una clave propia.
