@@ -259,8 +259,19 @@ def _grupos(tracks: list[Track]) -> dict[tuple[str, str, str], list[Track]]:
     for t in tracks:
         if t["album"] == SIN_ALBUM or t.get("origen") == "deezer":
             continue
-        out.setdefault((t["album"], t["distributor"], t.get("release_date") or ""), []).append(t)
+        out.setdefault(_clave_release(t), []).append(t)
     return out
+
+
+def _clave_release(t: Track) -> tuple[str, str, str]:
+    """A qué release de YouTube pertenece un track.
+
+    El álbum va normalizado, igual que en `productos._agrupar_por_release`:
+    «Grandes Éxitos» y «GRANDES EXITOS» son el mismo disco, y ahí terminan en un
+    solo producto. Si acá fueran dos, cada mitad se completaría por su lado y el
+    producto saldría con los temas repetidos.
+    """
+    return (comparable(t["album"]), t["distributor"], t.get("release_date") or "")
 
 
 def _lugar(x: TemaFaltante) -> tuple[int, int]:
@@ -357,9 +368,12 @@ def verificar_por_tracklist(tracks: list[Track], discos, tracklists, cruce: Cruc
     calzan igual no se elige. Devuelve cuántos discos verificó.
     """
     verificados = 0
-    for (album, _dist, fecha), grupo in _grupos(tracks).items():
+    for (_album, _dist, fecha), grupo in _grupos(tracks).items():
         if any(t.get("album_deezer_id") for t in grupo):
             continue
+        # El título como lo escribe YouTube, y no el normalizado de la clave:
+        # los paréntesis dicen qué versión es («(En Vivo)»), y ahí se pierden.
+        album = grupo[0]["album"]
         misma_fecha, exactos = [], []
         for a in discos:
             temas = tracklists.get(int(a["id"])) or []
@@ -694,8 +708,7 @@ def marcar(
         ids = {t.get("album_deezer_id") for t in p["tracks"]} - {None}
         temas: list[str] = []
         for t in p["tracks"]:
-            clave = (t["album"], t["distributor"], t.get("release_date") or "")
-            temas.extend(x for x in incompletos.get(clave, []) if x not in temas)
+            temas.extend(x for x in incompletos.get(_clave_release(t), []) if x not in temas)
         for f in relevados:
             suyo = f["deezer_id"] in ids or (
                 not ids and R.album_coincide(p["title"], f["titulo"], p.get("release_date") or "", f["fecha"])

@@ -45,11 +45,18 @@ def sin_esperas(monkeypatch):
 
 def _deezer_lento(monkeypatch, llamadas):
     lock = threading.Lock()
+    nunca = threading.Event()
 
     def match(t, artist):
         with lock:
             llamadas.append(t["track"])
-        time.sleep(0.01)
+        # Una espera de verdad, y no `time.sleep`: `sin_esperas` lo anula para
+        # todo el archivo, y con él anulado este Deezer no era lento. Que
+        # quedaran consultas sin salir al cancelar dependía de cómo se
+        # repartieran los hilos, y una vez de tantas salían las trescientas
+        # antes de que el hilo principal llegara a cancelar: así falló la
+        # compilación del release 1.3.0, sin que hubiera nada roto.
+        nunca.wait(0.01)
         return "", None, ""
 
     monkeypatch.setattr(R, "deezer_match", match)

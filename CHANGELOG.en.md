@@ -8,6 +8,12 @@ What changed in every published version. The numbers follow
 
 ## [Unreleased]
 
+### Fixed
+- **A release spelled with different capitalisation on two tracks was
+  completed twice.** For grouping they were the same release, but for
+  completing it they were two, and the release could come out with repeated
+  positions.
+
 ### Changed
 - **If the comparison against Deezer fails, the catalog is not lost.** It was
   already listed and it cost quota: on Deezer data in a shape that was not
@@ -17,6 +23,13 @@ What changed in every published version. The numbers follow
   in view and the detail moves inside "Show which".
 - The README screenshots show what a freshly surveyed catalog looks like today:
   listed through search, with the quota it used and what was added from Deezer.
+
+### For developers
+- **The cancellation test no longer depends on luck.** Its "slow Deezer" did
+  not wait at all, because another fixture in the same file disables
+  `time.sleep`, and whether any request was left unsent depended on how the
+  threads were scheduled. It failed once, right in the 1.3.0 release build,
+  with nothing broken.
 
 ## [1.3.0] — 2026-11-17
 

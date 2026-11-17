@@ -1045,3 +1045,29 @@ def test_un_disco_que_el_cruce_ya_verifico_no_se_vuelve_a_buscar(hacer_track, de
     _productos, comp, _f = _catalogo(hacer_track, deezer, discos, tracks)
     assert comp["verificados_por_tracklist"] == 0
     assert tracks[0]["upc"] == "UPC10"
+
+
+def test_el_mismo_disco_escrito_con_otra_mayuscula_se_completa_una_sola_vez(hacer_track, deezer):
+    """YouTube puede escribir el álbum distinto de un tema a otro. Para agrupar
+    son el mismo disco; si para completar fueran dos, cada mitad recibiría los
+    temas que le faltan y el producto saldría con los lugares repetidos."""
+    discos = {
+        10: (
+            "Grandes Éxitos",
+            "album",
+            "2020-01-01",
+            [tema("Uno", "AR1"), tema("Dos", "AR2"), tema("Tres", "AR3")],
+        )
+    }
+    tracks = [
+        ubicado(track(hacer_track, "Uno", "Grandes Éxitos", isrc="AR1", aid=10), 1),
+        ubicado(track(hacer_track, "Tres", "GRANDES EXITOS", isrc="AR3", aid=10), 3),
+    ]
+    productos, _c, _f = _catalogo(hacer_track, deezer, discos, tracks)
+    assert len(productos) == 1
+    (disco,) = productos.values()
+    assert [(t.get("track_number"), t["track"]) for t in disco["tracks"]] == [
+        (1, "Uno"),
+        (2, "Dos"),
+        (3, "Tres"),
+    ]

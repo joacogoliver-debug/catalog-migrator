@@ -8,6 +8,11 @@ Lo que cambió en cada versión publicada. Los números siguen
 
 ## [Sin publicar]
 
+### Corregido
+- **Un disco escrito con distinta mayúscula en dos temas se completaba dos
+  veces.** Para agrupar eran el mismo disco, pero para completarlo eran dos, y
+  el producto podía salir con los lugares repetidos.
+
 ### Cambiado
 - **Si la comparación con Deezer falla, el catálogo no se pierde.** Ya se listó
   y costó cuota: ante un dato de Deezer con una forma que no se previó, se
@@ -17,6 +22,12 @@ Lo que cambió en cada versión publicada. Los números siguen
   esencial queda a la vista y el detalle pasa adentro de «Ver cuáles».
 - Las capturas del README muestran cómo se ve hoy un catálogo recién relevado:
   listado por el buscador, con la cuota que gastó y lo que se sumó de Deezer.
+
+### Para quien desarrolla
+- **El test de cancelación ya no depende de la suerte.** Su «Deezer lento» no
+  esperaba nada, porque otro ajuste del mismo archivo anula `time.sleep`, y que
+  quedaran consultas sin salir dependía de cómo se repartieran los hilos. Falló
+  una vez, justo en la compilación del release 1.3.0, sin nada roto.
 
 ## [1.3.0] — 2026-11-17
 
