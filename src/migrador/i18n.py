@@ -400,7 +400,7 @@ TEXTOS = {
     },
     "mig.comparacion_fallo": {
         "es": "No pude comparar con la discografía de Deezer; sigo con lo relevado de YouTube. ({detalle})",
-        "en": "Could not compare against the Deezer discography; carrying on with YouTube's data. ({detalle})",
+        "en": "Could not compare against the Deezer discography; using YouTube's data only. ({detalle})",
     },
     "mig.verificados_por_tracklist": {
         "es": "Discos verificados contra Deezer por su lista de temas: {n}",
