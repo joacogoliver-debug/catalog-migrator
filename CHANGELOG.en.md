@@ -21,6 +21,25 @@ What changed in every published version. The numbers follow
   Deezer credits, and the validation says so. On the catalog this was measured
   on, 3 tracks went into their releases and 6 releases came in separately, 4 of
   them collaborations.
+- **A release comes out whole.** YouTube does not repeat a recording it already
+  has on another release: of a fifty-track compilation it showed twelve, and
+  the ingestion sheet came out with a twelve-track "album" numbered 2, 17, 18,
+  19… When the release is verified against Deezer and its order is confirmed,
+  what is missing from its tracklist goes in, in place. If the recording is on
+  YouTube under another release, the track carries that video, which is where
+  the reference audio comes from. It is not completed with another artist's
+  tracks: a split release stays as it is, with a notice of what it lacks.
+- **Releases verified by their tracklist.** A release was left with no UPC and
+  an estimated order when each of its tracks was also on a compilation and
+  Deezer's search returned the compilation. It is now looked up the other way
+  round, in the discography: the album with the same name that holds all its
+  tracks, by title and length. If the date matches too, it is the same release.
+  If the date does not match but the tracklist is exactly the same, it is
+  accepted and the validation says so, because it is usually the original date
+  on one side and the digital edition's on the other. With two editions that
+  fit equally, none is picked. On the catalog this was measured on, releases
+  with a UPC went from 23 to 27 out of 31, and those with a confirmed order
+  from 18 to 24 out of 28.
 - **More ISRCs, without searching more.** The artist's discography is already
   fetched whole for the comparison, and it holds tracks that Deezer's text
   search had not returned. Tracks left without a code get the one from the
@@ -30,6 +49,17 @@ What changed in every published version. The numbers follow
   and a third as long.
 
 ### Fixed
+- **A release with more than 25 tracks never had its order confirmed.** Deezer
+  embeds only the first twenty-five tracks in the album record, and the order
+  was built from that list: from track 26 on, nothing was placed. The whole list
+  is now requested.
+- **A title truncated by YouTube no longer leaves the release unordered.**
+  YouTube cuts titles at a hundred characters. A six-song medley did not match
+  Deezer's, stayed unplaced and was also reported missing when it was there. It
+  is now recognised by its beginning and its length.
+- **A compilation no longer floods the validation with repeated notices.** All
+  its tracks are also on their original release, and there was one notice per
+  track. It is now one per release, with the count.
 - **The same track delivered by two distributors is no longer a "rejection
   error".** The matcher gives each track Deezer's ISRC when the length agrees
   within four seconds, but the validation demanded three between two tracks

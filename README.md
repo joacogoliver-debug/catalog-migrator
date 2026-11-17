@@ -297,6 +297,11 @@ cambia dos cosas, y la app las dice en la pantalla y en el reporte:
   suma al catálogo con los datos de Deezer: el tema que faltaba en un disco
   entra al disco, en su lugar, y el disco que no apareció queda marcado «sólo
   en Deezer» y sin elegir, porque de él no se conoce la distribuidora.
+- **YouTube no muestra cada disco entero.** No repite una grabación que ya
+  tiene en otro: de un compilado de cincuenta temas mostraba doce. Un release
+  se entrega entero, así que cuando el disco está verificado contra Deezer y
+  tiene el orden confirmado, la app lo completa con su tracklist. Lo sumado va
+  marcado en la tabla, en la validación y en el reporte.
 
 Relevar de nuevo el mismo link dentro de la hora no vuelve a gastar cuota: lo
 que YouTube contestó queda en memoria, sin escribirse en el disco, y sólo se

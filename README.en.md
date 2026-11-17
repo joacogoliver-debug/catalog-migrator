@@ -297,6 +297,11 @@ report:
   track missing from a release goes into that release, in its place, and a
   release that did not show up is flagged "Deezer only" and left unselected,
   because its distributor is not known.
+- **YouTube does not show each release whole.** It does not repeat a recording
+  it already has on another one: of a fifty-track compilation it showed twelve.
+  A release is delivered whole, so when it is verified against Deezer and its
+  order is confirmed, the app completes it from its tracklist. What was added
+  is flagged in the table, in the validation and in the report.
 
 Surveying the same link again within the hour does not spend quota again: what
 YouTube answered stays in memory, never written to disk, and only the codes are

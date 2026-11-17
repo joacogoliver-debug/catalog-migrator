@@ -62,6 +62,14 @@ DURACION_MAX_SOSPECHOSA = 15 * 60  # 15 min: puede ser un mix o un álbum entero
 ANIO_MIN = 1900
 
 
+def lista_corta(nombres, tope=8):
+    """Una lista de títulos para un mensaje, sin que treinta lo vuelvan ilegible."""
+    nombres = list(nombres)
+    if len(nombres) <= tope:
+        return " · ".join(nombres)
+    return " · ".join(nombres[:tope]) + " · " + T("val.y_mas", n=len(nombres) - tope)
+
+
 def _hallazgo(nivel: NivelHallazgo, codigo, mensaje, producto="", track=None) -> Hallazgo:
     return {"nivel": nivel, "codigo": codigo, "mensaje": mensaje, "producto": producto, "track": track}
 
@@ -333,6 +341,11 @@ def validar(productos: list[Producto], artista="") -> ResultadoValidacion:
         # puede entregar, pero antes hay que mirarlo: del release entero no se
         # sabe la distribuidora ni si es del catálogo, y del tema suelto conviene
         # confirmar que sigue siendo parte del disco.
+        por_tracklist = sorted({t.get("upc_por_tracklist") or "" for t in p.get("tracks", [])} - {""})
+        if upc and por_tracklist:
+            texto = T("val.upc_por_tracklist", album=por_tracklist[0])
+            out.append(_hallazgo("aviso", "upc_por_tracklist", texto, nombre))
+
         de_deezer = [t.get("track", "") for t in p.get("tracks", []) if t.get("origen") == "deezer"]
         if p.get("origen") == "deezer":
             ajeno = p.get("artist") and artista and comparable(p.get("artist")) != comparable(artista)
@@ -343,7 +356,7 @@ def validar(productos: list[Producto], artista="") -> ResultadoValidacion:
             )
             out.append(_hallazgo("aviso", "solo_en_deezer", texto, nombre))
         elif de_deezer:
-            texto = T("val.temas_de_deezer", n=len(de_deezer), temas=" · ".join(de_deezer))
+            texto = T("val.temas_de_deezer", n=len(de_deezer), temas=lista_corta(de_deezer))
             out.append(_hallazgo("aviso", "temas_de_deezer", texto, nombre))
 
         # Deezer tiene temas de este disco que no aparecieron en YouTube. Es un
@@ -351,7 +364,7 @@ def validar(productos: list[Producto], artista="") -> ResultadoValidacion:
         # y eso hay que saberlo antes y no cuando la distribuidora lo publique.
         faltan = p.get("faltan_temas") or []
         if faltan:
-            texto = T("val.album_incompleto", n=len(faltan), temas=" · ".join(faltan))
+            texto = T("val.album_incompleto", n=len(faltan), temas=lista_corta(faltan))
             out.append(_hallazgo("aviso", "album_incompleto", texto, nombre))
 
         out.extend(validar_portada(p))
@@ -507,6 +520,7 @@ def _duplicados(productos):
     vistos_isrc = {}  # isrc -> (producto, track) de la primera aparición
     for p in productos:
         en_este = {}  # isrc -> dónde apareció primero, adentro de este producto
+        compartidos = []  # (isrc, dónde estaba, dónde está acá, track)
         for t in p.get("tracks", []):
             isrc = re.sub(r"[\s\-]", "", (t.get("isrc") or "")).upper()
             if not isrc:
@@ -521,8 +535,7 @@ def _duplicados(productos):
                 uno = f"{p0.get('title', '')} / {t0.get('track', '')}"
                 parentesco = _parentesco(t0, t)
                 if parentesco == "misma":
-                    texto = T("val.isrc_compartido", isrc=isrc, uno=uno, otro=donde)
-                    out.append(_hallazgo("aviso", "isrc_compartido", texto, titulo, pista))
+                    compartidos.append((isrc, uno, donde, pista))
                 elif parentesco == "otro_corte":
                     segundos = abs(int(t0.get("duration_s") or 0) - int(t.get("duration_s") or 0))
                     texto = T("val.isrc_otro_corte", isrc=isrc, uno=uno, otro=donde, n=segundos)
@@ -533,6 +546,17 @@ def _duplicados(productos):
             else:
                 vistos_isrc[isrc] = (p, t)
             en_este.setdefault(isrc, donde)
+
+        # Un compilado comparte TODOS sus temas con otros discos: un aviso por
+        # cada uno eran cien avisos que decían lo mismo y tapaban a los demás.
+        if len(compartidos) == 1:
+            isrc, uno, donde, pista = compartidos[0]
+            texto = T("val.isrc_compartido", isrc=isrc, uno=uno, otro=donde)
+            out.append(_hallazgo("aviso", "isrc_compartido", texto, p.get("title", ""), pista))
+        elif compartidos:
+            temas = lista_corta([pista for _i, _u, _d, pista in compartidos], 5)
+            texto = T("val.isrc_compartidos", n=len(compartidos), temas=temas)
+            out.append(_hallazgo("aviso", "isrc_compartido", texto, p.get("title", "")))
 
     vistos_upc = {}
     for p in productos:

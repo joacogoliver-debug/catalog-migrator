@@ -62,6 +62,7 @@ def completitud_vacia() -> Completitud:
         "temas": 0,
         "sin_respuesta": 0,
         "isrc_completados": 0,
+        "verificados_por_tracklist": 0,
         "recortada": False,
         "faltan": [],
     }
@@ -248,8 +249,157 @@ class _Dichas:
         self.titulos.setdefault(comparable(tema["titulo"]), []).append(tema["duracion_s"])
 
 
+def _grupos(tracks: list[Track]) -> dict[tuple[str, str, str], list[Track]]:
+    """Los releases tal como los muestra YouTube: (álbum, distribuidora, fecha).
+
+    Sin los singles, que no tienen tracklist que mirar, y sin lo que ya se sumó
+    de Deezer.
+    """
+    out: dict[tuple[str, str, str], list[Track]] = {}
+    for t in tracks:
+        if t["album"] == SIN_ALBUM or t.get("origen") == "deezer":
+            continue
+        out.setdefault((t["album"], t["distributor"], t.get("release_date") or ""), []).append(t)
+    return out
+
+
+def _lugar(x: TemaFaltante) -> tuple[int, int]:
+    return (x["disco"] or 1, x["posicion"])
+
+
+def _ubicar(t: Track, temas: list[TemaFaltante]) -> TemaFaltante | None:
+    """El tema del tracklist que es este track, o None si no hay uno solo.
+
+    El mismo título y, si se conocen las dos, la misma duración. Con la misma
+    duración se acepta además un título parecido, y uno cortado: YouTube corta
+    los títulos a cien caracteres y les pone puntos suspensivos, y el
+    enganchado de seis temas de un disco no coincidía nunca con el de Deezer.
+    """
+    titulo, duracion = comparable(t["track"]), t.get("duration_s") or 0
+    crudo = (t["track"] or "").rstrip()
+    cortado = comparable(crudo.rstrip(".…")) if crudo.endswith(("...", "…")) else ""
+    candidatos = []
+    for x in temas:
+        otro = comparable(x["titulo"])
+        ambas = bool(duracion and x["duracion_s"])
+        dura_igual = ambas and abs(duracion - x["duracion_s"]) <= MARGEN_DURACION
+        if cortado and len(cortado) >= 20 and dura_igual and otro.startswith(cortado):
+            candidatos.append(x)
+        elif not misma_version(x["titulo"], t["track"]) or (ambas and not dura_igual):
+            continue
+        elif otro == titulo or (
+            dura_igual and SequenceMatcher(None, titulo, otro).ratio() >= MIN_SIMILITUD_TITULO
+        ):
+            candidatos.append(x)
+    return candidatos[0] if len(candidatos) == 1 else None
+
+
+def _poner(t: Track, x: TemaFaltante, album_id):
+    """Deja el track ubicado en ese lugar del tracklist."""
+    t["track_number"], t["disc_number"], t["orden_fuente"] = x["posicion"], x["disco"] or 1, "deezer"
+    t["album_deezer_id"] = album_id
+    # Ubicado por título y duración en el tracklist de su propio disco, el
+    # código de ese lugar es el suyo.
+    if not t.get("isrc") and x["isrc"]:
+        t["isrc"], t["match"] = x["isrc"], "alta"
+
+
+def ubicar_restantes(tracks: list[Track], tracklists) -> int:
+    """Ubica en el tracklist de su disco los temas que quedaron sin ubicar.
+
+    El cruce de códigos ubica cada tema por su título, sin la duración. Acá,
+    con las duraciones del tracklist a la vista, se puede ubicar además el que
+    tiene el título apenas distinto o cortado. Un solo tema sin ubicar deja el
+    disco entero con el orden estimado, así que cada uno cuenta.
+    """
+    ubicados = 0
+    for grupo in _grupos(tracks).values():
+        ids = {t.get("album_deezer_id") for t in grupo} - {None}
+        if len(ids) != 1:
+            continue
+        album_id = ids.pop()
+        temas = tracklists.get(album_id) or []
+        ocupados = {
+            (t.get("disc_number") or 1, t.get("track_number")) for t in grupo if t.get("orden_fuente")
+        }
+        for t in grupo:
+            if t.get("orden_fuente"):
+                continue
+            x = _ubicar(t, temas)
+            if x and x["posicion"] and _lugar(x) not in ocupados:
+                _poner(t, x, album_id)
+                ocupados.add(_lugar(x))
+                ubicados += 1
+    return ubicados
+
+
+def verificar_por_tracklist(tracks: list[Track], discos, tracklists, cruce: CruceDeezer) -> int:
+    """Verifica contra la discografía los discos que el cruce no pudo verificar.
+
+    El cruce verifica un disco cuando la búsqueda de alguno de sus temas cae en
+    ese álbum de Deezer. Si ninguna cae ahí, porque cada tema está también en
+    un compilado y la búsqueda devuelve ése, el disco queda sin UPC y con el
+    orden estimado aunque Deezer lo tenga. Con la discografía entera se lo
+    busca al revés: el álbum que se llama igual y en cuyo tracklist están
+    TODOS los temas del disco, cada uno en un lugar distinto, por título y
+    duración.
+
+    Dos formas de aceptarlo, de más a menos segura:
+
+      - Coincide además la fecha de lanzamiento. Es el mismo release, y puede
+        tener más temas de los que YouTube muestra.
+      - La fecha no coincide, pero el tracklist es exactamente el mismo: los
+        mismos temas, ni uno más. Suele ser el mismo release con la fecha
+        original de un lado y la de la edición digital del otro. Se acepta, y
+        queda anotado (`upc_por_tracklist`) para que la validación lo diga.
+
+    En los dos casos tiene que haber un solo candidato. Con dos ediciones que
+    calzan igual no se elige. Devuelve cuántos discos verificó.
+    """
+    verificados = 0
+    for (album, _dist, fecha), grupo in _grupos(tracks).items():
+        if any(t.get("album_deezer_id") for t in grupo):
+            continue
+        misma_fecha, exactos = [], []
+        for a in discos:
+            temas = tracklists.get(int(a["id"])) or []
+            if not temas or not R.album_coincide(album, a.get("title") or ""):
+                continue
+            lugares = [_ubicar(t, temas) for t in grupo]
+            if not all(x and x["posicion"] for x in lugares):
+                continue
+            if len({_lugar(x) for x in lugares if x}) != len(grupo):
+                continue
+            fecha_dz = a.get("release_date") or ""
+            if fecha and fecha_dz and R.fechas_cercanas(fecha, fecha_dz):
+                misma_fecha.append((a, lugares))
+            elif len(temas) == len(grupo):
+                exactos.append((a, lugares))
+        candidatos = misma_fecha or exactos
+        if len(candidatos) != 1:
+            continue
+        a, lugares = candidatos[0]
+        album_id = int(a["id"])
+        info = R.deezer_albumes([album_id]).get(album_id) or {}
+        cruce.setdefault("albumes", {})[album_id] = info
+        for t, x in zip(grupo, lugares, strict=True):
+            if x is None:  # ya se comprobó arriba que están todos
+                continue
+            _poner(t, x, album_id)
+            t["upc"] = info.get("upc", "") or t["upc"]
+            t.pop("upc_descartado", None)
+            if not misma_fecha:
+                t["upc_por_tracklist"] = f"{a.get('title') or ''} ({a.get('release_date') or ''})"
+        verificados += 1
+    return verificados
+
+
 def revisar(tracks: list[Track], cruce: CruceDeezer, artista, avance=None) -> Completitud:
     """Compara lo relevado contra la discografía de Deezer.
+
+    Antes de ver qué falta, usa la discografía para mejorar lo relevado:
+    completa los ISRC que la búsqueda no encontró, ubica en su disco los temas
+    que quedaron sin ubicar y verifica los discos que el cruce no verificó.
 
     `avance(hechos, total)` se llama al terminar cada release, para mover la
     barra y dejar cancelar. Nunca levanta por Deezer: si no contesta, la
@@ -263,33 +413,43 @@ def revisar(tracks: list[Track], cruce: CruceDeezer, artista, avance=None) -> Co
     if not discos:
         return res
 
-    verificados = set(cruce.get("verificados") or {}) | {
-        t.get("album_deezer_id") for t in tracks if t.get("album_deezer_id")
-    }
-
     with ThreadPoolExecutor(max_workers=min(R.CODES_WORKERS, len(discos))) as ex:
         temas_por_disco = []
         for i, temas in enumerate(ex.map(lambda a: _temas_de(a["id"]), discos), 1):
             temas_por_disco.append(temas)
             if avance:
                 avance(i, len(discos))
+    tracklists: dict[int, list[TemaFaltante]] = {
+        int(a["id"]): temas for a, temas in zip(discos, temas_por_disco, strict=True) if temas is not None
+    }
+    res["sin_respuesta"] = sum(1 for temas in temas_por_disco if temas is None)
 
-    # Antes de ver qué falta: un tema que consigue acá su código deja de
-    # depender del título para que se lo reconozca.
-    res["isrc_completados"] = completar_isrc(tracks, temas_por_disco)
+    # Los discos que el cruce verificó y que no son de la discografía del
+    # artista: un compilado, que en Deezer figura a nombre del sello.
+    for album_id in {t.get("album_deezer_id") or 0 for t in tracks} - {0} - set(tracklists):
+        temas = _temas_de(album_id)
+        if temas is not None:
+            tracklists[album_id] = temas
+
+    # Antes de ver qué falta: un tema que consigue acá su código o su lugar
+    # deja de depender del título para que se lo reconozca.
+    res["isrc_completados"] = completar_isrc(tracks, tracklists.values())
+    ubicar_restantes(tracks, tracklists)
+    res["verificados_por_tracklist"] = verificar_por_tracklist(tracks, discos, tracklists, cruce)
     relevado = _Relevado(tracks)
+    verificados = set(cruce.get("verificados") or {}) | {
+        t.get("album_deezer_id") for t in tracks if t.get("album_deezer_id")
+    }
 
     candidatos: list[ReleaseIncompleto] = []
-    tracklists: dict[int, list[TemaFaltante]] = {}
-    for a, temas in zip(discos, temas_por_disco, strict=True):
+    for a in discos:
+        temas = tracklists.get(int(a["id"]))
         if temas is None:
-            res["sin_respuesta"] += 1
             continue
         faltan = [x for x in temas if not relevado.tiene(x)]
         if not faltan:
             continue
         titulo, fecha = a.get("title") or "", a.get("release_date") or ""
-        tracklists[int(a["id"])] = temas
         candidatos.append(
             {
                 "deezer_id": int(a["id"]),
@@ -319,15 +479,15 @@ def revisar(tracks: list[Track], cruce: CruceDeezer, artista, avance=None) -> Co
 
     # Los datos del álbum de los que no se conocen todavía: el UPC, que es con
     # lo que se los busca después, y el sello. Se piden sólo para los que se
-    # van a mostrar, y quedan en el cruce junto con su tracklist, que es lo que
-    # usa `sumar_de_deezer`.
+    # van a mostrar, y quedan en el cruce junto con los tracklists, que es lo
+    # que usa `sumar_de_deezer`.
     albumes = cruce.setdefault("albumes", {})
     sin_datos = [f["deezer_id"] for f in res["faltan"] if f["deezer_id"] not in albumes]
     if sin_datos:
         albumes.update(R.deezer_albumes(sin_datos))
     for f in res["faltan"]:
         f["upc"] = f["upc"] or (albumes.get(f["deezer_id"]) or {}).get("upc", "")
-    cruce["discografia"] = {f["deezer_id"]: tracklists[f["deezer_id"]] for f in res["faltan"]}
+    cruce["discografia"] = tracklists
 
     res.update(
         revisada=True,
@@ -367,7 +527,10 @@ def _track_de_deezer(tema: TemaFaltante, **datos) -> Track:
         "upload_date": "",
         "release_date": datos["fecha"],
         "p_line": "",
-        "artists": [tema["artista"]] if tema["artista"] else [],
+        # Deezer puede escribir al artista apenas distinto («Los De Maranaho»):
+        # si es el del canal, va como lo escribe el canal, que es como figura
+        # en el resto del catálogo.
+        "artists": [datos.get("artista") or tema["artista"]] if tema["artista"] else [],
         "credits": {"composers": [], "lyricists": [], "producers": [], "publishers": []},
         "desc3": "",
         "url": URL_DEEZER.format(id=tema["deezer_id"]) if tema["deezer_id"] else "",
@@ -380,98 +543,122 @@ def _track_de_deezer(tema: TemaFaltante, **datos) -> Track:
     return t
 
 
-def _release_relevado(tracks: list[Track], album_id) -> list[Track]:
-    """Los tracks del release de YouTube que se verificó contra ese álbum de
-    Deezer, o [] si no están todos ubicados en su tracklist.
-
-    Sólo a un disco con el orden confirmado se le puede sumar un tema en su
-    lugar: mezclar la posición real de uno con las estimadas de los demás daría
-    números repetidos.
-    """
-    ref = next((t for t in tracks if t.get("album_deezer_id") == album_id), None)
-    if ref is None or ref["album"] == SIN_ALBUM:
-        return []
-    clave = (ref["album"], ref["distributor"], ref.get("release_date") or "")
-    grupo = [t for t in tracks if (t["album"], t["distributor"], t.get("release_date") or "") == clave]
-    if all(t.get("orden_fuente") and t.get("album_deezer_id") == album_id for t in grupo):
-        return grupo
-    return []
-
-
 def _mismo_artista(a, b) -> bool:
     return SequenceMatcher(None, plegado(a), plegado(b)).ratio() >= MIN_SIMILITUD_ARTISTA
+
+
+def _como_el_canal(nombre, artista) -> str:
+    """El nombre del artista del canal, si `nombre` es ese artista; si no, "" ."""
+    return artista if (nombre and artista and _mismo_artista(nombre, artista)) else ""
 
 
 def _anio(fecha) -> int | str:
     return int(fecha[:4]) if fecha[:4].isdigit() else ""
 
 
-def sumar_de_deezer(tracks: list[Track], completitud: Completitud, cruce: CruceDeezer) -> list[Track]:
-    """Los temas que Deezer tiene y YouTube no trajo, como tracks para agrupar.
+def sumar_de_deezer(
+    tracks: list[Track], completitud: Completitud, cruce: CruceDeezer, artista=""
+) -> list[Track]:
+    """Los temas que le faltan a lo relevado, como tracks para agrupar.
 
-    Dos casos, que son los dos de `ReleaseIncompleto`:
+    Un release se entrega entero, y YouTube no siempre lo muestra entero: no
+    repite una grabación que ya tiene en otro disco, así que de un compilado de
+    cincuenta temas puede mostrar doce. Y el buscador puede no traer alguno.
+    Tres casos:
 
-      - **El disco está y le faltan temas.** Si el disco se verificó contra
-        Deezer y tiene el orden confirmado, lo que falta entra al disco, en su
-        posición, con la distribuidora y el UPC del disco. Es el mismo release:
-        lo dice el UPC.
+      - **El disco está, verificado y con el orden confirmado, y le faltan
+        lugares de su tracklist.** Lo que falta entra al disco, en su posición,
+        con la distribuidora y el UPC del disco. Es el mismo release: lo dice
+        el UPC. Si la grabación está en YouTube en otro disco, el tema lleva
+        ese video, que es de donde se puede sacar el audio de referencia.
+      - **El disco está pero lo que le falta es de otro artista**: un disco
+        compartido, o un compilado de varios. No se completa con temas ajenos:
+        queda anotado qué le falta (`cruce["incompletos"]`).
       - **El disco entero no apareció.** Se arma con todo su tracklist de
         Deezer. Queda sin distribuidora, que es un dato que sólo publica
         YouTube, y marcado para que la interfaz no lo elija sola: puede ser una
         colaboración que está en el canal de otro artista, o un release que
         nunca se entregó a YouTube.
 
-    En los dos casos el tema lleva `origen: "deezer"`. Marca en cada release de
+    Todo lo sumado lleva `origen: "deezer"`. Marca en cada release de
     `completitud["faltan"]` si se pudo sumar. No pide nada a la red: todo lo
     que usa quedó en `cruce` cuando se revisó.
     """
     nuevos: list[Track] = []
     tracklists = cruce.get("discografia") or {}
     albumes = cruce.get("albumes") or {}
+    con_video: dict[str, Track] = {}
+    for t in tracks:
+        if t.get("isrc") and t.get("video_id"):
+            con_video.setdefault(t["isrc"], t)
+
+    completados = set()
+    incompletos: dict[tuple[str, str, str], list[str]] = {}
+    for clave, grupo in _grupos(tracks).items():
+        ids = {t.get("album_deezer_id") for t in grupo}
+        if len(ids) != 1 or None in ids or not all(t.get("orden_fuente") for t in grupo):
+            continue
+        album_id = ids.pop()
+        temas = tracklists.get(album_id or 0) or []
+        ocupados = {(t.get("disc_number") or 1, t.get("track_number")) for t in grupo}
+        libres = [x for x in temas if _lugar(x) not in ocupados]
+        if not libres:
+            continue
+        # De quién son los temas que faltan, y no de quién es el álbum: un
+        # compilado del artista figura en Deezer a nombre del sello, y es suyo
+        # entero. Si el tema no dice de quién es, vale el titular del álbum.
+        titular = (albumes.get(album_id or 0) or {}).get("artist_name") or ""
+        ajeno = bool(artista) and any(
+            not _mismo_artista(x["artista"] or titular or artista, artista) for x in libres
+        )
+        if ajeno or not all(x["posicion"] for x in temas):
+            incompletos[clave] = [x["titulo"] for x in libres]
+            continue
+        ref = grupo[0]
+        for x in libres:
+            nuevo = _track_de_deezer(
+                x,
+                album=ref["album"],
+                distributor=ref["distributor"],
+                # El sello vacío: el del disco sale de sus temas de YouTube.
+                label="",
+                anio=ref["release_year"],
+                upc=ref["upc"],
+                fecha=ref.get("release_date") or "",
+                aid=album_id,
+                artista=_como_el_canal(x["artista"], artista),
+            )
+            gemelo = con_video.get(x["isrc"]) if x["isrc"] else None
+            if gemelo:
+                nuevo["video_id"], nuevo["url"] = gemelo["video_id"], gemelo["url"]
+            nuevos.append(nuevo)
+        completados.add(album_id)
+    cruce["incompletos"] = incompletos
+
     for f in completitud["faltan"]:
-        aid = f["deezer_id"]
+        album_id = f["deezer_id"]
         if f["relevado"]:
-            grupo = _release_relevado(tracks, aid)
-            ocupadas = {(t.get("disc_number") or 1, t.get("track_number")) for t in grupo}
-            libres = [
-                x for x in f["temas"] if x["posicion"] and (x["disco"] or 1, x["posicion"]) not in ocupadas
-            ]
-            if not grupo or len(libres) != len(f["temas"]):
-                continue
-            ref = grupo[0]
-            nuevos.extend(
-                _track_de_deezer(
-                    x,
-                    album=ref["album"],
-                    distributor=ref["distributor"],
-                    # El sello vacío: el del disco sale de sus temas de YouTube.
-                    label="",
-                    anio=ref["release_year"],
-                    upc=ref["upc"],
-                    fecha=ref.get("release_date") or "",
-                    aid=aid,
-                )
-                for x in f["temas"]
+            f["sumado"] = album_id in completados
+            continue
+        temas = tracklists.get(album_id) or []
+        if not temas or not all(x["posicion"] for x in temas):
+            continue
+        info = albumes.get(album_id) or {}
+        nuevos.extend(
+            _track_de_deezer(
+                x,
+                # Un release de un solo tema es un single: se llama como el tema.
+                album=f["titulo"] if len(temas) > 1 else SIN_ALBUM,
+                distributor=SIN_DATOS,
+                label=info.get("label", ""),
+                anio=_anio(f["fecha"]),
+                upc=f["upc"],
+                fecha=f["fecha"],
+                aid=album_id,
+                artista=_como_el_canal(x["artista"], artista),
             )
-        else:
-            temas = tracklists.get(aid) or []
-            if not temas or not all(x["posicion"] for x in temas):
-                continue
-            info = albumes.get(aid) or {}
-            nuevos.extend(
-                _track_de_deezer(
-                    x,
-                    # Un release de un solo tema es un single: se llama como el tema.
-                    album=f["titulo"] if len(temas) > 1 else SIN_ALBUM,
-                    distributor=SIN_DATOS,
-                    label=info.get("label", ""),
-                    anio=_anio(f["fecha"]),
-                    upc=f["upc"],
-                    fecha=f["fecha"],
-                    aid=aid,
-                )
-                for x in temas
-            )
+            for x in temas
+        )
         f["sumado"] = True
     return nuevos
 
@@ -481,10 +668,10 @@ def marcar(
 ) -> list[Producto]:
     """Le anota a cada producto lo que salió de la comparación con Deezer.
 
-    Los temas que Deezer tiene y acá no están (`faltan_temas`), cuando no se
-    pudieron sumar: así el aviso sale pegado al disco, en la tabla y en la
-    validación, que es donde se lo va a ir a buscar. Y cuántos de sus temas
-    vienen de Deezer (`de_deezer`, `origen`), cuando sí.
+    Los temas que el release tiene en Deezer y acá no están (`faltan_temas`),
+    cuando no se pudieron sumar: así el aviso sale pegado al disco, en la tabla
+    y en la validación, que es donde se lo va a ir a buscar. Y cuántos de sus
+    temas vienen de Deezer (`de_deezer`, `origen`), cuando sí.
 
     Un release que sólo está en Deezer puede figurar ahí a nombre de otro
     artista: una colaboración, que Deezer lista en la discografía de los dos.
@@ -492,6 +679,7 @@ def marcar(
     que la hoja no le adjudique al artista un release que no es suyo.
     """
     albumes = (cruce or {}).get("albumes") or {}
+    incompletos = (cruce or {}).get("incompletos") or {}
     for p in productos:
         de_deezer = sum(1 for t in p["tracks"] if t.get("origen") == "deezer")
         if de_deezer:
@@ -504,7 +692,10 @@ def marcar(
     relevados = [f for f in completitud["faltan"] if f["relevado"] and not f["sumado"]]
     for p in productos:
         ids = {t.get("album_deezer_id") for t in p["tracks"]} - {None}
-        temas = []
+        temas: list[str] = []
+        for t in p["tracks"]:
+            clave = (t["album"], t["distributor"], t.get("release_date") or "")
+            temas.extend(x for x in incompletos.get(clave, []) if x not in temas)
         for f in relevados:
             suyo = f["deezer_id"] in ids or (
                 not ids and R.album_coincide(p["title"], f["titulo"], p.get("release_date") or "", f["fecha"])

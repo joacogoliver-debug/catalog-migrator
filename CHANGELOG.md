@@ -20,6 +20,24 @@ Lo que cambió en cada versión publicada. Los números siguen
   otro artista. En ese caso queda a nombre de quien figura en Deezer, y la
   validación lo dice. En el catálogo con que se midió entraron 3 temas a sus
   discos y 6 lanzamientos aparte, 4 de ellos colaboraciones.
+- **Un release sale entero.** YouTube no repite una grabación que ya tiene en
+  otro disco: de un compilado de cincuenta temas mostraba doce, y la hoja de
+  ingesta salía con un «álbum» de doce temas numerados 2, 17, 18, 19… Cuando el
+  disco está verificado contra Deezer y tiene el orden confirmado, lo que le
+  falta de su tracklist entra en su lugar. Si la grabación está en YouTube en
+  otro disco, el tema lleva ese video, que es de donde sale el audio de
+  referencia. No se completa con temas de otro artista: un disco compartido
+  queda como está, con el aviso de qué le falta.
+- **Discos verificados por su lista de temas.** Un disco quedaba sin UPC y con
+  el orden estimado cuando cada uno de sus temas estaba también en un
+  compilado y la búsqueda de Deezer devolvía el compilado. Ahora se lo busca al
+  revés, en la discografía: el álbum que se llama igual y que tiene todos sus
+  temas, por título y duración. Si además coincide la fecha, es el mismo
+  release. Si la fecha no coincide pero el tracklist es exactamente el mismo,
+  se acepta y la validación lo dice, porque suele ser la fecha original de un
+  lado y la de la edición digital del otro. Con dos ediciones que calzan igual
+  no se elige. En el catálogo con que se midió, los discos con UPC pasaron de
+  23 a 27 de 31, y los que tienen el orden confirmado de 18 a 24 de 28.
 - **Más ISRC, sin buscar más.** La discografía del artista ya se baja entera
   para comparar, y ahí están temas que la búsqueda por texto de Deezer no
   había traído. A los que quedaron sin código se les pone el de la discografía
@@ -29,6 +47,17 @@ Lo que cambió en cada versión publicada. Los números siguen
   como el tema y duran un tercio.
 
 ### Corregido
+- **Un disco de más de 25 temas nunca tenía el orden confirmado.** Deezer mete
+  en la ficha del álbum sólo sus primeros veinticinco temas, y el orden se
+  armaba con esa lista: del 26 en adelante no se ubicaban. Ahora se pide la
+  lista entera.
+- **Un título cortado por YouTube ya no deja el disco sin orden.** YouTube
+  corta los títulos a cien caracteres. Un enganchado de seis temas no coincidía
+  con el de Deezer, quedaba sin ubicar y además figuraba como faltante cuando
+  estaba. Se lo reconoce por su comienzo y su duración.
+- **Un compilado ya no llena la validación de avisos repetidos.** Todos sus
+  temas están también en su disco original, y había un aviso por cada uno. Ahora
+  es uno por release, con la cuenta.
 - **El mismo tema entregado por dos distribuidoras ya no es un «error de
   rechazo».** El cruce le da a cada tema el ISRC de Deezer si dura lo mismo con
   cuatro segundos de margen, pero la validación exigía tres entre dos temas con

@@ -450,3 +450,23 @@ def test_el_mismo_release_en_dos_distribuidoras_elegido_dos_veces_dice_que_hacer
     dos.pop("tambien_en")
     (error,) = [h for h in V.validar([uno, dos])["hallazgos"] if h["codigo"] == "upc_duplicado"]
     assert "está repetido" in error["mensaje"]
+
+
+def test_un_compilado_no_llena_la_validacion_de_avisos_repetidos():
+    """Todos los temas de un compilado están también en su disco original. Un
+    aviso por tema eran, en el catálogo real, más de cien avisos iguales."""
+    originales = [_prod(title=f"Disco {i}", tracks=[_track(f"T{i}", f"ARABC20{i:05d}")]) for i in range(1, 8)]
+    compilado = _prod(title="Las Mejores", tracks=[_track(f"T{i}", f"ARABC20{i:05d}") for i in range(1, 8)])
+    res = V.validar([*originales, compilado])
+
+    (aviso,) = [h for h in res["hallazgos"] if h["codigo"] == "isrc_compartido"]
+    assert aviso["nivel"] == "aviso" and aviso["producto"] == "Las Mejores" and aviso["track"] is None
+    assert "(7): T1 · T2 · T3 · T4 · T5 · y 2 más" in aviso["mensaje"]
+    assert "conservá los códigos" in aviso["mensaje"]
+    assert codigos(res, "error") == []
+
+
+def test_lista_corta_no_corta_lo_que_entra():
+    assert V.lista_corta(["a", "b"]) == "a · b"
+    assert V.lista_corta([str(i) for i in range(9)], 8) == "0 · 1 · 2 · 3 · 4 · 5 · 6 · 7 · y 1 más"
+    assert V.lista_corta([]) == ""

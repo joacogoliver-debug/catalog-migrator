@@ -457,7 +457,7 @@ def _catalogo(hacer_track, deezer, discos, tracks, titulares=None):
     falso.titulares.update(titulares or {})
     datos = cruce(10)
     comp = C.revisar(tracks, datos, "Los del Ejemplo")
-    todos = tracks + C.sumar_de_deezer(tracks, comp, datos)
+    todos = tracks + C.sumar_de_deezer(tracks, comp, datos, "Los del Ejemplo")
     productos = C.marcar(P.group_products(todos, "Los del Ejemplo"), comp, datos)
     return {p["title"]: p for p in productos}, comp, falso
 
@@ -771,3 +771,277 @@ def test_un_isrc_que_ya_estaba_no_se_toca(hacer_track, deezer):
     tracks[0]["match"] = "media"
     C.revisar(tracks, cruce(10), "Los del Ejemplo")
     assert (tracks[0]["isrc"], tracks[0]["match"]) == ("XX9", "media")
+
+
+# ============================================================
+# Un release se entrega entero
+# ============================================================
+#
+# YouTube no repite una grabación que ya tiene en otro disco. Del catálogo
+# real: un compilado de cincuenta temas del que mostraba doce, y la hoja de
+# ingesta salía con un «álbum» de doce temas numerados 2, 17, 18, 19…
+
+
+def _ejemplo(nombre):
+    return {"artist": {"name": nombre}}
+
+
+def test_un_release_se_completa_con_los_lugares_que_youtube_no_muestra(hacer_track, deezer):
+    discos = {
+        10: (
+            "Grandes Éxitos",
+            "album",
+            "2020-01-01",
+            [tema("Uno", "AR1"), tema("Dos", "AR2"), tema("Tres", "AR3"), tema("Cuatro", "AR4")],
+        ),
+    }
+    tracks = [
+        ubicado(track(hacer_track, "Uno", "Grandes Éxitos", isrc="AR1", aid=10), 1),
+        ubicado(track(hacer_track, "Cuatro", "Grandes Éxitos", isrc="AR4", aid=10), 4),
+        # «Dos» está en YouTube, pero en su disco original.
+        track(hacer_track, "Dos", "El Original", isrc="AR2", fecha="2001-05-05"),
+    ]
+    tracks[2]["views"] = 900
+    productos, comp, _f = _catalogo(hacer_track, deezer, discos, tracks)
+
+    disco = productos["Grandes Éxitos"]
+    assert [(t.get("track_number"), t["track"]) for t in disco["tracks"]] == [
+        (1, "Uno"),
+        (2, "Dos"),
+        (3, "Tres"),
+        (4, "Cuatro"),
+    ], "entero y numerado de corrido"
+    dos, tres = disco["tracks"][1], disco["tracks"][2]
+    assert dos.get("origen") == "deezer" and dos["video_id"] == tracks[2]["video_id"], (
+        "con el video de la misma grabación, que es de donde sale el audio de referencia"
+    )
+    assert dos["views"] == 0, "las vistas son del video en su disco: no se cuentan dos veces"
+    assert (tres["video_id"], tres["url"]) == ("", "https://www.deezer.com/track/1003")
+    assert disco.get("de_deezer") == 2 and "faltan_temas" not in disco
+    assert comp["faltan"][0]["sumado"] is True
+    assert productos["El Original"]["track_count"] == 1, "el disco original no se toca"
+
+
+def test_un_compilado_del_artista_a_nombre_del_sello_se_completa(hacer_track, deezer):
+    """El álbum figura en Deezer a nombre del sello, pero los temas son del
+    artista: lo que decide es de quién es lo que falta."""
+    propio = _ejemplo("Los De Ejemplo")  # escrito apenas distinto, como en Deezer
+    discos = {
+        10: ("Las Mejores", "album", "2020-01-01", [tema("Uno", "AR1") | propio, tema("Dos", "AR2") | propio])
+    }
+    tracks = [ubicado(track(hacer_track, "Uno", "Las Mejores", isrc="AR1", aid=10), 1)]
+    productos, _c, _f = _catalogo(hacer_track, deezer, discos, tracks, titulares={10: "Leader Music"})
+    disco = productos["Las Mejores"]
+    assert disco["track_count"] == 2
+    assert disco["tracks"][1]["artists"] == ["Los del Ejemplo"], (
+        "a nombre del canal, como el resto del catálogo"
+    )
+
+
+def test_un_disco_compartido_no_se_completa_con_temas_de_otro_artista(hacer_track, deezer):
+    from migrador import validar as V
+
+    otros = [tema(f"De Otros {i}", f"XX{i}") | _ejemplo("Los Lamas") for i in range(1, 11)]
+    discos = {10: ("20 Temas Juntos", "album", "2020-01-01", [tema("Uno", "AR1"), *otros])}
+    tracks = [ubicado(track(hacer_track, "Uno", "20 Temas Juntos", isrc="AR1", aid=10), 1)]
+    productos, _c, _f = _catalogo(hacer_track, deezer, discos, tracks)
+
+    disco = productos["20 Temas Juntos"]
+    assert disco["track_count"] == 1 and "de_deezer" not in disco
+    assert disco.get("faltan_temas") == [f"De Otros {i}" for i in range(1, 11)]
+    (aviso,) = [
+        h for h in V.validar([disco], "Los del Ejemplo")["hallazgos"] if h["codigo"] == "album_incompleto"
+    ]
+    assert "(10): De Otros 1 · " in aviso["mensaje"] and aviso["mensaje"].count("De Otros") == 8
+    assert "y 2 más" in aviso["mensaje"], "diez títulos no hacen ilegible el mensaje"
+
+
+def test_un_disco_que_ya_esta_entero_no_recibe_nada(hacer_track, deezer):
+    discos = {10: ("Disco", "album", "2020-01-01", [tema("Uno", "AR1"), tema("Dos", "AR2")])}
+    tracks = [
+        ubicado(track(hacer_track, "Uno", "Disco", isrc="AR1", aid=10), 1),
+        ubicado(track(hacer_track, "Dos", "Disco", isrc="AR2", aid=10), 2),
+    ]
+    productos, comp, _f = _catalogo(hacer_track, deezer, discos, tracks)
+    assert productos["Disco"]["track_count"] == 2 and "de_deezer" not in productos["Disco"]
+    assert comp["faltan"] == []
+
+
+# ============================================================
+# Ubicar lo que el cruce no ubicó
+# ============================================================
+
+
+def test_un_titulo_cortado_por_youtube_se_ubica_por_su_comienzo_y_su_duracion(hacer_track, deezer):
+    """YouTube corta los títulos a cien caracteres. El enganchado de seis temas
+    del catálogo real no coincidía con el de Deezer, quedaba sin ubicar y
+    dejaba el disco entero con el orden estimado, además de figurar como
+    faltante cuando estaba."""
+    largo = (
+        "Alguien como yo / Abrazame otra vez / No vuelvas a intentar / Sabes como te quiero / Como pienso yo"
+    )
+    discos = {
+        10: ("Disco", "album", "2020-01-01", [tema("Uno", "AR1"), tema(largo + " / Tu por mi", "AR2", 615)])
+    }
+    tracks = [
+        ubicado(track(hacer_track, "Uno", "Disco", isrc="AR1", aid=10), 1),
+        track(hacer_track, largo[:88] + "...", "Disco", dur=616, aid=10),
+    ]
+    deezer(discos)
+    res = C.revisar(tracks, cruce(10), "Los del Ejemplo")
+    assert (tracks[1].get("track_number"), tracks[1].get("orden_fuente")) == (2, "deezer")
+    assert tracks[1]["isrc"] == "AR2", "y con su lugar, su código"
+    assert res["faltan"] == [], "estaba: no falta"
+
+
+@pytest.mark.parametrize(
+    ("titulo", "duracion", "motivo"),
+    [
+        ("Alguien como yo / Abrazame otra vez...", 300, "el comienzo coincide pero dura otra cosa"),
+        ("Alguien como yo...", 616, "un comienzo de quince letras no identifica nada"),
+        ("Otro comienzo / Abrazame otra vez / Y algo más largo todavía...", 616, "no es el comienzo"),
+    ],
+)
+def test_un_titulo_cortado_no_se_ubica_por_las_dudas(hacer_track, deezer, titulo, duracion, motivo):
+    largo = "Alguien como yo / Abrazame otra vez / No vuelvas a intentar / Sabes como te quiero"
+    discos = {10: ("Disco", "album", "2020-01-01", [tema("Uno", "AR1"), tema(largo, "AR2", 615)])}
+    tracks = [
+        ubicado(track(hacer_track, "Uno", "Disco", isrc="AR1", aid=10), 1),
+        track(hacer_track, titulo, "Disco", dur=duracion, aid=10),
+    ]
+    deezer(discos)
+    C.revisar(tracks, cruce(10), "Los del Ejemplo")
+    assert "orden_fuente" not in tracks[1], motivo
+
+
+# ============================================================
+# Verificar un disco por su lista de temas
+# ============================================================
+#
+# Del catálogo real: cuatro discos sin UPC y con el orden estimado que Deezer
+# tenía enteros. Cada tema estaba también en un compilado, y la búsqueda
+# devolvía el compilado.
+
+
+def _base(hacer_track):
+    """Un disco ya verificado: es lo que dice de quién es la discografía."""
+    return ubicado(track(hacer_track, "Base", "Verificado", isrc="AR0", aid=10), 1)
+
+
+def test_un_disco_se_verifica_por_su_tracklist_cuando_coincide_la_fecha(hacer_track, deezer):
+    discos = {
+        10: ("Verificado", "album", "2020-01-01", [tema("Base", "AR0")]),
+        20: (
+            "Pasajeros",
+            "album",
+            "2025-07-30",
+            [tema("A", "US1", 200), tema("B", "US2", 210), tema("C", "US3", 220)],
+        ),
+        # El compilado tiene los mismos temas: es el que devolvía la búsqueda.
+        21: ("Las 50 Mejores", "album", "2026-02-27", [tema("A", "US1", 200), tema("C", "US3", 220)]),
+    }
+    tracks = [
+        _base(hacer_track),
+        track(hacer_track, "C", "Pasajeros", dur=221, fecha="2025-07-30"),
+        track(hacer_track, "A", "Pasajeros", dur=199, fecha="2025-07-30"),
+    ]
+    tracks[1]["upc_descartado"] = "Las 50 Mejores"
+    productos, comp, _f = _catalogo(hacer_track, deezer, discos, tracks)
+
+    assert comp["verificados_por_tracklist"] == 1
+    disco = productos["Pasajeros"]
+    assert disco["upc"] == "UPC20" and disco["order_unconfirmed"] is False
+    assert [(t.get("track_number"), t["track"], t["isrc"]) for t in disco["tracks"]] == [
+        (1, "A", "US1"),
+        (2, "B", "US2"),
+        (3, "C", "US3"),
+    ], "verificado, ordenado, con sus códigos y completado con el tema que YouTube no mostraba"
+    assert not any("upc_por_tracklist" in t or "upc_descartado" in t for t in disco["tracks"])
+
+
+def test_con_otra_fecha_solo_vale_el_tracklist_exacto_y_se_avisa(hacer_track, deezer):
+    """YouTube muestra la fecha de la edición digital y Deezer la original. Con
+    exactamente los mismos temas es casi seguro el mismo release, pero no es
+    seguro del todo: se acepta y se dice."""
+    from migrador import validar as V
+
+    discos = {
+        10: ("Verificado", "album", "2020-01-01", [tema("Base", "AR0")]),
+        20: ("A Mi Manera", "album", "2018-10-10", [tema("A", "US1", 200), tema("B", "US2", 210)]),
+    }
+    tracks = [
+        _base(hacer_track),
+        track(hacer_track, "A", "A Mi Manera", dur=200, fecha="2019-03-22"),
+        track(hacer_track, "B", "A Mi Manera", dur=212, fecha="2019-03-22"),
+    ]
+    productos, comp, _f = _catalogo(hacer_track, deezer, discos, tracks)
+    disco = productos["A Mi Manera"]
+    assert comp["verificados_por_tracklist"] == 1 and disco["upc"] == "UPC20"
+    assert disco["release_date"] == "2019-03-22", "la fecha del producto sigue siendo la de YouTube"
+    (aviso,) = [
+        h for h in V.validar([disco], "Los del Ejemplo")["hallazgos"] if h["codigo"] == "upc_por_tracklist"
+    ]
+    assert aviso["nivel"] == "aviso" and "A Mi Manera (2018-10-10)" in aviso["mensaje"]
+
+
+@pytest.mark.parametrize(
+    ("discos_de_deezer", "motivo"),
+    [
+        (
+            {
+                20: (
+                    "A Mi Manera",
+                    "album",
+                    "2018-10-10",
+                    [tema("A", "US1"), tema("B", "US2"), tema("C", "US3")],
+                )
+            },
+            "con otra fecha y un tema de más, puede ser otra edición",
+        ),
+        (
+            {
+                20: ("A Mi Manera", "album", "2018-10-10", [tema("A", "US1"), tema("B", "US2")]),
+                21: ("A Mi Manera", "album", "1992-01-04", [tema("A", "XX1"), tema("B", "XX2")]),
+            },
+            "dos ediciones calzan igual: no se elige",
+        ),
+        (
+            {20: ("Las 50 Mejores", "album", "2019-03-22", [tema("A", "US1"), tema("B", "US2")])},
+            "tiene los temas pero es otro disco: se llama distinto",
+        ),
+        (
+            {20: ("A Mi Manera", "album", "2019-03-22", [tema("A", "US1"), tema("Otro", "US2")])},
+            "le falta uno de los temas del disco",
+        ),
+        (
+            {20: ("A Mi Manera", "album", "2019-03-22", [tema("A", "US1", 200), tema("B", "US2", 300)])},
+            "un tema dura otra cosa: es otra grabación",
+        ),
+    ],
+)
+def test_un_disco_no_se_verifica_por_tracklist_ante_la_duda(hacer_track, deezer, discos_de_deezer, motivo):
+    discos = {10: ("Verificado", "album", "2020-01-01", [tema("Base", "AR0")]), **discos_de_deezer}
+    tracks = [
+        _base(hacer_track),
+        track(hacer_track, "A", "A Mi Manera", dur=200, fecha="2019-03-22"),
+        track(hacer_track, "B", "A Mi Manera", dur=200, fecha="2019-03-22"),
+    ]
+    _productos, comp, _f = _catalogo(hacer_track, deezer, discos, tracks)
+    assert comp["verificados_por_tracklist"] == 0, motivo
+    # Se miran los tracks de YouTube y no el producto por su título: si a Deezer
+    # le sobra un tema, ese álbum entra aparte, como «sólo en Deezer», y se
+    # llama igual.
+    assert all(not t["upc"] and "orden_fuente" not in t for t in tracks[1:]), motivo
+
+
+def test_un_disco_que_el_cruce_ya_verifico_no_se_vuelve_a_buscar(hacer_track, deezer):
+    """El UPC que ya tiene viene de un álbum verificado: no se pisa con otro."""
+    discos = {
+        10: ("Verificado", "album", "2020-01-01", [tema("Base", "AR0"), tema("Dos", "AR2")]),
+        20: ("Verificado", "album", "2020-01-01", [tema("Base", "AR0"), tema("Dos", "AR2")]),
+    }
+    tracks = [_base(hacer_track), track(hacer_track, "Dos", "Verificado", dur=200)]
+    tracks[0]["upc"] = "UPC10"
+    _productos, comp, _f = _catalogo(hacer_track, deezer, discos, tracks)
+    assert comp["verificados_por_tracklist"] == 0
+    assert tracks[0]["upc"] == "UPC10"

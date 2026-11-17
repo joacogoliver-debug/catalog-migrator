@@ -74,7 +74,7 @@ def relevar_catalogo(
 
     # Lo que falta y se puede sumar entra al catálogo con los datos de Deezer:
     # adentro de su disco, o como un release aparte que queda sin elegir.
-    tracks = tracks + completitud_mod.sumar_de_deezer(tracks, comp, res["cruce"])
+    tracks = tracks + completitud_mod.sumar_de_deezer(tracks, comp, res["cruce"], artista)
     prods = productos_mod.group_products(tracks, artist=artista)
     completitud_mod.marcar(prods, comp, res["cruce"])
     log(T("mig.agrupados", productos=len(prods), tracks=len(tracks)))
@@ -110,6 +110,8 @@ def relevar_catalogo(
         log(T("mig.descartados", n=diag["descartados"]))
     if diag["cortado_por_cuota"]:
         log(T("mig.cortado_por_cuota", n=diag["temas"]))
+    if comp["verificados_por_tracklist"]:
+        log(T("mig.verificados_por_tracklist", n=comp["verificados_por_tracklist"]))
     if comp["isrc_completados"]:
         log(T("mig.isrc_de_discografia", n=comp["isrc_completados"]))
     if comp["revisada"] and comp["temas"]:

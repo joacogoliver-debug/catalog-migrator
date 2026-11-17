@@ -398,6 +398,10 @@ TEXTOS = {
         "es": "La cuota de YouTube se acabó a mitad del listado: el catálogo quedó incompleto, con {n} temas",
         "en": "The YouTube quota ran out mid-listing: the catalog is incomplete, with {n} tracks",
     },
+    "mig.verificados_por_tracklist": {
+        "es": "Discos verificados contra Deezer por su lista de temas: {n}",
+        "en": "Releases verified against Deezer by their tracklist: {n}",
+    },
     "mig.isrc_de_discografia": {
         "es": "La discografía de Deezer completó ISRC que la búsqueda no había encontrado: {n}",
         "en": "The Deezer discography filled in ISRCs the search had not found: {n}",
@@ -894,6 +898,19 @@ TEXTOS = {
             "({n}): {temas}. It is the same release, per its UPC; confirm they are still on it."
         ),
     },
+    "val.upc_por_tracklist": {
+        "es": (
+            "El UPC es el de «{album}» en Deezer, que tiene exactamente los mismos temas con las "
+            "mismas duraciones pero otra fecha de lanzamiento. Suele ser el mismo release, con la "
+            "fecha original de un lado y la de la edición digital del otro. Confirmalo."
+        ),
+        "en": (
+            'The UPC is that of "{album}" on Deezer, which has exactly the same tracks with the '
+            "same lengths but another release date. It is usually the same release, with the "
+            "original date on one side and the digital edition's on the other. Confirm it."
+        ),
+    },
+    "val.y_mas": {"es": "y {n} más", "en": "and {n} more"},
     "val.album_incompleto": {
         "es": (
             "Deezer tiene en este disco temas que no aparecieron en YouTube ({n}): {temas}. "
@@ -949,6 +966,18 @@ TEXTOS = {
             "The same recording is in '{uno}' and in '{otro}', with the same ISRC ({isrc}). "
             "That is expected if it came out as a single and later on the album: keep the "
             "code, it is what preserves its history."
+        ),
+    },
+    "val.isrc_compartidos": {
+        "es": (
+            "Grabaciones de este release que están también en otros, con el mismo ISRC ({n}): "
+            "{temas}. Es lo esperable en un compilado, o cuando un single entró después en el "
+            "álbum: conservá los códigos, que son lo que mantiene su historial."
+        ),
+        "en": (
+            "Recordings on this release that are also on others, with the same ISRC ({n}): "
+            "{temas}. That is expected on a compilation, or when a single later went onto the "
+            "album: keep the codes, they are what preserves their history."
         ),
     },
     "val.isrc_otro_corte": {

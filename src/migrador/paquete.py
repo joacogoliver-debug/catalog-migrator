@@ -510,6 +510,10 @@ def reporte_texto(productos: list[Producto], artista, entorno=None, con_tidal=Fa
     `diag` es el diagnóstico del relevamiento. Con él, el reporte dice además
     cómo se listó el catálogo y qué tiene Deezer que no apareció en YouTube.
     """
+    # Acá y no arriba, como en `build_zip`: `validar` no es de lo que depende el
+    # resto de este módulo.
+    from .validar import lista_corta
+
     L = []
     tracks = [t for p in productos for t in p["tracks"]]
     aptos = [t for t in tracks if (t.get("audio_format") or "") in FORMATOS_LOSSLESS]
@@ -579,12 +583,12 @@ def reporte_texto(productos: list[Producto], artista, entorno=None, con_tidal=Fa
             faltas.append(T("paq.falta_orden"))
         faltan = p.get("faltan_temas") or []
         if faltan:
-            faltas.append(T("paq.falta_temas", n=len(faltan), temas=" · ".join(faltan)))
+            faltas.append(T("paq.falta_temas", n=len(faltan), temas=lista_corta(faltan)))
         de_deezer = [t.get("track", "") for t in p["tracks"] if t.get("origen") == "deezer"]
         if p.get("origen") == "deezer":
             faltas.append(T("paq.solo_en_deezer"))
         elif de_deezer:
-            faltas.append(T("paq.temas_de_deezer", n=len(de_deezer), temas=" · ".join(de_deezer)))
+            faltas.append(T("paq.temas_de_deezer", n=len(de_deezer), temas=lista_corta(de_deezer)))
         if faltas:
             hay_pendientes = True
             L.append(f"  {p['folder']}")

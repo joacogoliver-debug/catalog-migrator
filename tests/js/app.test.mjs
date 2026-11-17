@@ -443,7 +443,7 @@ test('el disco con temas sumados de Deezer lo dice en el badge y en cada tema', 
       S.expandidos.add('c')`);
   const html = ev('tablaProductos(S.catalogo.productos)');
   assert.ok(html.includes('1 tema de Deezer'), html);
-  assert.equal(html.split('(de Deezer: no apareció en YouTube)').length - 1, 1, 'sólo en el tema que vino de Deezer');
+  assert.equal(html.split('(sumado de Deezer: YouTube no lo muestra en este disco)').length - 1, 1, 'sólo en el tema que vino de Deezer');
   ev(`S.catalogo.productos[2].de_deezer = 3`);
   assert.ok(ev('tablaProductos(S.catalogo.productos)').includes('3 temas de Deezer'));
 });

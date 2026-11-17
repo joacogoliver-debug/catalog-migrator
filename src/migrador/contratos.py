@@ -138,6 +138,10 @@ class Track(TypedDict):
     # un álbum que no es este release: guarda el título de ese álbum, y el UPC
     # queda en blanco en vez de ser el de otro producto.
     upc_descartado: NotRequired[str]
+    # Lo pone `completitud.verificar_por_tracklist` cuando el UPC salió de un
+    # álbum con exactamente los mismos temas pero otra fecha de lanzamiento:
+    # guarda el título y la fecha de ese álbum, para que la validación lo diga.
+    upc_por_tracklist: NotRequired[str]
 
     # El número de track. Lo pone `relevar_core.enrich_with_codes` con el real,
     # del tracklist de Deezer, cuando el álbum se verificó como este release; si
@@ -332,6 +336,9 @@ class CruceDeezer(TypedDict):
     # Lo pone `completitud.revisar`: el tracklist entero de cada release al que
     # le falta algo, para poder sumarlo sin volver a pedírselo a Deezer.
     discografia: NotRequired[dict[int, list["TemaFaltante"]]]
+    # Lo pone `completitud.sumar_de_deezer`: lo que le falta a cada release
+    # verificado que no se completó, por (álbum, distribuidora, fecha).
+    incompletos: NotRequired[dict[tuple[str, str, str], list[str]]]
 
 
 class Relevamiento(TypedDict):
@@ -441,6 +448,9 @@ class Completitud(TypedDict):
     # ISRC que la búsqueda por texto no había encontrado y que salieron de la
     # discografía, por título y duración (ver `completitud.completar_isrc`).
     isrc_completados: int
+    # Discos que el cruce no había verificado y que se verificaron por su lista
+    # de temas (ver `completitud.verificar_por_tracklist`).
+    verificados_por_tracklist: int
     recortada: bool  # la discografía superó el tope y se revisó una parte
     faltan: list[ReleaseIncompleto]
 

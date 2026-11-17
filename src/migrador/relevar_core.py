@@ -1085,7 +1085,7 @@ _RE_EDICION = re.compile(
 _RE_OTRO_RELEASE = re.compile(r"deluxe|expanded|bonus|ampliad", re.I)
 
 
-def _fechas_cercanas(a, b, dias=7):
+def fechas_cercanas(a, b, dias=7):
     try:
         return abs((date.fromisoformat(a[:10]) - date.fromisoformat(b[:10])).days) <= dias
     except ValueError:
@@ -1123,7 +1123,7 @@ def album_coincide(titulo_producto, titulo_deezer, fecha_producto="", fecha_deez
     # original de diez años antes, y sus temas se quedaban con el UPC y el
     # tracklist del original. Una semana de margen, porque cada plataforma puede
     # fechar la misma entrega con un día de diferencia.
-    if fecha_producto and fecha_deezer and not _fechas_cercanas(fecha_producto, fecha_deezer):
+    if fecha_producto and fecha_deezer and not fechas_cercanas(fecha_producto, fecha_deezer):
         return False
     # La edición se mira primero: su «10th» traería un número que el título de
     # YouTube no tiene, y ahí lo que decide es la fecha, no los números.
