@@ -1187,10 +1187,20 @@ _RE_OTRO_RELEASE = re.compile(r"deluxe|expanded|bonus|ampliad", re.I)
 
 
 def fechas_cercanas(a, b, dias=7):
+    """Si dos fechas de lanzamiento son la misma, con el margen con que cada
+    plataforma fecha la misma entrega.
+
+    Un 1 de enero es casi siempre un año sin día: así carga YouTube los discos
+    de los que sólo se sabe el año («2010-01-01» para uno del 7 de diciembre de
+    2010). Ahí lo que se compara es el año, que es lo único que esa fecha dice.
+    """
     try:
-        return abs((date.fromisoformat(a[:10]) - date.fromisoformat(b[:10])).days) <= dias
+        da, db = date.fromisoformat(a[:10]), date.fromisoformat(b[:10])
     except ValueError:
         return True  # una fecha ilegible no es evidencia de que sean distintos
+    if (da.month, da.day) == (1, 1) or (db.month, db.day) == (1, 1):
+        return da.year == db.year
+    return abs((da - db).days) <= dias
 
 
 def album_coincide(titulo_producto, titulo_deezer, fecha_producto="", fecha_deezer=""):

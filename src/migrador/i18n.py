@@ -944,14 +944,16 @@ TEXTOS = {
     },
     "val.upc_por_tracklist": {
         "es": (
-            "El UPC es el de «{album}» en Deezer, que tiene exactamente los mismos temas con las "
-            "mismas duraciones pero otra fecha de lanzamiento. Suele ser el mismo release, con la "
-            "fecha original de un lado y la de la edición digital del otro. Confirmalo."
+            "El UPC es el de «{album}» en Deezer. Se lo reconoció por su lista de temas, que "
+            "coincide con la de este disco, y no por la fecha de lanzamiento, que es otra o no se "
+            "conoce. Suele ser el mismo release, con la fecha original de un lado y la de la "
+            "edición digital del otro. Confirmalo."
         ),
         "en": (
-            'The UPC is that of "{album}" on Deezer, which has exactly the same tracks with the '
-            "same lengths but another release date. It is usually the same release, with the "
-            "original date on one side and the digital edition's on the other. Confirm it."
+            'The UPC is that of "{album}" on Deezer. It was recognized by its tracklist, which '
+            "matches this record's, and not by the release date, which differs or is unknown. It "
+            "is usually the same release, with the original date on one side and the digital "
+            "edition's on the other. Confirm it."
         ),
     },
     "val.y_mas": {"es": "y {n} más", "en": "and {n} more"},

@@ -8,6 +8,39 @@ What changed in every published version. The numbers follow
 
 ## [Unreleased]
 
+### Improved
+- **More ISRCs, more UPCs and more records with a confirmed order.** Measured on
+  seven real catalogs (1,221 tracks, 460 releases): tracks with an ISRC went
+  from 91% to 97%, releases with a UPC from 93% to 97%, and records with a
+  confirmed order from 77% to 89%. On the worst catalog, from 67% to 99% for
+  ISRC and from 70% to 98% for UPC. No code that was already found changed.
+  What did it, by weight:
+  - **The version stated in the record's title applies to its tracks.** On the
+    record "En Vivo En El Teatro Colonial", YouTube titles a track "Alma Mía"
+    and Deezer "Alma Mía (En Vivo)". Compared title against title they were
+    two different versions, and whole live and acoustic records ended up
+    without a single code. Now what each side says, track and record, is put
+    together. Not the other way round: if YouTube says "(Live)" and Deezer
+    says it nowhere, it is the studio one.
+  - **Records are also searched by their title**, not only in the artist's
+    discography. A various-artists compilation is filed under "Various
+    Artists" and sits in nobody's discography. To accept an album found this
+    way, every track has to be credited to the artist.
+  - **More ways to recognise the same release** when the date differs: YouTube
+    showing almost the whole album (four tracks or more, and four out of
+    five), or every track being there with the ISRC the match found. And a
+    January 1st is compared by year: that is how YouTube loads records whose
+    year is all that is known.
+  - **Tie-breaks between releases with the same name**: by ISRC, by the label
+    YouTube states, and leaving each one the album nobody else has taken. Two
+    singles with the same title no longer end up with the same UPC.
+  - **The track left over goes to the slot left over.** With almost the whole
+    record placed beyond doubt, the last track is placed by its title even if
+    the length differs, so the record can be ordered; its ISRC stays blank.
+- What did not improve, and why: megamix cuts and records that are not on
+  Deezer still have no code, because there is nowhere to take it from.
+  MusicBrainz was tried and does not carry the artists used for measuring.
+
 ### Fixed
 - **The app said an artist "is not on Deezer" while their profile was there,
   and brought no ISRC or UPC.** The match looked each track up in Deezer's

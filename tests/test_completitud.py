@@ -45,9 +45,21 @@ class FalsoDeezer:
         # Lo que contesta el buscador de artistas, y los temas más escuchados
         # de cada perfil: {id: (nombre, [temas])}.
         self.perfiles = {}
+        # Álbumes que existen en Deezer pero no en la discografía del artista
+        # (un compilado de varios), y los que devuelve el buscador de álbumes.
+        self.fuera_de_discografia = set()
+        self.por_titulo = []
+        self.sellos = {}  # id de álbum -> sello, si no es el de siempre
 
     def __call__(self, ruta):
         self.pedidos.append(ruta)
+        if ruta.startswith("search/album?"):
+            return {
+                "data": [
+                    {"id": i, "title": self.discos[i][0], "record_type": self.discos[i][1]}
+                    for i in self.por_titulo
+                ]
+            }
         if ruta.startswith("search/artist?"):
             return {"data": [{"id": i, "name": nombre} for i, (nombre, _top) in self.perfiles.items()]}
         if ruta.startswith("artist/") and "/top" in ruta:
@@ -63,7 +75,7 @@ class FalsoDeezer:
             data = [
                 {"id": i, "title": d[0], "record_type": d[1], "release_date": d[2]}
                 for i, d in ids.items()
-                if i in self.discos
+                if i in self.discos and i not in self.fuera_de_discografia
             ]
             return {"data": data}
         partes = ruta.split("?")[0].split("/")
@@ -89,7 +101,7 @@ class FalsoDeezer:
             "id": aid,
             "upc": f"UPC{aid}",
             "title": self.discos[aid][0],
-            "label": "Sello de Deezer",
+            "label": self.sellos.get(aid, "Sello de Deezer"),
             "release_date": self.discos[aid][2],
             "artist": {"id": 1, "name": self.titulares.get(aid, "Los del Ejemplo")},
         }
@@ -1359,11 +1371,33 @@ def test_un_disco_a_medio_ubicar_pasa_a_la_edicion_que_tiene_todos_sus_temas(hac
     )
 
 
-def test_con_fecha_en_youtube_no_se_pasa_a_una_edicion_de_otra_fecha(hacer_track, deezer):
-    """La fecha de YouTube es un dato: una edición que salió otro día y tiene
-    temas de más es otro release, aunque le entren todos los del disco."""
+def test_con_otra_fecha_la_edicion_vale_si_youtube_muestra_casi_todo_el_album(hacer_track, deezer):
+    """De un catálogo real: «En Vivo En El Teatro Colonial, Vol. 1» tenía 17
+    temas en YouTube y 19 en Deezer, con otra fecha. Quedaba sin UPC ni ISRC
+    siendo el único álbum con ese título. Con cuatro temas o más, y al menos
+    cuatro de cada cinco del álbum, se acepta y se avisa."""
+    from migrador import validar as V
+
     tracks = _tarea(hacer_track, fecha="1997-01-16")
     productos, comp, _f = _catalogo(hacer_track, deezer, _ediciones("2022-02-22"), tracks)
+    assert comp["verificados_por_tracklist"] == 1
+    disco = productos["Tarea"]
+    assert disco["upc"] == "UPC20" and disco["order_unconfirmed"] is False
+    assert disco["release_date"] == "1997-01-16", "la fecha sigue siendo la de YouTube"
+    assert [h["codigo"] for h in V.validar([disco], "Los del Ejemplo")["hallazgos"]].count(
+        "upc_por_tracklist"
+    ) == 1
+
+
+def test_con_otra_fecha_y_mostrando_poco_del_album_no_se_pasa_de_edicion(hacer_track, deezer):
+    """La fecha de YouTube es un dato. Si además el disco es una parte chica
+    del álbum, puede ser otro release: queda como estaba."""
+    discos = _ediciones("2022-02-22")
+    discos[20][3].extend(
+        [tema("Cuatro (Remix)", "AR6", 330), tema("Cinco (Remix)", "AR7", 340), tema("Seis", "AR8", 350)]
+    )
+    tracks = _tarea(hacer_track, fecha="1997-01-16")
+    productos, comp, _f = _catalogo(hacer_track, deezer, discos, tracks)
     assert comp["verificados_por_tracklist"] == 0
     assert [t["upc"] for t in tracks] == ["UPC10", "UPC10", "", ""], "queda como estaba"
     assert productos["Tarea"]["order_unconfirmed"] is True
@@ -1464,3 +1498,302 @@ def test_el_mismo_tema_con_un_agregado_en_el_titulo_no_es_un_cruce_dudoso(hacer_
     assert V._parentesco(a, b) == "otra", "con otra duración sigue siendo otra grabación"
     vivo = hacer_track("Overture (En Vivo)", "Vivo", 2021, dur=149)
     assert V._parentesco(a, vivo) == "otra", "y una versión declarada, también"
+
+
+# ============================================================
+# Lo que subió la cobertura, medido con siete catálogos reales
+# ============================================================
+#
+# ISRC de 91 % a 97 %, UPC de 93 % a 97 %, orden confirmado de 77 % a 89 %.
+# Cada test es un caso que salió de mirar por qué un lanzamiento quedaba sin
+# código teniendo su álbum publicado en Deezer.
+
+
+def _en_vivo(hacer_track, fecha="2022-11-17"):
+    """Un disco en vivo como lo muestra YouTube: la versión está en el título
+    del disco, y los temas van sin ella."""
+    album = "En Vivo en el Teatro"
+    return [
+        track(hacer_track, "Alma Mía", album, dur=153, fecha=fecha),
+        track(hacer_track, "Corre, Corre", album, dur=108, fecha=fecha),
+        track(hacer_track, "Cicatrices", album, dur=222, fecha=fecha),
+    ]
+
+
+DISCO_EN_VIVO = {
+    10: ("Verificado", "album", "2020-01-01", [tema("Base", "AR0")]),
+    20: (
+        "En Vivo en el Teatro",
+        "album",
+        "2022-01-12",
+        [
+            tema("Alma Mía (En Vivo)", "AR1", 152),
+            tema("Corre, Corre (En Vivo)", "AR2", 107),
+            tema("Cicatrices (En Vivo; Acústico)", "AR3", 221),
+        ],
+    ),
+}
+
+
+def test_la_version_dicha_en_el_titulo_del_disco_vale_para_sus_temas(hacer_track, deezer):
+    """El caso que más pesaba: discos en vivo enteros sin un solo código. En
+    un catálogo real eran 70 temas sin ISRC y 8 lanzamientos sin UPC."""
+    tracks = [_base(hacer_track), *_en_vivo(hacer_track)]
+    productos, comp, _f = _catalogo(hacer_track, deezer, DISCO_EN_VIVO, tracks)
+    disco = productos["En Vivo en el Teatro"]
+    assert comp["verificados_por_tracklist"] == 1 and disco["upc"] == "UPC20"
+    assert [(t.get("track_number"), t["track"], t["isrc"]) for t in disco["tracks"]] == [
+        (1, "Alma Mía", "AR1"),
+        (2, "Corre, Corre", "AR2"),
+        (3, "Cicatrices", "AR3"),
+    ]
+    assert comp["isrc_completados"] == 3
+
+
+def test_si_youtube_dice_en_vivo_y_deezer_no_lo_dice_en_ningun_lado_es_otro_tema(hacer_track):
+    """Al revés no vale: «Tema (En Vivo)» en un disco común no es el «Tema»
+    de estudio, aunque dure lo mismo."""
+    vivo = track(hacer_track, "Tema (En Vivo)", "Disco", dur=200)
+    estudio: TemaFaltante = {
+        "titulo": "Tema",
+        "isrc": "AR1",
+        "duracion_s": 200,
+        "posicion": 1,
+        "disco": 1,
+        "artista": "X",
+        "deezer_id": 1,
+    }
+    assert C._ubicar(vivo, [estudio], "Disco") is None
+    assert C._ubicar(vivo, [estudio], "Disco (En Vivo)") == estudio, "salvo que lo diga el disco de Deezer"
+
+
+def test_un_remix_no_es_la_version_en_vivo(hacer_track):
+    remix = track(hacer_track, "Tema (Remix)", "Disco en Vivo", dur=200)
+    vivo: TemaFaltante = {
+        "titulo": "Tema (En Vivo)",
+        "isrc": "AR1",
+        "duracion_s": 200,
+        "posicion": 1,
+        "disco": 1,
+        "artista": "X",
+        "deezer_id": 1,
+    }
+    assert C._ubicar(remix, [vivo], "Disco en Vivo") is None
+
+
+def test_con_el_tema_de_estudio_y_su_vivo_en_el_disco_cada_uno_va_con_el_suyo(hacer_track):
+    t = track(hacer_track, "Tema", "Disco", dur=200)
+    estudio: TemaFaltante = {
+        "titulo": "Tema",
+        "isrc": "AR1",
+        "duracion_s": 200,
+        "posicion": 1,
+        "disco": 1,
+        "artista": "X",
+        "deezer_id": 1,
+    }
+    vivo: TemaFaltante = {
+        "titulo": "Tema (En Vivo)",
+        "isrc": "AR2",
+        "duracion_s": 201,
+        "posicion": 2,
+        "disco": 1,
+        "artista": "X",
+        "deezer_id": 2,
+    }
+    assert C._ubicar(t, [vivo, estudio], "Disco") == estudio
+
+
+def test_el_mismo_tema_con_los_invitados_de_un_solo_lado(hacer_track):
+    t = track(hacer_track, "Sobreviviendo", "Sobreviviendo", dur=247)
+    con: TemaFaltante = {
+        "titulo": "Sobreviviendo (feat. Toti Iglesias)",
+        "isrc": "AR1",
+        "duracion_s": 246,
+        "posicion": 1,
+        "disco": 1,
+        "artista": "X",
+        "deezer_id": 1,
+    }
+    assert C._ubicar(t, [con], "Sobreviviendo (feat. Toti Iglesias)") == con
+    con["duracion_s"] = 300
+    assert C._ubicar(t, [con], "Sobreviviendo (feat. Toti Iglesias)") is None, "con otra duración, no"
+
+
+@pytest.mark.parametrize(
+    ("de_youtube", "de_deezer", "es_edicion"),
+    [
+        ("Acústico en Fm Pasión (En Vivo)", "Acústico en Fm Pasión (102.7) (En Vivo)", True),
+        ("Disco (En Vivo)", "Disco (Remixes)", False),
+        ("Disco (En Vivo)", "Disco (Deluxe)", False),
+    ],
+)
+def test_el_mismo_disco_con_el_parentesis_escrito_distinto(de_youtube, de_deezer, es_edicion):
+    assert C._es_edicion_de(de_youtube, de_deezer) is es_edicion
+
+
+def test_un_primero_de_enero_es_un_anio_sin_dia():
+    assert R.fechas_cercanas("2010-01-01", "2010-12-07") is True
+    assert R.fechas_cercanas("2010-12-07", "2010-01-01") is True
+    assert R.fechas_cercanas("2010-01-01", "2011-03-01") is False
+    assert R.fechas_cercanas("2010-03-01", "2010-12-07") is False, "con día, la fecha es la fecha"
+
+
+def test_un_compilado_de_varios_se_encuentra_buscando_su_titulo(hacer_track, deezer):
+    """No está en la discografía de nadie: figura a nombre de «Varios
+    Artistas». Se lo busca por título y se acepta por los temas del artista."""
+    discos = {
+        10: ("Verificado", "album", "2020-01-01", [tema("Base", "AR0")]),
+        30: (
+            "Compilado de Verano",
+            "album",
+            "2021-12-20",
+            [
+                {"title": "De Otro", "isrc": "ZZ1", "duration": 180, "artist": {"name": "Otra Banda"}},
+                tema("Mío", "AR5", 200),
+                {"title": "De Otro Más", "isrc": "ZZ2", "duration": 190, "artist": {"name": "Tercera Banda"}},
+            ],
+        ),
+    }
+    falso = deezer(discos)
+    falso.fuera_de_discografia = {30}
+    falso.por_titulo = [30]
+    mio = track(hacer_track, "Mío", "Compilado de Verano", isrc="AR5", dur=200, fecha="2021-11-15")
+    tracks = [_base(hacer_track), mio]
+    datos = cruce(10)
+    comp = C.revisar(tracks, datos, "Los del Ejemplo")
+    assert comp["verificados_por_tracklist"] == 1
+    assert (mio["upc"], mio["track_number"]) == ("UPC30", 2)
+    assert comp["faltan"] == [], "los temas de otros no cuentan como faltantes del artista"
+
+
+def test_un_album_que_se_llama_igual_pero_es_de_otro_artista_no_se_usa(hacer_track, deezer):
+    """Buscando por título aparece el «Loca» de cualquiera. Si el tema no
+    figura a nombre del artista, no es su single aunque dure lo mismo."""
+    discos = {
+        10: ("Verificado", "album", "2020-01-01", [tema("Base", "AR0")]),
+        30: (
+            "Loca",
+            "single",
+            "2021-11-15",
+            [{"title": "Loca", "isrc": "ZZ9", "duration": 200, "artist": {"name": "Otra Banda"}}],
+        ),
+    }
+    falso = deezer(discos)
+    falso.fuera_de_discografia = {30}
+    falso.por_titulo = [30]
+    loca = track(hacer_track, "Loca", "Loca", dur=200, fecha="2021-11-15")
+    comp = C.revisar([_base(hacer_track), loca], cruce(10), "Los del Ejemplo")
+    assert comp["verificados_por_tracklist"] == 0 and not loca["upc"] and not loca["isrc"]
+
+
+def test_dos_singles_que_se_llaman_igual_van_cada_uno_con_el_suyo(hacer_track, deezer):
+    """De un catálogo real: dos «Canción Sin Miedo» en YouTube y dos en
+    Deezer. Los dos quedaban con el mismo UPC."""
+    discos = {
+        10: ("Verificado", "album", "2020-01-01", [tema("Base", "AR0")]),
+        20: ("Canción", "single", "2021-03-21", [tema("Canción", "AR1", 156)]),
+        21: ("Canción", "single", "2021-03-03", [tema("Canción", "AR1", 156)]),
+    }
+    deezer(discos)
+    primero = track(hacer_track, "Canción", "Canción", isrc="AR1", dur=156, fecha="2021-03-22")
+    segundo = track(hacer_track, "Canción", "Canción", isrc="AR1", dur=156, fecha="2021-10-01")
+    comp = C.revisar([_base(hacer_track), primero, segundo], cruce(10), "Los del Ejemplo")
+    assert comp["verificados_por_tracklist"] == 2
+    assert (primero["upc"], segundo["upc"]) == ("UPC20", "UPC21")
+
+
+def test_un_album_que_ya_es_de_otro_lanzamiento_no_se_toma_por_una_forma_floja(hacer_track, deezer):
+    """De un catálogo real: tres singles de remixes terminaban siendo, cada
+    uno, el álbum «(Remixes)» entero, que ya era otro lanzamiento del canal."""
+    remixes = [tema(f"Tema (Remix {n})", f"AR{n}", 200 + n) for n in range(1, 6)]
+    discos = {
+        10: ("Verificado", "album", "2020-01-01", [tema("Base", "AR0")]),
+        20: ("Tema (Remixes)", "album", "2014-08-04", remixes),
+    }
+    deezer(discos)
+    album = [
+        ubicado(
+            track(
+                hacer_track,
+                f"Tema (Remix {n})",
+                "Tema (Remixes)",
+                isrc=f"AR{n}",
+                dur=200 + n,
+                aid=20,
+                fecha="2014-08-04",
+            ),
+            n,
+        )
+        for n in range(1, 6)
+    ]
+    single = track(hacer_track, "Tema (Remix 2)", "Tema", isrc="AR2", dur=202, fecha="2005-10-28")
+    comp = C.revisar([_base(hacer_track), *album, single], cruce(10, 20), "Los del Ejemplo")
+    assert comp["verificados_por_tracklist"] == 0 and not single["upc"]
+
+
+def test_el_mismo_single_entregado_dos_veces_se_separa_por_el_sello(hacer_track, deezer):
+    discos = {
+        10: ("Verificado", "album", "2020-01-01", [tema("Base", "AR0")]),
+        20: ("Canción", "single", "2021-03-21", [tema("Canción", "AR1", 156)]),
+        21: ("Canción", "single", "2021-03-03", [tema("Canción", "AR1", 156)]),
+    }
+    falso = deezer(discos)
+    falso.sellos = {20: "Discos del Sur", 21: "Sello"}
+    t = track(hacer_track, "Canción", "Canción", isrc="AR1", dur=156, fecha="2021-10-01")
+    comp = C.revisar([_base(hacer_track), t], cruce(10), "Los del Ejemplo")
+    assert comp["verificados_por_tracklist"] == 1 and t["upc"] == "UPC21", "el del sello que declara YouTube"
+
+
+def test_con_casi_todo_ubicado_el_tema_que_queda_va_al_lugar_que_queda(hacer_track, deezer):
+    """De un catálogo real: cinco de seis temas con su ISRC en el álbum, y el
+    sexto figuraba en Deezer con otra duración. El disco se verifica y se
+    ordena; a ese tema no se le pone el ISRC, que puede ser de otra grabación."""
+    temas = [tema(f"T{n}", f"AR{n}", 200 + n) for n in range(1, 6)] + [tema("Enamorada", "AR6", 85)]
+    discos = {
+        10: ("Verificado", "album", "2020-01-01", [tema("Base", "AR0")]),
+        20: ("Pasión", "ep", "2019-03-22", temas),
+    }
+    tracks = [track(hacer_track, f"T{n}", "Pasión", dur=200 + n, fecha="2019-03-22") for n in range(1, 6)]
+    rara = track(hacer_track, "Enamorada", "Pasión", dur=215, fecha="2019-03-22")
+    productos, _comp, _f = _catalogo(hacer_track, deezer, discos, [_base(hacer_track), *tracks, rara])
+    disco = productos["Pasión"]
+    assert disco["upc"] == "UPC20" and disco["order_unconfirmed"] is False
+    assert (rara.get("track_number"), rara["isrc"]) == (6, "")
+
+
+def test_con_pocos_temas_no_se_ubica_nada_por_descarte(hacer_track, deezer):
+    discos = {
+        10: ("Verificado", "album", "2020-01-01", [tema("Base", "AR0")]),
+        20: ("Pasión", "ep", "2019-03-22", [tema("T1", "AR1", 201), tema("Enamorada", "AR6", 85)]),
+    }
+    tracks = [
+        track(hacer_track, "T1", "Pasión", dur=201, fecha="2019-03-22"),
+        track(hacer_track, "Enamorada", "Pasión", dur=215, fecha="2019-03-22"),
+    ]
+    _p, comp, _f = _catalogo(hacer_track, deezer, discos, [_base(hacer_track), *tracks])
+    assert comp["verificados_por_tracklist"] == 0
+
+
+def test_un_disco_del_que_youtube_muestra_una_parte_se_verifica_por_sus_isrc(hacer_track, deezer):
+    """YouTube no repite una grabación que ya tiene en otro disco: de un
+    release de tres temas puede mostrar uno, con otra fecha. Si ese tema está
+    en el álbum con el ISRC que le encontró el cruce, es el álbum."""
+    discos = {
+        10: ("Verificado", "album", "2020-01-01", [tema("Base", "AR0")]),
+        20: (
+            "Tres en Uno",
+            "single",
+            "2021-05-19",
+            [tema("Uno", "AR1", 204), tema("Dos", "AR2", 190), tema("Tres", "AR3", 180)],
+        ),
+    }
+    con_isrc = track(hacer_track, "Uno", "Tres en Uno", isrc="AR1", dur=204, fecha="2021-02-05")
+    deezer(discos)
+    comp = C.revisar([_base(hacer_track), con_isrc], cruce(10), "Los del Ejemplo")
+    assert comp["verificados_por_tracklist"] == 1 and con_isrc["upc"] == "UPC20"
+
+    sin_isrc = track(hacer_track, "Uno", "Tres en Uno", dur=204, fecha="2021-02-05")
+    deezer(discos)
+    comp = C.revisar([_base(hacer_track), sin_isrc], cruce(10), "Los del Ejemplo")
+    assert comp["verificados_por_tracklist"] == 0, "sin el ISRC del cruce, la fecha distinta manda"

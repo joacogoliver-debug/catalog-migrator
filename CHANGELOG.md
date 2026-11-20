@@ -8,6 +8,41 @@ Lo que cambió en cada versión publicada. Los números siguen
 
 ## [Sin publicar]
 
+### Mejorado
+- **Más ISRC, más UPC y más discos con el orden confirmado.** Medido con siete
+  catálogos reales (1.221 temas, 460 lanzamientos): los temas con ISRC pasaron
+  de 91 % a 97 %, los lanzamientos con UPC de 93 % a 97 %, y los discos con el
+  orden confirmado de 77 % a 89 %. En el catálogo que peor estaba, de 67 % a
+  99 % en ISRC y de 70 % a 98 % en UPC. Ningún código que ya salía cambió. Lo
+  que lo logró, por orden de peso:
+  - **La versión dicha en el título del disco vale para sus temas.** En el
+    disco «En Vivo En El Teatro Colonial», YouTube titula «Alma Mía» y Deezer
+    «Alma Mía (En Vivo)». Comparados título contra título eran dos versiones
+    distintas, y los discos en vivo y acústicos quedaban enteros sin un solo
+    código. Ahora se junta lo que dice cada lado, tema y disco. Al revés no
+    vale: si YouTube dice «(En Vivo)» y Deezer no lo dice en ningún lado, es
+    el de estudio.
+  - **Los discos se buscan también por su título**, no sólo en la discografía
+    del artista. Un compilado de varios artistas figura a nombre de «Varios
+    Artistas» y no está en la discografía de nadie. Para aceptar un álbum
+    encontrado así, cada tema tiene que figurar a nombre del artista.
+  - **Más formas de reconocer el mismo release** cuando la fecha no coincide:
+    que YouTube muestre casi todo el álbum (cuatro temas o más, y cuatro de
+    cada cinco), o que cada tema esté ahí con el ISRC que le encontró el
+    cruce. Y un 1 de enero se compara por el año: es como YouTube carga los
+    discos de los que sólo se sabe el año.
+  - **Desempate entre lanzamientos que se llaman igual**: por ISRC, por el
+    sello que declara YouTube, y dejando para cada uno el álbum que todavía
+    no es de otro. Dos singles con el mismo título ya no quedan con el mismo
+    UPC.
+  - **El tema que queda va al lugar que queda.** Con casi todo el disco
+    ubicado sin dudas, el último tema se ubica por su título aunque la
+    duración no coincida, para poder ordenar el disco; su ISRC queda en
+    blanco.
+- Lo que no mejoró, y por qué: los cortes de megamix y los discos que no están
+  en Deezer siguen sin código, porque no hay de dónde sacarlo. Se probó
+  MusicBrainz y no tiene a los artistas con que se midió.
+
 ### Corregido
 - **La app decía que un artista «no está en Deezer» con su perfil ahí, y no
   traía ningún ISRC ni UPC.** El cruce buscaba cada tema en el buscador de
