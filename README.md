@@ -364,6 +364,12 @@ Deezer» no vienen elegidos: revisá uno por uno si son tuyos antes de elegirlos
 Los que dicen «a nombre de» otro artista son colaboraciones, y lo más probable
 es que no sean parte de tu catálogo.
 
+**La app dice que no encontró a mi artista en Deezer, y está. ¿Qué hago?**
+Pegá el link de su perfil de Deezer en el campo que trae ese mismo aviso y tocá
+«Buscar códigos con este perfil». La app saca los códigos de su discografía, sin
+volver a gastar cupo de YouTube. Si encontró un perfil pero es el de otro
+artista que se llama igual, el aviso tiene «Usar otro perfil».
+
 **Me faltan ISRC o UPC. ¿Qué hago?** Pedíselos a tu distribuidora actual antes
 de aceptar códigos nuevos: un código nuevo es un release nuevo, que arranca sin
 las reproducciones ni las playlists del anterior. La pantalla del catálogo dice

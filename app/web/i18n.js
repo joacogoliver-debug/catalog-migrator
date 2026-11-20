@@ -570,12 +570,21 @@ const TEXTOS = {
     en: 'Codes were not looked up, so ISRC and UPC are empty. To bring them in, survey again with "Look up ISRC and UPC codes" ticked.',
   },
   'paso2.no_esta_en_deezer_titulo': {
-    es: '{artista} no está en Deezer, o está con otro nombre.',
-    en: '{artista} is not on Deezer, or is there under another name.',
+    es: 'No se encontró a {artista} en Deezer.',
+    en: '{artista} was not found on Deezer.',
   },
   'paso2.no_esta_en_deezer_cuerpo': {
-    es: 'Por eso no hay ISRC ni UPC: no es una falla de la app, es que la fuente no los tiene. Pedíselos a tu distribuidora actual antes de aceptar códigos nuevos.',
-    en: 'That is why there is no ISRC or UPC: it is not the app failing, the source does not have them. Ask your current distributor for them before accepting new codes.',
+    es: 'Por eso no hay ISRC ni UPC. Si el artista tiene perfil en Deezer, pegá acá su link y la app busca los códigos en su discografía. Si no lo tiene, pedíselos a tu distribuidora actual antes de aceptar códigos nuevos.',
+    en: 'That is why there is no ISRC or UPC. If the artist has a Deezer profile, paste its link here and the app looks the codes up in their discography. If not, ask your current distributor for them before accepting new codes.',
+  },
+  'paso2.deezer_link_label': { es: 'Link del artista en Deezer', en: "The artist's Deezer link" },
+  'paso2.deezer_usar': { es: 'Buscar códigos con este perfil', en: 'Look up codes with this profile' },
+  'paso2.deezer_perfil_usado': { es: 'Los códigos salen del perfil de Deezer «{artista}».', en: 'The codes come from the Deezer profile "{artista}".' },
+  'paso2.deezer_otro_perfil': { es: 'Usar otro perfil', en: 'Use another profile' },
+  'paso2.deezer_falta_link': { es: 'Pegá el link del perfil.', en: 'Paste the profile link.' },
+  'paso2.deezer_perfil_vacio': {
+    es: 'Con ese perfil no se encontró ningún tema del canal. Revisá que sea el del artista.',
+    en: 'No track from the channel was found with that profile. Check that it is the artist\'s.',
   },
   'paso2.deezer_no_respondio': {
     es: 'Deezer no respondió {n} consultas, aun después de reintentar. Algunos códigos pueden faltar por eso y no porque no existan: relevar de nuevo más tarde puede completarlos.',

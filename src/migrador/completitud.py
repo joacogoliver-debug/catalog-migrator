@@ -11,7 +11,9 @@ guarda en el canal del otro artista, nunca aparecían y nadie lo notaba.
 Lo que hace. Con los temas que ya se cruzaron con Deezer alcanza para saber qué
 artista de Deezer es el del canal: es el dueño de los álbumes que se verificaron
 como releases de este catálogo. No se lo busca por nombre, que es como se
-termina con la discografía de un homónimo. Con ese artista se pide su
+termina con la discografía de un homónimo. Cuando el cruce no encontró ningún
+tema, sí se busca el perfil por nombre, pero se lo acepta por sus temas y no
+por cómo se llama (ver `buscar_artista`); y el usuario puede indicar cuál es. Con ese artista se pide su
 discografía entera, que no cuesta cuota de YouTube, y se compara grabación por
 grabación contra lo relevado.
 
@@ -42,6 +44,7 @@ de Deezer cubre lo mismo sin salir de las fuentes oficiales.
 """
 
 import re
+import urllib.parse
 from collections import Counter
 from typing import Any
 from concurrent.futures import ThreadPoolExecutor
@@ -72,6 +75,8 @@ def completitud_vacia() -> Completitud:
     return {
         "revisada": False,
         "artista_deezer": "",
+        "artista_id": 0,
+        "como": "",
         "releases": 0,
         "temas": 0,
         "sin_respuesta": 0,
@@ -103,6 +108,74 @@ def artistas_en_deezer(tracks: list[Track], cruce: CruceDeezer, artista) -> list
         if _mismo_artista(artista, nombre):
             out.append((aid, nombre))
     return out[:MAX_ARTISTAS]
+
+
+# Cuántos perfiles se miran al buscar al artista por su nombre, y cuántos temas
+# del canal tienen que estar entre los más escuchados de un perfil para
+# aceptarlo aunque no se llame igual.
+MAX_CANDIDATOS = 5
+MIN_COINCIDENCIAS = 3
+
+
+def _coincidencias(tracks: list[Track], temas) -> int:
+    """Cuántos temas del canal están en esa lista de Deezer: el mismo título,
+    la misma versión y la misma duración, con las dos a la vista."""
+    por_titulo: dict[str, list[tuple[str, int]]] = {}
+    for x in temas:
+        if x.get("title") and x.get("duration"):
+            por_titulo.setdefault(comparable(x["title"]), []).append((x["title"], int(x["duration"])))
+    n = 0
+    for t in tracks:
+        duracion = t.get("duration_s") or 0
+        if not duracion or t.get("origen") == "deezer":
+            continue
+        if any(
+            abs(d - duracion) <= MARGEN_DURACION and misma_version(titulo, t["track"])
+            for titulo, d in por_titulo.get(comparable(t["track"]), [])
+        ):
+            n += 1
+    return n
+
+
+def buscar_artista(tracks: list[Track], artista) -> list[tuple[int, str]]:
+    """El perfil del artista en Deezer, buscado por su nombre: [(id, nombre)].
+
+    Es el camino para cuando el cruce tema por tema no encontró nada. Ese cruce
+    depende del buscador de Deezer, que busca por texto: si el artista se
+    escribe distinto en YouTube («Q' Lokura» y «Q’Lokura»), ningún tema
+    aparece, no queda ningún álbum verificado del que sacar el artista, y la
+    app terminaba diciendo que el artista no está en Deezer, con su perfil ahí.
+
+    No alcanza con el nombre, que es como se termina con la discografía de un
+    homónimo. A cada perfil que devuelve el buscador de artistas se le piden
+    sus temas más escuchados y se cuenta cuántos temas del canal están ahí, por
+    título y duración. Se acepta el que se llama igual y tiene alguno, o
+    cualquiera que tenga varios: tres temas con el mismo título y la misma
+    duración no son una casualidad.
+    """
+    if not comparable(artista):
+        return []
+    ruta = "search/artist?q=" + urllib.parse.quote(artista) + f"&limit={MAX_CANDIDATOS}"
+    hallados = []
+    for cand in ((R._deezer_json(ruta) or {}).get("data") or [])[:MAX_CANDIDATOS]:
+        aid, nombre = int(cand.get("id") or 0), cand.get("name") or ""
+        if not aid:
+            continue
+        top = (R._deezer_json(f"artist/{aid}/top?limit=100") or {}).get("data") or []
+        n = _coincidencias(tracks, top)
+        mismo = _mismo_artista(artista, nombre) or comparable(artista).replace(" ", "") == comparable(
+            nombre
+        ).replace(" ", "")
+        if n >= MIN_COINCIDENCIAS or (mismo and n >= 1):
+            hallados.append((n, aid, nombre))
+    hallados.sort(key=lambda h: -h[0])
+    return [(aid, nombre) for _n, aid, nombre in hallados[:MAX_ARTISTAS]]
+
+
+def artista_por_id(artist_id) -> list[tuple[int, str]]:
+    """El perfil que eligió el usuario, por su id: [(id, nombre)] o []."""
+    datos = R._deezer_json(f"artist/{int(artist_id)}") or {}
+    return [(int(datos["id"]), datos.get("name") or "")] if datos.get("id") else []
 
 
 def discografia(artist_ids) -> tuple[list[dict[str, Any]], bool]:
@@ -502,8 +575,13 @@ def verificar_por_tracklist(tracks: list[Track], discos, tracklists, cruce: Cruc
     return verificados
 
 
-def revisar(tracks: list[Track], cruce: CruceDeezer, artista, avance=None) -> Completitud:
+def revisar(tracks: list[Track], cruce: CruceDeezer, artista, avance=None, artista_deezer=0) -> Completitud:
     """Compara lo relevado contra la discografía de Deezer.
+
+    De quién es la discografía, por orden: el perfil que indicó el usuario
+    (`artista_deezer`, su id), el dueño de los álbumes que el cruce verificó,
+    o el que se encuentra buscando por nombre y comprobando con sus temas (ver
+    `buscar_artista`). `como` dice cuál de los tres fue.
 
     Antes de ver qué falta, usa la discografía para mejorar lo relevado:
     completa los ISRC que la búsqueda no encontró, ubica en su disco los temas
@@ -514,7 +592,12 @@ def revisar(tracks: list[Track], cruce: CruceDeezer, artista, avance=None) -> Co
     revisión queda sin hacer y `revisada` lo dice.
     """
     res = completitud_vacia()
-    artistas = artistas_en_deezer(tracks, cruce, artista)
+    if artista_deezer:
+        artistas, como = artista_por_id(artista_deezer), "manual"
+    else:
+        artistas, como = artistas_en_deezer(tracks, cruce, artista), "cruce"
+        if not artistas:
+            artistas, como = buscar_artista(tracks, artista), "nombre"
     if not artistas:
         return res
     discos, recortada = discografia([aid for aid, _nombre in artistas])
@@ -600,6 +683,8 @@ def revisar(tracks: list[Track], cruce: CruceDeezer, artista, avance=None) -> Co
     res.update(
         revisada=True,
         artista_deezer=artistas[0][1],
+        artista_id=artistas[0][0],
+        como=como,
         releases=len(discos),
         temas=dichas.n,
         recortada=recortada,

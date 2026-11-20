@@ -364,6 +364,13 @@ not selected by default: check one by one whether they are yours before
 selecting them. Those "credited to" another artist are collaborations, and most
 likely not part of your catalog.
 
+**The app says it did not find my artist on Deezer, and they are there. What do
+I do?** Paste the link to their Deezer profile in the field that notice carries
+and press "Look up codes with this profile". The app takes the codes from their
+discography, without spending YouTube quota again. If it found a profile but it
+belongs to another artist with the same name, the notice has "Use another
+profile".
+
 **I am missing ISRCs or UPCs. What do I do?** Ask your current distributor for
 them before accepting new codes: a new code is a new release, which starts
 without the plays and playlists of the old one. The catalog screen says whether

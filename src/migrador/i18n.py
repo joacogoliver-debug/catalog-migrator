@@ -176,6 +176,16 @@ TEXTOS = {
         "es": "Pegá el link del canal de YouTube.",
         "en": "Paste the YouTube channel link.",
     },
+    "srv.deezer_link_invalido": {
+        "es": (
+            "Ese link no es el de un artista de Deezer. Tiene que ser el de su perfil, como "
+            "https://www.deezer.com/es/artist/27"
+        ),
+        "en": (
+            "That link is not a Deezer artist. It has to be the artist's profile, like "
+            "https://www.deezer.com/en/artist/27"
+        ),
+    },
     "server.url_larga": {
         "es": "Ese link es demasiado largo para ser un canal de YouTube.",
         "en": "That link is too long to be a YouTube channel.",

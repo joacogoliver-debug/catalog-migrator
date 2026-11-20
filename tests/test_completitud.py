@@ -42,9 +42,21 @@ class FalsoDeezer:
         self.caidos = set()
         self.pedidos = []
         self.titulares = {}  # id de álbum -> a nombre de quién figura, si no es el del canal
+        # Lo que contesta el buscador de artistas, y los temas más escuchados
+        # de cada perfil: {id: (nombre, [temas])}.
+        self.perfiles = {}
 
     def __call__(self, ruta):
         self.pedidos.append(ruta)
+        if ruta.startswith("search/artist?"):
+            return {"data": [{"id": i, "name": nombre} for i, (nombre, _top) in self.perfiles.items()]}
+        if ruta.startswith("artist/") and "/top" in ruta:
+            return {"data": self.perfiles.get(int(ruta.split("/")[1]), ("", []))[1]}
+        if ruta.startswith("artist/") and "/" not in ruta[len("artist/") :]:
+            aid = int(ruta.split("/")[1])
+            if aid == ARTISTA:
+                return {"id": aid, "name": "Los del Ejemplo"}
+            return {"id": aid, "name": self.perfiles[aid][0]} if aid in self.perfiles else {}
         if ruta.startswith("artist/"):
             aid = int(ruta.split("/")[1])
             ids = self.discos if aid == ARTISTA else self.de_otros.get(aid, {})
@@ -133,11 +145,131 @@ def test_el_artista_de_un_compilado_no_cuenta(hacer_track):
 
 
 def test_sin_ningun_album_verificado_no_se_adivina_por_nombre(hacer_track, deezer):
+    """Un perfil que se llama igual y no tiene ningún tema del canal es un
+    homónimo: no se usa su discografía."""
     falso = deezer({})
+    falso.perfiles = {ARTISTA: ("Los del Ejemplo", [tema("Otra Cosa", "XX1", 200)])}
     tracks = [track(hacer_track, "T", "Disco", isrc="AR0000000001")]
     res = C.revisar(tracks, cruce(), "Los del Ejemplo")
     assert res["revisada"] is False and res["faltan"] == []
-    assert falso.pedidos == [], "sin saber quién es, no se le pregunta nada a Deezer"
+    assert not any("/albums" in ruta for ruta in falso.pedidos), "no se le pide la discografía"
+
+
+# ============================================================
+# El perfil del artista, cuando el cruce tema por tema no encontró nada
+# ============================================================
+#
+# De un caso real: la app decía que una artista «no está en Deezer» con su
+# perfil ahí. El cruce depende del buscador de Deezer, que busca por texto; si
+# ningún tema aparece, no queda álbum verificado del que sacar el artista, y la
+# comparación con la discografía, que no necesita al buscador, nunca corría.
+
+
+def _sin_cruce(hacer_track):
+    """Un disco de tres temas del que el cruce no encontró nada."""
+    return [
+        track(hacer_track, "Uno", "Disco", dur=200),
+        track(hacer_track, "Dos", "Disco", dur=210),
+        track(hacer_track, "Tres", "Disco", dur=220),
+    ]
+
+
+DISCO_SIN_CRUCE = {
+    10: (
+        "Disco",
+        "album",
+        "2020-01-01",
+        [tema("Uno", "AR1", 200), tema("Dos", "AR2", 211), tema("Tres", "AR3", 219)],
+    )
+}
+
+
+def test_el_artista_se_encuentra_por_nombre_y_sus_temas_lo_confirman(hacer_track, deezer):
+    falso = deezer(DISCO_SIN_CRUCE)
+    falso.perfiles = {ARTISTA: ("Los Del Ejemplo", [tema("Dos", "AR2", 211)])}
+    tracks = _sin_cruce(hacer_track)
+    datos: CruceDeezer = {"albumes": {}, "verificados": {}}
+    comp = C.revisar(tracks, datos, "Los del Ejemplo")
+
+    assert comp["revisada"] is True
+    assert (comp["artista_deezer"], comp["artista_id"], comp["como"]) == (
+        "Los Del Ejemplo",
+        ARTISTA,
+        "nombre",
+    )
+    assert [t["isrc"] for t in tracks] == ["AR1", "AR2", "AR3"], "los códigos salen de la discografía"
+    assert {t["upc"] for t in tracks} == {"UPC10"} and comp["verificados_por_tracklist"] == 1
+    (disco,) = P.group_products(tracks, "Los del Ejemplo")
+    assert disco["upc"] == "UPC10" and disco["order_unconfirmed"] is False
+
+
+def test_un_perfil_con_otro_nombre_se_acepta_si_tiene_varios_temas_del_canal(hacer_track, deezer):
+    """En YouTube «Q' Lokura» y en Deezer «Q’Lokura»: el nombre no coincide,
+    pero tres temas con el mismo título y la misma duración no son casualidad."""
+    falso = deezer(DISCO_SIN_CRUCE)
+    falso.perfiles = {
+        77: ("Otro Que Suena Parecido", [tema("Uno", "ZZ1", 300)]),
+        ARTISTA: (
+            "Ejemplo, Los",
+            [tema("Uno", "AR1", 200), tema("Dos", "AR2", 211), tema("Tres", "AR3", 219)],
+        ),
+    }
+    tracks = _sin_cruce(hacer_track)
+    comp = C.revisar(tracks, {"albumes": {}, "verificados": {}}, "Los del Ejemplo")
+    assert (comp["artista_id"], comp["como"]) == (ARTISTA, "nombre")
+    assert [t["isrc"] for t in tracks] == ["AR1", "AR2", "AR3"]
+
+
+def test_un_perfil_con_otro_nombre_y_un_solo_tema_no_alcanza(hacer_track, deezer):
+    falso = deezer(DISCO_SIN_CRUCE)
+    falso.perfiles = {ARTISTA: ("Otra Banda", [tema("Uno", "AR1", 200)])}
+    tracks = _sin_cruce(hacer_track)
+    comp = C.revisar(tracks, {"albumes": {}, "verificados": {}}, "Los del Ejemplo")
+    assert comp["revisada"] is False and all(not t["isrc"] for t in tracks)
+
+
+def test_el_perfil_que_indica_el_usuario_se_usa_sin_buscar(hacer_track, deezer):
+    """El link que se pega manda: no se busca por nombre ni se pide evidencia."""
+    falso = deezer(DISCO_SIN_CRUCE)
+    tracks = _sin_cruce(hacer_track)
+    comp = C.revisar(
+        tracks, {"albumes": {}, "verificados": {}}, "Un Nombre Que No Ayuda", artista_deezer=ARTISTA
+    )
+    assert (comp["artista_deezer"], comp["artista_id"], comp["como"]) == (
+        "Los del Ejemplo",
+        ARTISTA,
+        "manual",
+    )
+    assert [t["isrc"] for t in tracks] == ["AR1", "AR2", "AR3"]
+    assert not any(ruta.startswith("search/") for ruta in falso.pedidos)
+
+
+def test_un_perfil_indicado_que_no_existe_deja_la_revision_sin_hacer(hacer_track, deezer):
+    deezer(DISCO_SIN_CRUCE)
+    comp = C.revisar(_sin_cruce(hacer_track), {"albumes": {}, "verificados": {}}, "X", artista_deezer=999)
+    assert comp["revisada"] is False
+
+
+@pytest.mark.parametrize(
+    ("pegado", "esperado"),
+    [
+        ("https://www.deezer.com/es/artist/4209085", 4209085),
+        ("https://www.deezer.com/artist/27?utm_source=x", 27),
+        ("deezer.com/en-gb/artist/27/top_track", 27),
+        ("27", 27),
+        ("  https://www.deezer.com/us/artist/27  ", 27),
+        ("https://www.deezer.com/es/album/302127", 0),
+        ("https://example.com/artist/27", 0),
+        ("cualquier cosa", 0),
+        ("", 0),
+    ],
+)
+def test_el_link_del_perfil_de_deezer_se_entiende(pegado, esperado, monkeypatch):
+    def urlopen(*_a, **_k):
+        raise AssertionError("no hay que abrir nada para leer un link común")
+
+    monkeypatch.setattr(R.urllib.request, "urlopen", urlopen)
+    assert R.id_de_artista_deezer(pegado) == esperado
 
 
 # ============================================================

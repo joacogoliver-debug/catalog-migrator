@@ -155,20 +155,21 @@ def test_el_cruce_con_deezer_cuenta_lo_que_dice_su_contrato(deezer_grabado):
     assert stats["isrc"] == 1 and t["isrc"] == ISRC_REAL
 
 
-def test_la_busqueda_estricta_no_encuentra_nada_y_por_eso_existe_el_respaldo(deezer_grabado):
+def test_la_busqueda_estricta_no_encuentra_nada_y_por_eso_va_primero_la_libre(deezer_grabado):
     """Esto no es un caso de borde inventado: es lo que Deezer contesta hoy.
 
     La consulta con `track:"..." artist:"..."` devuelve cero resultados para un
-    tema que sí está en su catálogo. Sin el respaldo por búsqueda libre, el
-    enriquecimiento no traería ningún código para este disco.
+    tema que sí está en su catálogo, y para cualquier otro: su filtro por
+    artista dejó de funcionar. Era la primera consulta de cada tema, y la mitad
+    de los pedidos del cruce se iban en ella. Ahora va primero la libre, y la
+    estricta sólo si la libre no trae nada.
     """
     assert _respuesta_grabada("deezer_search_estricta.json")["data"] == []
 
     R.deezer_match(_track_de_youtube(), "Daft Punk")
 
-    assert len(deezer_grabado) >= 2, deezer_grabado
-    assert "track%3A" in deezer_grabado[0], "la primera consulta es la estricta"
-    assert "track%3A" not in deezer_grabado[1], "la segunda es la libre"
+    busquedas = [p for p in deezer_grabado if p.startswith("search?")]
+    assert len(busquedas) == 1 and "track%3A" not in busquedas[0], busquedas
 
 
 def test_un_artista_que_no_es_el_no_alcanza_la_confianza(deezer_grabado):

@@ -35,7 +35,14 @@ from .i18n import T
 
 
 def relevar_catalogo(
-    url, yt_key, with_codes=True, progress=None, use_musicbrainz=False, fraccion=None, reusar=True
+    url,
+    yt_key,
+    with_codes=True,
+    progress=None,
+    use_musicbrainz=False,
+    fraccion=None,
+    reusar=True,
+    artista_deezer=0,
 ) -> tuple[list[Producto], str, list[Track], Diagnostico]:
     """Releva el catálogo y lo devuelve ya agrupado en productos.
 
@@ -77,6 +84,7 @@ def relevar_catalogo(
                 res["cruce"],
                 artista,
                 avance=(lambda h, t: fraccion(0.96 + 0.03 * h / t)) if fraccion else None,
+                artista_deezer=artista_deezer,
             )
             # Lo que falta y se puede sumar entra al catálogo con los datos de
             # Deezer: adentro de su disco, o como un release aparte que queda
@@ -104,7 +112,13 @@ def relevar_catalogo(
         "descartados": int(res.get("descartados") or 0),
         "codigos": {
             "pedidos": res.get("codes") is not None,
-            "encontrados": int((res.get("codes") or {}).get("matched") or 0),
+            # Lo que encontró el cruce tema por tema, o lo que salió de la
+            # discografía cuando ese cruce no encontró nada: para quien mira,
+            # son temas con su código.
+            "encontrados": max(
+                int((res.get("codes") or {}).get("matched") or 0),
+                sum(1 for t in res["tracks"] if t.get("isrc")) if res.get("codes") is not None else 0,
+            ),
             "fallas": int((res.get("codes") or {}).get("fallas") or 0),
             "motivo": str((res.get("codes") or {}).get("motivo") or ""),
         },

@@ -35,6 +35,10 @@ const S = {
   error: '',
   errorCodigo: '',
   errorCampo: '',           // error de validacion del link, va bajo el campo
+  deezerLink: '',           // el link del artista en Deezer que pegó el usuario, si pegó alguno
+  deezerUsado: '',          // el que se mandó con el último relevamiento
+  deezerError: '',
+  pideDeezer: false,        // el campo está a la vista porque se pidió «usar otro perfil»
   errorDescarga: '',        // el ZIP ya no está (vence a la hora): aviso en la misma pantalla
   guardado: null,           // { ruta, archivo } del paquete copiado a la carpeta Descargas
   actualizacion: null,      // lo que contestó la búsqueda de versiones: { hay, ultima } | { buscando } | { error }
@@ -788,10 +792,38 @@ function avisoCanal() {
   } else if (cod && !cod.encontrados && S.catalogo.productos.length) {
     partes.push(alerta('warn', 'alerta', `
       <strong>${esc(T('paso2.no_esta_en_deezer_titulo', { artista: S.catalogo.artista }))}</strong>
-      ${esc(T('paso2.no_esta_en_deezer_cuerpo'))}`));
+      ${esc(T('paso2.no_esta_en_deezer_cuerpo'))}
+      ${formDeezer(d.completitud)}`));
+  }
+
+  // De qué perfil de Deezer salieron los códigos, con la forma de cambiarlo:
+  // dos artistas pueden llamarse igual, y la app puede haber elegido al otro.
+  const perfil = d.completitud;
+  if (cod && cod.pedidos && cod.encontrados && perfil && perfil.revisada) {
+    partes.push(alerta('', 'info', `
+      ${esc(T('paso2.deezer_perfil_usado', { artista: perfil.artista_deezer }))}
+      ${S.pideDeezer ? formDeezer(perfil) : `<button type="button" class="link-inline" data-accion="otro-deezer">${esc(T('paso2.deezer_otro_perfil'))}</button>`}`));
   }
 
   return partes.join('');
+}
+
+/** El campo para pegar el link del artista en Deezer. Es la salida para cuando
+ *  la app no encuentra el perfil sola, o usa el de un homónimo. */
+function formDeezer(comp) {
+  const vacio = S.deezerLink && S.deezerUsado === S.deezerLink && comp && !comp.revisada;
+  const error = S.deezerError || (vacio ? T('paso2.deezer_perfil_vacio') : '');
+  return `
+    <div class="form-deezer">
+      <label for="deezer-link">${esc(T('paso2.deezer_link_label'))}</label>
+      <div class="form-deezer-linea">
+        <input class="input${error ? ' error' : ''}" id="deezer-link" type="url" spellcheck="false"
+               placeholder="https://www.deezer.com/es/artist/…" value="${esc(S.deezerLink)}"
+               ${error ? 'aria-invalid="true" aria-describedby="deezer-error"' : ''}>
+        <button type="button" class="btn btn-secondary" data-accion="usar-deezer">${esc(T('paso2.deezer_usar'))}</button>
+      </div>
+      ${error ? `<span class="hint hint-error" id="deezer-error">${esc(error)}</span>` : ''}
+    </div>`;
 }
 
 /** «Elegidos: 3 de 12 productos, 27 tracks», para la barra del paso 2. */
@@ -1473,6 +1505,22 @@ const ACCIONES = {
   // Vuelve al paso 1, que es donde está el campo y la barra de avance, y
   // releva el mismo link pidiendo el listado de cero.
   relistar() { S.paso = 1; S.deCero = true; S.error = ''; S.errorCodigo = ''; render(); return ACCIONES.relevar(); },
+
+  'otro-deezer'() { S.pideDeezer = true; render(); const c = $('#deezer-link'); if (c) c.focus(); },
+
+  /** Volver a buscar los códigos con el perfil de Deezer que se pegó. No gasta
+   *  cupo de YouTube: el listado del canal es el de esta sesión. */
+  'usar-deezer'() {
+    const campo = $('#deezer-link');
+    S.deezerLink = campo ? campo.value.trim() : S.deezerLink;
+    if (!S.deezerLink) {
+      S.deezerError = T('paso2.deezer_falta_link'); render();
+      const c = $('#deezer-link'); if (c) c.focus();
+      return undefined;
+    }
+    S.deezerError = ''; S.paso = 1; S.error = ''; S.errorCodigo = ''; render();
+    return ACCIONES.relevar();
+  },
   'cerrar-vista'() { S.vista = null; S.entrando = true; render(); arriba(); },
 
   async 'aceptar-terminos'() {
@@ -1533,10 +1581,14 @@ const ACCIONES = {
     if (casilla) S.conCodigos = casilla.checked;
     S.error = ''; S.errorCodigo = ''; S.errorCampo = ''; S.ocupado = true; S.job = null; render();
     try {
-      const { job } = await api('/api/relevar', { url, con_codigos: S.conCodigos, de_cero: deCero });
+      S.deezerUsado = S.deezerLink;
+      const { job } = await api('/api/relevar', {
+        url, con_codigos: S.conCodigos, de_cero: deCero, deezer_artista: S.deezerLink,
+      });
       const cat = await esperarJob(job, () => actualizarProgreso());
       await cierreDelTrabajo();
       adoptarCatalogo(cat);          // arranca con todo elegido
+      S.pideDeezer = false;
       S.ocupado = false; S.entrando = true;
       render(); arriba();
     } catch (e) {
@@ -1546,6 +1598,11 @@ const ACCIONES = {
       // contra una frase en español dejaba de funcionar justo acá.
       if (e.codigo === 'url') {
         S.errorCampo = e.message; S.error = '';
+      } else if (e.codigo === 'deezer') {
+        // El link de Deezer no sirve: se vuelve a donde está el campo, con el
+        // catálogo que ya había, y se dice ahí.
+        S.deezerError = e.message; S.error = '';
+        if (S.catalogo) { S.paso = 2; S.pideDeezer = true; }
       } else {
         S.error = e.message === 'CANCELADO' ? '' : e.message;
       }
@@ -1793,7 +1850,12 @@ document.addEventListener('change', (ev) => {
 });
 
 document.addEventListener('input', (ev) => {
+  // Otro canal es otro artista: el perfil de Deezer que se había pegado no vale.
+  if (ev.target.id === 'url' && ev.target.value.trim() !== (S.url || '').trim()) {
+    S.deezerLink = ''; S.deezerUsado = ''; S.deezerError = '';
+  }
   if (ev.target.id === 'url') S.url = ev.target.value;
+  if (ev.target.id === 'deezer-link') { S.deezerLink = ev.target.value; S.deezerError = ''; }
   if (ev.target.id === 'url' && S.errorCampo) {
     S.errorCampo = '';
     ev.target.classList.remove('error');

@@ -61,6 +61,36 @@ def test_relevar_reusa_lo_listado_salvo_que_se_pida_de_cero(monkeypatch):
     assert pedidos == [True, False]
 
 
+def test_el_perfil_de_deezer_que_se_pega_llega_al_motor_como_su_id(monkeypatch):
+    """Es lo que pidió quien no encontraba a su artista: decirle a la app cuál
+    es el perfil. Sin link, el motor lo busca solo (id 0)."""
+    monkeypatch.setattr(backend, "leer_clave", lambda: "clave-de-prueba")
+    pedidos = []
+
+    def relevar(url, clave, **kw):
+        pedidos.append(kw["artista_deezer"])
+        return [_producto(title="Disco")], "Fulano", [], {}
+
+    monkeypatch.setattr(backend.M, "relevar_catalogo", relevar)
+    canal = "https://www.youtube.com/@fulano"
+    _terminar(backend.api_relevar({"url": canal})["job"])
+    _terminar(
+        backend.api_relevar({"url": canal, "deezer_artista": " https://www.deezer.com/es/artist/27 "})["job"]
+    )
+    assert pedidos == [0, 27]
+
+
+@pytest.mark.parametrize(
+    "pegado", ["cualquier cosa", "https://www.deezer.com/es/album/302127", "https://example.com/a"]
+)
+def test_un_link_de_deezer_que_no_es_de_un_artista_se_rechaza_antes_de_relevar(monkeypatch, pegado):
+    monkeypatch.setattr(backend, "leer_clave", lambda: "clave-de-prueba")
+    monkeypatch.setattr(backend.M, "relevar_catalogo", lambda *a, **k: pytest.fail("no tenía que relevar"))
+    with pytest.raises(backend.ErrorDeCampo) as error:
+        backend.api_relevar({"url": "https://www.youtube.com/@fulano", "deezer_artista": pegado})
+    assert error.value.codigo == "deezer", "la interfaz lo muestra debajo del campo de Deezer"
+
+
 def test_el_reporte_del_paquete_lleva_el_diagnostico_del_relevamiento(monkeypatch):
     """Sin esto el reporte del ZIP salía sin decir cómo se listó el catálogo ni
     qué le falta, aunque la pantalla lo dijera."""

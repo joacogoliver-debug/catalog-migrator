@@ -451,6 +451,11 @@ class Completitud(TypedDict):
 
     revisada: bool
     artista_deezer: str
+    artista_id: int  # el id de ese perfil en Deezer
+    # Cómo se supo qué perfil es: "cruce" (el dueño de los álbumes verificados),
+    # "nombre" (buscado por nombre y comprobado con sus temas) o "manual" (el
+    # link que pegó el usuario).
+    como: str
     releases: int  # cuántos releases tiene el artista en Deezer
     temas: int  # grabaciones distintas que faltan
     sin_respuesta: int  # releases que Deezer no contestó

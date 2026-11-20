@@ -6,6 +6,39 @@ What changed in every published version. The numbers follow
 [SemVer](https://semver.org/), and the downloads are in
 [Releases](https://github.com/joacogoliver-debug/catalog-migrator/releases).
 
+## [Unreleased]
+
+### Fixed
+- **The app said an artist "is not on Deezer" while their profile was there,
+  and brought no ISRC or UPC.** The match looked each track up in Deezer's
+  search, which is text-based. If the artist is spelled differently on YouTube
+  ("Q' Lokura" and "Q’Lokura"), or the search does not return the track among
+  its first results, nothing showed up; with no track found there was no way to
+  tell which profile was the artist's, and the comparison against their
+  discography, which does not depend on the search, never ran. Now, when the
+  match finds nothing, the profile is searched by name and checked against its
+  top tracks: the one holding tracks from the channel, with the same title and
+  length, is accepted, not the one that merely shares the name. With the
+  profile, the codes come from its discography. Tested on two real catalogs
+  with the search disabled entirely: from 0 tracks with an ISRC to 246 of 290
+  and 210 of 220, and from 0 releases with a UPC to 27 of 31 and 26 of 42.
+- **Deezer's exact search stopped working, and it was the first query for every
+  track.** Its artist filter returns zero for any artist, including the example
+  in its own documentation. The app already fell back to the free search, but
+  spent half of its requests on the one that does not answer. The free search
+  now goes first, with fifteen results instead of five: a track with a common
+  title did not make it among those of other artists.
+- **The notice no longer blames the source.** It said "it is not the app
+  failing, the source does not have them", which was not always true.
+
+### Added
+- **The artist's Deezer link can be pasted.** When the app does not find the
+  profile, the notice carries a field to paste it and look the codes up again
+  with it. And when it does find it, it says which profile the codes came from
+  and lets you change it, in case it picked a namesake. Looking up again costs
+  no YouTube quota: the channel listing is the session's. It was requested by
+  someone testing the app with an artist the app could not find.
+
 ## [1.3.4] — 2026-11-17
 
 ### Added

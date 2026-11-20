@@ -997,15 +997,58 @@ def _misma_version(titulo_a, titulo_b):
     return misma_version(titulo_a, titulo_b)
 
 
+# Cuántos resultados se le piden a Deezer por tema. Con cinco, un tema con un
+# título común («Loca», «Hoy») no llegaba a aparecer entre los de otros artistas.
+CANDIDATOS_POR_TEMA = 15
+
+_RE_ARTISTA_DEEZER = re.compile(r"deezer\.com/(?:[a-z]{2}(?:-[a-z]{2})?/)?artist/(\d+)", re.I)
+# Los links cortos que da Deezer al compartir: son los únicos que se siguen.
+_HOSTS_CORTOS_DEEZER = ("link.deezer.com", "deezer.page.link", "dzr.page.link")
+
+
+def id_de_artista_deezer(texto):
+    """El id del artista en Deezer, a partir de lo que pegó el usuario.
+
+    Acepta el link del perfil (`https://www.deezer.com/es/artist/27`), el link
+    corto que da la app de Deezer al compartir, o el número solo. Devuelve 0 si
+    no es nada de eso. El link corto se resuelve siguiéndolo, y sólo si es de
+    Deezer: no se abre cualquier dirección que alguien pegue.
+    """
+    texto = (texto or "").strip()
+    if texto.isdigit():
+        return int(texto)
+    m = _RE_ARTISTA_DEEZER.search(texto)
+    if m:
+        return int(m.group(1))
+    try:
+        partes = urllib.parse.urlsplit(texto if "://" in texto else "https://" + texto)
+    except ValueError:
+        return 0
+    if partes.scheme != "https" or (partes.hostname or "").lower() not in _HOSTS_CORTOS_DEEZER:
+        return 0
+    try:
+        req = urllib.request.Request(partes.geturl(), headers={"User-Agent": USER_AGENT})
+        with urllib.request.urlopen(req, timeout=15) as r:
+            m = _RE_ARTISTA_DEEZER.search(r.geturl())
+    except (urllib.error.URLError, TimeoutError, ValueError):
+        return 0
+    return int(m.group(1)) if m else 0
+
+
 # ---- Deezer (principal, sin clave) ----
 def deezer_match(t, artist):
     """Devuelve (isrc, album_id, confianza) o ('', None, '')."""
     title = _clean_title(t["track"])
-    q = urllib.parse.quote(f'track:"{title}" artist:"{artist}"')
-    items = (_deezer_json(f"search?q={q}&limit=5") or {}).get("data") or []
-    if not items:  # reintento con búsqueda libre (el filtro estricto a veces no matchea)
-        q2 = urllib.parse.quote(f"{title} {artist}")
-        items = (_deezer_json(f"search?q={q2}&limit=5") or {}).get("data") or []
+    # La búsqueda libre va primero. La exacta (`track:"…" artist:"…"`) era la
+    # principal y Deezer dejó de contestarla: su filtro por artista devuelve
+    # cero para cualquier artista, incluido el ejemplo de su documentación. Cada
+    # tema gastaba un pedido en ella antes de llegar a la que sí funciona. Queda
+    # de respaldo, por si vuelve.
+    q = urllib.parse.quote(f"{title} {artist}")
+    items = (_deezer_json(f"search?q={q}&limit={CANDIDATOS_POR_TEMA}") or {}).get("data") or []
+    if not items:
+        q2 = urllib.parse.quote(f'track:"{title}" artist:"{artist}"')
+        items = (_deezer_json(f"search?q={q2}&limit={CANDIDATOS_POR_TEMA}") or {}).get("data") or []
     if not items:
         return "", None, ""
     best, best_meta = None, None

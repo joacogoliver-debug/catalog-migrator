@@ -243,11 +243,68 @@ test('«ISRC 0 de 27» se explica: no se pidió, no está en Deezer, o Deezer no
   catalogoDeTres();
   const aviso = (codigos) => { ev(`S.catalogo.diagnostico = { codigos: ${JSON.stringify(codigos)} }`); return ev('avisoCanal()'); };
   assert.ok(aviso({ pedidos: false, encontrados: 0, fallas: 0 }).includes('No se buscaron los códigos'));
-  assert.ok(aviso({ pedidos: true, encontrados: 0, fallas: 0 }).includes('no está en Deezer'));
+  assert.ok(aviso({ pedidos: true, encontrados: 0, fallas: 0 }).includes('No se encontró a'));
   assert.ok(aviso({ pedidos: true, encontrados: 0, fallas: 4 }).includes('Deezer no respondió 4 consultas'));
   assert.equal(aviso({ pedidos: true, encontrados: 3, fallas: 0 }), '', 'si salió bien no hay nada que decir');
   ev('S.catalogo.diagnostico = {}');
   assert.equal(ev('avisoCanal()'), '', 'un diagnóstico viejo, sin códigos, no rompe nada');
+});
+
+test('si no se encontró al artista en Deezer, se puede pegar el link de su perfil', () => {
+  // De un caso real: la app decía que una artista «no está en Deezer» con su
+  // perfil ahí, y no había forma de decirle cuál era.
+  catalogoDeTres();
+  ev(`S.url = 'https://www.youtube.com/channel/UCxxxxxxxxxxxxxxxxxxxxxx'; S.deezerLink = ''; S.deezerError = ''; S.pideDeezer = false`);
+  ev(`S.catalogo.diagnostico = { codigos: { pedidos: true, encontrados: 0, fallas: 0 } }`);
+  let html = ev('avisoCanal()');
+  assert.ok(html.includes('id="deezer-link"') && html.includes('data-accion="usar-deezer"'), html);
+  assert.ok(!html.includes('no es una falla de la app'), 'la app ya no le echa la culpa a la fuente');
+
+  // Sin link no se releva nada: se pide el link.
+  const cuerpos = [];
+  const fetchDeAntes = ctx.fetch;
+  ctx.fetch = async (ruta, opciones) => {
+    if (ruta === '/api/relevar') cuerpos.push(JSON.parse(opciones.body));
+    return { ok: false, status: 400, json: async () => ({ error: 'hasta acá llega la prueba' }) };
+  };
+  ev(`ACCIONES['usar-deezer']()`);
+  assert.equal(cuerpos.length, 0);
+  assert.equal(ev('S.deezerError'), 'Pegá el link del perfil.');
+  ctx.fetch = fetchDeAntes;
+  ev(`S.deezerError = ''`);
+});
+
+test('el link de Deezer viaja con el relevamiento, y otro canal lo descarta', async () => {
+  const cuerpos = [];
+  const fetchDeAntes = ctx.fetch;
+  ctx.fetch = async (ruta, opciones) => {
+    if (ruta === '/api/relevar') cuerpos.push(JSON.parse(opciones.body));
+    return { ok: false, status: 400, json: async () => ({ error: 'hasta acá llega la prueba' }) };
+  };
+  catalogoDeTres();
+  ev(`S.url = 'https://www.youtube.com/channel/UCx'; S.conCodigos = true; S.deezerError = ''; S.error = ''`);
+  ev(`S.deezerLink = 'https://www.deezer.com/es/artist/27'`);
+  await ev(`ACCIONES['usar-deezer']()`);
+  assert.equal(cuerpos.length, 1);
+  assert.equal(cuerpos[0].deezer_artista, 'https://www.deezer.com/es/artist/27');
+  assert.equal(cuerpos[0].url, 'https://www.youtube.com/channel/UCx', 'el canal es el que ya se había pegado');
+  assert.equal(cuerpos[0].de_cero, false, 'no vuelve a listar el canal: no gasta cupo de YouTube');
+  ctx.fetch = fetchDeAntes;
+  ev(`S.error = ''; S.errorCodigo = ''; S.ocupado = false; S.deezerLink = ''; S.deezerUsado = ''`);
+});
+
+test('con códigos encontrados se dice de qué perfil de Deezer salieron y se puede cambiar', () => {
+  catalogoDeTres();
+  ev(`S.pideDeezer = false; S.deezerLink = ''; S.deezerError = ''`);
+  ev(`S.catalogo.diagnostico = { codigos: { pedidos: true, encontrados: 3, fallas: 0 },
+      completitud: { revisada: true, artista_deezer: 'Los Del Ejemplo', releases: 4, temas: 0, faltan: [] } }`);
+  let html = ev('avisoCanal()');
+  assert.ok(html.includes('Los códigos salen del perfil de Deezer «Los Del Ejemplo».'), html);
+  assert.ok(html.includes('data-accion="otro-deezer"') && !html.includes('id="deezer-link"'));
+  ev(`S.pideDeezer = true`);
+  html = ev('avisoCanal()');
+  assert.ok(html.includes('id="deezer-link"'), 'al pedirlo aparece el campo');
+  ev(`S.pideDeezer = false`);
 });
 
 test('la pantalla final dice qué sigue, con la baja al final', () => {

@@ -6,6 +6,39 @@ Lo que cambió en cada versión publicada. Los números siguen
 [SemVer](https://semver.org/lang/es/), y las descargas están en
 [Releases](https://github.com/joacogoliver-debug/catalog-migrator/releases).
 
+## [Sin publicar]
+
+### Corregido
+- **La app decía que un artista «no está en Deezer» con su perfil ahí, y no
+  traía ningún ISRC ni UPC.** El cruce buscaba cada tema en el buscador de
+  Deezer, que busca por texto. Si el artista se escribe distinto en YouTube
+  («Q' Lokura» y «Q’Lokura»), o el buscador no devuelve el tema entre sus
+  primeros resultados, no aparecía nada; sin ningún tema encontrado no se sabía
+  cuál era el perfil del artista, y la comparación con su discografía, que no
+  depende del buscador, nunca corría. Ahora, cuando el cruce no encuentra nada,
+  se busca el perfil por el nombre y se lo comprueba con sus temas más
+  escuchados: se acepta el que tiene temas del canal, con el mismo título y la
+  misma duración, y no el que sólo se llama igual. Con el perfil, los códigos
+  salen de su discografía. Probado con dos catálogos reales anulando el
+  buscador por completo: de 0 temas con ISRC pasó a 246 de 290 y a 210 de 220,
+  y de 0 lanzamientos con UPC a 27 de 31 y a 26 de 42.
+- **La búsqueda exacta de Deezer dejó de funcionar, y era la primera consulta
+  de cada tema.** Su filtro por artista devuelve cero para cualquier artista,
+  incluido el ejemplo de su documentación. La app ya caía a la búsqueda libre,
+  pero gastaba la mitad de los pedidos en la que no contesta. Ahora la libre va
+  primero, con quince resultados en vez de cinco: un tema con un título común
+  no llegaba a aparecer entre los de otros artistas.
+- **El aviso ya no le echa la culpa a la fuente.** Decía «no es una falla de la
+  app, es que la fuente no los tiene», y no siempre era cierto.
+
+### Agregado
+- **Se puede pegar el link del artista en Deezer.** Cuando la app no encuentra
+  el perfil, el aviso trae un campo para pegarlo y volver a buscar los códigos
+  con él. Y cuando sí lo encuentra, dice de qué perfil salieron y deja cambiarlo,
+  por si eligió a un homónimo. Volver a buscar no gasta cupo de YouTube: el
+  listado del canal es el de la sesión. Lo pidió quien probó la app con una
+  artista que la app no encontraba.
+
 ## [1.3.4] — 2026-11-17
 
 ### Agregado

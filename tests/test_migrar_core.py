@@ -21,6 +21,17 @@ from migrador import migrar_core as M
 from migrador import relevar_core
 from migrador.contratos import Diagnostico, OpcionesFiltro, Relevamiento, ResultadoMigracion
 
+
+@pytest.fixture(autouse=True)
+def sin_buscar_al_artista_en_deezer(monkeypatch):
+    """Estos tests arman el relevamiento con datos propios y no hablan con
+    Deezer. Sin álbumes verificados, la comparación iría a buscar al artista
+    por su nombre: acá no encuentra a nadie, sin salir a la red."""
+    from migrador import completitud
+
+    monkeypatch.setattr(completitud, "buscar_artista", lambda *_a, **_k: [])
+
+
 # Las claves que `relevar()` tiene que devolver salen del contrato, no de una
 # lista escrita a mano acá. Antes eran catorce cadenas copiadas, que es la forma
 # más fácil de que el test y el código se separen sin que nadie se entere:
@@ -341,6 +352,21 @@ def test_el_pedido_de_listar_de_cero_llega_al_motor(relevar_doble):
     _p, _a, _t, diag = M.relevar_catalogo("https://www.youtube.com/@Test", "clave-falsa", reusar=False)
     assert relevar_doble["reusar"] is False
     assert diag["reusado"] is False
+
+
+def test_el_perfil_de_deezer_indicado_llega_a_la_comparacion(relevar_doble, monkeypatch):
+    from migrador import completitud
+
+    vistos = []
+
+    def revisar(*_a, **k):
+        vistos.append(k.get("artista_deezer"))
+        return completitud.completitud_vacia()
+
+    monkeypatch.setattr(completitud, "revisar", revisar)
+    M.relevar_catalogo("https://www.youtube.com/@Test", "clave-falsa")
+    M.relevar_catalogo("https://www.youtube.com/@Test", "clave-falsa", artista_deezer=27)
+    assert vistos == [0, 27]
 
 
 def test_sin_codigos_la_comparacion_con_deezer_queda_sin_hacer(relevar_doble, monkeypatch):

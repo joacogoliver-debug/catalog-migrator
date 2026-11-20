@@ -800,6 +800,12 @@ def api_relevar(body):
     # Volver a listar el canal aunque ya se haya listado en esta sesión. Lo
     # pide el botón «Volver a listar», para quien sabe que el canal cambió.
     de_cero = bool(body.get("de_cero", False))
+    # El perfil del artista en Deezer, cuando lo indica el usuario: es la
+    # salida para cuando la app no lo encuentra sola, o elige a un homónimo.
+    pegado = str(body.get("deezer_artista") or "").strip()[:2048]
+    artista_deezer = R.id_de_artista_deezer(pegado) if pegado else 0
+    if pegado and not artista_deezer:
+        raise ErrorDeCampo(T("srv.deezer_link_invalido"), "deezer")
 
     def trabajo(job):
         prods, artista, _, diag = M.relevar_catalogo(
@@ -809,6 +815,7 @@ def api_relevar(body):
             progress=lambda m, f=None: job.avance(m, f),
             fraccion=job.fraccion,
             reusar=not de_cero,
+            artista_deezer=artista_deezer,
         )
         ESTADO.guardar_catalogo(prods, artista, diag)
         texto = "srv.productos_encontrados_uno" if len(prods) == 1 else "srv.productos_encontrados"
