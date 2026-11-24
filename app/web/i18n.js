@@ -476,6 +476,7 @@ const TEXTOS = {
   'paso2.marcar_todos': { es: 'Marcar todos', en: 'Select all' },
   'paso2.desmarcar_todos': { es: 'Desmarcar todos', en: 'Clear selection' },
   'paso2.marcar_visibles': { es: 'Marcar los que se ven', en: 'Select the visible ones' },
+  'paso2.deshacer': { es: 'Deshacer', en: 'Undo' },
   'paso2.desmarcar_visibles': { es: 'Desmarcar los que se ven', en: 'Clear the visible ones' },
   'paso2.relevamiento': { es: 'Cómo se relevó', en: 'How it was surveyed' },
   'paso2.rel_topic': { es: 'Topic: {topic}', en: 'Topic: {topic}' },

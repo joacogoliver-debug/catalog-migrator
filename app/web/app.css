@@ -111,8 +111,8 @@ code, .mono {
 
 /* La etiqueta de borde: mono, versalitas, tracking ancho. Es la voz de la app
    para todo lo que rotula en vez de leerse. */
-.leyenda, .barra-accion .resumen, .footer, .seccion-etiqueta .der,
-.field label, table.tabla thead th, .header-version {
+.barra-accion .resumen, .footer, .seccion-etiqueta .der,
+.field label, table.tabla > thead > tr > th, .header-version {
   font-family: var(--mono);
   font-size: var(--t-nano);
   font-weight: var(--p-regular);
@@ -553,7 +553,10 @@ table.tabla {
 /* `top` negativo por el padding de `main`: el sticky se pega al borde del
    área con padding, y con `top: 0` la cabecera quedaba 48 px más abajo del
    borde, con las filas pasando por arriba de ella. */
-table.tabla thead th {
+/* Todo con hijo directo (`>`): con el descendiente a secas, estas reglas les
+   ganaban por especificidad a las de la subtabla de tracks, y cada track medía
+   52 px de alto con letra de 11, y su cabecera se volvía fija como la de acá. */
+table.tabla > thead > tr > th {
   position: sticky; top: calc(-1 * var(--pad-main-arriba)); z-index: 2;
   background: var(--panel);
   text-align: left; padding: var(--e-3);
@@ -562,7 +565,7 @@ table.tabla thead th {
   white-space: nowrap;
   overflow: hidden; text-overflow: ellipsis;
 }
-table.tabla thead th.td-num { text-align: right; }
+table.tabla > thead > tr > th.td-num { text-align: right; }
 
 /* La cabecera que ordena es un botón con la misma voz de etiqueta: hereda la
    letra, el tracking y las versalitas del th. La marca sólo aparece en la
@@ -587,15 +590,15 @@ table.tabla thead th.td-num { text-align: right; }
 table.tabla > tbody > tr:not(.fila-detalle) { counter-increment: fila; }
 table.tabla > tbody > tr[data-fila] { cursor: pointer; }
 
-table.tabla tbody td {
+table.tabla > tbody > tr > td {
   padding: var(--e-3);
   height: var(--h-fila);
   border-bottom: 1px solid var(--borde-suave);
   vertical-align: middle;
   color: var(--texto-2);
 }
-table.tabla tbody tr:last-child td { border-bottom: none; }
-table.tabla tbody tr:hover td { background: color-mix(in srgb, var(--hueso) 3%, transparent); }
+table.tabla > tbody > tr:last-child > td { border-bottom: none; }
+table.tabla > tbody > tr[data-fila]:hover > td { background: color-mix(in srgb, var(--hueso) 3%, transparent); }
 /* La fila elegida se distingue por algo más que una casilla de 16 px: un
    tinte del acento, que es el color de lo que está en curso. Sólo las filas
    propias, no las de la subtabla de tracks. */
@@ -626,7 +629,14 @@ tbody .td-check::before {
   letter-spacing: var(--tracking-mono); text-transform: uppercase;
   color: var(--texto-3);
 }
-.leyenda { margin-top: var(--e-4); display: block; }
+/* La leyenda es una oración, y la más importante de la pantalla: va en la
+   letra de leer, no en la de rotular. Estaba en mono, versalitas y 10 px, que
+   es lo que el sistema reserva para etiquetas de tres palabras. */
+.leyenda {
+  margin-top: var(--e-4); display: block;
+  font-size: var(--t-dato); line-height: var(--i-cuerpo);
+  color: var(--texto-2); max-width: var(--medida-ancha);
+}
 
 .btn-expandir {
   display: inline-flex; align-items: center; justify-content: center;
@@ -651,7 +661,7 @@ tr.fila-detalle > td { background: var(--panel-alto); padding: 0 !important; hei
 @starting-style {
   .detalle-inner { grid-template-rows: 0fr; opacity: 0; }
 }
-table.sub { width: 100%; border-collapse: collapse; font-size: var(--t-micro); }
+table.sub { width: 100%; border-collapse: collapse; font-size: var(--t-dato); }
 table.sub th {
   text-align: left; padding: 2px var(--e-3);
   font-family: var(--mono); font-size: var(--t-nano);
@@ -660,9 +670,10 @@ table.sub th {
 }
 table.sub th.td-num { text-align: right; }
 table.sub td {
-  padding: 4px var(--e-3); border-top: 1px solid var(--borde-suave);
+  padding: 6px var(--e-3); border-top: 1px solid var(--borde-suave);
   color: var(--texto-2); height: auto;
 }
+table.sub tbody tr:hover td { background: color-mix(in srgb, var(--hueso) 3%, transparent); }
 
 /* ---------------------------------------------------------- alertas */
 /* El mismo lenguaje que los badges: relleno teñido, texto e icono del tono. */
@@ -823,6 +834,20 @@ table.sub td {
   color: var(--atencion);
 }
 .barra-accion .resumen strong { color: var(--texto); font-weight: var(--p-regular); }
+/* Cuando el resumen es una oración («El ZIP queda disponible…») va en la letra
+   de leer: las versalitas mono son para rotular, no para decir. */
+.barra-accion .resumen.frase {
+  font-family: var(--sans); font-size: var(--t-cuerpo);
+  text-transform: none; letter-spacing: normal; color: var(--texto-2);
+}
+.barra-accion .deshacer {
+  margin-left: var(--e-3);
+  font-family: var(--sans); font-size: var(--t-ui);
+  text-transform: none; letter-spacing: normal;
+}
+/* El primario no queda pegado a «Desmarcar todos»: son las dos acciones de
+   efecto más distinto de la pantalla. */
+.barra-accion .acciones .btn-primary { margin-left: var(--e-3); }
 .barra-accion .acciones { margin-left: auto; display: flex; gap: var(--e-2); align-items: center; }
 
 /* ---------------------------------------------------------- acordeón */

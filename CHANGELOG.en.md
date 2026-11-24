@@ -33,6 +33,21 @@ What changed in every published version. The numbers follow
   - The selected row is tinted, not only its checkbox.
   - Shift selects a whole run of rows.
   - Columns have a fixed width: they no longer jump around when filtering.
+- **Track rows are half as tall**, with 13 px text instead of 11. Through a
+  style clash they inherited the height of release rows: an unfolded 12-track
+  album took up almost the whole window.
+- **Sentences use the reading font.** The note under the table, which is the
+  most important advice on the screen (keep the ISRC, UPC and original date),
+  was in mono, small caps and 10 px, like three-word labels. Same for the bar
+  notes in steps 3 and 4.
+- **Bulk select and clear can be undone.** "Clear selection" sits next to
+  "Continue", and one extra click wiped out what had been picked by hand with no
+  way back.
+- **"Survey another artist" no longer throws the package away.** From step 4 it
+  discarded a ZIP that had not been downloaded yet; now step 4 stays reachable
+  until another catalog is surveyed.
+- **"Cancel" looks like a button** while a long job runs. It was loose text at
+  the far end of the line.
 
 ### Improved
 - **More ISRCs, more UPCs and more records with a confirmed order.** Measured on

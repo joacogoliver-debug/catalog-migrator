@@ -194,7 +194,8 @@ igual a cualquier otra.
 - Escalones de gris como estructura. Las superficies están casi juntas a propósito.
 - Relleno pastel claro en badges, y badges de borde de color.
 - La plantilla de métrica: número enorme, etiqueta chica, fila de stats.
-- Versalitas como estructura de página. Van sólo en lo que rotula.
+- Versalitas como estructura de página. Van sólo en lo que rotula: si tiene
+  verbo, es una oración y va en la letra de leer.
 - Emojis como iconos.
 - Degradados, vidrio esmerilado y brillos de color.
 - Negro puro `#000000`: el lienzo es grafito bajado, y es cálido.

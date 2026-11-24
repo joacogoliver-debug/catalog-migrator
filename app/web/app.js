@@ -715,7 +715,7 @@ function bloqueProgreso(conCancelar = true) {
       <span class="latido" aria-hidden="true"><i></i><i></i><i></i></span>${ico('ok', 'ico-listo')}
       <strong id="progreso-mensaje" aria-live="polite">${esc(j.mensaje || T('progreso.trabajando'))}</strong>
       <span class="muted small mono" id="progreso-pct">${j.progreso ? Math.round(j.progreso * 100) + '%' : ''}</span>
-      ${conCancelar ? `<button class="btn btn-ghost btn-sm a-la-derecha" data-accion="cancelar">${esc(T('comun.cancelar'))}</button>` : ''}
+      ${conCancelar ? `<button class="btn btn-secondary btn-sm a-la-derecha" data-accion="cancelar">${esc(T('comun.cancelar'))}</button>` : ''}
     </div>
     ${conBarra ? `
       <div class="barra" role="progressbar" aria-label="${esc(T('progreso.aria_barra'))}" aria-valuemin="0" aria-valuemax="100"
@@ -921,9 +921,12 @@ function resumenElegidos(sel) {
     total: cuenta('comun.n_productos', total, `<strong>${num(total)}</strong>`),
     tracks: cuenta('comun.n_tracks', tracks),
   });
+  const deshacer = S.deshacer
+    ? `<button type="button" class="link-inline deshacer" data-accion="deshacer-seleccion">${esc(T('paso2.deshacer'))}</button>`
+    : '';
   const ocultos = elegidosOcultos();
-  if (!ocultos) return texto;
-  return `${texto}<span class="ocultos">${esc(T(ocultos === 1 ? 'paso2.ocultos_uno' : 'paso2.ocultos', { n: num(ocultos) }))}
+  if (!ocultos) return texto + deshacer;
+  return `${texto}${deshacer}<span class="ocultos">${esc(T(ocultos === 1 ? 'paso2.ocultos_uno' : 'paso2.ocultos', { n: num(ocultos) }))}
     <button type="button" class="link-inline" data-accion="limpiar-filtro">${esc(T('paso2.ver_todos'))}</button></span>`;
 }
 
@@ -1211,7 +1214,7 @@ function vistaPaso3() {
     </div>
 
     <div class="barra-accion">
-      <div class="resumen">${esc(T('paso3.resumen_zip'))}</div>
+      <div class="resumen frase">${esc(T('paso3.resumen_zip'))}</div>
       <div class="acciones">
         <button class="btn btn-secondary" data-accion="volver-2">${esc(T('comun.volver'))}</button>
         <button class="btn btn-primary" data-accion="generar"
@@ -1334,7 +1337,7 @@ function vistaPaso4() {
       <button class="btn btn-ghost" data-accion="mostrar-guardado">${esc(T('paso4.mostrar'))}</button>`, 'status') : ''}
 
     <div class="barra-accion">
-      <div class="resumen">${esc(T('paso4.zip_disponible'))}</div>
+      <div class="resumen frase">${esc(T('paso4.zip_disponible'))}</div>
       <div class="acciones">
         <button class="btn btn-ghost" data-accion="volver-1">${esc(T('paso2.otro_artista'))}</button>
         <button class="btn btn-secondary" data-accion="volver-2">${esc(T('paso4.otros_productos'))}</button>
@@ -1741,13 +1744,22 @@ const ACCIONES = {
     if (S.job) { try { await api(`/api/job/${S.job.id}/cancelar`, {}); } catch (_) {} }
   },
 
-  'volver-1'() { S.paso = 1; S.aviso = ''; S.error = ''; S.errorCodigo = ''; S.resultado = null; S.entrando = true; render(); arriba(); },
+  // No descarta el paquete: «Relevar otro artista» en el paso 4 tiraba un ZIP
+  // que todavía no se había bajado, al lado de un texto que decía que seguía
+  // disponible. Se descarta cuando hay otro catálogo (`adoptarCatalogo`).
+  'volver-1'() { S.paso = 1; S.aviso = ''; S.error = ''; S.errorCodigo = ''; S.entrando = true; render(); arriba(); },
   'volver-2'() { S.paso = 2; S.aviso = ''; S.error = ''; S.errorCodigo = ''; S.entrando = true; render(); arriba(); },
   'volver-3'() { S.paso = 3; S.aviso = ''; S.error = ''; S.errorCodigo = ''; S.entrando = true; render(); arriba(); },
   'ir-3'() { S.paso = 3; S.aviso = ''; S.error = ''; S.errorCodigo = ''; S.entrando = true; render(); arriba(); },
 
-  'sel-todo'() { productosFiltrados().forEach((p) => S.seleccion.add(p.id)); render(); },
-  'sel-nada'() { productosFiltrados().forEach((p) => S.seleccion.delete(p.id)); render(); },
+  'sel-todo'() { recordarSeleccion(); productosFiltrados().forEach((p) => S.seleccion.add(p.id)); conScrollPreservado(render); },
+  'sel-nada'() { recordarSeleccion(); productosFiltrados().forEach((p) => S.seleccion.delete(p.id)); conScrollPreservado(render); },
+  'deshacer-seleccion'() {
+    if (!S.deshacer) return;
+    S.seleccion = S.deshacer;
+    S.deshacer = null;
+    conScrollPreservado(render);
+  },
 
   async 'tidal-iniciar'() {
     S.error = '';
@@ -1942,6 +1954,9 @@ document.addEventListener('change', (ev) => {
     const tramo = S.conShift ? tramoDesdeAncla(id) : [id];
     S.conShift = false;
     S.ancla = id;
+    // Un tramo se deshace como cualquier acción en lote. Un clic suelto, no: se
+    // deshace con otro clic, y el «Deshacer» anterior ya no correspondería.
+    if (tramo.length > 1) recordarSeleccion(); else S.deshacer = null;
     for (const x of tramo) {
       if (t.checked) S.seleccion.add(x); else S.seleccion.delete(x);
       // Actualización puntual: redibujar la tabla entera en cada clic se siente lento.
@@ -1957,6 +1972,7 @@ document.addEventListener('change', (ev) => {
   }
 
   if (t.id === 'check-todos') {
+    recordarSeleccion();
     if (t.checked) productosFiltrados().forEach((p) => S.seleccion.add(p.id));
     else productosFiltrados().forEach((p) => S.seleccion.delete(p.id));
     seguro(() => conScrollPreservado(render));
@@ -2031,6 +2047,13 @@ document.addEventListener('keydown', (ev) => {
 window.addEventListener('error', (ev) => { if (!S.fatal) mostrarFatal(ev.error || ev.message); });
 window.addEventListener('unhandledrejection', (ev) => { if (!S.fatal) mostrarFatal(ev.reason); });
 
+/** Guarda la selección antes de una acción en lote, para poder deshacerla.
+ *  «Desmarcar todos» está al lado de «Continuar» y un clic de más borraba lo
+ *  elegido a mano en un catálogo de cientos de productos, sin vuelta atrás. */
+function recordarSeleccion() {
+  S.deshacer = new Set(S.seleccion);
+}
+
 /** Las filas entre la última que se tocó y ésta, en el orden en que se ven. Si
  *  la anterior ya no está a la vista (otro filtro, otro orden), sólo ésta. */
 function tramoDesdeAncla(id) {
@@ -2092,6 +2115,10 @@ function adoptarCatalogo(cat) {
   S.verRelevamiento = false;
   S.orden = null;
   S.ancla = null;
+  S.deshacer = null;
+  // Otro catálogo: el paquete del anterior ya no es de lo que se ve.
+  S.resultado = null;
+  S.guardado = null;
   S.filtro = {
     modo: 'manual',
     anioDesde: cat.filtros.anio_min,

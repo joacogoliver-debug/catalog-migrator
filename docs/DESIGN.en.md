@@ -192,7 +192,8 @@ look like every other one.
 - Steps of gray as structure. The surfaces sit almost together on purpose.
 - Light pastel fill on badges, and badges with a colored border.
 - The metric template: huge number, small label, row of stats.
-- Small caps as page structure. They go only on what labels.
+- Small caps as page structure. They go only on what labels: if it has a
+  verb, it is a sentence and goes in the reading font.
 - Emojis as icons.
 - Gradients, frosted glass and colored glows.
 - Pure black `#000000`: the canvas is graphite taken down, and it is warm.

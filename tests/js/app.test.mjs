@@ -239,6 +239,27 @@ test('con un filtro puesto, marcar y desmarcar dicen que actúan sobre lo que se
   ev(`S.filtro.texto = ''`);
 });
 
+test('marcar o desmarcar en lote se puede deshacer', () => {
+  catalogoDeTres();
+  ev(`S.seleccion = new Set(['a', 'c'])`);
+  assert.ok(!ev('resumenElegidos(seleccionados())').includes('deshacer-seleccion'), 'sin acción en lote no hay nada que deshacer');
+  ev(`ACCIONES['sel-nada']()`);
+  assert.equal(ev('seleccionados().length'), 0);
+  assert.ok(ev('resumenElegidos(seleccionados())').includes('data-accion="deshacer-seleccion"'));
+  ev(`ACCIONES['deshacer-seleccion']()`);
+  assert.deepEqual([...ev('seleccionados().map((p) => p.id)')], ['a', 'c'], 'vuelve lo elegido a mano, no todo');
+  assert.ok(!ev('resumenElegidos(seleccionados())').includes('deshacer-seleccion'), 'y el botón se va');
+});
+
+test('volver al paso 1 no tira el paquete; otro catálogo sí', () => {
+  catalogoDeTres();
+  ev(`S.resultado = { archivo: 'x.zip', bytes: 1 }; S.paso = 4`);
+  ev(`ACCIONES['volver-1']()`);
+  assert.equal(ev('pasoAlcanzable(4)'), true, 'el paso 4 sigue a mano');
+  catalogoDeTres();
+  assert.equal(ev('S.resultado'), null, 'el paquete era del catálogo anterior');
+});
+
 test('las cabeceras ordenan: ascendente, descendente y de vuelta al orden original', () => {
   catalogoDeTres();
   const ids = () => [...ev('productosFiltrados().map((p) => p.id)')];

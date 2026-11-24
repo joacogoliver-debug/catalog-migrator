@@ -33,6 +33,21 @@ Lo que cambió en cada versión publicada. Los números siguen
   - La fila elegida tiene un tinte, y no sólo la casilla.
   - Con Shift se elige un tramo entero de filas.
   - Las columnas tienen ancho fijo: ya no saltan de lugar al filtrar.
+- **Las filas de tracks miden la mitad**, con letra de 13 en vez de 11. Por un
+  cruce de estilos heredaban el alto de las filas de productos: un álbum de 12
+  temas desplegado ocupaba casi toda la ventana.
+- **Las oraciones van en letra de leer.** La leyenda bajo la tabla, que es el
+  consejo más importante de la pantalla (conservar ISRC, UPC y fecha original),
+  estaba en mono, versalitas y 10 px, igual que los rótulos de tres palabras.
+  Lo mismo los avisos de la barra en los pasos 3 y 4.
+- **Marcar o desmarcar en lote se puede deshacer.** «Desmarcar todos» está al
+  lado de «Continuar», y un clic de más borraba lo elegido a mano sin vuelta
+  atrás.
+- **«Relevar otro artista» ya no tira el paquete.** Desde el paso 4 descartaba
+  un ZIP que todavía no se había bajado; ahora se puede volver al paso 4 hasta
+  que se releve otro catálogo.
+- **«Cancelar» tiene forma de botón** mientras corre un trabajo largo. Era texto
+  suelto en la otra punta del renglón.
 
 ### Mejorado
 - **Más ISRC, más UPC y más discos con el orden confirmado.** Medido con siete
