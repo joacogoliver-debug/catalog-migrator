@@ -8,6 +8,32 @@ Lo que cambió en cada versión publicada. Los números siguen
 
 ## [Sin publicar]
 
+### Cambiado
+- **El paquete lleva todo lo que está tildado, aunque el filtro lo esconda.**
+  Antes llevaba sólo lo elegido que el filtro dejaba ver: buscar un título para
+  chequearlo y apretar «Continuar» armaba un paquete con ese único producto, y
+  el aviso era una línea chica en la otra punta de la pantalla. Ahora el filtro
+  es para mirar. Si esconde algo elegido, la barra lo dice («3 elegidos no se
+  ven por el filtro, pero van en el paquete»), y con un filtro puesto los
+  botones dicen «Marcar los que se ven» y «Desmarcar los que se ven».
+- **La tabla ya se ve al entrar al paso 2.** Arriba de la tabla había cinco
+  avisos de ancho completo, que podían llegar a nueve, y en una ventana común no
+  se veía ningún producto. Ahora queda a la vista sólo lo que pide hacer algo
+  (la cuota cortó el listado, Deezer tiene grabaciones que no aparecieron,
+  Deezer no contestó, no se encontró al artista). Lo que sólo informa va junto
+  en una franja plegada de un renglón, «Cómo se relevó», con los números a la
+  vista y el detalle al desplegarla.
+- **La tabla, para catálogos grandes.**
+  - Se ordena tocando la cabecera: por producto, distribuidora, tipo, año o
+    estado. La tercera vez vuelve al orden del relevamiento.
+  - Muestra la distribuidora de cada producto, que se podía filtrar y buscar
+    pero no se veía.
+  - La columna «Faltantes» pasó a llamarse «Estado» y tiene dos niveles: en
+    ámbar lo que falta para entregar, en neutro lo que vino de Deezer.
+  - La fila elegida tiene un tinte, y no sólo la casilla.
+  - Con Shift se elige un tramo entero de filas.
+  - Las columnas tienen ancho fijo: ya no saltan de lugar al filtrar.
+
 ### Mejorado
 - **Más ISRC, más UPC y más discos con el orden confirmado.** Medido con siete
   catálogos reales (1.221 temas, 460 lanzamientos): los temas con ISRC pasaron

@@ -539,7 +539,17 @@ table.tabla {
   width: 100%; border-collapse: separate; border-spacing: 0;
   font-size: var(--t-ui);
   counter-reset: fila;
+  /* Anchos fijos, declarados en el <colgroup>: con el ancho automático cada
+     filtro movía las columnas, porque el ancho dependía de qué filas había. */
+  table-layout: fixed;
 }
+.c-check   { width: var(--w-indice); }
+.c-exp     { width: var(--w-expandir); }
+.c-distrib { width: 15%; }
+.c-tipo    { width: 84px; }
+.c-anio    { width: 92px; }
+.c-upc     { width: 140px; }
+.c-estado  { width: 24%; }
 /* `top` negativo por el padding de `main`: el sticky se pega al borde del
    área con padding, y con `top: 0` la cabecera quedaba 48 px más abajo del
    borde, con las filas pasando por arriba de ella. */
@@ -550,8 +560,26 @@ table.tabla thead th {
   height: 40px;
   border-bottom: 1px solid var(--borde);
   white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
 }
 table.tabla thead th.td-num { text-align: right; }
+
+/* La cabecera que ordena es un botón con la misma voz de etiqueta: hereda la
+   letra, el tracking y las versalitas del th. La marca sólo aparece en la
+   columna que ordena, y apunta hacia donde crece. */
+.orden {
+  display: inline-flex; align-items: center; gap: var(--e-1);
+  max-width: 100%;
+  background: none; border: 0; padding: 0; margin: 0;
+  font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit;
+  cursor: pointer;
+}
+.orden span { overflow: hidden; text-overflow: ellipsis; }
+.orden:hover, .orden-asc, .orden-desc { color: var(--texto); }
+.orden .ico { opacity: 0; transition: transform var(--m-rapido), opacity var(--m-rapido); }
+.orden:hover .ico { opacity: .5; transform: rotate(90deg); }
+.orden-asc .ico, .orden-asc:hover .ico { opacity: 1; transform: rotate(-90deg); }
+.orden-desc .ico, .orden-desc:hover .ico { opacity: 1; transform: rotate(90deg); }
 
 /* Sólo las filas propias: `tbody tr` a secas también contaba las de la
    subtabla de tracks, que es descendiente de este tbody, y la numeración
@@ -568,6 +596,11 @@ table.tabla tbody td {
 }
 table.tabla tbody tr:last-child td { border-bottom: none; }
 table.tabla tbody tr:hover td { background: color-mix(in srgb, var(--hueso) 3%, transparent); }
+/* La fila elegida se distingue por algo más que una casilla de 16 px: un
+   tinte del acento, que es el color de lo que está en curso. Sólo las filas
+   propias, no las de la subtabla de tracks. */
+table.tabla > tbody > tr.elegida > td { background: color-mix(in srgb, var(--acento) 6%, transparent); }
+table.tabla > tbody > tr.elegida:hover > td { background: color-mix(in srgb, var(--acento) 10%, transparent); }
 
 /* El número de fila, contado por CSS. Es el eje de la tabla. */
 .td-check { width: var(--w-indice); white-space: nowrap; }
@@ -584,6 +617,8 @@ tbody .td-check::before {
 .td-exp { width: var(--w-expandir); }
 .td-num { text-align: right; font-family: var(--mono); }
 .celda-titulo { color: var(--texto); font-weight: var(--p-medio); }
+.celda-distrib { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.apagado { color: var(--texto-3); }
 .celda-sub { font-size: var(--t-micro); color: var(--texto-3); margin-top: 1px; }
 /* El tipo de producto es un dato, no un estado. */
 .tipo {
@@ -656,6 +691,48 @@ table.sub td {
 .alerta-danger { background: var(--mal-fondo);  border-color: transparent; color: var(--negativo); }
 .alerta-ok strong, .alerta-warn strong, .alerta-danger strong,
 .alerta-ok .alerta-icono, .alerta-warn .alerta-icono, .alerta-danger .alerta-icono { color: inherit; }
+
+/* «Cómo se relevó»: lo que sólo informa, en una línea. Tiene la forma de un
+   aviso neutro para que se lea como parte del mismo bloque, pero plegado mide
+   un renglón: los datos van seguidos, separados por un punto medio. */
+.relevamiento {
+  border: 1px solid var(--borde);
+  background: var(--panel);
+  border-radius: var(--r-control);
+  color: var(--texto-2);
+  font-size: var(--t-ui); line-height: var(--i-ui);
+}
+.card + .relevamiento { margin-top: var(--e-5); }
+.alerta + .relevamiento, .relevamiento + .alerta { margin-top: var(--e-3); }
+.relevamiento > summary {
+  display: flex; align-items: center; gap: var(--e-4);
+  padding: var(--e-3) var(--e-4);
+  cursor: pointer; list-style: none;
+}
+.relevamiento > summary::-webkit-details-marker { display: none; }
+.relevamiento-rotulo {
+  flex: 0 0 auto;
+  font-family: var(--mono); font-size: var(--t-nano);
+  letter-spacing: var(--tracking-mono); text-transform: uppercase;
+  color: var(--texto-3);
+}
+.relevamiento-datos { flex: 1 1 auto; min-width: 0; display: flex; flex-wrap: wrap; column-gap: var(--e-2); }
+.relevamiento-datos > span { white-space: nowrap; }
+.relevamiento-datos > span + span::before { content: "·"; margin-right: var(--e-2); color: var(--texto-3); }
+.relevamiento-datos strong { color: var(--texto); font-weight: var(--p-regular); font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.relevamiento > summary .ico { flex: 0 0 auto; color: var(--texto-3); transition: transform var(--m-rapido); }
+.relevamiento[open] > summary .ico { transform: rotate(90deg); }
+.relevamiento > summary:hover .relevamiento-rotulo,
+.relevamiento > summary:hover .ico { color: var(--texto); }
+.relevamiento-detalle {
+  margin: 0; padding: var(--e-2) var(--e-4) var(--e-4) var(--e-4);
+  list-style: none;
+  border-top: 1px solid var(--borde-suave);
+}
+/* El tope de largo va en cada renglón y no en la lista: en la lista también
+   recortaba la línea que la separa del resumen. */
+.relevamiento-detalle li { padding-top: var(--e-3); max-width: var(--medida-ancha); }
+.relevamiento-detalle li strong { color: var(--texto); font-weight: var(--p-medio); }
 
 /* ---------------------------------------------------------- progreso */
 /* El único momento con autoría de toda la app. Un trabajo largo es lo único
@@ -865,6 +942,9 @@ details.acordeon > summary .cuenta.negativo { color: var(--negativo); }
   /* Acá la tabla no entra y scrollea en horizontal, como cualquier grilla; la
      cabecera fija se pierde, que es el costo de no romper las columnas. */
   .tabla-wrap { overflow-x: auto; }
+  /* Con anchos fijos la tabla se apretaría hasta romper los títulos: abajo de
+     este ancho deja de achicarse y scrollea. */
+  table.tabla { min-width: 860px; }
   .card-head.row { display: block; }
   .card-head.row > .btn { margin-top: var(--e-3); }
   .lista-hallazgos { columns: 1; }

@@ -8,6 +8,32 @@ What changed in every published version. The numbers follow
 
 ## [Unreleased]
 
+### Changed
+- **The package carries everything that is ticked, even if the filter hides
+  it.** It used to carry only what was picked and visible: searching for a title
+  to check it and pressing "Continue" built a package with that single release,
+  and the warning was a small line at the other end of the screen. The filter
+  is now for looking. If it hides something picked, the bar says so ("3 picked
+  releases are hidden by the filter, but they go into the package"), and with a
+  filter on, the buttons read "Select the visible ones" and "Clear the visible
+  ones".
+- **The table is in view when step 2 opens.** Above it sat five full-width
+  notices, up to nine, and in a regular window no release was visible. Now only
+  what asks for action stays in view (the quota cut the listing, Deezer has
+  recordings that did not show up, Deezer did not answer, the artist was not
+  found). What only informs goes together in a folded, one-line strip, "How it
+  was surveyed", with the numbers visible and the detail on unfolding.
+- **The table, for large catalogs.**
+  - It sorts by clicking the header: by release, distributor, type, year or
+    status. The third click goes back to the survey's order.
+  - It shows each release's distributor, which could be filtered and searched
+    but not seen.
+  - The "Missing" column is now "Status" and has two levels: amber for what is
+    missing for delivery, neutral for what came from Deezer.
+  - The selected row is tinted, not only its checkbox.
+  - Shift selects a whole run of rows.
+  - Columns have a fixed width: they no longer jump around when filtering.
+
 ### Improved
 - **More ISRCs, more UPCs and more records with a confirmed order.** Measured on
   seven real catalogs (1,221 tracks, 460 releases): tracks with an ISRC went

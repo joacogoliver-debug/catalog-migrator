@@ -83,6 +83,22 @@ mezclado al 13% en la superficie, con el texto saturado del mismo tono encima.
 Ni borde de color, ni relleno pastel: la mancha plana es el atajo que hace que
 todo se vea igual.
 
+**En la tabla, el estado tiene dos niveles.** Lo que falta para entregar (un
+código, el orden, temas del disco) va en ámbar. De dónde salió algo («sólo en
+Deezer», «1 tema de Deezer») va en neutro: no falta nada, pero hay que mirarlo.
+Si todo es ámbar, «sin UPC» y la procedencia pesan lo mismo y la columna deja de
+ordenar la atención.
+
+**La fila elegida lleva un tinte del acento**, al 6%. Es lo que está en curso:
+lo que va al paquete. Como casi todo arranca elegido, lo que salta a la vista es
+la fila que no lo está, que es justo la que hay que revisar.
+
+**Lo que sólo informa no es un aviso.** Encima de la tabla, a la vista, va
+únicamente lo que pide que alguien haga algo. Lo demás (cómo se listó, cuánto
+cupo gastó, de qué perfil salieron los códigos) va junto en una franja plegada
+de un renglón, «Cómo se relevó», con los números en mono. Apilarlo en cajas de
+ancho completo dejaba la tabla, que es la pantalla, fuera de la ventana.
+
 **Todo se midió, y un test lo vuelve a medir** sobre `colors.css` en cada
 corrida. El peor par de la interfaz es un estado sobre su propio relleno: 4,7 en
 oscuro (el negativo) y 5,1 en claro (la atención), los dos por encima del 4,5 de

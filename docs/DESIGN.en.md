@@ -83,6 +83,22 @@ mixed at 13% into the surface, with saturated text of the same tone on top.
 Neither a colored border nor a pastel fill: the flat patch is the shortcut that
 makes everything look alike.
 
+**In the table, status has two levels.** What is missing for delivery (a
+code, the order, tracks from the record) goes in amber. Where something came
+from ("Deezer only", "1 track from Deezer") goes in neutral: nothing is missing,
+but it needs a look. When everything is amber, "no UPC" and provenance weigh the
+same and the column stops directing attention.
+
+**The selected row carries a tint of the accent**, at 6%. It is what is in
+progress: what goes into the package. Since almost everything starts selected,
+what stands out is the row that is not, which is exactly the one to review.
+
+**What only informs is not a notice.** Above the table, in view, goes only what
+asks someone to do something. The rest (how the channel was listed, how much
+quota it used, which profile the codes came from) goes together in a folded,
+one-line strip, "How it was surveyed", with the numbers in mono. Stacking it in
+full-width boxes pushed the table, which is the screen, out of the window.
+
 **All of it was measured, and a test measures it again** on `colors.css` on
 every run. The worst pair in the interface is a state over its own fill: 4.7 in
 dark (the negative) and 5.1 in light (the warning), both above AA's 4.5. The 500 neutrals were left out of

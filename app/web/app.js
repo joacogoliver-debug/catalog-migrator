@@ -319,7 +319,41 @@ function productosFiltrados() {
       p.detalle.some((t) => t.titulo.toLowerCase().includes(q) || (t.isrc || '').toLowerCase().includes(q))
     );
   }
-  return ps;
+  return ordenar(ps);
+}
+
+/** Qué tan lejos está un producto de poder entregarse tal cual: los huecos que
+ *  hay que completar pesan uno cada uno; lo que vino de Deezer, medio, porque
+ *  hay que mirarlo pero no falta nada. Es la clave del orden por estado. */
+function gravedad(p) {
+  const huecos = (!p.upc ? 1 : 0) + (p.con_isrc < p.tracks ? 1 : 0) + (p.orden_estimado ? 1 : 0)
+    + ((p.faltan || []).length ? 1 : 0);
+  return huecos + (p.origen === 'deezer' || p.de_deezer > 0 ? 0.5 : 0);
+}
+
+const CLAVES_DE_ORDEN = {
+  titulo: (p) => p.titulo,
+  distribuidora: (p) => p.distribuidora || '',
+  tipo: (p) => p.tipo || '',
+  anio: (p) => Number(p.anio) || 0,
+  estado: gravedad,
+};
+
+/** El orden que se eligió en la cabecera, o el del relevamiento si no se eligió
+ *  ninguno. Estable: ante un empate manda el orden original, así dos clics
+ *  seguidos no barajan las filas que empatan. */
+function ordenar(ps) {
+  const o = S.orden;
+  const clave = o && CLAVES_DE_ORDEN[o.col];
+  if (!clave) return ps;
+  const lugar = new Map(S.catalogo.productos.map((p, i) => [p.id, i]));
+  return [...ps].sort((a, b) => {
+    const x = clave(a), y = clave(b);
+    const c = typeof x === 'number'
+      ? x - y
+      : String(x).localeCompare(String(y), undefined, { numeric: true, sensitivity: 'base' });
+    return (o.dir === 'desc' ? -c : c) || lugar.get(a.id) - lugar.get(b.id);
+  });
 }
 
 /** Lo mismo que la tabla marca con un badge: sin UPC, con ISRC faltantes o con
@@ -330,8 +364,8 @@ function leFaltaAlgo(p) {
     || p.origen === 'deezer' || p.de_deezer > 0;
 }
 
-/** Los elegidos que el filtro esconde. No entran al paquete, porque lo que
- *  sale es lo elegido de lo que se ve, y eso hay que decirlo. */
+/** Los elegidos que el filtro esconde. Van en el paquete igual, y por eso se
+ *  dice: si no, el paquete lleva más de lo que se ve en la tabla. */
 function elegidosOcultos() {
   if (!S.catalogo) return 0;
   const visibles = new Set(productosFiltrados().map((p) => p.id));
@@ -340,8 +374,19 @@ function elegidosOcultos() {
   return n;
 }
 
+/** Lo que va al paquete: todo lo tildado, se vea o no. El filtro es para mirar,
+ *  no para decidir qué se entrega. Antes el paquete llevaba sólo lo elegido
+ *  que el filtro dejaba ver, y buscar un título para chequearlo terminaba en un
+ *  paquete con ese único producto. */
 function seleccionados() {
-  return productosFiltrados().filter((p) => S.seleccion.has(p.id));
+  if (!S.catalogo) return [];
+  return S.catalogo.productos.filter((p) => S.seleccion.has(p.id));
+}
+
+/** Si hay un filtro que esconde filas. Cambia cómo se llaman los botones de
+ *  marcar: con filtro, actúan sólo sobre lo que se ve. */
+function hayFiltro() {
+  return !!S.catalogo && productosFiltrados().length !== S.catalogo.productos.length;
 }
 
 /* ------------------------------------------------------------ render principal */
@@ -715,10 +760,20 @@ function avisoFaltantes(comp) {
     ${lista}`);
 }
 
+/** Lo que el paso 2 tiene para decir sobre cómo se relevó el catálogo.
+ *
+ *  Antes cada cosa era un aviso de ancho completo, uno abajo del otro: cinco
+ *  cajas, a veces nueve, y la tabla quedaba fuera de la ventana. Ahora se
+ *  separa lo que pide que alguien haga algo (la cuota cortó el listado, Deezer
+ *  tiene grabaciones que no aparecieron, Deezer no contestó, no se encontró al
+ *  artista), que sigue a la vista y primero, de lo que sólo informa (se usó el
+ *  Topic, se listó por el buscador, se dejaron videos afuera, de qué perfil
+ *  salieron los códigos), que va junto en una sola franja plegada. */
 function avisoCanal() {
   const d = (S.catalogo && S.catalogo.diagnostico) || {};
   const comp = d.completitud || {};
   const partes = [];
+  const datos = []; // { corto, largo }: la franja plegada «Cómo se relevó»
 
   // La cuota se acabó a mitad del listado. Va primero: todo lo demás se lee
   // sobre un catálogo que está incompleto.
@@ -733,12 +788,13 @@ function avisoCanal() {
 
   // Caso habitual y bueno: pegaron un canal común y la app encontró el Topic sola.
   if (d.via_topic && d.canal) {
-    partes.push(alerta('ok', 'ok', `
-      ${T('paso2.via_topic', {
+    datos.push({
+      corto: esc(T('paso2.rel_topic', { topic: d.canal })),
+      largo: `${T('paso2.via_topic', {
         pedido: `<strong>${esc(d.canal_pedido || T('paso2.canal_comun'))}</strong>`,
         topic: `<strong>${esc(d.canal)}</strong>`,
-      })}
-      <span class="small">${esc(T('paso2.que_es_topic'))}</span>`));
+      })} ${esc(T('paso2.que_es_topic'))}`,
+    });
   }
 
   // Cómo se listó. Desde fines de 2026 un canal Topic sólo se puede listar por
@@ -748,8 +804,11 @@ function avisoCanal() {
   // la forma de pedirlo de nuevo: quien sabe que el canal cambió no tiene por
   // qué cerrar la app para verlo.
   if (d.reusado) {
-    partes.push(alerta('', 'info', `${esc(T('paso2.reusado'))}
-      <button type="button" class="link-inline" data-accion="relistar">${esc(T('paso2.relistar'))}</button>`));
+    datos.push({
+      corto: esc(T('paso2.rel_reusado')),
+      largo: `${esc(T('paso2.reusado'))}
+        <button type="button" class="link-inline" data-accion="relistar">${esc(T('paso2.relistar'))}</button>`,
+    });
   }
 
   if (d.via === 'busqueda') {
@@ -764,28 +823,45 @@ function avisoCanal() {
     } else if (!comp.revisada) {
       frases.push(esc(T('paso2.buscador_sin_comparar')));
     }
-    partes.push(alerta('', 'info', frases.join(' ')));
+    const cortos = [T('paso2.rel_buscador', { n: `<strong>${num(d.temas || 0)}</strong>` })];
+    if (!d.reusado) cortos.push(T('paso2.rel_unidades', { n: `<strong>${num(d.unidades || 0)}</strong>` }));
+    if (!comp.revisada) cortos.push(esc(T('paso2.rel_sin_comparar')));
+    datos.push({ corto: cortos.join(', '), largo: frases.join(' ') });
   }
 
   partes.push(avisoFaltantes(comp));
 
-  if (d.sin_distribuidora) {
-    partes.push(alerta('', 'info', esc(T(d.sin_distribuidora === 1 ? 'paso2.sin_distribuidora_uno' : 'paso2.sin_distribuidora', {
-      n: num(d.sin_distribuidora),
-    }))));
-  }
-
-  if (d.descartados) {
-    partes.push(alerta('', 'info', T(d.descartados === 1 ? 'paso2.descartados_uno' : 'paso2.descartados', {
-      n: `<strong>${num(d.descartados)}</strong>`,
-    })));
-  }
-
   // Los códigos. Sin esto, «ISRC 0 de 27» parecía una falla de la app cuando
   // podía ser que no se pidieron o que el artista no está en Deezer.
   const cod = d.codigos;
+
+  // De qué perfil de Deezer salieron los códigos, con la forma de cambiarlo:
+  // dos artistas pueden llamarse igual, y la app puede haber elegido al otro.
+  const perfil = d.completitud;
+  if (cod && cod.pedidos && cod.encontrados && perfil && perfil.revisada) {
+    datos.push({
+      corto: esc(T('paso2.rel_perfil', { artista: perfil.artista_deezer })),
+      largo: `${esc(T('paso2.deezer_perfil_usado', { artista: perfil.artista_deezer }))}
+        ${S.pideDeezer ? formDeezer(perfil) : `<button type="button" class="link-inline" data-accion="otro-deezer">${esc(T('paso2.deezer_otro_perfil'))}</button>`}`,
+    });
+  }
+
+  if (d.sin_distribuidora) {
+    const n = num(d.sin_distribuidora);
+    datos.push(d.sin_distribuidora === 1
+      ? { corto: esc(T('paso2.rel_sin_distrib_uno')), largo: esc(T('paso2.sin_distribuidora_uno', { n })) }
+      : { corto: esc(T('paso2.rel_sin_distrib', { n })), largo: esc(T('paso2.sin_distribuidora', { n })) });
+  }
+
+  if (d.descartados) {
+    const n = `<strong>${num(d.descartados)}</strong>`;
+    datos.push(d.descartados === 1
+      ? { corto: T('paso2.rel_descartados_uno', { n }), largo: T('paso2.descartados_uno', { n }) }
+      : { corto: T('paso2.rel_descartados', { n }), largo: T('paso2.descartados', { n }) });
+  }
+
   if (cod && !cod.pedidos) {
-    partes.push(alerta('', 'info', esc(T('paso2.codigos_no_pedidos'))));
+    datos.push({ corto: esc(T('paso2.rel_sin_codigos')), largo: esc(T('paso2.codigos_no_pedidos')) });
   } else if (cod && cod.fallas) {
     const motivo = cod.motivo ? ' ' + T('paso2.deezer_motivo', { motivo: cod.motivo }) : '';
     partes.push(alerta('warn', 'alerta', esc(T(cod.fallas === 1 ? 'paso2.deezer_no_respondio_uno' : 'paso2.deezer_no_respondio', { n: num(cod.fallas) }) + motivo)));
@@ -796,16 +872,24 @@ function avisoCanal() {
       ${formDeezer(d.completitud)}`));
   }
 
-  // De qué perfil de Deezer salieron los códigos, con la forma de cambiarlo:
-  // dos artistas pueden llamarse igual, y la app puede haber elegido al otro.
-  const perfil = d.completitud;
-  if (cod && cod.pedidos && cod.encontrados && perfil && perfil.revisada) {
-    partes.push(alerta('', 'info', `
-      ${esc(T('paso2.deezer_perfil_usado', { artista: perfil.artista_deezer }))}
-      ${S.pideDeezer ? formDeezer(perfil) : `<button type="button" class="link-inline" data-accion="otro-deezer">${esc(T('paso2.deezer_otro_perfil'))}</button>`}`));
-  }
+  return partes.join('') + franjaRelevamiento(datos);
+}
 
-  return partes.join('');
+/** «Cómo se relevó»: lo que sólo informa, en una línea que se despliega. Plegada
+ *  dice lo esencial con los números; desplegada, cada cosa con su explicación y
+ *  sus botones. Es un <details> de verdad, así el lector de pantalla y el
+ *  teclado lo abren como cualquier otro, y el estado sobrevive al redibujo. */
+function franjaRelevamiento(datos) {
+  if (!datos.length) return '';
+  return `
+    <details class="relevamiento" ${S.verRelevamiento ? 'open' : ''}>
+      <summary>
+        <span class="relevamiento-rotulo">${esc(T('paso2.relevamiento'))}</span>
+        <span class="relevamiento-datos">${datos.map((x) => `<span>${x.corto}</span>`).join('')}</span>
+        ${ico('flecha', 'ico-sm')}
+      </summary>
+      <ul class="relevamiento-detalle">${datos.map((x) => `<li>${x.largo}</li>`).join('')}</ul>
+    </details>`;
 }
 
 /** El campo para pegar el link del artista en Deezer. Es la salida para cuando
@@ -826,12 +910,15 @@ function formDeezer(comp) {
     </div>`;
 }
 
-/** «Elegidos: 3 de 12 productos, 27 tracks», para la barra del paso 2. */
-function resumenElegidos(sel, ps) {
+/** «Elegidos: 3 de 12 productos, 27 tracks», para la barra del paso 2. El total
+ *  es el del catálogo y no el de lo que se ve, porque lo elegido es del catálogo:
+ *  va al paquete aunque el filtro lo esconda. */
+function resumenElegidos(sel) {
+  const total = S.catalogo ? S.catalogo.productos.length : sel.length;
   const tracks = sel.reduce((a, p) => a + p.tracks, 0);
   const texto = T('paso2.elegidos', {
     n: `<strong>${num(sel.length)}</strong>`,
-    total: cuenta('comun.n_productos', ps.length, `<strong>${num(ps.length)}</strong>`),
+    total: cuenta('comun.n_productos', total, `<strong>${num(total)}</strong>`),
     tracks: cuenta('comun.n_tracks', tracks),
   });
   const ocultos = elegidosOcultos();
@@ -904,15 +991,26 @@ function vistaPaso2() {
 
     <div class="barra-accion">
       <div class="resumen">
-        ${resumenElegidos(sel, ps)}
+        ${resumenElegidos(sel)}
       </div>
       <div class="acciones">
-        <button class="btn btn-secondary" data-accion="sel-todo" ${sel.length < ps.length ? '' : 'hidden'}>${esc(T('paso2.marcar_todos'))}</button>
-        <button class="btn btn-secondary" data-accion="sel-nada" ${sel.length ? '' : 'hidden'}>${esc(T('paso2.desmarcar_todos'))}</button>
+        ${botonesDeMarcar(ps)}
         <button class="btn btn-primary" data-accion="ir-3" ${sel.length ? '' : 'disabled'}>${esc(T('comun.continuar'))}</button>
       </div>
     </div>
   </div>`;
+}
+
+/** Marcar y desmarcar actúan sobre lo que se ve. Con un filtro puesto, se dice
+ *  en el botón: «Desmarcar todos» con tres filas a la vista desmarcaba tres, y
+ *  los elegidos que el filtro escondía seguían yendo al paquete. Se ofrece sólo
+ *  el que tiene sentido: marcar si falta alguno, desmarcar si hay alguno. */
+function botonesDeMarcar(ps) {
+  const elegidos = ps.filter((p) => S.seleccion.has(p.id)).length;
+  const filtro = hayFiltro();
+  return `
+        <button class="btn btn-secondary" data-accion="sel-todo" ${elegidos < ps.length ? '' : 'hidden'}>${esc(filtro ? T('paso2.marcar_visibles') : T('paso2.marcar_todos'))}</button>
+        <button class="btn btn-secondary" data-accion="sel-nada" ${elegidos ? '' : 'hidden'}>${esc(filtro ? T('paso2.desmarcar_visibles') : T('paso2.desmarcar_todos'))}</button>`;
 }
 
 /** Por qué la tabla quedó vacía, para decir eso y no siempre lo de los años.
@@ -981,20 +1079,24 @@ function tablaProductos(ps) {
     const avisos = [];
     // Un codigo que falta es un aviso: la distribuidora asigna uno nuevo y no
     // rechaza. El rojo queda para lo que la validacion marca como error.
+    // Dos niveles. En ámbar, lo que falta para entregar: un código, el orden,
+    // temas del disco. En neutro, de dónde salió algo: no falta nada, pero hay
+    // que mirarlo. Antes todo era ámbar y «1 tema de Deezer» pesaba lo mismo
+    // que «sin UPC».
     if (!p.upc) avisos.push(`<span class="badge badge-warn">${esc(T('tabla.sin_upc'))}</span>`);
     if (p.con_isrc < p.tracks) avisos.push(`<span class="badge badge-warn">${esc(T('tabla.isrc_de', { n: p.con_isrc, total: p.tracks }))}</span>`);
     if (p.orden_estimado) avisos.push(`<span class="badge badge-warn">${esc(T('tabla.orden_estimado'))}</span>`);
-    if (p.origen === 'deezer') {
-      avisos.push(`<span class="badge badge-warn">${esc(T('tabla.solo_deezer'))}</span>`);
-    } else if (p.de_deezer) {
-      avisos.push(`<span class="badge badge-warn">${esc(T(p.de_deezer === 1 ? 'tabla.de_deezer_uno' : 'tabla.de_deezer', { n: p.de_deezer }))}</span>`);
-    }
     const ajeno = p.origen === 'deezer' && p.artista && S.catalogo && p.artista !== S.catalogo.artista;
     const faltan = p.faltan || [];
     if (faltan.length) avisos.push(`<span class="badge badge-warn">${esc(T(faltan.length === 1 ? 'tabla.faltan_temas_uno' : 'tabla.faltan_temas', { n: faltan.length }))}</span>`);
+    if (p.origen === 'deezer') {
+      avisos.push(`<span class="badge badge-accent">${esc(T('tabla.solo_deezer'))}</span>`);
+    } else if (p.de_deezer) {
+      avisos.push(`<span class="badge badge-accent">${esc(T(p.de_deezer === 1 ? 'tabla.de_deezer_uno' : 'tabla.de_deezer', { n: p.de_deezer }))}</span>`);
+    }
 
     const detalle = abierto ? `
-      <tr class="fila-detalle"><td colspan="7"><div class="detalle-inner">
+      <tr class="fila-detalle"><td colspan="8"><div class="detalle-inner">
         <table class="sub">
           <thead><tr><th scope="col">${esc(T('tabla.col_n'))}</th><th scope="col">${esc(T('tabla.col_track'))}</th><th scope="col">ISRC</th><th scope="col">${esc(T('tabla.col_duracion'))}</th><th scope="col" class="td-num">${esc(T('tabla.col_reproducciones'))}</th></tr></thead>
           <tbody>${p.detalle.map((t) => `
@@ -1025,6 +1127,7 @@ function tablaProductos(ps) {
         <div class="celda-titulo">${esc(p.titulo)}</div>
         <div class="celda-sub">${esc(T(p.tracks === 1 ? 'comun.n_tracks_uno' : 'comun.n_tracks', { n: p.tracks }))}${p.sello ? ', ' + esc(p.sello) : ''}${ajeno ? ', ' + esc(T('tabla.a_nombre_de', { artista: p.artista })) : ''}</div>
       </td>
+      <td class="celda-distrib" ${p.distribuidora ? `title="${esc(p.distribuidora)}"` : ''}>${p.distribuidora ? esc(p.distribuidora) : `<span class="apagado">${esc(T('tabla.sin_distribuidora'))}</span>`}</td>
       <td><span class="tipo">${esc(p.tipo)}</span></td>
       <td class="nowrap mono">${esc(p.anio) || `<span class="muted">${esc(T('tabla.sin_fecha'))}</span>`}</td>
       <td class="mono">${p.upc ? esc(p.upc) : `<span class="muted">${esc(T('tabla.sin_upc'))}</span>`}</td>
@@ -1032,19 +1135,38 @@ function tablaProductos(ps) {
     </tr>${detalle}`;
   }).join('');
 
+  // Anchos fijos: con el ancho automático cada filtro cambiaba qué filas había,
+  // y con ellas el ancho de cada columna. La tabla saltaba de lugar.
   return `
   <div class="tabla-wrap" id="tabla-wrap">
     <table class="tabla">
+      <colgroup><col class="c-check"><col class="c-exp"><col><col class="c-distrib"><col class="c-tipo"><col class="c-anio"><col class="c-upc"><col class="c-estado"></colgroup>
       <thead><tr>
         <th scope="col" class="td-check"><label class="check"><input type="checkbox" id="check-todos"
           ${todos ? 'checked' : ''} ${!todos && algunos ? 'data-indeterminado="1"' : ''} />
           <span class="sr">${esc(T('tabla.aria_marcar_todos'))}</span></label></th>
         <th scope="col" class="td-exp"></th>
-        <th scope="col">${esc(T('tabla.col_producto'))}</th><th scope="col">${esc(T('tabla.col_tipo'))}</th><th scope="col">${esc(T('tabla.col_anio'))}</th><th scope="col">UPC</th><th scope="col">${esc(T('tabla.col_faltantes'))}</th>
+        ${cabeceraOrdenable('titulo', T('tabla.col_producto'))}${cabeceraOrdenable('distribuidora', T('tabla.col_distribuidora'))}${cabeceraOrdenable('tipo', T('tabla.col_tipo'))}${cabeceraOrdenable('anio', T('tabla.col_anio'))}<th scope="col">UPC</th>${cabeceraOrdenable('estado', T('tabla.col_estado'))}
       </tr></thead>
       <tbody>${filas}</tbody>
     </table>
   </div>`;
+}
+
+/** Una cabecera que ordena al tocarla: primero ascendente, después
+ *  descendente, y la tercera vez vuelve al orden del relevamiento. `aria-sort`
+ *  es lo que le dice al lector de pantalla cómo está ordenada la tabla. */
+function siguienteOrden(col) {
+  const actual = S.orden && S.orden.col === col ? S.orden.dir : '';
+  if (actual === '') return { col, dir: 'asc' };
+  return actual === 'asc' ? { col, dir: 'desc' } : null;
+}
+
+function cabeceraOrdenable(col, texto) {
+  const dir = S.orden && S.orden.col === col ? S.orden.dir : '';
+  const aria = dir === 'asc' ? 'ascending' : (dir === 'desc' ? 'descending' : 'none');
+  return `<th scope="col" aria-sort="${aria}"><button type="button" class="orden${dir ? ' orden-' + dir : ''}" data-orden="${col}">
+    <span>${esc(texto)}</span>${ico('flecha', 'ico-sm')}</button></th>`;
 }
 
 /* ------------------------------------------------------------ paso 3 */
@@ -1506,7 +1628,10 @@ const ACCIONES = {
   // releva el mismo link pidiendo el listado de cero.
   relistar() { S.paso = 1; S.deCero = true; S.error = ''; S.errorCodigo = ''; render(); return ACCIONES.relevar(); },
 
-  'otro-deezer'() { S.pideDeezer = true; render(); const c = $('#deezer-link'); if (c) c.focus(); },
+  'otro-deezer'() {
+    S.pideDeezer = true; S.verRelevamiento = true; render();
+    const c = $('#deezer-link'); if (c) c.focus();
+  },
 
   /** Volver a buscar los códigos con el perfil de Deezer que se pegó. No gasta
    *  cupo de YouTube: el listado del canal es el de esta sesión. */
@@ -1602,7 +1727,7 @@ const ACCIONES = {
         // El link de Deezer no sirve: se vuelve a donde está el campo, con el
         // catálogo que ya había, y se dice ahí.
         S.deezerError = e.message; S.error = '';
-        if (S.catalogo) { S.paso = 2; S.pideDeezer = true; }
+        if (S.catalogo) { S.paso = 2; S.pideDeezer = true; S.verRelevamiento = true; }
       } else {
         S.error = e.message === 'CANCELADO' ? '' : e.message;
       }
@@ -1768,12 +1893,27 @@ document.addEventListener('click', (ev) => {
   const modo = ev.target.closest('[data-modo]');
   if (modo) { S.filtro.modo = modo.dataset.modo; seguro(render); return; }
 
+  const orden = ev.target.closest('[data-orden]');
+  if (orden) {
+    S.orden = siguienteOrden(orden.dataset.orden);
+    seguro(() => conScrollPreservado(render));
+    return;
+  }
+
+  // Con Shift, la casilla o la fila eligen todo el tramo desde la última que se
+  // tocó. El evento `change` no trae la tecla, así que se anota acá.
+  if (ev.target.matches && ev.target.matches('input[data-prod]')) S.conShift = ev.shiftKey;
+
   // La fila entera elige el producto; la casilla, el chevron y los links siguen
   // haciendo lo suyo. Apuntar a 15 px no es una interaccion.
   const fila = ev.target.closest('tr[data-fila]');
   if (fila && !ev.target.closest('button, a, input, label')) {
     const cb = fila.querySelector('input[data-prod]');
-    if (cb) { cb.checked = !cb.checked; cb.dispatchEvent(new Event('change', { bubbles: true })); }
+    if (cb) {
+      S.conShift = ev.shiftKey;
+      cb.checked = !cb.checked;
+      cb.dispatchEvent(new Event('change', { bubbles: true }));
+    }
     return;
   }
 
@@ -1798,10 +1938,20 @@ document.addEventListener('change', (ev) => {
   const t = ev.target;
 
   if (t.dataset.prod) {
-    if (t.checked) S.seleccion.add(t.dataset.prod); else S.seleccion.delete(t.dataset.prod);
-    // Actualización puntual: redibujar la tabla entera en cada clic se siente lento.
-    const fila = filaDe(t.dataset.prod);
-    if (fila) fila.classList.toggle('elegida', t.checked);
+    const id = t.dataset.prod;
+    const tramo = S.conShift ? tramoDesdeAncla(id) : [id];
+    S.conShift = false;
+    S.ancla = id;
+    for (const x of tramo) {
+      if (t.checked) S.seleccion.add(x); else S.seleccion.delete(x);
+      // Actualización puntual: redibujar la tabla entera en cada clic se siente lento.
+      const fila = filaDe(x);
+      if (fila) {
+        fila.classList.toggle('elegida', t.checked);
+        const cb = fila.querySelector('input[data-prod]');
+        if (cb) cb.checked = t.checked;
+      }
+    }
     seguro(actualizarResumenSeleccion);
     return;
   }
@@ -1881,6 +2031,22 @@ document.addEventListener('keydown', (ev) => {
 window.addEventListener('error', (ev) => { if (!S.fatal) mostrarFatal(ev.error || ev.message); });
 window.addEventListener('unhandledrejection', (ev) => { if (!S.fatal) mostrarFatal(ev.reason); });
 
+/** Las filas entre la última que se tocó y ésta, en el orden en que se ven. Si
+ *  la anterior ya no está a la vista (otro filtro, otro orden), sólo ésta. */
+function tramoDesdeAncla(id) {
+  const ids = productosFiltrados().map((p) => p.id);
+  const a = ids.indexOf(S.ancla), b = ids.indexOf(id);
+  if (a < 0 || b < 0) return [id];
+  return ids.slice(Math.min(a, b), Math.max(a, b) + 1);
+}
+
+/* El <details> de «Cómo se relevó» se abre y se cierra solo, sin pasar por
+   render(). Se anota el estado para que el próximo redibujo lo respete. El
+   evento `toggle` no burbujea: se escucha en la captura. */
+document.addEventListener('toggle', (ev) => {
+  if (ev.target.classList && ev.target.classList.contains('relevamiento')) S.verRelevamiento = ev.target.open;
+}, true);
+
 /** Redibuja conservando el scroll de la tabla. */
 function conScrollPreservado(fn) {
   const caja = $('#tabla-wrap');
@@ -1895,15 +2061,16 @@ function actualizarResumenSeleccion() {
   const sel = seleccionados();
   const caja = document.querySelector('.barra-accion .resumen');
   if (caja) {
-    caja.innerHTML = resumenElegidos(sel, ps);
+    caja.innerHTML = resumenElegidos(sel);
   }
   const btn = document.querySelector('[data-accion="ir-3"]');
   if (btn) btn.disabled = sel.length === 0;
   // Solo se ofrece la accion que tiene sentido: marcar si falta alguno, desmarcar si hay alguno.
+  const visiblesElegidos = ps.filter((p) => S.seleccion.has(p.id)).length;
   const bTodo = document.querySelector('[data-accion="sel-todo"]');
-  if (bTodo) bTodo.hidden = sel.length >= ps.length;
+  if (bTodo) bTodo.hidden = visiblesElegidos >= ps.length;
   const bNada = document.querySelector('[data-accion="sel-nada"]');
-  if (bNada) bNada.hidden = sel.length === 0;
+  if (bNada) bNada.hidden = visiblesElegidos === 0;
   const todos = $('#check-todos');
   if (todos) {
     todos.checked = ps.length > 0 && ps.every((p) => S.seleccion.has(p.id));
@@ -1922,6 +2089,9 @@ function adoptarCatalogo(cat) {
   S.seleccion = new Set(cat.productos.filter((p) => p.origen !== 'deezer').map((p) => p.id));
   S.expandidos = new Set();
   S.verFaltantes = false;
+  S.verRelevamiento = false;
+  S.orden = null;
+  S.ancla = null;
   S.filtro = {
     modo: 'manual',
     anioDesde: cat.filtros.anio_min,

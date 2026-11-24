@@ -211,16 +211,103 @@ test('el filtro de faltantes deja sólo lo que tiene algo que completar', () => 
   ev(`S.filtro.texto = ''; S.filtro.faltantes = false`);
 });
 
-test('lo elegido que el filtro esconde se avisa, porque no entra al paquete', () => {
+test('el paquete lleva todo lo tildado, aunque el filtro lo esconda, y se dice', () => {
+  // Antes llevaba sólo lo elegido que se veía: buscar un título para chequearlo
+  // y apretar «Continuar» armaba un paquete con ese único producto.
   catalogoDeTres();
   assert.equal(ev('elegidosOcultos()'), 0);
   ev(`S.filtro.texto = 'Completo'`);
+  assert.equal(ev('productosFiltrados().length'), 1);
+  assert.deepEqual([...ev('seleccionados().map((p) => p.id)')], ['a', 'b', 'c'], 'van los tres');
   assert.equal(ev('elegidosOcultos()'), 2);
-  const html = ev('resumenElegidos(seleccionados(), productosFiltrados())');
-  assert.ok(html.includes('2 elegidos quedan afuera'), html);
+  const html = ev('resumenElegidos(seleccionados())');
+  assert.ok(html.includes('<strong>3</strong> de <strong>3</strong>'), 'el total es el del catálogo: ' + html);
+  assert.ok(html.includes('2 elegidos no se ven por el filtro, pero van en el paquete'), html);
   assert.ok(html.includes('data-accion="limpiar-filtro"'), 'tiene que ofrecer la salida');
   ev(`ACCIONES['limpiar-filtro']()`);
   assert.equal(ev('elegidosOcultos()'), 0);
+});
+
+test('con un filtro puesto, marcar y desmarcar dicen que actúan sobre lo que se ve', () => {
+  catalogoDeTres();
+  assert.ok(ev('botonesDeMarcar(productosFiltrados())').includes('Desmarcar todos'));
+  ev(`S.filtro.texto = 'Sin'`);
+  const botones = ev('botonesDeMarcar(productosFiltrados())');
+  assert.ok(botones.includes('Desmarcar los que se ven'), botones);
+  ev(`ACCIONES['sel-nada']()`);
+  assert.deepEqual([...ev('seleccionados().map((p) => p.id)')], ['a'], 'el que no se ve sigue elegido');
+  ev(`S.filtro.texto = ''`);
+});
+
+test('las cabeceras ordenan: ascendente, descendente y de vuelta al orden original', () => {
+  catalogoDeTres();
+  const ids = () => [...ev('productosFiltrados().map((p) => p.id)')];
+  assert.deepEqual(ids(), ['a', 'b', 'c']);
+  const tocar = (col) => ev(`S.orden = siguienteOrden('${col}')`);
+  tocar('anio');
+  assert.deepEqual(ids(), ['a', 'b', 'c']);
+  tocar('anio');
+  assert.deepEqual(ids(), ['c', 'b', 'a'], 'más nuevo primero');
+  tocar('anio');
+  assert.deepEqual(ids(), ['a', 'b', 'c'], 'la tercera vez vuelve al orden del relevamiento');
+  ev(`S.orden = { col: 'estado', dir: 'desc' }`);
+  assert.equal(ids()[2], 'a', 'lo completo, al final');
+  ev(`S.orden = { col: 'titulo', dir: 'asc' }`);
+  assert.deepEqual(ids(), ['a', 'c', 'b'], 'Completo, Sin ISRC, Sin UPC');
+  const cabecera = ev('tablaProductos(productosFiltrados())');
+  assert.ok(cabecera.includes('aria-sort="ascending"'), 'el lector de pantalla sabe cómo está ordenada');
+  assert.ok(cabecera.includes('data-orden="distribuidora"'));
+  ev(`S.orden = null`);
+});
+
+test('Shift elige el tramo entero desde la última fila tocada, en el orden en que se ven', () => {
+  catalogoDeTres();
+  ev(`S.seleccion = new Set(); S.ancla = 'a'`);
+  assert.deepEqual([...ev(`tramoDesdeAncla('c')`)], ['a', 'b', 'c']);
+  ev(`S.orden = { col: 'titulo', dir: 'asc' }`);
+  assert.deepEqual([...ev(`tramoDesdeAncla('c')`)], ['a', 'c'], 'el tramo sigue el orden de la pantalla');
+  ev(`S.filtro.texto = 'Sin'`);
+  assert.deepEqual([...ev(`tramoDesdeAncla('c')`)], ['c'], 'si la anterior no se ve, sólo ésta');
+  ev(`S.filtro.texto = ''; S.orden = null; S.ancla = null`);
+});
+
+test('la tabla muestra la distribuidora, y separa lo que falta de lo que vino de Deezer', () => {
+  catalogoDeTres();
+  ev(`S.catalogo.productos[0].de_deezer = 1; S.catalogo.productos[2].distribuidora = ''`);
+  const html = ev('tablaProductos(S.catalogo.productos)');
+  assert.ok(html.includes('class="celda-distrib" title="X">X</td>'), 'se ve por qué distribuidora se entregó');
+  assert.ok(html.includes('sin declarar'), 'y cuando no la declara, se dice');
+  assert.ok(html.includes('badge badge-warn">sin UPC'), 'lo que falta, en ámbar');
+  assert.ok(html.includes('badge badge-accent">1 tema de Deezer'), 'la procedencia, en neutro');
+  assert.ok(html.includes('<colgroup>'), 'con anchos fijos, para que las columnas no salten');
+  assert.ok(html.includes('Estado') && !html.includes('Faltantes'));
+});
+
+test('lo que sólo informa va junto y plegado; lo que pide algo queda a la vista', () => {
+  catalogoDeTres();
+  ev(`S.catalogo.diagnostico = ${JSON.stringify({
+    via_topic: true, canal: 'A - Topic', canal_pedido: 'A', via: 'busqueda', temas: 26, unidades: 203,
+    descartados: 17, sin_distribuidora: 2, codigos: { pedidos: true, encontrados: 3, fallas: 0 },
+    completitud: { revisada: true, artista_deezer: 'A', releases: 4, temas: 0, faltan: [] },
+  })}; S.verRelevamiento = false`);
+  const html = ev('avisoCanal()');
+  assert.equal((html.match(/class="alerta/g) || []).length, 0, 'nada pide acción: no hay avisos sueltos');
+  assert.equal((html.match(/<details class="relevamiento"/g) || []).length, 1, 'una sola franja');
+  assert.ok(!/<details class="relevamiento" open/.test(html), 'plegada');
+  const resumen = html.slice(html.indexOf('<summary>'), html.indexOf('</summary>'));
+  for (const dato of ['Topic: A - Topic', '<strong>26</strong> temas por el buscador', '<strong>203</strong> unidades de cupo',
+    '<strong>17</strong> videos afuera', '2 temas sin distribuidora', 'códigos de «A» en Deezer']) {
+    assert.ok(resumen.includes(dato), `falta «${dato}» en la línea plegada: ${resumen}`);
+  }
+  assert.ok(html.includes('data-accion="otro-deezer"'), 'el cambio de perfil sigue a mano, adentro');
+
+  ev(`S.catalogo.diagnostico.codigos.fallas = 4`);
+  const conFalla = ev('avisoCanal()');
+  assert.ok(conFalla.indexOf('alerta-warn') < conFalla.indexOf('<details'), 'lo que pide algo va antes que la franja');
+
+  ev(`ACCIONES['otro-deezer']()`);
+  assert.ok(/<details class="relevamiento" open/.test(ev('avisoCanal()')), 'pedir otro perfil abre la franja');
+  ev(`S.pideDeezer = false; S.verRelevamiento = false`);
 });
 
 test('cada texto nuevo del paso 2 está en los dos idiomas', () => {
