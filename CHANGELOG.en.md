@@ -6,7 +6,7 @@ What changed in every published version. The numbers follow
 [SemVer](https://semver.org/), and the downloads are in
 [Releases](https://github.com/joacogoliver-debug/catalog-migrator/releases).
 
-## [Unreleased]
+## [1.3.5] — 2026-11-24
 
 ### Changed
 - **The package carries everything that is ticked, even if the filter hides
@@ -933,6 +933,7 @@ First public version.
 - Executables for Windows, macOS and Linux compiled in GitHub Actions, with
   SHA256 and a build provenance attestation.
 
+[1.3.5]: https://github.com/joacogoliver-debug/catalog-migrator/releases/tag/v1.3.5
 [1.3.4]: https://github.com/joacogoliver-debug/catalog-migrator/releases/tag/v1.3.4
 [1.3.3]: https://github.com/joacogoliver-debug/catalog-migrator/releases/tag/v1.3.3
 [1.3.2]: https://github.com/joacogoliver-debug/catalog-migrator/releases/tag/v1.3.2

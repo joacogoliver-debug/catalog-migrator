@@ -16,4 +16,4 @@ la versión es del producto, y el producto es este paquete: la app de escritorio
 es una de las formas de manejarlo.
 """
 
-VERSION = "1.3.4"
+VERSION = "1.3.5"
