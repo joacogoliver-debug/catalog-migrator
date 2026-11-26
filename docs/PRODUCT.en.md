@@ -87,8 +87,11 @@ These are not edge cases: they are half the product.
 
 ## What does not get touched
 
+- **It never overwrites a code silently or picks between two.** Whatever is not
+  certain is shown, and a person decides.
 - **It does not invent metadata.** Whatever does not come from a public source is
-  marked `<<COMPLETAR>>`. An empty field is information; one filled in by eye is
+  marked `<<COMPLETAR>>`, unless the person using the app enters it, and then it
+  says where it came from. An empty field is information; one filled in by eye is
   a lie that someone later delivers.
 - **What is reported is what was measured, not what was asked for.** Artwork is
   requested at 3000×3000 and the size Apple actually returned is what gets
