@@ -242,14 +242,14 @@ confianza, y la app lo dice en cada tema y en cada producto:
 
 | Nivel | Qué quiere decir |
 |---|---|
-| **confirmado** | Dos caminos independientes dan el mismo código: la búsqueda por texto en Deezer y el tracklist del álbum verificado como ese release; o el archivo de tu distribuidora. |
+| **confirmado** | Es el código que lleva ese tema en el tracklist del álbum de Deezer verificado como su release, casi siempre el mismo que la búsqueda por texto había encontrado por su cuenta; o lo confirmó el archivo de tu distribuidora. |
 | **inferido** | Salió de una sola fuente (la búsqueda por título, artista y duración) y nada más lo respalda. Casi siempre es el correcto; es el que conviene confirmar. |
 | **dudoso** | La coincidencia fue parecida y no idéntica. |
 | **a mano** / **de tu archivo** | Lo cargaste vos, o salió de la planilla que importaste. |
 
-En el catálogo con que se midió, de 221 temas, 205 ISRC quedaron confirmados y
-14 inferidos: los catorce son remixes sueltos, que es justo donde un cruce por
-título se puede equivocar. La hoja de ingesta lleva el nivel en dos columnas,
+En los dos catálogos con que se midió, uno de 221 temas y otro de 268, quedaron
+confirmados 205 y 235 ISRC, e inferidos 14 y 6. Los catorce del primero son
+remixes sueltos, que es justo donde un cruce por título se puede equivocar. La hoja de ingesta lleva el nivel en dos columnas,
 `ISRC Evidence` y `UPC Evidence`. Cuando el relevamiento encuentra dos
 grabaciones posibles para un tema no elige: las muestra, y elegís vos.
 
@@ -318,6 +318,8 @@ informe dice siempre qué no mira.
   coincide sólo por el título del release: se exportan igual, y conviene
   confirmarlos
 - Un tema con más de una grabación candidata, entre las que no se eligió
+- Una grabación que está en las tiendas con dos ISRC, uno por cada entrega: se
+  usa el del release, y conviene avisarle a la distribuidora
 - La portada está en escala de grises, en colores indexados o con transparencia
 - El paquete trae audio que es sólo de referencia
 - Los campos que ninguna fuente pública trae (género, idioma, explicit, línea C,
@@ -379,6 +381,13 @@ Deezer encuentra la grabación, y la misma grabación está en el single, en el
 Deezer es el mismo release que el producto: si no, queda en blanco y la
 validación dice en qué otro release lo encontró, en vez de entregar el código
 de otro producto.
+
+El ISRC tiene el mismo cuidado. Una grabación puede estar entregada dos veces
+con dos códigos: el disco original de un sello y su reentrega por otro. La
+búsqueda devuelve cualquiera de las dos, así que cuando el tema quedó ubicado
+en el tracklist de su release, el código que vale es el de ese lugar. El otro
+no se pierde: la validación avisa que esa grabación tiene dos ISRC en las
+tiendas.
 
 YouTube muestra el título de un disco sin su versión: la edición aniversario
 se llama igual que el original. Cuando los temas de un disco no entran todos

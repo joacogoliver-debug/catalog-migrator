@@ -171,6 +171,10 @@ class Track(TypedDict):
     # "archivo" cuando la planilla de la distribuidora trae ese mismo código
     # para este tema (ver `importar`): con eso queda confirmado.
     isrc_respaldo: NotRequired[str]
+    # El ISRC que había encontrado la búsqueda, cuando era el de otra entrega
+    # de la misma grabación y se lo reemplazó por el de su release (ver
+    # `completitud.alinear_con_el_release`).
+    isrc_otra_entrega: NotRequired[str]
     # Las grabaciones entre las que no se pudo elegir: el mismo título y la
     # misma duración con ISRC distintos. El tema queda sin código, y esto es lo
     # que deja a una persona elegir mirando los candidatos.
@@ -608,6 +612,9 @@ class Completitud(TypedDict):
     # Discos que el cruce no había verificado y que se verificaron por su lista
     # de temas (ver `completitud.verificar_por_tracklist`).
     verificados_por_tracklist: int
+    # Temas a los que se les puso el ISRC de su release en vez del de otra
+    # entrega de la misma grabación (ver `completitud.alinear_con_el_release`).
+    isrc_del_release: int
     recortada: bool  # la discografía superó el tope y se revisó una parte
     faltan: list[ReleaseIncompleto]
 

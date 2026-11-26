@@ -358,6 +358,19 @@ def validar(productos: list[Producto], artista="") -> ResultadoValidacion:
             # cualquier otro: hay que decir que conviene confirmarlo.
             out.append(_hallazgo("aviso", "upc_inferido", T("val.upc_inferido", upc=upc), nombre))
 
+        # La misma grabación con dos códigos en las tiendas: el del release,
+        # que es el que se usa, y el de otra entrega. No es un error de este
+        # paquete, pero es lo primero que hay que saber antes de migrarla.
+        otra_entrega = [t for t in p.get("tracks", []) if t.get("isrc_otra_entrega")]
+        if otra_entrega:
+            texto = T(
+                "val.isrc_otra_entrega",
+                n=len(otra_entrega),
+                temas=lista_corta(t.get("track", "") for t in otra_entrega),
+                ejemplo=f"{otra_entrega[0].get('isrc_otra_entrega')} → {otra_entrega[0].get('isrc')}",
+            )
+            out.append(_hallazgo("aviso", "isrc_otra_entrega", texto, nombre))
+
         # Los ISRC que salieron de un solo camino, juntos: uno por tema eran
         # quince avisos iguales en un disco de remixes.
         inferidos = [t.get("track", "") for t in p.get("tracks", []) if t.get("isrc_nivel") == "inferido"]

@@ -1818,7 +1818,7 @@ const CODIGOS_HALLAZGO = [
   'upc_mezclado', 'release_en_dos_distribuidoras', 'album_incompleto',
   'solo_en_deezer', 'temas_de_deezer', 'isrc_otro_corte', 'upc_por_tracklist', 'fecha_de_deezer',
   'artista_no_principal', 'portada_modo_color', 'audio_no_apto', 'isrc_confianza_media',
-  'campos_a_completar', 'isrc_inferido', 'upc_inferido', 'isrc_ambiguo',
+  'campos_a_completar', 'isrc_inferido', 'upc_inferido', 'isrc_ambiguo', 'isrc_otra_entrega',
 ];
 
 function tituloHallazgo(codigo, porDefecto) {

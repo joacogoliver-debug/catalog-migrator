@@ -13,10 +13,13 @@ Acá no se busca nada ni se cambia ningún código: se mira lo que el relevamien
 ya sabe y se lo dice. Tres niveles salen del relevamiento, y dos más de lo que
 hace el usuario (ver `ediciones`):
 
-    confirmado   Dos caminos independientes dan el mismo código. El ISRC que
-                 encontró la búsqueda por texto es el que lleva ese tema en el
-                 tracklist del álbum de Deezer verificado como su release; o el
-                 tema es de Deezer y el código es el suyo.
+    confirmado   Es el código que lleva ese tema en el tracklist del álbum de
+                 Deezer verificado como su release. Casi siempre es además el
+                 que la búsqueda por texto había encontrado por su cuenta (en
+                 los dos catálogos medidos, más de nueve de cada diez), y ahí
+                 son dos caminos que dan lo mismo; cuando no, el tema se ubicó
+                 en ese tracklist por su título y su duración. También lo es
+                 el de un tema que se sumó desde Deezer, que es el suyo.
     inferido     Un solo camino: la búsqueda por texto, o el título y la
                  duración en la discografía. Es el mejor candidato y casi
                  siempre es el bueno, pero nada más lo respalda.

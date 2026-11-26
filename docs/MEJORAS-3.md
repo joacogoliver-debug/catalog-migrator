@@ -65,7 +65,23 @@ Línea de base medida con él:
 
 | C09 | **Tests de propiedades** (`tests/test_propiedades.py`, Hypothesis sólo en desarrollo) | 21 reglas sobre nombres del ZIP, códigos, la planilla importada y el relevamiento guardado. **Encontraron tres fallas**: un corchete suelto en el campo del link terminaba en «Invalid IPv6 URL» (estaba desde antes del ciclo), y un retorno de carro suelto o un byte nulo tumbaban el lector de CSV nuevo. Con 2.500 ejemplos por regla no aparece nada más. |
 
-Al cerrar: 1.163 tests de Python y 53 de la interfaz, ruff y pyright en cero.
+| C10 | **El ISRC de cada tema es el de su release** (`completitud.alinear_con_el_release`) | El hallazgo más serio del ciclo, y salió de medir un segundo catálogo. Un disco estaba dos veces en Deezer, entregado por dos sellos con códigos distintos; el cruce elegía bien cuál era el del canal y le dejaba a sus temas el ISRC del otro. **43 temas de 268** salían con el UPC de un release y el ISRC de otro. Ahora toman el del tracklist de su release, el otro queda anotado y la validación lo dice. Sobre el primer catálogo no cambia nada (no tenía ningún caso). |
+
+Al cerrar: 1.173 tests de Python y 53 de la interfaz, ruff y pyright en cero.
+
+**Un segundo catálogo, para no ajustar la regla mirando uno solo.** Se grabó
+además el de un artista regional (268 temas, 707 unidades): 43 s en vivo, 357
+pedidos y ningún rechazo de Deezer. ISRC, antes de C10: 192 confirmados, 49
+inferidos y 27 sin código; los 28 UPC, confirmados. De esos 49 inferidos, 43
+estaban ubicados en el tracklist de su release con OTRO código: no eran
+códigos sin respaldo, eran códigos de otra entrega (C10). Después: 235
+confirmados y 6 inferidos. «Confirmado» se define por el tracklist del release
+verificado y no por «dos caminos», que es cierto para la mayoría y no para
+todos.
+
+Esto es también lo que justifica el nivel de evidencia: los 43 estaban
+marcados «inferido» antes de saber por qué. La marca decía «miralos», y al
+mirarlos apareció el error.
 
 **Los ocho productos sin UPC del banco se miraron uno por uno** contra lo que
 Deezer contestó: son singles que YouTube arma con una combinación de temas que

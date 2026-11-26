@@ -156,6 +156,8 @@ def _relevar_catalogo(
         log(T("mig.cortado_por_cuota", n=diag["temas"]))
     if comp["verificados_por_tracklist"]:
         log(T("mig.verificados_por_tracklist", n=comp["verificados_por_tracklist"]))
+    if comp["isrc_del_release"]:
+        log(T("mig.isrc_del_release", n=comp["isrc_del_release"]))
     if comp["isrc_completados"]:
         log(T("mig.isrc_de_discografia", n=comp["isrc_completados"]))
     if comp["revisada"] and comp["temas"]:

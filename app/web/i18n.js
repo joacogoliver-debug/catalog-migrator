@@ -841,8 +841,8 @@ const TEXTOS = {
   /* ---- evidencia: qué tan comprobado está cada código ---- */
   'nivel.confirmado': { es: 'confirmado', en: 'confirmed' },
   'nivel.confirmado_ayuda': {
-    es: 'Dos caminos independientes dan este mismo código: la búsqueda por texto y el tracklist de su release, o tu distribuidora.',
-    en: 'Two independent paths give this same code: the text search and its release\'s tracklist, or your distributor.',
+    es: 'Es el código que lleva este tema en el tracklist de su release verificado en Deezer, o el que confirmó tu distribuidora.',
+    en: 'It is the code this track carries in the tracklist of its verified release on Deezer, or the one your distributor confirmed.',
   },
   'nivel.inferido': { es: 'inferido', en: 'inferred' },
   'nivel.inferido_ayuda': {
@@ -901,6 +901,7 @@ const TEXTOS = {
   'hallazgo.isrc_inferido': { es: 'ISRC de una sola fuente', en: 'Single-source ISRC' },
   'hallazgo.upc_inferido': { es: 'UPC que coincide sólo por el título', en: 'UPC matched by title only' },
   'hallazgo.isrc_ambiguo': { es: 'ISRC con más de un candidato', en: 'ISRC with more than one candidate' },
+  'hallazgo.isrc_otra_entrega': { es: 'Grabación con dos ISRC en las tiendas', en: 'Recording with two ISRCs in stores' },
 
   /* ---- edición de códigos en el lugar ---- */
   'edicion.cargar': { es: 'cargar', en: 'enter' },

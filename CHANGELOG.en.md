@@ -12,8 +12,9 @@ What changed in every published version. The numbers follow
 - **How well checked each code is.** An ISRC that came from searching “title
   artist” on Deezer and one that also appears with that same code in its
   release's tracklist looked the same: twelve characters in a cell. Now every
-  track and every release says whether its code is **confirmed** (two
-  independent paths give the same one), **inferred** (a single source) or
+  track and every release says whether its code is **confirmed** (it is the
+  one in its release's tracklist), **inferred** (a single source, with nothing
+  else behind it) or
   **doubtful** (a close match). It is in the table, the spreadsheet, two new
   columns of the ingestion sheet (`ISRC Evidence`, `UPC Evidence`) and the
   validation. In the catalog it was measured with, 221 tracks, 205 ISRCs came
@@ -56,6 +57,16 @@ What changed in every published version. The numbers follow
   are all entered.
 
 ### Fixed
+- **Each track carries its own release's ISRC, not that of another delivery of
+  the same recording.** A record can be in stores twice, delivered by two
+  labels with different codes: the original, and a redelivery that was given
+  new ISRCs. The app already picked correctly which of the two was the
+  channel's (by title, date and label), and took the UPC and the order from
+  it. But each track kept the ISRC the search returned, which could be the
+  other delivery's. In a real catalog, 43 tracks of 268 came out with one
+  release's UPC and another's ISRC. The code is now the one the track carries
+  in its release's tracklist, and the validation tells you that recording has
+  two codes in stores, which is something to raise with the distributor.
 - **A pasted link with a bracket no longer gives an error in library English.**
   Pasting “[link]”, the way a chat copies it with its formatting, ended in
   “Invalid IPv6 URL”. It now says the same as any other text that is not a

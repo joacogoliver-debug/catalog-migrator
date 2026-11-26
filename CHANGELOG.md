@@ -12,8 +12,9 @@ Lo que cambió en cada versión publicada. Los números siguen
 - **Qué tan comprobado está cada código.** Un ISRC que salió de buscar «título
   artista» en Deezer y uno que además figura con ese mismo código en el
   tracklist de su release se veían iguales: doce caracteres en una celda. Ahora
-  cada tema y cada producto dice si su código está **confirmado** (dos caminos
-  independientes dan el mismo), es **inferido** (una sola fuente) o **dudoso**
+  cada tema y cada producto dice si su código está **confirmado** (es el que
+  figura en el tracklist de su release), es **inferido** (una sola fuente, sin
+  nada más que lo respalde) o **dudoso**
   (coincidencia parecida). Va en la tabla, en la planilla, en dos columnas
   nuevas de la hoja de ingesta (`ISRC Evidence`, `UPC Evidence`) y en la
   validación. En el catálogo con que se midió, de 221 temas, 205 ISRC quedaron
@@ -57,6 +58,16 @@ Lo que cambió en cada versión publicada. Los números siguen
   están todos cargados.
 
 ### Corregido
+- **Cada tema lleva el ISRC de su release, y no el de otra entrega de la misma
+  grabación.** Un disco puede estar dos veces en las tiendas, entregado por
+  dos sellos con códigos distintos: el original, y una reentrega a la que le
+  asignaron ISRC nuevos. La app ya elegía bien cuál de los dos era el del canal
+  (por el título, la fecha y el sello), y de ahí tomaba el UPC y el orden. Pero
+  a cada tema le dejaba el ISRC que devolvía la búsqueda, que podía ser el de
+  la otra entrega. En un catálogo real, 43 temas de 268 salían con el UPC de un
+  release y el ISRC de otro. Ahora el código es el que el tema lleva en el
+  tracklist de su release, y la validación avisa que esa grabación tiene dos
+  códigos en las tiendas, que es algo para hablar con la distribuidora.
 - **Un link pegado con un corchete ya no da un error en inglés.** Pegar
   «[link]», como lo copia un chat con su formato, terminaba en «Invalid IPv6
   URL». Ahora dice lo mismo que cualquier otro texto que no es un link.

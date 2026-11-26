@@ -243,14 +243,15 @@ the app says so on each track and each release:
 
 | Level | What it means |
 |---|---|
-| **confirmed** | Two independent paths give the same code: the text search on Deezer and the tracklist of the album verified as that release; or your distributor's file. |
+| **confirmed** | It is the code that track carries in the tracklist of the Deezer album verified as its release, nearly always the same one the text search had found on its own; or your distributor's file confirmed it. |
 | **inferred** | It came from a single source (the search by title, artist and length) and nothing else backs it. It is almost always right; it is the one worth confirming. |
 | **doubtful** | The match was close but not identical. |
 | **by hand** / **from your file** | You entered it, or it came from the spreadsheet you imported. |
 
-In the catalog it was measured with, 221 tracks, 205 ISRCs came out confirmed
-and 14 inferred: all fourteen are stray remixes, which is exactly where a match
-by title can go wrong. The ingestion sheet carries the level in two columns,
+In the two catalogs it was measured with, one of 221 tracks and one of 268,
+205 and 235 ISRCs came out confirmed, and 14 and 6 inferred. The fourteen in
+the first are stray remixes, which is exactly where a match by title can go
+wrong. The ingestion sheet carries the level in two columns,
 `ISRC Evidence` and `UPC Evidence`. When the survey finds two possible
 recordings for a track it does not choose: it shows them, and you pick.
 
@@ -319,6 +320,8 @@ accept the delivery, and the report always says what it does not look at.
 - A release's ISRCs that came from a single source, and a UPC that matches by
   release title only: they are exported all the same, and are worth confirming
 - A track with more than one candidate recording, none of which was chosen
+- A recording that is in stores with two ISRCs, one per delivery: the release's
+  own is used, and it is worth telling the distributor
 - The cover is grayscale, indexed color or transparent
 - The package carries reference-only audio
 - The fields no public source has (genre, language, explicit, C line,
@@ -378,6 +381,12 @@ album and on every compilation. That is why the UPC is only accepted when the
 Deezer album is the same release as the product: otherwise it stays blank and
 the validation says which other release it was found on, instead of delivering
 another release's code.
+
+The ISRC gets the same care. A recording can be delivered twice with two
+codes: a label's original record and its redelivery by another. The search
+returns either one, so once the track is placed in its release's tracklist, the
+code that counts is the one at that position. The other is not lost: the
+validation tells you that recording has two ISRCs in stores.
 
 YouTube shows a record's title without its version: the anniversary edition is
 named like the original. When a record's tracks do not all fit in the Deezer

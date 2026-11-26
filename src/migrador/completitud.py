@@ -82,6 +82,7 @@ def completitud_vacia() -> Completitud:
         "sin_respuesta": 0,
         "isrc_completados": 0,
         "verificados_por_tracklist": 0,
+        "isrc_del_release": 0,
         "recortada": False,
         "faltan": [],
     }
@@ -264,6 +265,54 @@ def _candidatos_de(t: Track, por_titulo, duracion) -> list[TemaFaltante]:
         if abs(x["duracion_s"] - duracion) <= MARGEN_DURACION and misma_version(x["titulo"], t["track"]):
             out.setdefault(x["isrc"], x)
     return list(out.values())
+
+
+def alinear_con_el_release(tracks: list[Track], tracklists) -> int:
+    """Le pone a cada tema el ISRC que lleva en SU release, si tenía el de otro.
+
+    La búsqueda de Deezer encuentra la grabación, y una grabación puede estar
+    entregada dos veces con dos códigos: el disco de 2009 de un sello, y su
+    reentrega de 2019 por otro, que le asignó ISRC nuevos. La búsqueda devuelve
+    cualquiera de las dos. El cruce ya sabía cuál de los dos álbumes es el del
+    canal (por el título, la fecha y el sello) y de ahí tomaba el UPC y el
+    orden, pero el ISRC del tema seguía siendo el que había traído la
+    búsqueda. En un catálogo real, diez de los doce temas de un disco salían
+    con el UPC de una entrega y los ISRC de la otra: en la hoja de ingesta eso
+    es un release armado con los códigos de otro.
+
+    Con el tema ya ubicado en el tracklist de su álbum, el código de ese lugar
+    es el del release. Se cambia sólo si lo que hay en ese lugar es el mismo
+    tema sin dudas: el mismo título, la misma versión y, con las dos
+    duraciones a la vista, la misma duración. El código que traía la búsqueda
+    no se tira: queda en `isrc_otra_entrega`, y la validación lo dice, porque
+    que la misma grabación tenga dos códigos en las tiendas es justo lo que
+    hay que saber antes de migrarla.
+
+    Devuelve a cuántos temas les cambió el código.
+    """
+    cambiados = 0
+    for t in tracks:
+        album_id = t.get("album_deezer_id")
+        if not album_id or not t.get("orden_fuente") or not t.get("isrc") or t.get("origen") == "deezer":
+            continue
+        temas = tracklists.get(album_id) or []
+        # Si su código ya está en el tracklist, no hay nada que alinear.
+        if any(x["isrc"] == t["isrc"] for x in temas):
+            continue
+        lugar = (t.get("disc_number") or 1, t.get("track_number"))
+        en_su_lugar = [x for x in temas if x["isrc"] and x["posicion"] and _lugar(x) == lugar]
+        if len(en_su_lugar) != 1:
+            continue
+        x = en_su_lugar[0]
+        duracion = t.get("duration_s") or 0
+        mismo_titulo = comparable(sin_decorado(x["titulo"])) == comparable(sin_decorado(t["track"]))
+        dura_igual = bool(duracion and x["duracion_s"]) and abs(duracion - x["duracion_s"]) <= MARGEN_DURACION
+        if not (mismo_titulo and dura_igual and misma_version(x["titulo"], t["track"])):
+            continue
+        t["isrc_otra_entrega"] = t["isrc"]
+        t["isrc"], t["match"], t["isrc_como"] = x["isrc"], "alta", "tracklist"
+        cambiados += 1
+    return cambiados
 
 
 class _Relevado:
@@ -936,6 +985,9 @@ def revisar(tracks: list[Track], cruce: CruceDeezer, artista, avance=None, artis
         for a in por_titulo:
             if int(a["id"]) not in usados:
                 tracklists.pop(int(a["id"]), None)
+    # Con cada disco ya en su álbum: el código de cada tema es el de ese
+    # álbum, y no el de otra entrega de la misma grabación.
+    res["isrc_del_release"] = alinear_con_el_release(tracks, tracklists)
     completar_isrc(tracks, tracklists.values())
     # Los que consiguieron su código en esta revisión, por cualquiera de las
     # dos vías: su lugar en el disco, o su título y duración en la discografía.

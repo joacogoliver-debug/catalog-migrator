@@ -910,12 +910,26 @@ def test_la_misma_grabacion_en_dos_discos_no_es_ambigua(hacer_track, deezer):
     assert tracks[1]["isrc"] == "AR2"
 
 
-def test_un_isrc_que_ya_estaba_no_se_toca(hacer_track, deezer):
+def test_un_isrc_que_ya_estaba_no_se_completa_desde_la_discografia(hacer_track):
+    """`completar_isrc` llena huecos y nada más: un tema que ya tiene código no
+    recibe otro por llamarse y durar igual que una grabación de la discografía."""
+    t = track(hacer_track, "Uno", "Disco", isrc="XX9", dur=200)
+    t["match"] = "media"
+    assert C.completar_isrc([t], [[_tema_deezer("Uno", "AR1", 1)]]) == 0
+    assert (t["isrc"], t["match"]) == ("XX9", "media")
+
+
+def test_un_isrc_que_ya_estaba_se_cambia_solo_por_el_de_su_propio_release(hacer_track, deezer):
+    """Este test decía «un ISRC que ya estaba no se toca», y fijaba el error: el
+    tema quedaba ubicado en el álbum 10, con el UPC del álbum 10, y con el ISRC
+    de otro lado. Ubicado en su release, el código de ese lugar es el suyo; el
+    que traía queda anotado (ver `alinear_con_el_release`)."""
     deezer({10: ("Disco", "album", "2020-01-01", [tema("Uno", "AR1", 200)])})
     tracks = [track(hacer_track, "Uno", "Disco", isrc="XX9", dur=200, aid=10)]
     tracks[0]["match"] = "media"
-    C.revisar(tracks, cruce(10), "Los del Ejemplo")
-    assert (tracks[0]["isrc"], tracks[0]["match"]) == ("XX9", "media")
+    comp = C.revisar(tracks, cruce(10), "Los del Ejemplo")
+    assert (tracks[0]["isrc"], tracks[0].get("isrc_otra_entrega")) == ("AR1", "XX9")
+    assert comp["isrc_del_release"] == 1
 
 
 # ============================================================
@@ -1797,3 +1811,102 @@ def test_un_disco_del_que_youtube_muestra_una_parte_se_verifica_por_sus_isrc(hac
     deezer(discos)
     comp = C.revisar([_base(hacer_track), sin_isrc], cruce(10), "Los del Ejemplo")
     assert comp["verificados_por_tracklist"] == 0, "sin el ISRC del cruce, la fecha distinta manda"
+
+
+# ============================================================
+# El ISRC de cada tema es el de SU release
+# ============================================================
+#
+# El caso real: un disco de 2009 de un sello, y su reentrega de 2019 por otro,
+# que le asignó ISRC nuevos a las mismas grabaciones. El cruce identificaba bien
+# cuál de los dos álbumes era el del canal, y le dejaba a diez de sus doce temas
+# el ISRC del otro, que era el que devolvía la búsqueda.
+
+
+def _tema_deezer(titulo, isrc, posicion, dur=200) -> TemaFaltante:
+    return {
+        "titulo": titulo,
+        "isrc": isrc,
+        "duracion_s": dur,
+        "posicion": posicion,
+        "disco": 1,
+        "artista": "Artista",
+        "deezer_id": posicion,
+    }
+
+
+def _ubicado(hacer_track, titulo, isrc, numero, dur=200, album_id=77):
+    t = hacer_track(track=titulo, album="Disco", isrc=isrc, dur=dur)
+    t["track_number"], t["disc_number"], t["orden_fuente"], t["album_deezer_id"] = (
+        numero,
+        1,
+        "deezer",
+        album_id,
+    )
+    t["isrc_como"], t["match"] = "busqueda", "alta"
+    return t
+
+
+def test_el_tema_lleva_el_isrc_de_su_release_y_no_el_de_otra_entrega(hacer_track):
+    t = _ubicado(hacer_track, "Quererte a Ti", "QM4TW1805334", 2, dur=167)
+    lista = {
+        77: [
+            _tema_deezer("Será Una Historia Más", "ARG992049178", 1),
+            _tema_deezer("Quererte a Ti", "ARG992049179", 2, dur=166),
+        ]
+    }
+    assert C.alinear_con_el_release([t], lista) == 1
+    assert (t["isrc"], t["isrc_como"]) == ("ARG992049179", "tracklist")
+    assert t["isrc_otra_entrega"] == "QM4TW1805334", "el otro código no se tira: hay que poder decirlo"
+
+
+def test_si_ya_tiene_el_codigo_de_su_release_no_se_toca(hacer_track):
+    t = _ubicado(hacer_track, "Uno", "ARG992049178", 1)
+    assert C.alinear_con_el_release([t], {77: [_tema_deezer("Uno", "ARG992049178", 1)]}) == 0
+    assert "isrc_otra_entrega" not in t and t["isrc_como"] == "busqueda"
+
+
+def test_el_codigo_de_otro_lugar_del_disco_no_es_otra_entrega(hacer_track):
+    """El ISRC del tema está en el tracklist, en otro lugar: es un tema que se
+    ubicó mal, no una grabación con dos códigos, y no se le cambia nada."""
+    t = _ubicado(hacer_track, "Uno", "ARG992049179", 1)
+    lista = {77: [_tema_deezer("Uno", "ARG992049178", 1), _tema_deezer("Otro", "ARG992049179", 2)]}
+    assert C.alinear_con_el_release([t], lista) == 0
+    assert t["isrc"] == "ARG992049179"
+
+
+@pytest.mark.parametrize(
+    "titulo, dur, dur_deezer",
+    [
+        ("Uno", 200, 260),  # el mismo título con otra duración: otra grabación
+        ("Uno (En Vivo)", 200, 200),  # otra versión
+        ("Otro Tema", 200, 200),  # otro título en ese lugar
+        ("Uno", 0, 200),  # sin la duración de YouTube no se puede comprobar
+    ],
+)
+def test_sin_la_certeza_de_que_es_el_mismo_tema_no_se_cambia_el_codigo(hacer_track, titulo, dur, dur_deezer):
+    t = _ubicado(hacer_track, titulo, "QM4TW1805334", 1, dur=dur)
+    assert C.alinear_con_el_release([t], {77: [_tema_deezer("Uno", "ARG992049178", 1, dur=dur_deezer)]}) == 0
+    assert t["isrc"] == "QM4TW1805334" and "isrc_otra_entrega" not in t
+
+
+def test_un_tema_sin_ubicar_o_que_vino_de_deezer_no_se_alinea(hacer_track):
+    sin_lugar = hacer_track(track="Uno", isrc="QM4TW1805334", dur=200)
+    sin_lugar["album_deezer_id"] = 77  # en el álbum, pero sin lugar confirmado
+    de_deezer = _ubicado(hacer_track, "Uno", "QM4TW1805334", 1)
+    de_deezer["origen"] = "deezer"
+    lista = {77: [_tema_deezer("Uno", "ARG992049178", 1)]}
+    assert C.alinear_con_el_release([sin_lugar, de_deezer], lista) == 0
+
+
+def test_la_validacion_dice_que_la_grabacion_tiene_dos_codigos(hacer_producto, hacer_track):
+    from migrador import validar as V
+
+    ts = [_ubicado(hacer_track, f"Tema {n}", f"QM4TW180533{n}", n) for n in (1, 2)]
+    lista = {77: [_tema_deezer(f"Tema {n}", f"ARG99204917{n}", n) for n in (1, 2)]}
+    assert C.alinear_con_el_release(ts, lista) == 2
+    res = V.validar([hacer_producto(upc="0885012345673", tracks=ts)])
+    avisos = [h for h in res["hallazgos"] if h["codigo"] == "isrc_otra_entrega"]
+    assert len(avisos) == 1, "un aviso por producto, no uno por tema"
+    assert "QM4TW1805331" in avisos[0]["mensaje"] and "ARG992049171" in avisos[0]["mensaje"]
+    assert res["apto"], "es un aviso: el paquete lleva los códigos correctos"

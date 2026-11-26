@@ -1312,6 +1312,28 @@ TEXTOS = {
     },
     "paq.sin_fecha": {"es": "s/f", "en": "n/d"},
     "paq.sin_upc_par": {"es": "(sin UPC)", "en": "(no UPC)"},
+    "mig.isrc_del_release": {
+        "es": (
+            "{n} temas tenían el ISRC de otra entrega de la misma grabación: se les puso el de su release."
+        ),
+        "en": (
+            "{n} tracks had the ISRC of another delivery of the same recording: they now carry "
+            "their own release's."
+        ),
+    },
+    "val.isrc_otra_entrega": {
+        "es": (
+            "{n} grabaciones de este producto están en Deezer con dos ISRC, uno por cada entrega: "
+            "{temas}. Se usa el de este release, que es el que corresponde a su UPC (por ejemplo "
+            "{ejemplo}). Avisale a tu distribuidora: dos códigos para la misma grabación parten "
+            "sus reproducciones."
+        ),
+        "en": (
+            "{n} recordings in this release are on Deezer with two ISRCs, one per delivery: "
+            "{temas}. This release's own is used, the one that goes with its UPC (for example "
+            "{ejemplo}). Tell your distributor: two codes for the same recording split its plays."
+        ),
+    },
     # ---- evidencia: qué tan comprobado está cada código --------------------
     "val.isrc_inferido": {
         "es": (
