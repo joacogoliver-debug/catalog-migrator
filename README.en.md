@@ -750,6 +750,7 @@ pytest -q --cov
 | `tests/test_concurrencia.py` | One job at a time for real, an identified catalog and no leftover temp files |
 | `tests/test_progreso.py` | Real progress, a cancel that responds and retries only where they help |
 | `tests/test_listado.py` | How a channel is listed: through search when YouTube does not publish the uploads list, with its cap, its quota and the releases with no distributor |
+| `tests/test_propiedades.py` | What has to hold for any input: names inside the ZIP, codes, the imported spreadsheet and the saved survey |
 | `tests/test_evidencia.py` | Which code is confirmed and which only inferred, plus the pacing and memo of the Deezer requests |
 | `tests/test_ediciones.py` | What is entered by hand: validated, marked, undoable, and reaching the sheet |
 | `tests/test_importar.py` | The distributor's spreadsheet: what it confirms, what it fills in, and that a conflict is never applied on its own |

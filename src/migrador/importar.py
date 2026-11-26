@@ -250,10 +250,19 @@ def _celdas_csv(datos: bytes) -> list[list[str]]:
     cuentas = {sep: muestra.count(sep) for sep in (",", ";", "\t", "|")}
     separador = max(cuentas, key=lambda s: cuentas[s]) if any(cuentas.values()) else ","
     filas = []
-    for fila in csv.reader(io.StringIO(texto), delimiter=separador):
-        filas.append([c.strip() for c in fila[:MAX_COLUMNAS]])
-        if len(filas) > MAX_FILAS:
-            break
+    # `newline=""` es lo que pide el módulo csv: sin eso, un retorno de carro
+    # suelto adentro de un campo (un CSV de Mac viejo, o un archivo que no es
+    # un CSV) lo hace levantar. Y un byte nulo, que no puede ser parte de una
+    # planilla, se saca antes. Lo que aun así no se pueda leer es un archivo
+    # inválido, no un error de la app: los dos casos los encontró un test de
+    # propiedades.
+    try:
+        for fila in csv.reader(io.StringIO(texto.replace("\x00", ""), newline=""), delimiter=separador):
+            filas.append([c.strip() for c in fila[:MAX_COLUMNAS]])
+            if len(filas) > MAX_FILAS:
+                break
+    except csv.Error:
+        raise ArchivoInvalido(T("imp.no_se_lee")) from None
     return filas
 
 

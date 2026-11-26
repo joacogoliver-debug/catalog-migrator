@@ -13,6 +13,11 @@
 pytest>=8.0
 pytest-cov>=5.0
 
+# Los tests de propiedades (tests/test_propiedades.py): en vez de un caso
+# escrito a mano, una regla, y Hypothesis busca la entrada que la rompe. Sólo
+# para los tests: el motor y la app no la usan ni la empaquetan.
+hypothesis>=6.100
+
 # El linter. La versión va clavada, igual que en el CI, para que una release de
 # ruff no rompa el build un martes y para que la máquina de quien escribe mire
 # exactamente las mismas reglas que GitHub Actions.

@@ -746,6 +746,7 @@ pytest -q --cov
 | `tests/test_concurrencia.py` | Un trabajo por vez de verdad, catálogo identificado y temporales que no quedan |
 | `tests/test_progreso.py` | Avance real, cancelación que responde y reintentos sólo donde sirven |
 | `tests/test_listado.py` | Cómo se lista un canal: por el buscador cuando YouTube no publica la lista de subidas, con su tope, su cuota y los lanzamientos sin distribuidora |
+| `tests/test_propiedades.py` | Lo que tiene que ser cierto para cualquier entrada: nombres adentro del ZIP, códigos, la planilla importada y el relevamiento guardado |
 | `tests/test_evidencia.py` | Qué código está confirmado y cuál sólo inferido, y el ritmo y la memoria de los pedidos a Deezer |
 | `tests/test_ediciones.py` | Lo que se carga a mano: validado, marcado, que se pueda deshacer, y que llegue a la hoja |
 | `tests/test_importar.py` | La planilla de la distribuidora: qué confirma, qué completa, y que un conflicto no se aplique solo |

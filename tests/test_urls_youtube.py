@@ -115,3 +115,14 @@ def test_un_canal_que_no_existe_nombra_lo_que_se_busco(monkeypatch):
     with pytest.raises(R.RelevarError) as e:
         R.resolve_channel("https://www.youtube.com/@pe%C3%B1a", "k")
     assert "@peña" in str(e.value)
+
+
+@pytest.mark.parametrize("pegado", ["[", "[link](https://ejemplo.com)", "https://[::1", "]["])
+def test_un_corchete_suelto_no_es_un_error_de_la_biblioteca(pegado):
+    """`urlsplit` levanta «Invalid IPv6 URL» con un corchete sin cerrar, y lo
+    pegado es texto libre. Tiene que ser el mismo error de campo que cualquier
+    otro texto que no es un link, no una excepción suelta en inglés. Lo
+    encontró `tests/test_propiedades.py`, con la entrada «[»."""
+    with pytest.raises(R.RelevarError) as e:
+        R.pedido_de_canal(pegado)
+    assert e.value.codigo == "url"

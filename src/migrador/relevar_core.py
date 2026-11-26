@@ -213,8 +213,15 @@ _RE_ID_VIDEO = re.compile(r"^[\w-]{11}$")
 def _id_de_video(url):
     """El id del video de un link a un tema (`watch?v=`, `youtu.be/`,
     `/shorts/`), o None. Sirve para llegar al canal que lo subió."""
-    partes = urllib.parse.urlsplit(url if "://" in url else "https://" + url)
-    host = (partes.hostname or "").lower()
+    # `urlsplit` levanta ValueError con un corchete suelto («Invalid IPv6 URL»),
+    # y lo pegado es texto libre: «[link]», copiado de un chat con su formato,
+    # terminaba en ese mensaje en inglés en vez de «no reconozco ese link». Lo
+    # encontró un test de propiedades, con la entrada «[».
+    try:
+        partes = urllib.parse.urlsplit(url if "://" in url else "https://" + url)
+        host = (partes.hostname or "").lower()
+    except ValueError:
+        return None
     candidato = None
     if host.endswith("youtu.be"):
         candidato = partes.path.strip("/").split("/")[0]

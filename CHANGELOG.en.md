@@ -55,10 +55,21 @@ What changed in every published version. The numbers follow
 - **The fields-to-fill-in notice names the ones left**, and goes away when they
   are all entered.
 
+### Fixed
+- **A pasted link with a bracket no longer gives an error in library English.**
+  Pasting “[link]”, the way a chat copies it with its formatting, ended in
+  “Invalid IPv6 URL”. It now says the same as any other text that is not a
+  link.
+
 ### For developers
+- **Property-based tests**, with Hypothesis (development only: the app neither
+  uses nor ships it). Instead of hand-written cases, rules (“a folder name
+  never leaves the root”, “reconciling never changes the catalog”) and a tool
+  that looks for the input that breaks them. They found the fix above, and two
+  more in the spreadsheet reader before it shipped.
 - Four new engine modules: `evidencia`, `ediciones`, `importar` and
   `instantanea`. None of them touches the network.
-- 120 new Python tests and 8 for the interface. The imported file and the saved
+- 145 new Python tests and 8 for the interface. The imported file and the saved
   survey are outside data: there are tests that nothing they carry is executed,
   used as a path or let in unescaped.
 - `docs/MEJORAS-3.md` keeps the record of the cycle: what was measured, what

@@ -777,8 +777,8 @@ const TEXTOS = {
     en: 'Unzip it and open the ingestion sheet in Excel. Whatever says <code>&lt;&lt;COMPLETAR&gt;&gt;</code> has to be filled in before uploading: it is what no public source has.',
   },
   'paso4.sigue_pedir': {
-    es: 'Pedile a tu distribuidora actual lo que falte: los ISRC y UPC que no aparecieron, las fechas originales, los másters en WAV o FLAC y el arte original.',
-    en: 'Ask your current distributor for whatever is missing: the ISRCs and UPCs that did not turn up, the original dates, the masters as WAV or FLAC, and the original artwork.',
+    es: 'Pedile a tu distribuidora actual lo que falte: mandale la hoja de pedido que viene en el ZIP, que ya lista los ISRC y UPC que faltan o no quedaron confirmados, y pedile también las fechas originales, los másters en WAV o FLAC y el arte original. Cuando te la devuelva completa, importala en el paso 2.',
+    en: 'Ask your current distributor for whatever is missing: send them the request sheet in the ZIP, which already lists the missing or unconfirmed ISRCs and UPCs, and also ask for the original dates, the masters as WAV or FLAC, and the original artwork. When it comes back filled in, import it in step 2.',
   },
   'paso4.sigue_cargar': {
     es: 'Cargá el catálogo en la distribuidora nueva con los mismos ISRC, UPC y fecha original. Es lo que une cada release al que ya está en las tiendas.',

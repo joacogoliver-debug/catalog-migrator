@@ -56,10 +56,20 @@ Lo que cambió en cada versión publicada. Los números siguen
 - **El aviso de campos a completar nombra los que quedan**, y desaparece cuando
   están todos cargados.
 
+### Corregido
+- **Un link pegado con un corchete ya no da un error en inglés.** Pegar
+  «[link]», como lo copia un chat con su formato, terminaba en «Invalid IPv6
+  URL». Ahora dice lo mismo que cualquier otro texto que no es un link.
+
 ### Para quien desarrolla
+- **Tests de propiedades**, con Hypothesis (sólo para desarrollar: la app no la
+  usa ni la empaqueta). En vez de casos escritos a mano, reglas («el nombre de
+  una carpeta nunca sale de la raíz», «conciliar nunca cambia el catálogo») y
+  una herramienta que busca la entrada que las rompe. El arreglo de arriba lo
+  encontraron ellos, y dos más en el lector de planillas antes de publicarlo.
 - Cuatro módulos nuevos en el motor: `evidencia`, `ediciones`, `importar` e
   `instantanea`. Ninguno toca la red.
-- 120 tests nuevos de Python y 8 de la interfaz. El archivo que se importa y el
+- 145 tests nuevos de Python y 8 de la interfaz. El archivo que se importa y el
   relevamiento guardado son datos de afuera: hay tests de que nada de lo que
   traen se ejecuta, se usa como ruta ni entra sin escapar.
 - `docs/MEJORAS-3.md` deja el registro del ciclo: qué se midió, qué se decidió

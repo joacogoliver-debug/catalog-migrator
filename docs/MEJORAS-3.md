@@ -63,7 +63,15 @@ Línea de base medida con él:
 | C07 | **Relevamiento guardado** (`instantanea.py`) | Va en cada paquete. Se reabre sin cuota. Se reconstruye campo por campo, porque puede venir de otra persona. |
 | C08 | **Verificación post-migración** (`instantanea.comparar`) | Seis estados por release. Probado en la app real con un «antes» armado sobre el banco. |
 
-Al cerrar: 1.138 tests de Python y 53 de la interfaz, ruff y pyright en cero.
+| C09 | **Tests de propiedades** (`tests/test_propiedades.py`, Hypothesis sólo en desarrollo) | 21 reglas sobre nombres del ZIP, códigos, la planilla importada y el relevamiento guardado. **Encontraron tres fallas**: un corchete suelto en el campo del link terminaba en «Invalid IPv6 URL» (estaba desde antes del ciclo), y un retorno de carro suelto o un byte nulo tumbaban el lector de CSV nuevo. Con 2.500 ejemplos por regla no aparece nada más. |
+
+Al cerrar: 1.163 tests de Python y 53 de la interfaz, ruff y pyright en cero.
+
+**Los ocho productos sin UPC del banco se miraron uno por uno** contra lo que
+Deezer contestó: son singles que YouTube arma con una combinación de temas que
+en Deezer no existe como release («Technologic» con el remix de Digitalism,
+cuando el single de Deezer trae el de Peaches). Que queden en blanco es lo
+correcto; no hay cobertura para ganar ahí sin inventar.
 
 ## Decisiones, y por qué
 
@@ -114,8 +122,10 @@ interfaz.
   de fondo a «¿funciona con mi distribuidora?».
 - **Editar más que códigos.** El título, la fecha, el sello y el orden siguen
   siendo de sólo lectura.
-- **Tests de propiedades** (Hypothesis) para `texto`, `validar` e `importar`,
-  que son las piezas donde una entrada rara puede romper algo.
+- **Guardar el relevamiento sin armar el paquete.** Hoy lo cargado a mano
+  queda a salvo recién cuando se arma un paquete (que lo trae adentro). Un
+  botón que baje sólo ese archivo pide resolver la descarga en la ventana
+  nativa de cada sistema, que ya dio trabajo con el ZIP.
 - **Lo que no se pudo verificar acá:** el selector de archivos con un clic
   humano en la ventana nativa de cada sistema (se probó entregándole el archivo
   a la interfaz por código), y la comparación contra una migración de verdad.
