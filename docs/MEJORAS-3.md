@@ -89,6 +89,12 @@ en Deezer no existe como release («Technologic» con el remix de Digitalism,
 cuando el single de Deezer trae el de Peaches). Que queden en blanco es lo
 correcto; no hay cobertura para ganar ahí sin inventar.
 
+**El binario empaquetado.** `python build/build.py` (variante esencial, en
+Windows) pasa, y al ejecutable se le pidió por HTTP todo lo nuevo: abrir un
+relevamiento guardado, editar un código, rechazar uno inválido, importar una
+planilla y validar. Los de macOS y Linux los compila y arranca el CI; acá no se
+pudieron probar.
+
 ## Decisiones, y por qué
 
 **No se dio vuelta el cruce para buscar primero en la discografía.** Se midió:

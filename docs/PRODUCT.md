@@ -44,6 +44,9 @@ Cuatro pasos, y el orden no es negociable porque cada uno necesita el anterior.
 2. **Elegir productos.** Acá se pasa la mayor parte del tiempo. El catálogo
    aparece agrupado en productos (álbum, EP, single), con lo que le falta a cada
    uno marcado. Se puede filtrar por año, por distribuidora, o buscar.
+   Es también donde entra lo que sólo sabe quien usa la app: los códigos que
+   le pasó su distribuidora (se importan de su planilla), un código corregido a
+   mano, y los datos que ninguna fuente pública trae.
 3. **Elegir qué bajar.** Planilla, portadas, audios.
 4. **Descargar** un ZIP con una carpeta por producto, más el informe de
    validación.
@@ -67,14 +70,26 @@ No son casos borde: son la mitad del producto.
   grabación que ya tiene en otro. Lo que falta sale de la discografía de Deezer
   y entra marcado. Lo que no se sabe si es del catálogo, como un lanzamiento
   que sólo está en Deezer, queda sin elegir: lo elige una persona.
+- **Un código que no está confirmado.** No todos merecen la misma confianza.
+  El que figura en el tracklist de su release está confirmado; el que salió de
+  una sola búsqueda es inferido, y se dice en cada tema. No es un error ni un
+  faltante: es lo que conviene confirmar, y va en neutro.
+- **El archivo no coincide con el catálogo.** La planilla de la distribuidora
+  trae un código y el relevamiento otro. No se elige: se muestran los dos.
+- **Después de migrar.** El recorrido no termina en el ZIP. Con el catálogo en
+  la distribuidora nueva, se compara contra el relevamiento que quedó en el
+  paquete, y la app dice qué conservó sus códigos y qué no.
 - **Vacío por filtro.** Se filtró de más y no queda nada.
 - **Primera vez.** Términos de uso, y la clave de la API si esta copia no trae
   una.
 
 ## Lo que no se toca
 
+- **Nunca pisa un código en silencio ni elige entre dos.** Lo que no es seguro
+  se muestra y lo decide una persona.
 - **No inventa metadata.** Lo que no sale de una fuente pública queda marcado
-  `<<COMPLETAR>>`. Un campo vacío es información; uno rellenado a ojo es una
+  `<<COMPLETAR>>`, salvo que lo cargue quien usa la app, y entonces se dice de
+  dónde salió. Un campo vacío es información; uno rellenado a ojo es una
   mentira que después alguien entrega.
 - **Se reporta lo medido, no lo pedido.** Las portadas se piden en 3000×3000 y
   se informa el tamaño que Apple realmente devolvió.
