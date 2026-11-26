@@ -838,6 +838,246 @@ const TEXTOS = {
   },
 
   /* ---------------------------------------------------------- títulos de hallazgo */
+  /* ---- evidencia: qué tan comprobado está cada código ---- */
+  'nivel.confirmado': { es: 'confirmado', en: 'confirmed' },
+  'nivel.confirmado_ayuda': {
+    es: 'Dos caminos independientes dan este mismo código: la búsqueda por texto y el tracklist de su release, o tu distribuidora.',
+    en: 'Two independent paths give this same code: the text search and its release\'s tracklist, or your distributor.',
+  },
+  'nivel.inferido': { es: 'inferido', en: 'inferred' },
+  'nivel.inferido_ayuda': {
+    es: 'Salió de una sola fuente y nada más lo respalda. Casi siempre es el correcto; conviene confirmarlo con tu distribuidora actual.',
+    en: 'It came from a single source and nothing else backs it. It is almost always right; confirm it with your current distributor.',
+  },
+  'nivel.dudoso': { es: 'dudoso', en: 'doubtful' },
+  'nivel.dudoso_ayuda': {
+    es: 'La coincidencia fue parecida y no idéntica. Verificalo antes de entregarlo.',
+    en: 'The match was close but not identical. Check it before you deliver it.',
+  },
+  'nivel.manual': { es: 'a mano', en: 'by hand' },
+  'nivel.manual_ayuda': { es: 'Lo cargaste vos.', en: 'You entered it.' },
+  'nivel.importado': { es: 'de tu archivo', en: 'from your file' },
+  'nivel.importado_ayuda': {
+    es: 'Salió de la planilla que importaste.',
+    en: 'It came from the spreadsheet you imported.',
+  },
+  'paso2.evidencia_isrc': {
+    es: '{confirmados} ISRC confirmados y {n} de una sola fuente.',
+    en: '{confirmados} ISRCs confirmed and {n} from a single source.',
+  },
+  'paso2.evidencia_isrc_uno': {
+    es: '{confirmados} ISRC confirmados y {n} de una sola fuente.',
+    en: '{confirmados} ISRCs confirmed and {n} from a single source.',
+  },
+  'paso2.evidencia_upc': {
+    es: '{n} UPC coinciden sólo por el título.',
+    en: '{n} UPCs match by title only.',
+  },
+  'paso2.evidencia_upc_uno': {
+    es: '{n} UPC coincide sólo por el título.',
+    en: '{n} UPC matches by title only.',
+  },
+  'paso2.evidencia_que_hacer': {
+    es: 'Van marcados «inferido»: conviene confirmarlos con tu distribuidora.',
+    en: 'They are marked “inferred”: confirm them with your distributor.',
+  },
+  'paso2.abierto_titulo': {
+    es: 'Relevamiento guardado el {fecha}.',
+    en: 'Survey saved on {fecha}.',
+  },
+  'paso2.abierto_cuerpo': {
+    es: 'Salió de un archivo: no se le pidió nada a YouTube ni a Deezer, y no gastó cupo. Lo que cambió en el canal desde ese día no está acá; para verlo, relevá de nuevo.',
+    en: 'It came from a file: nothing was asked of YouTube or Deezer, and it used no quota. Whatever changed on the channel since that day is not here; survey again to see it.',
+  },
+  'paso1.abrir_ayuda': {
+    es: '¿Ya lo relevaste antes? Cada paquete trae su relevamiento guardado, y abrirlo no gasta cupo.',
+    en: 'Surveyed it before? Every package carries its saved survey, and opening it uses no quota.',
+  },
+  'paso1.abrir': { es: 'Abrir un relevamiento guardado', en: 'Open a saved survey' },
+  'tabla.col_evidencia': { es: 'Evidencia', en: 'Evidence' },
+  'tabla.upc_del_producto': { es: 'UPC del producto', en: 'Release UPC' },
+  'tabla.por_confirmar': { es: '{n} códigos por confirmar', en: '{n} codes to confirm' },
+  'tabla.por_confirmar_uno': { es: '{n} código por confirmar', en: '{n} code to confirm' },
+  'hallazgo.isrc_inferido': { es: 'ISRC de una sola fuente', en: 'Single-source ISRC' },
+  'hallazgo.upc_inferido': { es: 'UPC que coincide sólo por el título', en: 'UPC matched by title only' },
+  'hallazgo.isrc_ambiguo': { es: 'ISRC con más de un candidato', en: 'ISRC with more than one candidate' },
+
+  /* ---- edición de códigos en el lugar ---- */
+  'edicion.cargar': { es: 'cargar', en: 'enter' },
+  'edicion.cambiar': { es: 'cambiar', en: 'change' },
+  'edicion.deshacer': { es: 'deshacer', en: 'undo' },
+  'edicion.guardar': { es: 'Guardar', en: 'Save' },
+  'edicion.cancelar': { es: 'Cancelar', en: 'Cancel' },
+  'edicion.de': { es: 'el ISRC de {titulo}', en: 'the ISRC of {titulo}' },
+  'edicion.aria_isrc': { es: 'ISRC del tema', en: 'Track ISRC' },
+  'edicion.aria_upc': { es: 'UPC del producto', en: 'Release UPC' },
+  'edicion.elegir_entre': { es: 'Elegí:', en: 'Pick one:' },
+
+  /* ---- herramientas del paso 2 ---- */
+  'herr.importar': { es: 'Importar códigos de tu distribuidora', en: 'Import codes from your distributor' },
+  'herr.datos': { es: 'Completar datos de la hoja', en: 'Fill in sheet fields' },
+  'herr.comparar': { es: 'Comparar con un relevamiento guardado', en: 'Compare with a saved survey' },
+  'herr.leyendo': { es: 'Leyendo el archivo', en: 'Reading the file' },
+  'herr.muy_grande': {
+    es: 'El archivo pesa más de 5 MB. Si es el ZIP de un paquete, descomprimilo y elegí el archivo del relevamiento que trae adentro.',
+    en: 'The file is over 5 MB. If it is a package ZIP, unzip it and pick the survey file inside.',
+  },
+
+  /* ---- importar la planilla de la distribuidora ---- */
+  'imp.titulo': { es: 'Lo que trae {archivo}', en: 'What {archivo} brings' },
+  'imp.leido': {
+    es: '{filas} filas con códigos. Columnas que se tomaron:',
+    en: '{filas} rows with codes. Columns used:',
+  },
+  'imp.col_isrc': { es: 'ISRC', en: 'ISRC' },
+  'imp.col_upc': { es: 'UPC', en: 'UPC' },
+  'imp.col_track': { es: 'tema', en: 'track' },
+  'imp.col_album': { es: 'release', en: 'release' },
+  'imp.col_duracion': { es: 'duración', en: 'length' },
+  'imp.col_numero': { es: 'número', en: 'number' },
+  'imp.col_version': { es: 'versión', en: 'version' },
+  'imp.t_conflicto': { es: 'No coinciden', en: 'Do not match' },
+  'imp.d_conflicto': {
+    es: 'El archivo dice un código y el catálogo otro. No se cambia ninguno si no lo marcás.',
+    en: 'The file says one code and the catalog another. Nothing changes unless you tick it.',
+  },
+  'imp.t_ambiguo': { es: 'Hay más de una fila posible', en: 'More than one possible row' },
+  'imp.d_ambiguo': {
+    es: 'Dos filas del archivo pueden ser el mismo tema. Elegí cuál.',
+    en: 'Two rows in the file could be the same track. Pick one.',
+  },
+  'imp.t_completa': { es: 'Completa lo que faltaba', en: 'Fills in what was missing' },
+  'imp.d_completa': {
+    es: 'El catálogo no tenía el código y el archivo lo trae.',
+    en: 'The catalog had no code and the file has it.',
+  },
+  'imp.t_confirma': { es: 'Confirma lo que ya había', en: 'Confirms what was there' },
+  'imp.d_confirma': {
+    es: 'El archivo trae el mismo código: pasa a «confirmado».',
+    en: 'The file has the same code: it becomes “confirmed”.',
+  },
+  'imp.t_sobran': { es: 'En el archivo y no en el catálogo', en: 'In the file, not in the catalog' },
+  'imp.d_sobran': {
+    es: 'Tu distribuidora tiene estos códigos y el relevamiento no encontró a qué corresponden.',
+    en: 'Your distributor has these codes and the survey found nothing they belong to.',
+  },
+  'imp.del_catalogo': { es: 'en el catálogo, {nivel}', en: 'in the catalog, {nivel}' },
+  'imp.fila': { es: 'fila {n}', en: 'row {n}' },
+  'imp.aria_aplicar': { es: 'Aplicar el cambio de {titulo}', en: 'Apply the change to {titulo}' },
+  'imp.nada': {
+    es: 'El archivo no cambia nada: los códigos que trae ya estaban confirmados, o no corresponden a ningún tema del catálogo.',
+    en: 'The file changes nothing: its codes were already confirmed, or match no track in the catalog.',
+  },
+  'imp.aplicar': { es: 'Aplicar {n} cambios', en: 'Apply {n} changes' },
+  'imp.aplicar_uno': { es: 'Aplicar {n} cambio', en: 'Apply {n} change' },
+  'imp.descartar': { es: 'Descartar', en: 'Discard' },
+  'imp.nota_decisiones': {
+    es: 'Lo que no coincide y lo que tiene más de una fila posible no se aplica solo: quedan como están si no los marcás.',
+    en: 'Mismatches and rows with more than one candidate are never applied on their own: they stay as they are unless you tick them.',
+  },
+  'imp.hecho': {
+    es: 'Listo. Códigos cargados: {cargados}. Confirmados con tu archivo: {confirmados}.',
+    en: 'Done. Codes loaded: {cargados}. Confirmed by your file: {confirmados}.',
+  },
+
+  /* ---- los campos que ninguna fuente trae ---- */
+  'datos.titulo': { es: 'Datos que ninguna fuente pública trae', en: 'Fields no public source has' },
+  'datos.bajada': {
+    es: 'Cargalos una vez y van a la hoja de ingesta de cada producto, en vez de quedar como <<COMPLETAR>>. Un campo que dejes vacío no cambia nada.',
+    en: 'Enter them once and they go into each release\'s ingestion sheet, instead of staying as <<COMPLETAR>>. A field left empty changes nothing.',
+  },
+  'datos.c_c_line': { es: 'Línea ©', en: 'C line' },
+  'datos.p_c_line': { es: 'ej.: © 2024 Nombre del titular', en: 'e.g. © 2024 Rights holder' },
+  'datos.c_genre': { es: 'Género', en: 'Genre' },
+  'datos.p_genre': { es: 'ej.: Cuarteto', en: 'e.g. Latin' },
+  'datos.c_language': { es: 'Idioma del release', en: 'Release language' },
+  'datos.p_language': { es: 'ej.: Español', en: 'e.g. Spanish' },
+  'datos.c_territories': { es: 'Territorios', en: 'Territories' },
+  'datos.p_territories': { es: 'ej.: Mundo', en: 'e.g. Worldwide' },
+  'datos.c_explicit': { es: 'Explicit', en: 'Explicit' },
+  'datos.p_explicit': { es: 'ej.: No', en: 'e.g. No' },
+  'datos.c_lyrics_language': { es: 'Idioma de la letra', en: 'Lyrics language' },
+  'datos.p_lyrics_language': { es: 'ej.: Español', en: 'e.g. Spanish' },
+  'datos.ya': { es: 'cargado en {n} de {total}', en: 'set on {n} of {total}' },
+  'datos.linea_c_titulo': {
+    es: 'Armar la línea © de cada producto con su año y el titular de la línea ℗',
+    en: 'Build each release\'s C line from its year and the P line\'s rights holder',
+  },
+  'datos.linea_c_detalle': {
+    es: 'En un catálogo independiente suelen ser el mismo titular. Si no es tu caso, escribila.',
+    en: 'For an independent catalog they are usually the same holder. If not, type it in.',
+  },
+  'datos.aria_alcance': { es: 'A qué productos se aplica', en: 'Which releases it applies to' },
+  'datos.a_elegidos': { es: 'A los {n} elegidos', en: 'To the {n} selected' },
+  'datos.a_todos': { es: 'A los {n} del catálogo', en: 'To all {n}' },
+  'datos.guardar': { es: 'Cargar', en: 'Apply' },
+  'datos.cerrar': { es: 'Cerrar', en: 'Close' },
+  'datos.nada_que_guardar': { es: 'No escribiste ningún dato para cargar.', en: 'You typed nothing to apply.' },
+  'datos.hecho': { es: 'Listo: datos cargados en {n} productos.', en: 'Done: fields set on {n} releases.' },
+  'datos.hecho_uno': { es: 'Listo: datos cargados en {n} producto.', en: 'Done: fields set on {n} release.' },
+
+  /* ---- comparar con un relevamiento guardado ---- */
+  'comp.titulo': { es: 'Contra el relevamiento del {fecha}', en: 'Against the survey of {fecha}' },
+  'comp.bajada': {
+    es: 'Qué pasó con cada release de aquel relevamiento, según lo que hay hoy en el canal. Sirve para comprobar una migración: que cada uno esté en la distribuidora nueva con su mismo UPC y sus mismos ISRC.',
+    en: 'What happened to each release in that survey, going by what is on the channel today. It checks a migration: each one at the new distributor with the same UPC and the same ISRCs.',
+  },
+  'comp.otro_artista': {
+    es: 'Ese relevamiento es de {artista}, no del artista que tenés en pantalla. La comparación no dice nada.',
+    en: 'That survey belongs to {artista}, not the artist on screen. The comparison means nothing.',
+  },
+  'comp.e_migrado': { es: 'migrado', en: 'migrated' },
+  'comp.d_migrado': {
+    es: 'Está en otra distribuidora, con el mismo UPC y los mismos ISRC.',
+    en: 'It is at another distributor, with the same UPC and the same ISRCs.',
+  },
+  'comp.e_en_las_dos': { es: 'en las dos', en: 'at both' },
+  'comp.d_en_las_dos': {
+    es: 'Está en la distribuidora de antes y en otra: falta darlo de baja en la de antes.',
+    en: 'It is at the old distributor and at another: the takedown at the old one is pending.',
+  },
+  'comp.e_igual': { es: 'sin migrar', en: 'not migrated' },
+  'comp.d_igual': {
+    es: 'Sigue sólo en la distribuidora de antes.',
+    en: 'It is still at the old distributor only.',
+  },
+  'comp.e_sin_youtube': { es: 'no se ve en YouTube', en: 'not on YouTube' },
+  'comp.d_sin_youtube': {
+    es: 'Hoy no aparece en el canal, aunque figura en Deezer.',
+    en: 'It is not on the channel today, though Deezer lists it.',
+  },
+  'comp.e_falta': { es: 'no aparece', en: 'missing' },
+  'comp.d_falta': {
+    es: 'No está en lo relevado hoy. Puede estar dado de baja, o no haber llegado todavía.',
+    en: 'It is not in today\'s survey. It may be taken down, or not live yet.',
+  },
+  'comp.e_codigos_cambiados': { es: 'cambió de código', en: 'code changed' },
+  'comp.d_codigos_cambiados': {
+    es: 'Está en otra distribuidora con otro UPC o con algún ISRC distinto: perdió su historial.',
+    en: 'It is at another distributor with a different UPC or ISRC: it lost its history.',
+  },
+  'comp.faltan_temas': { es: 'Temas que hoy no están: {temas}', en: 'Tracks not there today: {temas}' },
+  'comp.isrc_perdidos': {
+    es: 'Tenían ISRC y hoy no se les encuentra: {temas}',
+    en: 'Had an ISRC and none is found today: {temas}',
+  },
+  'comp.nada': {
+    es: 'Ese relevamiento no tiene releases para comparar.',
+    en: 'That survey has no releases to compare.',
+  },
+  'comp.nuevos': {
+    es: 'Hoy hay {n} releases que no estaban en aquel relevamiento: {titulos}',
+    en: 'There are {n} releases today that were not in that survey: {titulos}',
+  },
+  'comp.nuevos_uno': {
+    es: 'Hoy hay {n} release que no estaba en aquel relevamiento: {titulos}',
+    en: 'There is {n} release today that was not in that survey: {titulos}',
+  },
+  'comp.limite': {
+    es: 'Los códigos de hoy salen de Deezer, que puede tardar unos días en mostrar una entrega nueva: mientras el release esté en las dos distribuidoras, puede seguir mostrando los códigos de la anterior.',
+    en: 'Today\'s codes come from Deezer, which can take a few days to show a new delivery: while the release is at both distributors, it may still show the previous one\'s codes.',
+  },
+
   'hallazgo.upc_falta': { es: 'Sin UPC', en: 'No UPC' },
   'hallazgo.portada_modo_color': { es: 'Portada en gris, paleta o transparente', en: 'Cover in gray, palette or transparent' },
   'hallazgo.audio_no_apto': { es: 'Audio sólo de referencia', en: 'Reference-only audio' },

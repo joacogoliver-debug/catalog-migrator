@@ -21,6 +21,7 @@ import tempfile
 
 from . import audio as audio_mod
 from . import completitud as completitud_mod
+from . import evidencia as evidencia_mod
 from . import paquete
 from . import portadas as portadas_mod
 from . import productos as productos_mod
@@ -50,6 +51,17 @@ def relevar_catalogo(
     `reusar=False` vuelve a listar el canal aunque ya se haya listado en esta
     sesión (ver `relevar_core._Listados`).
     """
+    # Todo el relevamiento es una sesión de Deezer: lo que ya contestó no se le
+    # vuelve a pedir (ver `relevar_core.sesion_deezer`).
+    with relevar_core.sesion_deezer():
+        return _relevar_catalogo(
+            url, yt_key, with_codes, progress, use_musicbrainz, fraccion, reusar, artista_deezer
+        )
+
+
+def _relevar_catalogo(
+    url, yt_key, with_codes, progress, use_musicbrainz, fraccion, reusar, artista_deezer
+) -> tuple[list[Producto], str, list[Track], Diagnostico]:
     log = progress or (lambda *_: None)
     # relevar_core.relevar() devuelve un DICT, no una tupla: desempaquetarlo como
     # tupla toma sus claves y tira "too many values to unpack".
@@ -96,8 +108,12 @@ def relevar_catalogo(
 
     tracks = tracks + sumados
     completitud_mod.fechar_desde_deezer(tracks, res["cruce"])
+    # Qué tan comprobado quedó cada código, antes de agrupar: se mira el álbum
+    # en que quedó ubicado cada tema, y agrupar renumera los que no se ubicaron.
+    evidencia_mod.clasificar(tracks, res["cruce"])
     prods = productos_mod.group_products(tracks, artist=artista)
     completitud_mod.marcar(prods, comp, res["cruce"])
+    evidencia_mod.marcar_productos(prods, res["cruce"])
     log(T("mig.agrupados", productos=len(prods), tracks=len(tracks)))
 
     # Diagnóstico del canal: si no trae descripciones auto-generadas, el

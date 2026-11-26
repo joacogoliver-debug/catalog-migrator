@@ -188,7 +188,7 @@ def catalogo_demo() -> dict[str, Any]:
     # `Any` y no un TypedDict porque es el JSON de `catalogo_json()` del
     # servidor, que tampoco tiene contrato todavía: lo que lo fija es que la
     # pantalla lo dibuje, y eso lo prueban las capturas.
-    def tracks(n, titulos, prefijo, con_isrc):
+    def tracks(n, titulos, prefijo, con_isrc, inferidos=()):
         return [
             {
                 "n": i + 1,
@@ -197,6 +197,12 @@ def catalogo_demo() -> dict[str, Any]:
                 "duracion": f"{2 + (i % 3)}:{(17 + i * 7) % 60:02d}",
                 "views": 48210 - i * 3100,
                 "url": "#",
+                # Qué tan comprobado está el código: casi todos confirmados, y
+                # alguno que salió de una sola fuente, que es lo que la tabla
+                # tiene que dejar ver.
+                "nivel": ("inferido" if i in inferidos else "confirmado") if i < con_isrc else "",
+                "editado": False,
+                "candidatos": [],
             }
             for i in range(n)
         ]
@@ -215,6 +221,7 @@ def catalogo_demo() -> dict[str, Any]:
             "views": 412_338,
             "orden_estimado": False,
             "con_isrc": 9,
+            "upc_nivel": "confirmado",
             "detalle": tracks(
                 9,
                 [
@@ -249,8 +256,10 @@ def catalogo_demo() -> dict[str, Any]:
             "views": 188_402,
             "orden_estimado": False,
             "con_isrc": 3,
+            "upc_nivel": "confirmado",
+            "sin_confirmar": 1,
             "detalle": tracks(
-                5, ["Ducha fría", "Mediodía", "Pileta vacía", "Hormiga", "Nueve y cuarto"], "CB2", 3
+                5, ["Ducha fría", "Mediodía", "Pileta vacía", "Hormiga", "Nueve y cuarto"], "CB2", 3, (2,)
             ),
         },
         {
@@ -299,11 +308,14 @@ def catalogo_demo() -> dict[str, Any]:
             "views": 731_005,
             "orden_estimado": False,
             "con_isrc": 1,
+            "upc_nivel": "confirmado",
             "detalle": tracks(1, ["Muéstrame la mini"], "CB4", 1),
         },
     ]
     return {
         "artista": "Delta Serrano",
+        "evidencia": {"isrc": {"confirmado": 12, "inferido": 1}, "upc": {"confirmado": 3}},
+        "campos": ["c_line", "genre", "language", "territories", "explicit", "lyrics_language"],
         "diagnostico": {
             "via_topic": True,
             "canal": "Delta Serrano - Topic",

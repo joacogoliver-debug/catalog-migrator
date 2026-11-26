@@ -608,6 +608,21 @@ TEXTOS = {
         "en": "The request has to be a JSON object.",
     },
     "srv.sin_catalogo": {"es": "No hay un catálogo cargado.", "en": "No catalog is loaded."},
+    "srv.archivo_vacio": {
+        "es": "No llegó ningún archivo, o llegó dañado. Elegilo de nuevo.",
+        "en": "No file arrived, or it arrived damaged. Pick it again.",
+    },
+    "srv.archivo_grande": {
+        "es": "El archivo es demasiado grande (el tope es 5 MB).",
+        "en": "The file is too large (the limit is 5 MB).",
+    },
+    "srv.importacion_vencida": {
+        "es": "Esa importación ya no vale: el catálogo cambió o ya se aplicó. Elegí el archivo de nuevo.",
+        "en": (
+            "That import is no longer valid: the catalog changed or it was already applied. "
+            "Pick the file again."
+        ),
+    },
     "srv.zip_vencido": {
         "es": "El paquete ya no está disponible. Generalo de nuevo.",
         "en": "The package is no longer available. Build it again.",
@@ -1297,6 +1312,169 @@ TEXTOS = {
     },
     "paq.sin_fecha": {"es": "s/f", "en": "n/d"},
     "paq.sin_upc_par": {"es": "(sin UPC)", "en": "(no UPC)"},
+    # ---- evidencia: qué tan comprobado está cada código --------------------
+    "val.isrc_inferido": {
+        "es": (
+            "{n} ISRC de este producto salieron de una sola fuente (la búsqueda por título, artista "
+            "y duración) y no se pudieron comprobar en el tracklist del release: {temas}. Casi "
+            "siempre son los correctos, pero conviene confirmarlos con tu distribuidora actual."
+        ),
+        "en": (
+            "{n} ISRC(s) in this release came from a single source (the search by title, artist and "
+            "length) and could not be checked against the release's tracklist: {temas}. They are "
+            "almost always right, but it is worth confirming them with your current distributor."
+        ),
+    },
+    "val.upc_inferido": {
+        "es": (
+            "El UPC {upc} salió de un álbum de Deezer que se llama igual, sin la fecha ni la lista "
+            "de temas que lo confirmen como este release. Confirmalo con tu distribuidora actual."
+        ),
+        "en": (
+            "UPC {upc} came from a Deezer album with the same title, with no date or tracklist to "
+            "confirm it is this release. Confirm it with your current distributor."
+        ),
+    },
+    "val.isrc_ambiguo": {
+        "es": (
+            "Hay más de una grabación que puede ser este tema, con el mismo título y la misma "
+            "duración, y no se eligió ninguna: {codigos}. Elegí la correcta en la tabla del catálogo."
+        ),
+        "en": (
+            "More than one recording could be this track, with the same title and length, and none "
+            "was chosen: {codigos}. Pick the right one in the catalog table."
+        ),
+    },
+    "val.campos_a_completar_parcial": {
+        "es": (
+            "Quedan campos sin cargar en algún producto: {campos}. En la hoja de ingesta van "
+            "marcados <<COMPLETAR>>."
+        ),
+        "en": (
+            "Some releases still have fields to fill in: {campos}. They are marked <<COMPLETAR>> "
+            "in the ingestion sheet."
+        ),
+    },
+    "paq.col_evidencia_isrc": {"es": "ISRC: qué tan comprobado", "en": "ISRC: how well checked"},
+    "paq.col_evidencia_upc": {"es": "UPC: qué tan comprobado", "en": "UPC: how well checked"},
+    "paq.nivel_confirmado": {"es": "confirmado", "en": "confirmed"},
+    "paq.nivel_inferido": {"es": "inferido", "en": "inferred"},
+    "paq.nivel_dudoso": {"es": "dudoso", "en": "doubtful"},
+    "paq.nivel_manual": {"es": "cargado a mano", "en": "entered by hand"},
+    "paq.nivel_importado": {"es": "del archivo de la distribuidora", "en": "from the distributor's file"},
+    # ---- la hoja de pedido para la distribuidora actual ---------------------
+    "paq.f_pedido": {
+        "es": "_Pedido a la distribuidora actual.xlsx",
+        "en": "_Request for your current distributor.xlsx",
+    },
+    "paq.hoja_pedido": {"es": "Pedido", "en": "Request"},
+    "paq.ped_titulo": {"es": "{artista}: códigos del catálogo", "en": "{artista}: catalog codes"},
+    "paq.ped_instrucciones": {
+        "es": (
+            "Para migrar este catálogo sin perder su historial necesitamos los códigos con que está "
+            "entregado hoy.\n"
+            "Por favor completen las columnas «UPC» e «ISRC» (las celdas en amarillo son las que no "
+            "tenemos o no pudimos confirmar).\n"
+            "Las columnas «que tenemos» son sólo de referencia: si un código no coincide, vale el de "
+            "ustedes."
+        ),
+        "en": (
+            "To move this catalog without losing its history we need the codes it is delivered "
+            "with today.\n"
+            "Please fill in the “UPC” and “ISRC” columns (the yellow cells are the ones we do not "
+            "have or could not confirm).\n"
+            "The “we have” columns are for reference only: if a code does not match, yours is the "
+            "one that counts."
+        ),
+    },
+    "paq.ped_distribuidora": {"es": "Distribuidora", "en": "Distributor"},
+    "paq.ped_release": {"es": "Lanzamiento", "en": "Release"},
+    "paq.ped_upc_tenemos": {"es": "UPC que tenemos", "en": "UPC we have"},
+    "paq.ped_tema": {"es": "Tema", "en": "Track title"},
+    "paq.ped_isrc_tenemos": {"es": "ISRC que tenemos", "en": "ISRC we have"},
+    "paq.ped_pedido": {"es": "Qué necesitamos", "en": "What we need"},
+    "paq.ped_falta": {"es": "falta el código", "en": "code missing"},
+    "paq.ped_confirmar": {"es": "confirmar el código", "en": "confirm the code"},
+    # ---- ediciones: lo que carga el usuario ---------------------------------
+    "edi.producto_no_existe": {
+        "es": "Ese producto ya no está en el catálogo. Relevalo de nuevo o recargá la ventana.",
+        "en": "That release is no longer in the catalog. Survey it again or reload the window.",
+    },
+    "edi.track_no_existe": {
+        "es": "Ese tema ya no está en el producto. Recargá la ventana.",
+        "en": "That track is no longer in the release. Reload the window.",
+    },
+    "edi.isrc_invalido": {
+        "es": (
+            "«{isrc}» no tiene el formato de un ISRC: son 12 caracteres, dos letras del país, tres "
+            "del registrante, dos dígitos del año y cinco del tema (AR-ABC-24-00001)."
+        ),
+        "en": (
+            "“{isrc}” is not in ISRC format: 12 characters, two country letters, three registrant "
+            "characters, two year digits and five for the track (AR-ABC-24-00001)."
+        ),
+    },
+    "edi.upc_invalido": {
+        "es": "«{upc}» no es un UPC válido: {motivo}.",
+        "en": "“{upc}” is not a valid UPC: {motivo}.",
+    },
+    "edi.campo_desconocido": {
+        "es": "No se puede cargar ese campo desde acá: {campo}.",
+        "en": "That field cannot be set from here: {campo}.",
+    },
+    # ---- importar: la planilla de la distribuidora actual -------------------
+    "imp.no_se_lee": {
+        "es": "No pude leer el archivo. Tiene que ser una planilla de Excel (.xlsx) o un CSV.",
+        "en": "I could not read the file. It has to be an Excel spreadsheet (.xlsx) or a CSV.",
+    },
+    "imp.muy_grande": {
+        "es": "El archivo es demasiado grande para ser una planilla de catálogo (el tope es 5 MB).",
+        "en": "The file is too large to be a catalog spreadsheet (the limit is 5 MB).",
+    },
+    "imp.vacio": {"es": "El archivo está vacío.", "en": "The file is empty."},
+    "imp.formato_no_soportado": {
+        "es": "Ese formato no se puede leer. Guardalo como .xlsx o como CSV y volvé a elegirlo.",
+        "en": "That format cannot be read. Save it as .xlsx or CSV and pick it again.",
+    },
+    "imp.sin_codigos": {
+        "es": (
+            "No encontré ninguna columna con ISRC o UPC válidos. Fijate que el archivo tenga una "
+            "columna «ISRC» o «UPC» con los códigos."
+        ),
+        "en": (
+            "I found no column with valid ISRCs or UPCs. Check that the file has an “ISRC” or "
+            "“UPC” column with the codes."
+        ),
+    },
+    # ---- instantanea: el relevamiento guardado ------------------------------
+    "paq.f_instantanea": {
+        "es": "_Relevamiento (para reabrir en la app).json",
+        "en": "_Survey (to reopen in the app).json",
+    },
+    "ins.no_es": {
+        "es": (
+            "Ese archivo no es un relevamiento guardado por la app. Elegí el archivo "
+            "«_Relevamiento (para reabrir en la app).json» que viene en la raíz del paquete."
+        ),
+        "en": (
+            "That file is not a survey saved by the app. Pick the “_Survey (to reopen in the app).json” "
+            "file from the root of the package."
+        ),
+    },
+    "ins.muy_grande": {
+        "es": (
+            "El archivo es demasiado grande. Si elegiste el ZIP entero, descomprimilo y elegí el "
+            "archivo «_Relevamiento (para reabrir en la app).json» de adentro."
+        ),
+        "en": (
+            "The file is too large. If you picked the whole ZIP, unzip it and pick the “_Survey (to "
+            "reopen in the app).json” file inside."
+        ),
+    },
+    "ins.mas_nueva": {
+        "es": "Ese relevamiento lo guardó una versión más nueva de la app. Actualizala para abrirlo.",
+        "en": "That survey was saved by a newer version of the app. Update it to open the file.",
+    },
     # ---- paquete: el LEEME que va en la raíz del ZIP ------------------------
     "paq.leeme": {
         "es": """CÓMO ESTÁ ORGANIZADO ESTE PAQUETE
@@ -1317,6 +1495,13 @@ En la raíz:
       El archivo para cargar en la distribuidora nueva.
   {ingesta_xlsx}
       La misma hoja en Excel, para completar lo que falta.
+  {pedido}
+      Para mandarle a tu distribuidora actual: lo que falta y lo que conviene
+      confirmar. Sólo viene si hay algo que pedir.
+  {instantanea}
+      El relevamiento tal como quedó, para la app: con él se reabre este
+      catálogo sin volver a relevar, y se compara contra uno nuevo después
+      de migrar. No es para leer ni para entregar.
   {validacion}
       Qué va a ser rechazado y qué conviene revisar.
   {reporte}
@@ -1406,8 +1591,11 @@ tiendas, con sus reproducciones, playlists y enlaces. Un código nuevo es un
 release nuevo que arranca de cero. El orden que conviene:
 
   1. Pedile a la distribuidora actual lo que este paquete no pudo traer:
-     los ISRC y UPC que figuran como faltantes en "{reporte}", las fechas
-     originales, los másters en WAV o FLAC y el arte original.
+     los ISRC y UPC que faltan o no quedaron confirmados (mandale
+     "{pedido}", que ya los lista), las fechas originales, los másters en
+     WAV o FLAC y el arte original. Cuando te devuelva la planilla
+     completa, importala en la app: carga los códigos sola y te muestra los
+     que no coinciden.
   2. Completá lo marcado <<COMPLETAR>> en "{ingesta_xlsx}".
   3. Cargá el catálogo en la distribuidora nueva con esos mismos códigos y
      fechas, y esperá a que esté en vivo en las tiendas.
@@ -1449,6 +1637,13 @@ In the root:
       The file to load into the new distributor.
   {ingesta_xlsx}
       The same sheet in Excel, to fill in what is missing.
+  {pedido}
+      To send to your current distributor: what is missing and what is worth
+      confirming. Only included when there is something to ask for.
+  {instantanea}
+      The survey as it stood, for the app: it reopens this catalog without
+      surveying again, and compares it against a new survey after you migrate.
+      Not meant to be read or delivered.
   {validacion}
       What will be rejected and what is worth reviewing.
   {reporte}
@@ -1539,8 +1734,11 @@ playlists and links. A new code is a new release that starts from zero. The
 order that works:
 
   1. Ask your current distributor for what this package could not bring:
-     the ISRCs and UPCs listed as missing in "{reporte}", the original
-     dates, the masters as WAV or FLAC, and the original artwork.
+     the ISRCs and UPCs that are missing or unconfirmed (send them
+     "{pedido}", which already lists them), the original dates, the masters
+     as WAV or FLAC, and the original artwork. When they send the sheet back
+     filled in, import it in the app: it loads the codes and shows you the
+     ones that do not match.
   2. Fill in whatever is marked <<COMPLETAR>> in "{ingesta_xlsx}".
   3. Load the catalog into the new distributor with those same codes and
      dates, and wait until it is live in stores.

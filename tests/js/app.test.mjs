@@ -630,3 +630,144 @@ test('la lista de lo que faltaba dice qué pasó con cada lanzamiento', () => {
   }
   ev(`ponerIdioma('es'); S.verFaltantes = false`);
 });
+
+// ------------------------------------------------------------ evidencia, edición e importación
+
+function catalogoConEvidencia() {
+  ev(`
+    S.config = { version: '0', terminos_aceptados: true, tiene_clave: true, idiomas: ['es', 'en'] };
+    S.vista = null; S.fatal = ''; S.ocupado = false;
+    adoptarCatalogo({
+      catalogo_id: 'c1', artista: 'Artista',
+      productos: [{ id: 'p1', titulo: 'Disco', tipo: 'album', anio: 2020, upc: '0885012345673', upc_nivel: 'inferido',
+                    sello: 'Sello', distribuidora: 'X', tracks: 3, views: 0, orden_estimado: false, con_isrc: 2,
+                    sin_confirmar: 1, datos: { genre: 'Rock' }, upc_editado: false,
+                    detalle: [
+                      { n: 1, titulo: 'Uno', isrc: 'ARAAA2000001', duracion: '3:20', views: 0, nivel: 'confirmado', editado: false, candidatos: [] },
+                      { n: 2, titulo: 'Dos', isrc: 'ARAAA2000002', duracion: '3:30', views: 0, nivel: 'inferido', editado: true, candidatos: [] },
+                      { n: 3, titulo: 'Tres', isrc: '', duracion: '3:40', views: 0, nivel: '', editado: false,
+                        candidatos: [{ isrc: 'ARBBB2100003', duracion: '3:40' }, { isrc: 'ARCCC1900004', duracion: '3:41' }] },
+                    ] }],
+      resumen: { products: 1, tracks: 3, views: 0, with_upc: 1, with_isrc: 2 },
+      evidencia: { isrc: { confirmado: 1, inferido: 1 }, upc: { inferido: 1 } },
+      campos: ['c_line', 'genre', 'language', 'territories', 'explicit', 'lyrics_language', 'uno_que_no_conozco'],
+      filtros: { distribuidoras: [{ name: 'X', count: 1 }], anio_min: 2020, anio_max: 2020 },
+      diagnostico: {},
+    });
+    S.expandidos = new Set(['p1']);
+    render();
+  `);
+  return pantalla.innerHTML;
+}
+
+test('la tabla dice qué códigos conviene confirmar, sin tratarlos como faltantes', () => {
+  const html = catalogoConEvidencia();
+  // Un ISRC inferido y el UPC inferido: dos códigos por confirmar, en neutro.
+  assert.ok(html.includes('badge badge-accent">2 códigos por confirmar'), 'falta el badge neutro');
+  assert.ok(!html.includes('badge badge-warn">2 códigos'), 'por confirmar no es un faltante');
+  assert.ok(html.includes('nivel nivel-neutro'), 'el inferido tiene que verse en la fila del tema');
+  assert.ok(html.includes('1</span> de una sola fuente'), 'la oración de arriba dice cuántos son');
+  assert.equal(ev(`leFaltaAlgo(S.catalogo.productos[0])`), true, 'entra al filtro de «algo que completar»');
+});
+
+test('un tema con candidatos los ofrece en vez de decir «sin ISRC»', () => {
+  const html = catalogoConEvidencia();
+  assert.ok(html.includes('data-accion="usar-candidato"') && html.includes('data-isrc="ARCCC1900004"'));
+  assert.ok(html.includes('data-accion="restaurar-isrc"'), 'el que se cambió a mano se puede deshacer');
+});
+
+test('guardar un código mal formado deja el error al lado del campo y lo escrito a la vista', async () => {
+  catalogoConEvidencia();
+  ctx.fetch = async () => ({ ok: false, status: 400, json: async () => ({ error: 'no tiene el formato de un ISRC' }) });
+  ev(`S.editando = { tipo: 'isrc', producto: 'p1', indice: 0, valor: 'ARAAA', error: '' };`);
+  poner('#codigo-edit', { value: 'ARAAA' });
+  await ev(`ACCIONES['guardar-codigo']()`);
+  nodos.delete('#codigo-edit');
+  assert.equal(ev('S.editando.error'), 'no tiene el formato de un ISRC');
+  assert.equal(ev('S.editando.valor'), 'ARAAA');
+  assert.ok(pantalla.innerHTML.includes('id="codigo-error"'), 'el error se dibuja junto al campo');
+  assert.equal(ev('S.fatal'), '', 'un código inválido no es un error de la app');
+  ev(`S.editando = null;`);
+});
+
+test('lo que trae la planilla importada llega escapado, y un conflicto no viene elegido', () => {
+  catalogoConEvidencia();
+  ev(`
+    S.importacion = {
+      id: 'i', nombre: '<b>export</b>.csv', filas: 3, columnas: { track: '<i>Tema</i>', isrc: 'ISRC' },
+      resumen: { confirma: 0, completa: 1, conflicto: 1, ambiguo: 1 },
+      items: [
+        { id: 'i0001', tipo: 'completa', codigo: 'isrc', producto_id: 'p1', producto: 'Disco', indice: 2, track: '<img src=x onerror=alert(1)>', actual: '', nuevo: 'ARBBB2100003', fila: 2, candidatos: [], nivel: '' },
+        { id: 'i0002', tipo: 'conflicto', codigo: 'isrc', producto_id: 'p1', producto: 'Disco', indice: 0, track: 'Uno', actual: 'ARAAA2000001', nuevo: 'ARZZZ9900009', fila: 3, candidatos: [], nivel: 'confirmado' },
+        { id: 'i0003', tipo: 'ambiguo', codigo: 'isrc', producto_id: 'p1', producto: 'Disco', indice: 1, track: 'Dos', actual: '', nuevo: '', fila: 0, nivel: '',
+          candidatos: [{ isrc: 'ARBBB2100003', titulo: 'Dos', album: '<u>Disco</u>', duracion_s: 200, fila: 4 }, { isrc: 'ARCCC1900004', titulo: 'Dos', album: '', duracion_s: 0, fila: 5 }] },
+      ],
+      sin_correspondencia: [{ fila: 9, track: '<script>x</script>', album: '', isrc: 'ARDDD1800001', upc: '' }],
+      sin_correspondencia_total: 1,
+    };
+    S.importElegidos = new Set(['i0001']);
+    S.importElecciones = {};
+    render();
+  `);
+  const html = pantalla.innerHTML;
+  for (const crudo of ['<img src=x', '<b>export', '<i>Tema', '<u>Disco', '<script>x']) {
+    assert.ok(!html.includes(crudo), `entró sin escapar: ${crudo}`);
+  }
+  assert.ok(html.includes('&lt;img src=x'), 'el título del archivo tenía que verse, escapado');
+  assert.ok(/data-item="i0001" checked/.test(html), 'lo que completa viene elegido');
+  assert.ok(!/data-item="i0002" checked/.test(html), 'un conflicto no se aplica solo');
+  assert.ok(html.includes('Aplicar 1 cambio<'), 'el botón dice cuántos cambios aplica');
+  ev(`S.importacion = null;`);
+});
+
+test('la comparación pone primero lo que perdió su código y escapa lo que viene del archivo', () => {
+  catalogoConEvidencia();
+  ev(`
+    S.comparacion = {
+      fecha: '2026-10-01', artista: 'Artista', otro_artista: false, nuevos: [], nuevos_total: 0,
+      resumen: { migrado: 1, codigos_cambiados: 1 },
+      releases: [
+        { titulo: 'Bien', anio: 2020, estado: 'migrado', distribuidora_antes: 'Vieja', distribuidoras_ahora: ['Nueva'], upc_antes: '1', upc_ahora: '1', isrc_cambiados: [], isrc_perdidos: [], temas_que_faltan: [] },
+        { titulo: '<b>Mal</b>', anio: 2021, estado: 'codigos_cambiados', distribuidora_antes: 'Vieja', distribuidoras_ahora: ['Nueva'], upc_antes: '1', upc_ahora: '1',
+          isrc_cambiados: [{ tema: '<i>Tema</i>', antes: 'ARAAA2000001', ahora: 'ARNEW2600777' }], isrc_perdidos: [], temas_que_faltan: [] },
+      ],
+    };
+    render();
+  `);
+  const html = pantalla.innerHTML;
+  assert.ok(html.indexOf('&lt;b&gt;Mal') < html.indexOf('>Bien<'), 'lo que cambió de código va primero');
+  assert.ok(!html.includes('<b>Mal') && !html.includes('<i>Tema'), 'lo del archivo entró sin escapar');
+  assert.ok(html.includes('ARNEW2600777'), 'se muestra el código nuevo');
+  ev(`S.comparacion = null;`);
+});
+
+test('el formulario de datos no dibuja un campo que la interfaz no conoce', () => {
+  catalogoConEvidencia();
+  ev(`S.datosAbierto = true; render();`);
+  const html = pantalla.innerHTML;
+  assert.ok(html.includes('id="dato-genre"') && html.includes('id="dato-lyrics_language"'));
+  assert.ok(!html.includes('uno_que_no_conozco'));
+  assert.ok(html.includes('cargado en 1 de 1'), 'dice en cuántos de los elegidos ya está cargado');
+  ev(`S.datosAbierto = false;`);
+});
+
+test('un catálogo abierto de un archivo lo dice, en vez de los avisos del relevamiento', () => {
+  catalogoConEvidencia();
+  ev(`S.catalogo.diagnostico = { abierto: { fecha: '2026-10-01' }, completitud: { revisada: false }, codigos: { pedidos: true } }; render();`);
+  assert.ok(pantalla.innerHTML.includes('Relevamiento guardado el 2026-10-01'));
+});
+
+test('los textos de lo nuevo están en los dos idiomas', () => {
+  for (const idioma of ['es', 'en']) {
+    ev(`ponerIdioma('${idioma}')`);
+    for (const nivel of ['confirmado', 'inferido', 'dudoso', 'manual', 'importado']) {
+      assert.ok(ev(`etiquetaNivel('${nivel}')`).includes('class="nivel'), `${idioma}: ${nivel}`);
+      assert.ok(!ev(`nombreNivel('${nivel}')`).includes('nivel.'), `${idioma}: ${nivel} sin traducir`);
+    }
+    for (const estado of ev('ESTADOS_COMPARACION')) {
+      assert.ok(!ev(`TEXTO_ESTADO['${estado}'].nombre()`).startsWith('comp.'), `${idioma}: ${estado}`);
+    }
+  }
+  ev(`ponerIdioma('es')`);
+  assert.equal(ev(`etiquetaNivel('uno-que-no-existe')`), '');
+});

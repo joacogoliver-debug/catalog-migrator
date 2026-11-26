@@ -197,7 +197,9 @@ link of any of their songs works too: the app looks up the channel that uploaded
 **2. You choose what to migrate.** The catalog shows up grouped into products
 (album / EP / single). You can tick them one by one, filter by year range or by
 distributor, or search by title, ISRC or UPC. Each product can be expanded to see
-its tracks.
+its tracks, with how well checked each code is. That is also where you import
+your distributor's codes, fix one by hand and enter the missing fields: see
+[Confirm, fill in and verify](#confirm-fill-in-and-verify).
 
 ![The catalog table, with what each product is missing](docs/capturas/en/05-catalogo-2.png)
 
@@ -213,6 +215,8 @@ Artist - Migration 2026-09-14/
 ├── _Pre-delivery validation.txt   ← start here
 ├── _Ingestion sheet.csv           ← the file you load into the distributor
 ├── _Ingestion sheet.xlsx          ← the same one, to fill in with Excel
+├── _Request for your current distributor.xlsx   ← what is missing, to send them
+├── _Survey (to reopen in the app).json
 ├── _Full catalog.xlsx
 ├── _Migration report.txt
 ├── _READ ME.txt
@@ -227,6 +231,62 @@ One folder per product, because in a migration each release is delivered as a
 unit: one UPC, one cover, its data. That way each folder is already good to
 upload, and the UPC in the name keeps an album from being confused with its
 reissue.
+
+## Confirm, fill in and verify
+
+Surveying is half the job. The other half is what only you or your distributor
+know, and checking afterwards that the migration went well. All of this happens
+in step 2, above the table.
+
+**How well checked each code is.** Not every code deserves the same trust, and
+the app says so on each track and each release:
+
+| Level | What it means |
+|---|---|
+| **confirmed** | Two independent paths give the same code: the text search on Deezer and the tracklist of the album verified as that release; or your distributor's file. |
+| **inferred** | It came from a single source (the search by title, artist and length) and nothing else backs it. It is almost always right; it is the one worth confirming. |
+| **doubtful** | The match was close but not identical. |
+| **by hand** / **from your file** | You entered it, or it came from the spreadsheet you imported. |
+
+In the catalog it was measured with, 221 tracks, 205 ISRCs came out confirmed
+and 14 inferred: all fourteen are stray remixes, which is exactly where a match
+by title can go wrong. The ingestion sheet carries the level in two columns,
+`ISRC Evidence` and `UPC Evidence`. When the survey finds two possible
+recordings for a track it does not choose: it shows them, and you pick.
+
+**Import your distributor's codes.** The package includes a request sheet
+(`_Request for your current distributor.xlsx`) with what is missing and what
+could not be confirmed, ready to send. When it comes back filled in, or if you
+already have an export from their dashboard, “Import codes from your
+distributor” reads it (xlsx or CSV, with no required format: it recognises the
+columns by name, in English or Spanish) and reconciles it against the catalog.
+What matches becomes confirmed, what was missing is filled in, and **what does
+not match is left alone**: the file's code is shown next to the one that was
+there, and you decide. A live version never takes the studio version's code,
+which is the classic copy-and-paste mistake.
+
+**Fix a code by hand.** With a release expanded, each ISRC and the UPC can be
+changed. The format is validated before it is accepted (a mistyped ISRC is
+rejected there, not at ingestion) and it can always be undone.
+
+**Fill in the fields no source has.** Genre, language, explicit, C line,
+territories and lyrics language are entered once, for the selected releases or
+the whole catalog, and go into the ingestion sheet instead of staying as
+`<<COMPLETAR>>`.
+
+**Reopen a survey without using quota.** Every package carries the survey as it
+stood (`_Survey (to reopen in the app).json`), with what you entered. “Open a
+saved survey”, in step 1, brings it back to the screen without asking YouTube
+or Deezer for anything.
+
+**Verify the migration.** With the catalog already at the new distributor,
+survey the channel again and use “Compare with a saved survey” with the file
+from the old package. The app says, release by release, whether it is at the
+new distributor with the same UPC and the same ISRCs, whether it is still at
+both (the takedown at the old one is pending), whether it has not been migrated,
+whether it is missing, or whether a code changed, which is what a migration has
+to avoid. Today's codes come from Deezer, which can take a few days to show a
+new delivery.
 
 ## The pre-delivery validation
 
@@ -256,6 +316,9 @@ accept the delivery, and the report always says what it does not look at.
   that later went on the album. It is not an error: it is the right thing,
   and the warning is there so nobody "fixes" it by asking for a new code
 - An ISRC that came from a close but not identical match
+- A release's ISRCs that came from a single source, and a UPC that matches by
+  release title only: they are exported all the same, and are worth confirming
+- A track with more than one candidate recording, none of which was chosen
 - The cover is grayscale, indexed color or transparent
 - The package carries reference-only audio
 - The fields no public source has (genre, language, explicit, C line,
@@ -373,9 +436,11 @@ profile".
 
 **I am missing ISRCs or UPCs. What do I do?** Ask your current distributor for
 them before accepting new codes: a new code is a new release, which starts
-without the plays and playlists of the old one. The catalog screen says whether
-they are missing because the artist is not on Deezer or because Deezer did not
-answer.
+without the plays and playlists of the old one. The package includes the request
+sheet ready to send, and when it comes back you import it in the app, which
+loads the codes and shows you the ones that do not match. The catalog screen
+says whether they are missing because the artist is not on Deezer or because
+Deezer did not answer.
 
 ## If something does not work
 
@@ -432,6 +497,12 @@ what it detected, and it does not include your key.
 - **Your API key stays on your computer**, it is never sent anywhere other than
   Google.
 - **The catalog is not stored.** It lives in memory while the app is open.
+  The only thing left is what you download: the package carries the survey in
+  a file, which is yours and stays wherever you save it, to reopen or compare
+  later.
+- **The files you import never leave your machine.** Your distributor's
+  spreadsheet and the saved survey are read by the local server, and nothing
+  else.
 - Deezer and iTunes are queried with public catalog data (artist name, title,
   duration).
 - **It does not check for updates on its own.** Only when you press "Check
@@ -593,6 +664,10 @@ points one way, which is why the core can be tested without a server.
 | `src/migrador/migrar_core.py` | Orchestrates the 4 steps |
 | `src/migrador/relevar_core.py` | YouTube survey + ISRC/UPC via Deezer |
 | `src/migrador/completitud.py` | What the Deezer discography has that did not show up on YouTube |
+| `src/migrador/evidencia.py` | How well checked each code is: confirmed, inferred or doubtful |
+| `src/migrador/ediciones.py` | What the user enters: a corrected code, and the fields nobody else has |
+| `src/migrador/importar.py` | The current distributor's spreadsheet, read and reconciled against the catalog |
+| `src/migrador/instantanea.py` | The saved survey: dumping it, reopening it and comparing it with a new one |
 | `src/migrador/productos.py` | Groups tracks into products and filters the selection |
 | `src/migrador/validar.py` | Pre-delivery validation |
 | `src/migrador/portadas.py` | Artwork via the iTunes Search API |
@@ -675,6 +750,11 @@ pytest -q --cov
 | `tests/test_concurrencia.py` | One job at a time for real, an identified catalog and no leftover temp files |
 | `tests/test_progreso.py` | Real progress, a cancel that responds and retries only where they help |
 | `tests/test_listado.py` | How a channel is listed: through search when YouTube does not publish the uploads list, with its cap, its quota and the releases with no distributor |
+| `tests/test_evidencia.py` | Which code is confirmed and which only inferred, plus the pacing and memo of the Deezer requests |
+| `tests/test_ediciones.py` | What is entered by hand: validated, marked, undoable, and reaching the sheet |
+| `tests/test_importar.py` | The distributor's spreadsheet: what it confirms, what it fills in, and that a conflict is never applied on its own |
+| `tests/test_instantanea.py` | The saved survey: that it comes back the same, that a foreign file does no harm, and the comparison |
+| `tests/test_rutas_edicion.py` | The routes that change the catalog, behind the same defences as the rest |
 | `tests/test_completitud.py` | What is missing against the Deezer discography: whose it is, what counts as the same recording and how far the notice reaches |
 | `tests/test_ci.py` | The CI's supply chain rules: actions pinned by SHA, permissions, timeouts, auditing |
 | `tests/test_secretos.py` | That the key does not leave where it belongs: header, permissions, history |

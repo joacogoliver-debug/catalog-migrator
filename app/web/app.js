@@ -50,6 +50,20 @@ const S = {
   url: '',
   conCodigos: true,
   aviso: '',                // un aviso neutro, no un error: «cancelaste el armado»
+  // Lo que el usuario cambia a mano en el paso 2 (ver `ediciones` en el motor).
+  editando: null,           // { tipo: 'isrc' | 'upc', producto, indice, valor, error }
+  datosAbierto: false,      // el formulario de los campos a completar, a la vista
+  datos: {},                // lo que se va escribiendo ahí: clave -> valor
+  datosAlcance: 'elegidos', // a qué productos se aplica: 'elegidos' | 'todos'
+  datosLineaC: false,       // usar «© año titular» de cada producto
+  importacion: null,        // la propuesta de la planilla importada, hasta aplicarla
+  importElegidos: new Set(),
+  importElecciones: {},     // ítem ambiguo -> el ISRC que se eligió
+  comparacion: null,        // el resultado de comparar con un relevamiento guardado
+  archivoPara: '',          // para qué se abrió el selector de archivos
+  leyendo: '',              // se está leyendo un archivo: 'importar' | 'comparar' | 'abrir'
+  hecho: '',                // lo que se acaba de aplicar, dicho en una línea
+  errorHerramienta: '',     // el error de la última herramienta, al lado de sus botones
   tidal: null,
   ocupado: false,
   // Pantallas que se superponen al flujo normal.
@@ -328,7 +342,15 @@ function productosFiltrados() {
 function gravedad(p) {
   const huecos = (!p.upc ? 1 : 0) + (p.con_isrc < p.tracks ? 1 : 0) + (p.orden_estimado ? 1 : 0)
     + ((p.faltan || []).length ? 1 : 0);
-  return huecos + (p.origen === 'deezer' || p.de_deezer > 0 ? 0.5 : 0);
+  return huecos + (p.origen === 'deezer' || p.de_deezer > 0 ? 0.5 : 0) + (porConfirmar(p) ? 0.25 : 0);
+}
+
+/** Cuántos códigos del producto conviene confirmar: los ISRC que salieron de
+ *  una sola fuente, y el UPC si está en la misma situación. No falta nada, y
+ *  por eso pesa menos que un hueco; pero es lo que hay que mirar antes de
+ *  entregar, y la tabla lo tiene que poder mostrar. */
+function porConfirmar(p) {
+  return (p.sin_confirmar || 0) + (p.upc_nivel === 'inferido' ? 1 : 0);
 }
 
 const CLAVES_DE_ORDEN = {
@@ -361,7 +383,7 @@ function ordenar(ps) {
  *  falta?» no se puede contestar scrolleando. */
 function leFaltaAlgo(p) {
   return !p.upc || p.con_isrc < p.tracks || !!p.orden_estimado || (p.faltan || []).length > 0
-    || p.origen === 'deezer' || p.de_deezer > 0;
+    || p.origen === 'deezer' || p.de_deezer > 0 || porConfirmar(p) > 0;
 }
 
 /** Los elegidos que el filtro esconde. Van en el paquete igual, y por eso se
@@ -396,7 +418,8 @@ function hayFiltro() {
    un filtro. Guardamos cómo identificar al elemento enfocado y lo recuperamos. */
 
 const ATRIBUTOS_FOCO = [
-  'data-distrib', 'data-prod', 'data-opcion-check', 'data-modo', 'data-expandir', 'data-ir-paso', 'data-accion',
+  'data-distrib', 'data-prod', 'data-opcion-check', 'data-modo', 'data-expandir', 'data-ir-paso', 'data-alcance',
+  'data-item', 'data-dato', 'data-accion',
 ];
 
 function tomarFoco() {
@@ -699,8 +722,21 @@ function vistaPaso1() {
     ${corriendo ? bloqueProgreso() : `
       <div class="row mt-5">
         <button class="btn btn-primary btn-lg" data-accion="relevar">${esc(T('paso1.relevar'))}</button>
-      </div>`}
+      </div>
+      <p class="small muted mt-4">
+        ${esc(T('paso1.abrir_ayuda'))}
+        <button type="button" class="link-inline" data-accion="elegir-archivo" data-para="abrir" ${S.leyendo ? 'disabled' : ''}>${esc(T(S.leyendo === 'abrir' ? 'herr.leyendo' : 'paso1.abrir'))}</button>
+      </p>
+      ${S.errorHerramienta ? alerta('danger', 'error', esc(S.errorHerramienta)) : ''}
+      ${selectorDeArchivo()}`}
   </div>`;
+}
+
+/** El selector de archivos, uno solo y escondido: los botones lo abren. Vive
+ *  en la vista y no se crea con `createElement` para que el foco y el lector
+ *  de pantalla lo traten como cualquier otro control de la página. */
+function selectorDeArchivo() {
+  return `<input type="file" id="archivo" class="sr" tabindex="-1" aria-hidden="true" accept=".xlsx,.csv,.txt,.json,.zip" />`;
 }
 
 function bloqueProgreso(conCancelar = true) {
@@ -772,6 +808,13 @@ function avisoFaltantes(comp) {
 function avisoCanal() {
   const d = (S.catalogo && S.catalogo.diagnostico) || {};
   const comp = d.completitud || {};
+  // El catálogo salió de un archivo guardado: no se relevó nada ahora, y los
+  // avisos del relevamiento (la cuota, Deezer, el canal) no corresponden.
+  if (d.abierto) {
+    return alerta('', 'info', `
+      <strong>${esc(T('paso2.abierto_titulo', { fecha: d.abierto.fecha || '' }))}</strong>
+      ${esc(T('paso2.abierto_cuerpo'))}`);
+  }
   const partes = [];
   const datos = []; // { corto, largo }: la franja plegada «Cómo se relevó»
 
@@ -952,12 +995,15 @@ function vistaPaso2() {
               isrc: cuenta('comun.n_tracks', r.tracks, `<span class="n${r.with_isrc < r.tracks ? ' atencion' : ''}">${num(r.with_isrc)} / ${num(r.tracks)}</span>`),
             })}
           </p>
+          ${lecturaEvidencia()}
         </div>
         <button class="btn btn-ghost" data-accion="volver-1">${esc(T('paso2.otro_artista'))}</button>
       </div>
     </div>
 
     ${avisoCanal()}
+
+    ${herramientas()}
 
     <div class="seccion">
       <div class="seccion-etiqueta">
@@ -1097,21 +1143,26 @@ function tablaProductos(ps) {
     } else if (p.de_deezer) {
       avisos.push(`<span class="badge badge-accent">${esc(T(p.de_deezer === 1 ? 'tabla.de_deezer_uno' : 'tabla.de_deezer', { n: p.de_deezer }))}</span>`);
     }
+    // En neutro también: el código está, pero salió de una sola fuente.
+    const aConfirmar = porConfirmar(p);
+    if (aConfirmar) avisos.push(`<span class="badge badge-accent">${esc(T(aConfirmar === 1 ? 'tabla.por_confirmar_uno' : 'tabla.por_confirmar', { n: aConfirmar }))}</span>`);
 
     const detalle = abierto ? `
       <tr class="fila-detalle"><td colspan="8"><div class="detalle-inner">
-        <table class="sub">
-          <thead><tr><th scope="col">${esc(T('tabla.col_n'))}</th><th scope="col">${esc(T('tabla.col_track'))}</th><th scope="col">ISRC</th><th scope="col">${esc(T('tabla.col_duracion'))}</th><th scope="col" class="td-num">${esc(T('tabla.col_reproducciones'))}</th></tr></thead>
-          <tbody>${p.detalle.map((t) => `
+        <table class="sub sub-codigos">
+          <thead><tr><th scope="col">${esc(T('tabla.col_n'))}</th><th scope="col">${esc(T('tabla.col_track'))}</th><th scope="col">ISRC</th><th scope="col">${esc(T('tabla.col_evidencia'))}</th><th scope="col">${esc(T('tabla.col_duracion'))}</th><th scope="col" class="td-num">${esc(T('tabla.col_reproducciones'))}</th></tr></thead>
+          <tbody>${p.detalle.map((t, i) => `
             <tr>
               <td class="mono">${esc(t.n)}</td>
               <td>${esc(t.titulo)}${t.origen === 'deezer' && p.origen !== 'deezer' ? ` <span class="muted">${esc(T('tabla.tema_de_deezer'))}</span>` : ''}</td>
-              <td class="mono">${t.isrc ? esc(t.isrc) : `<span class="muted">${esc(T('tabla.sin_isrc'))}</span>`}</td>
+              <td class="mono celda-codigo">${celdaIsrc(p, t, i)}</td>
+              <td>${etiquetaNivel(t.nivel)}</td>
               <td class="mono">${esc(t.duracion)}</td>
               <td class="td-num">${num(t.views)}</td>
             </tr>`).join('')}
           </tbody>
         </table>
+        <p class="small fila-upc"><span class="rotulo">${esc(T('tabla.upc_del_producto'))}</span> <span class="mono celda-codigo">${celdaUpc(p)}</span> ${etiquetaNivel(p.upc_nivel)}</p>
         ${faltan.length ? `<p class="small nota-faltan"><strong>${esc(T('tabla.faltan_detalle'))}</strong> ${esc(faltan.join(' · '))}</p>` : ''}
       </div></td></tr>` : '';
 
@@ -1170,6 +1221,376 @@ function cabeceraOrdenable(col, texto) {
   const aria = dir === 'asc' ? 'ascending' : (dir === 'desc' ? 'descending' : 'none');
   return `<th scope="col" aria-sort="${aria}"><button type="button" class="orden${dir ? ' orden-' + dir : ''}" data-orden="${col}">
     <span>${esc(texto)}</span>${ico('flecha', 'ico-sm')}</button></th>`;
+}
+
+/* ------------------------------------------------------------ evidencia y edición */
+
+/** Qué tan comprobado está un código, en una palabra. «Confirmado» va apagado:
+ *  es lo normal y no tiene que competir con lo que sí hay que mirar. */
+const NIVELES = {
+  confirmado: { texto: () => T('nivel.confirmado'), ayuda: () => T('nivel.confirmado_ayuda'), clase: 'nivel-ok' },
+  inferido: { texto: () => T('nivel.inferido'), ayuda: () => T('nivel.inferido_ayuda'), clase: 'nivel-neutro' },
+  dudoso: { texto: () => T('nivel.dudoso'), ayuda: () => T('nivel.dudoso_ayuda'), clase: 'nivel-warn' },
+  manual: { texto: () => T('nivel.manual'), ayuda: () => T('nivel.manual_ayuda'), clase: 'nivel-propio' },
+  importado: { texto: () => T('nivel.importado'), ayuda: () => T('nivel.importado_ayuda'), clase: 'nivel-propio' },
+};
+
+function nombreNivel(nivel) {
+  return NIVELES[nivel] ? NIVELES[nivel].texto() : '';
+}
+
+function etiquetaNivel(nivel) {
+  const n = NIVELES[nivel];
+  if (!n) return '';
+  return `<span class="nivel ${n.clase}" title="${esc(n.ayuda())}">${esc(n.texto())}</span>`;
+}
+
+/** La oración de arriba de la tabla: cuántos ISRC están confirmados y cuántos
+ *  no. Sólo si hay alguno sin confirmar; con todo confirmado no agrega nada. */
+function lecturaEvidencia() {
+  const e = (S.catalogo && S.catalogo.evidencia) || {};
+  const isrc = e.isrc || {};
+  const upc = e.upc || {};
+  const flojos = (isrc.inferido || 0) + (isrc.dudoso || 0);
+  const upcFlojos = upc.inferido || 0;
+  if (!flojos && !upcFlojos) return '';
+  const partes = [];
+  if (flojos) {
+    partes.push(T(flojos === 1 ? 'paso2.evidencia_isrc_uno' : 'paso2.evidencia_isrc', {
+      n: `<span class="n">${num(flojos)}</span>`,
+      confirmados: `<span class="n">${num((isrc.confirmado || 0) + (isrc.manual || 0) + (isrc.importado || 0))}</span>`,
+    }));
+  }
+  if (upcFlojos) {
+    partes.push(T(upcFlojos === 1 ? 'paso2.evidencia_upc_uno' : 'paso2.evidencia_upc', { n: `<span class="n">${num(upcFlojos)}</span>` }));
+  }
+  return `<p class="lectura lectura-evidencia">${partes.join(' ')} ${esc(T('paso2.evidencia_que_hacer'))}</p>`;
+}
+
+function esEditando(tipo, producto, indice) {
+  const e = S.editando;
+  return !!e && e.tipo === tipo && e.producto === producto && (tipo === 'upc' || e.indice === indice);
+}
+
+/** El formulario de un código, en el lugar. Un solo campo, Enter guarda y
+ *  Escape cancela: es una corrección puntual, no una pantalla. */
+function editorCodigo(tipo) {
+  const e = S.editando;
+  const rotulo = T(tipo === 'isrc' ? 'edicion.aria_isrc' : 'edicion.aria_upc');
+  return `<span class="editor-codigo">
+    <input class="input input-codigo mono${e.error ? ' error' : ''}" id="codigo-edit" type="text" spellcheck="false" autocomplete="off"
+      maxlength="20" value="${esc(e.valor)}" aria-label="${esc(rotulo)}" ${e.error ? 'aria-invalid="true" aria-describedby="codigo-error"' : ''} />
+    <button type="button" class="btn btn-secondary btn-sm" data-accion="guardar-codigo">${esc(T('edicion.guardar'))}</button>
+    <button type="button" class="link-inline" data-accion="cancelar-codigo">${esc(T('edicion.cancelar'))}</button>
+    ${e.error ? `<span class="hint hint-error" id="codigo-error" role="alert">${esc(e.error)}</span>` : ''}
+  </span>`;
+}
+
+function celdaIsrc(p, t, i) {
+  if (esEditando('isrc', p.id, i)) return editorCodigo('isrc');
+  const marca = `data-producto="${esc(p.id)}" data-indice="${i}"`;
+  const editar = `<button type="button" class="link-inline accion-codigo" data-accion="editar-isrc" ${marca}>${esc(T(t.isrc ? 'edicion.cambiar' : 'edicion.cargar'))}<span class="sr"> ${esc(T('edicion.de', { titulo: t.titulo }))}</span></button>`;
+  const deshacer = t.editado
+    ? `<button type="button" class="link-inline accion-codigo" data-accion="restaurar-isrc" ${marca}>${esc(T('edicion.deshacer'))}</button>` : '';
+  if (t.isrc) return `${esc(t.isrc)} ${editar}${deshacer}`;
+  // Sin código pero con candidatos: el relevamiento encontró más de una
+  // grabación posible y no eligió. Se ofrecen acá, que es donde se decide.
+  const candidatos = (t.candidatos || []).map((c) =>
+    `<button type="button" class="btn btn-secondary btn-sm candidato" data-accion="usar-candidato" ${marca} data-isrc="${esc(c.isrc)}">${esc(c.isrc)} <span class="muted">${esc(c.duracion)}</span></button>`).join('');
+  if (candidatos) {
+    return `<span class="candidatos"><span class="muted">${esc(T('edicion.elegir_entre'))}</span> ${candidatos} ${editar}</span>`;
+  }
+  return `<span class="muted">${esc(T('tabla.sin_isrc'))}</span> ${editar}${deshacer}`;
+}
+
+function celdaUpc(p) {
+  if (esEditando('upc', p.id)) return editorCodigo('upc');
+  const marca = `data-producto="${esc(p.id)}"`;
+  const editar = `<button type="button" class="link-inline accion-codigo" data-accion="editar-upc" ${marca}>${esc(T(p.upc ? 'edicion.cambiar' : 'edicion.cargar'))}</button>`;
+  const deshacer = p.upc_editado
+    ? `<button type="button" class="link-inline accion-codigo" data-accion="restaurar-upc" ${marca}>${esc(T('edicion.deshacer'))}</button>` : '';
+  return `${p.upc ? esc(p.upc) : `<span class="muted">${esc(T('tabla.sin_upc'))}</span>`} ${editar}${deshacer}`;
+}
+
+/* ------------------------------------------------------------ herramientas del paso 2 */
+
+/** Las tres cosas que se pueden hacer con el catálogo además de mirarlo:
+ *  traer los códigos de la distribuidora actual, cargar lo que ninguna fuente
+ *  trae, y comparar con un relevamiento anterior. */
+function herramientas() {
+  const ocupado = !!S.leyendo;
+  const boton = (para, texto) =>
+    `<button type="button" class="btn btn-secondary btn-sm" data-accion="elegir-archivo" data-para="${para}" ${ocupado ? 'disabled' : ''}>${esc(S.leyendo === para ? T('herr.leyendo') : texto)}</button>`;
+  return `
+  <div class="herramientas">
+    <div class="row row-wrap">
+      ${boton('importar', T('herr.importar'))}
+      <button type="button" class="btn btn-secondary btn-sm" data-accion="abrir-datos" aria-expanded="${S.datosAbierto}">${esc(T('herr.datos'))}</button>
+      ${boton('comparar', T('herr.comparar'))}
+    </div>
+    ${selectorDeArchivo()}
+    ${S.errorHerramienta ? alerta('danger', 'error', esc(S.errorHerramienta)) : ''}
+    ${S.hecho ? alerta('ok', 'ok', esc(S.hecho), 'status') : ''}
+    ${S.importacion ? panelImportacion() : ''}
+    ${S.datosAbierto ? panelDatos() : ''}
+    ${S.comparacion ? panelComparacion() : ''}
+  </div>`;
+}
+
+const TIPOS_IMPORTACION = ['conflicto', 'ambiguo', 'completa', 'confirma'];
+const TEXTO_IMPORTACION = {
+  conflicto: { titulo: () => T('imp.t_conflicto'), detalle: () => T('imp.d_conflicto') },
+  ambiguo: { titulo: () => T('imp.t_ambiguo'), detalle: () => T('imp.d_ambiguo') },
+  completa: { titulo: () => T('imp.t_completa'), detalle: () => T('imp.d_completa') },
+  confirma: { titulo: () => T('imp.t_confirma'), detalle: () => T('imp.d_confirma') },
+};
+const COLUMNA_IMPORTADA = {
+  isrc: () => T('imp.col_isrc'), upc: () => T('imp.col_upc'), track: () => T('imp.col_track'),
+  album: () => T('imp.col_album'), duracion: () => T('imp.col_duracion'), numero: () => T('imp.col_numero'),
+  version: () => T('imp.col_version'),
+};
+
+/** La propuesta de la planilla: qué confirma, qué completa, y lo que no se
+ *  aplica solo. Primero lo que pide una decisión; lo seguro va plegado. */
+function panelImportacion() {
+  const imp = S.importacion;
+  const r = imp.resumen;
+  const columnas = Object.entries(imp.columnas || {})
+    .map(([campo, nombre]) => `${esc(COLUMNA_IMPORTADA[campo] ? COLUMNA_IMPORTADA[campo]() : campo)}: <span class="mono">${esc(nombre)}</span>`).join(' · ');
+
+  const grupo = (tipo) => {
+    const items = imp.items.filter((it) => it.tipo === tipo);
+    if (!items.length) return '';
+    const filas = items.slice(0, 200).map((it) => {
+      const elegido = S.importElegidos.has(it.id);
+      const donde = it.codigo === 'upc'
+        ? `<strong>${esc(it.producto)}</strong> <span class="muted">UPC</span>`
+        : `<strong>${esc(it.track)}</strong> <span class="muted">${esc(it.producto)}</span>`;
+      let cambio;
+      if (tipo === 'ambiguo') {
+        cambio = it.candidatos.map((c) => `
+          <label class="check check-suelto">
+            <input type="radio" name="amb-${esc(it.id)}" data-eleccion="${esc(it.id)}" value="${esc(c.isrc)}" ${S.importElecciones[it.id] === c.isrc ? 'checked' : ''} />
+            <span class="check-texto"><span class="mono">${esc(c.isrc)}</span><span class="sub">${esc([c.album, c.duracion_s ? mmss(c.duracion_s) : '', T('imp.fila', { n: c.fila })].filter(Boolean).join(' · '))}</span></span>
+          </label>`).join('');
+      } else if (tipo === 'conflicto') {
+        cambio = `<span class="mono">${esc(it.actual)}</span> <span class="muted">${esc(T('imp.del_catalogo', { nivel: nombreNivel(it.nivel) }))}</span>
+          <span class="flecha-cambio">→</span> <span class="mono">${esc(it.nuevo)}</span> <span class="muted">${esc(T('imp.fila', { n: it.fila }))}</span>`;
+      } else {
+        cambio = `<span class="mono">${esc(it.nuevo)}</span> <span class="muted">${esc(T('imp.fila', { n: it.fila }))}</span>`;
+      }
+      return `
+      <li class="item-importacion">
+        <label class="check"><input type="checkbox" data-item="${esc(it.id)}" ${elegido ? 'checked' : ''} />
+          <span class="sr">${esc(T('imp.aria_aplicar', { titulo: it.track || it.producto }))}</span></label>
+        <div class="item-donde">${donde}</div>
+        <div class="item-cambio">${cambio}</div>
+      </li>`;
+    }).join('');
+    const abierto = tipo === 'conflicto' || tipo === 'ambiguo';
+    return `
+    <details class="grupo-importacion" ${abierto ? 'open' : ''}>
+      <summary><strong>${esc(TEXTO_IMPORTACION[tipo].titulo())}</strong> <span class="n">${num(items.length)}</span>
+        <span class="muted">${esc(TEXTO_IMPORTACION[tipo].detalle())}</span></summary>
+      <ul class="lista-importacion">${filas}</ul>
+    </details>`;
+  };
+
+  const sobran = imp.sin_correspondencia_total || 0;
+  const aplicar = S.importElegidos.size;
+  return `
+  <div class="panel panel-herramienta" role="region" aria-label="${esc(T('herr.importar'))}">
+    <h3>${esc(T('imp.titulo', { archivo: imp.nombre || '' }))}</h3>
+    <p class="small muted">${T('imp.leido', { filas: `<span class="n">${num(imp.filas)}</span>` })} ${columnas}</p>
+    ${!imp.items.length ? `<p class="mt-3">${esc(T('imp.nada'))}</p>` : TIPOS_IMPORTACION.map(grupo).join('')}
+    ${sobran ? `
+    <details class="grupo-importacion">
+      <summary><strong>${esc(T('imp.t_sobran'))}</strong> <span class="n">${num(sobran)}</span>
+        <span class="muted">${esc(T('imp.d_sobran'))}</span></summary>
+      <ul class="lista-importacion">${imp.sin_correspondencia.slice(0, 50).map((f) => `
+        <li class="item-importacion"><span></span><div class="item-donde"><strong>${esc(f.track || f.album || '')}</strong> <span class="muted">${esc(f.track ? f.album : '')}</span></div>
+          <div class="item-cambio"><span class="mono">${esc(f.isrc || f.upc)}</span> <span class="muted">${esc(T('imp.fila', { n: f.fila }))}</span></div></li>`).join('')}
+      </ul>
+    </details>` : ''}
+    <div class="row row-wrap mt-4">
+      <button type="button" class="btn btn-primary" data-accion="aplicar-importacion" ${aplicar ? '' : 'disabled'}>${esc(T(aplicar === 1 ? 'imp.aplicar_uno' : 'imp.aplicar', { n: num(aplicar) }))}</button>
+      <button type="button" class="btn btn-ghost" data-accion="descartar-importacion">${esc(T('imp.descartar'))}</button>
+    </div>
+    ${r.conflicto || r.ambiguo ? `<p class="small muted mt-3">${esc(T('imp.nota_decisiones'))}</p>` : ''}
+  </div>`;
+}
+
+function mmss(segundos) {
+  const s = Math.max(0, Math.round(Number(segundos) || 0));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
+/** Los campos que ninguna fuente pública trae, para cargarlos una vez y no en
+ *  trescientas celdas de una planilla. Un campo vacío no cambia nada. */
+const CAMPO_A_COMPLETAR = {
+  c_line: { rotulo: () => T('datos.c_c_line'), ejemplo: () => T('datos.p_c_line') },
+  genre: { rotulo: () => T('datos.c_genre'), ejemplo: () => T('datos.p_genre') },
+  language: { rotulo: () => T('datos.c_language'), ejemplo: () => T('datos.p_language') },
+  territories: { rotulo: () => T('datos.c_territories'), ejemplo: () => T('datos.p_territories') },
+  explicit: { rotulo: () => T('datos.c_explicit'), ejemplo: () => T('datos.p_explicit') },
+  lyrics_language: { rotulo: () => T('datos.c_lyrics_language'), ejemplo: () => T('datos.p_lyrics_language') },
+};
+
+function panelDatos() {
+  // Sólo los campos que esta versión de la interfaz conoce: si el servidor
+  // suma uno, no se dibuja un campo sin rótulo.
+  const campos = ((S.catalogo && S.catalogo.campos) || []).filter((k) => CAMPO_A_COMPLETAR[k]);
+  const sel = seleccionados();
+  const total = S.catalogo.productos.length;
+  const destino = S.datosAlcance === 'todos' ? S.catalogo.productos : sel;
+  const cargados = (clave) => destino.filter((p) => (p.datos || {})[clave]).length;
+  return `
+  <div class="panel panel-herramienta" role="region" aria-label="${esc(T('herr.datos'))}">
+    <h3>${esc(T('datos.titulo'))}</h3>
+    <p class="small muted">${esc(T('datos.bajada'))}</p>
+    <div class="grilla-datos mt-3">
+      ${campos.map((clave) => `
+      <div class="field">
+        <label for="dato-${esc(clave)}">${esc(CAMPO_A_COMPLETAR[clave].rotulo())}</label>
+        <input class="input" id="dato-${esc(clave)}" data-dato="${esc(clave)}" type="text" maxlength="200" autocomplete="off"
+          placeholder="${esc(CAMPO_A_COMPLETAR[clave].ejemplo())}" value="${esc(S.datos[clave] || '')}"
+          ${clave === 'c_line' && S.datosLineaC ? 'disabled' : ''} />
+        <span class="hint">${esc(T('datos.ya', { n: num(cargados(clave)), total: num(destino.length) }))}</span>
+      </div>`).join('')}
+    </div>
+    <label class="check mt-3">
+      <input type="checkbox" id="datos-linea-c" ${S.datosLineaC ? 'checked' : ''} />
+      <span class="check-texto"><strong>${esc(T('datos.linea_c_titulo'))}</strong><span class="sub">${esc(T('datos.linea_c_detalle'))}</span></span>
+    </label>
+    <div class="row row-wrap mt-4">
+      <div class="segmented" role="group" aria-label="${esc(T('datos.aria_alcance'))}">
+        <button type="button" class="${S.datosAlcance === 'elegidos' ? 'activo' : ''}" aria-pressed="${S.datosAlcance === 'elegidos'}" data-alcance="elegidos">${esc(T('datos.a_elegidos', { n: num(sel.length) }))}</button>
+        <button type="button" class="${S.datosAlcance === 'todos' ? 'activo' : ''}" aria-pressed="${S.datosAlcance === 'todos'}" data-alcance="todos">${esc(T('datos.a_todos', { n: num(total) }))}</button>
+      </div>
+      <button type="button" class="btn btn-primary" data-accion="guardar-datos" ${destino.length ? '' : 'disabled'}>${esc(T('datos.guardar'))}</button>
+      <button type="button" class="btn btn-ghost" data-accion="abrir-datos">${esc(T('datos.cerrar'))}</button>
+    </div>
+  </div>`;
+}
+
+const ESTADOS_COMPARACION = ['codigos_cambiados', 'falta', 'sin_youtube', 'en_las_dos', 'igual', 'migrado'];
+const CLASE_ESTADO = {
+  codigos_cambiados: 'badge-danger', falta: 'badge-warn', sin_youtube: 'badge-warn',
+  en_las_dos: 'badge-warn', igual: 'badge-accent', migrado: 'badge-ok',
+};
+const TEXTO_ESTADO = {
+  codigos_cambiados: { nombre: () => T('comp.e_codigos_cambiados'), detalle: () => T('comp.d_codigos_cambiados') },
+  falta: { nombre: () => T('comp.e_falta'), detalle: () => T('comp.d_falta') },
+  sin_youtube: { nombre: () => T('comp.e_sin_youtube'), detalle: () => T('comp.d_sin_youtube') },
+  en_las_dos: { nombre: () => T('comp.e_en_las_dos'), detalle: () => T('comp.d_en_las_dos') },
+  igual: { nombre: () => T('comp.e_igual'), detalle: () => T('comp.d_igual') },
+  migrado: { nombre: () => T('comp.e_migrado'), detalle: () => T('comp.d_migrado') },
+};
+
+/** Qué pasó con cada release del relevamiento guardado. Lo malo primero: es a
+ *  lo que se viene a mirar después de una migración. */
+function panelComparacion() {
+  const c = S.comparacion;
+  const cuenta = ESTADOS_COMPARACION.filter((e) => c.resumen[e])
+    .map((e) => `<span class="badge ${CLASE_ESTADO[e]}">${esc(TEXTO_ESTADO[e].nombre())} ${num(c.resumen[e])}</span>`).join('');
+  const orden = [...c.releases].sort((a, b) => ESTADOS_COMPARACION.indexOf(a.estado) - ESTADOS_COMPARACION.indexOf(b.estado));
+  const filas = orden.slice(0, 500).map((r) => {
+    const detalle = [];
+    if (r.upc_antes && r.upc_ahora && r.estado === 'codigos_cambiados' && r.upc_antes.replace(/^0+/, '') !== r.upc_ahora.replace(/^0+/, '')) {
+      detalle.push(`UPC <span class="mono">${esc(r.upc_antes)}</span> <span class="flecha-cambio">→</span> <span class="mono">${esc(r.upc_ahora)}</span>`);
+    }
+    for (const x of r.isrc_cambiados) {
+      detalle.push(`${esc(x.tema)}: <span class="mono">${esc(x.antes)}</span> <span class="flecha-cambio">→</span> <span class="mono">${esc(x.ahora)}</span>`);
+    }
+    if (r.temas_que_faltan.length) detalle.push(esc(T('comp.faltan_temas', { temas: r.temas_que_faltan.slice(0, 8).join(' · ') })));
+    if (r.isrc_perdidos.length) detalle.push(esc(T('comp.isrc_perdidos', { temas: r.isrc_perdidos.slice(0, 8).join(' · ') })));
+    const mismas = r.distribuidoras_ahora.length === 1 && r.distribuidoras_ahora[0] === r.distribuidora_antes;
+    const distribuidoras = r.distribuidoras_ahora.length && !mismas
+      ? `${esc(r.distribuidora_antes || T('tabla.sin_distribuidora'))} <span class="flecha-cambio">→</span> ${esc(r.distribuidoras_ahora.join(', '))}`
+      : esc(r.distribuidora_antes || T('tabla.sin_distribuidora'));
+    return `
+    <tr>
+      <td><div class="celda-titulo">${esc(r.titulo)}</div>${detalle.length ? `<div class="celda-sub">${detalle.join('<br>')}</div>` : ''}</td>
+      <td class="nowrap mono">${esc(r.anio)}</td>
+      <td>${distribuidoras}</td>
+      <td>${TEXTO_ESTADO[r.estado] ? `<span class="badge ${CLASE_ESTADO[r.estado]}" title="${esc(TEXTO_ESTADO[r.estado].detalle())}">${esc(TEXTO_ESTADO[r.estado].nombre())}</span>` : ''}</td>
+    </tr>`;
+  }).join('');
+  return `
+  <div class="panel panel-herramienta" role="region" aria-label="${esc(T('herr.comparar'))}">
+    <h3>${esc(T('comp.titulo', { fecha: c.fecha || '' }))}</h3>
+    ${c.otro_artista ? alerta('warn', 'alerta', esc(T('comp.otro_artista', { artista: c.artista }))) : ''}
+    <p class="small muted">${esc(T('comp.bajada'))}</p>
+    <p class="badges mt-3">${cuenta}</p>
+    ${c.releases.length ? `
+    <div class="tabla-comparacion mt-3">
+      <table class="sub">
+        <thead><tr><th scope="col">${esc(T('tabla.col_producto'))}</th><th scope="col">${esc(T('tabla.col_anio'))}</th><th scope="col">${esc(T('tabla.col_distribuidora'))}</th><th scope="col">${esc(T('tabla.col_estado'))}</th></tr></thead>
+        <tbody>${filas}</tbody>
+      </table>
+    </div>` : `<p class="mt-3">${esc(T('comp.nada'))}</p>`}
+    ${c.nuevos_total ? `<p class="small muted mt-3">${esc(T(c.nuevos_total === 1 ? 'comp.nuevos_uno' : 'comp.nuevos', { n: num(c.nuevos_total), titulos: c.nuevos.slice(0, 6).map((n) => n.titulo).join(' · ') }))}</p>` : ''}
+    <p class="small muted mt-3">${esc(T('comp.limite'))}</p>
+    <div class="row mt-3"><button type="button" class="btn btn-ghost" data-accion="cerrar-comparacion">${esc(T('datos.cerrar'))}</button></div>
+  </div>`;
+}
+
+/** Un archivo como base64, para mandarlo adentro del JSON: así pasa por el
+ *  mismo camino, y las mismas defensas, que cualquier otro pedido. */
+async function leerEnBase64(archivo) {
+  const bytes = new Uint8Array(await archivo.arrayBuffer());
+  let binario = '';
+  // De a tramos: `String.fromCharCode(...bytes)` con un archivo de megas
+  // revienta el límite de argumentos.
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    binario += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  }
+  return btoa(binario);
+}
+
+const TOPE_ARCHIVO = 5 * 1024 * 1024;
+
+/** Lo que pasa cuando se eligió un archivo, según para qué se había pedido. */
+async function archivoElegido(archivo) {
+  const para = S.archivoPara;
+  if (!archivo || !para) return;
+  S.errorHerramienta = ''; S.hecho = '';
+  if (archivo.size > TOPE_ARCHIVO) { S.errorHerramienta = T('herr.muy_grande'); render(); return; }
+  S.leyendo = para; render();
+  try {
+    const cuerpo = { nombre: archivo.name || '', contenido: await leerEnBase64(archivo) };
+    if (S.catalogo) cuerpo.catalogo_id = S.catalogo.catalogo_id;
+    if (para === 'importar') {
+      const imp = await api('/api/importar', cuerpo, 120000);
+      S.importacion = imp;
+      S.importElegidos = new Set(imp.elegidos || []);
+      S.importElecciones = {};
+    } else if (para === 'comparar') {
+      S.comparacion = await api('/api/comparar', cuerpo, 120000);
+    } else if (para === 'abrir') {
+      delete cuerpo.catalogo_id;
+      adoptarCatalogo(await api('/api/abrir', cuerpo, 120000));
+      S.entrando = true;
+    }
+  } catch (e) {
+    S.errorHerramienta = e.message;
+  }
+  S.leyendo = ''; S.archivoPara = '';
+  render();
+}
+
+/** Aplica al catálogo en pantalla el que devolvió el servidor después de un
+ *  cambio, sin perder lo elegido, lo desplegado ni el filtro: es el mismo
+ *  catálogo con un dato distinto, no uno nuevo. */
+function refrescarCatalogo(cat) {
+  S.catalogo = cat;
+  S.resultado = null;   // el paquete armado ya no es de lo que se ve
+  S.guardado = null;
+}
+
+async function editar(cuerpo) {
+  const cat = await api('/api/editar', { catalogo_id: S.catalogo.catalogo_id, ...cuerpo });
+  refrescarCatalogo(cat);
 }
 
 /* ------------------------------------------------------------ paso 3 */
@@ -1397,7 +1818,7 @@ const CODIGOS_HALLAZGO = [
   'upc_mezclado', 'release_en_dos_distribuidoras', 'album_incompleto',
   'solo_en_deezer', 'temas_de_deezer', 'isrc_otro_corte', 'upc_por_tracklist', 'fecha_de_deezer',
   'artista_no_principal', 'portada_modo_color', 'audio_no_apto', 'isrc_confianza_media',
-  'campos_a_completar',
+  'campos_a_completar', 'isrc_inferido', 'upc_inferido', 'isrc_ambiguo',
 ];
 
 function tituloHallazgo(codigo, porDefecto) {
@@ -1623,6 +2044,101 @@ const ACCIONES = {
     }
     render();
   },
+
+  /* ---- lo que el usuario cambia a mano ---- */
+
+  'elegir-archivo'(el) {
+    S.archivoPara = (el && el.getAttribute('data-para')) || '';
+    const campo = $('#archivo');
+    if (campo) { campo.value = ''; campo.click(); }
+  },
+
+  'editar-isrc'(el) {
+    const producto = el.getAttribute('data-producto'), indice = Number(el.getAttribute('data-indice'));
+    const p = S.catalogo.productos.find((x) => x.id === producto);
+    S.editando = { tipo: 'isrc', producto, indice, valor: (p && p.detalle[indice] && p.detalle[indice].isrc) || '', error: '' };
+    conScrollPreservado(render);
+    const c = $('#codigo-edit'); if (c) { c.focus(); c.select(); }
+  },
+
+  'editar-upc'(el) {
+    const producto = el.getAttribute('data-producto');
+    const p = S.catalogo.productos.find((x) => x.id === producto);
+    S.editando = { tipo: 'upc', producto, indice: -1, valor: (p && p.upc) || '', error: '' };
+    conScrollPreservado(render);
+    const c = $('#codigo-edit'); if (c) { c.focus(); c.select(); }
+  },
+
+  'cancelar-codigo'() { S.editando = null; conScrollPreservado(render); },
+
+  async 'guardar-codigo'() {
+    const e = S.editando;
+    if (!e) return;
+    const campo = $('#codigo-edit');
+    const valor = (campo ? campo.value : e.valor).trim();
+    try {
+      await editar({ tipo: e.tipo, producto: e.producto, indice: e.indice, valor });
+      S.editando = null;
+    } catch (err) {
+      // El formato inválido se dice al lado del campo, con lo escrito a la
+      // vista para corregirlo: no es un error de la app.
+      S.editando = { ...e, valor, error: err.message };
+    }
+    conScrollPreservado(render);
+    const c = $('#codigo-edit'); if (c) c.focus();
+  },
+
+  async 'usar-candidato'(el) {
+    await editar({ tipo: 'isrc', producto: el.getAttribute('data-producto'), indice: Number(el.getAttribute('data-indice')), valor: el.getAttribute('data-isrc') });
+    conScrollPreservado(render);
+  },
+
+  async 'restaurar-isrc'(el) {
+    await editar({ tipo: 'isrc', producto: el.getAttribute('data-producto'), indice: Number(el.getAttribute('data-indice')), valor: '' });
+    conScrollPreservado(render);
+  },
+
+  async 'restaurar-upc'(el) {
+    await editar({ tipo: 'upc', producto: el.getAttribute('data-producto'), valor: '' });
+    conScrollPreservado(render);
+  },
+
+  'abrir-datos'() { S.datosAbierto = !S.datosAbierto; S.hecho = ''; S.errorHerramienta = ''; render(); },
+
+  async 'guardar-datos'() {
+    const ids = (S.datosAlcance === 'todos' ? S.catalogo.productos : seleccionados()).map((p) => p.id);
+    const datos = {};
+    for (const [clave, valor] of Object.entries(S.datos)) if (String(valor).trim()) datos[clave] = String(valor).trim();
+    if (!Object.keys(datos).length && !S.datosLineaC) { S.errorHerramienta = T('datos.nada_que_guardar'); render(); return; }
+    try {
+      await editar({ tipo: 'datos', ids, datos, c_sugerida: S.datosLineaC });
+      S.hecho = T(ids.length === 1 ? 'datos.hecho_uno' : 'datos.hecho', { n: num(ids.length) });
+      S.datos = {}; S.datosLineaC = false; S.datosAbierto = false; S.errorHerramienta = '';
+    } catch (e) {
+      S.errorHerramienta = e.message;
+    }
+    render();
+  },
+
+  async 'aplicar-importacion'() {
+    const imp = S.importacion;
+    if (!imp) return;
+    try {
+      const r = await api('/api/importar/aplicar', {
+        catalogo_id: S.catalogo.catalogo_id, id: imp.id,
+        elegidos: [...S.importElegidos], elecciones: S.importElecciones,
+      });
+      refrescarCatalogo(r.catalogo);
+      S.hecho = T('imp.hecho', { cargados: num(r.hechos.cargados), confirmados: num(r.hechos.confirmados) });
+      S.importacion = null; S.errorHerramienta = '';
+    } catch (e) {
+      S.errorHerramienta = e.message;
+    }
+    render();
+  },
+
+  'descartar-importacion'() { S.importacion = null; S.errorHerramienta = ''; render(); },
+  'cerrar-comparacion'() { S.comparacion = null; render(); },
 
   'ver-terminos'() { S.vista = 'terminos'; S.entrando = true; render(); arriba(); },
   'ver-clave'() { S.vista = 'clave'; S.entrando = true; render(); arriba(); },
@@ -1905,6 +2421,9 @@ document.addEventListener('click', (ev) => {
   const modo = ev.target.closest('[data-modo]');
   if (modo) { S.filtro.modo = modo.dataset.modo; seguro(render); return; }
 
+  const alcance = ev.target.closest('[data-alcance]');
+  if (alcance) { S.datosAlcance = alcance.dataset.alcance; seguro(render); return; }
+
   const orden = ev.target.closest('[data-orden]');
   if (orden) {
     S.orden = siguienteOrden(orden.dataset.orden);
@@ -1948,6 +2467,24 @@ document.addEventListener('click', (ev) => {
 
 document.addEventListener('change', (ev) => {
   const t = ev.target;
+
+  if (t.id === 'archivo') {
+    seguro(() => archivoElegido(t.files && t.files[0]));
+    return;
+  }
+  if (t.dataset.item) {
+    if (t.checked) S.importElegidos.add(t.dataset.item); else S.importElegidos.delete(t.dataset.item);
+    seguro(render);
+    return;
+  }
+  if (t.dataset.eleccion) {
+    // Elegir entre los candidatos de un ítem ambiguo es también elegir el ítem.
+    S.importElecciones[t.dataset.eleccion] = t.value;
+    S.importElegidos.add(t.dataset.eleccion);
+    seguro(render);
+    return;
+  }
+  if (t.id === 'datos-linea-c') { S.datosLineaC = t.checked; seguro(render); return; }
 
   if (t.dataset.prod) {
     const id = t.dataset.prod;
@@ -2021,6 +2558,8 @@ document.addEventListener('input', (ev) => {
     S.deezerLink = ''; S.deezerUsado = ''; S.deezerError = '';
   }
   if (ev.target.id === 'url') S.url = ev.target.value;
+  if (ev.target.dataset && ev.target.dataset.dato) S.datos[ev.target.dataset.dato] = ev.target.value;
+  if (ev.target.id === 'codigo-edit' && S.editando) S.editando.valor = ev.target.value;
   if (ev.target.id === 'deezer-link') { S.deezerLink = ev.target.value; S.deezerError = ''; }
   if (ev.target.id === 'url' && S.errorCampo) {
     S.errorCampo = '';
@@ -2037,7 +2576,9 @@ document.addEventListener('input', (ev) => {
 });
 
 document.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape' && ev.target.id === 'codigo-edit') { ev.preventDefault(); seguro(ACCIONES['cancelar-codigo']); return; }
   if (ev.key !== 'Enter') return;
+  if (ev.target.id === 'codigo-edit') { ev.preventDefault(); seguro(ACCIONES['guardar-codigo']); return; }
   if (ev.target.id === 'url') { ev.preventDefault(); seguro(ACCIONES.relevar); }
   if (ev.target.id === 'clave') { ev.preventDefault(); seguro(ACCIONES['guardar-clave']); }
 });
@@ -2116,9 +2657,13 @@ function adoptarCatalogo(cat) {
   S.orden = null;
   S.ancla = null;
   S.deshacer = null;
-  // Otro catálogo: el paquete del anterior ya no es de lo que se ve.
+  // Otro catálogo: el paquete del anterior ya no es de lo que se ve, ni lo
+  // que se estaba editando, importando o comparando.
   S.resultado = null;
   S.guardado = null;
+  S.editando = null; S.importacion = null; S.comparacion = null;
+  S.datosAbierto = false; S.datos = {}; S.datosLineaC = false;
+  S.hecho = ''; S.errorHerramienta = '';
   S.filtro = {
     modo: 'manual',
     anioDesde: cat.filtros.anio_min,

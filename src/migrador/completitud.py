@@ -242,15 +242,28 @@ def completar_isrc(tracks: list[Track], tracklists) -> int:
         duracion = t.get("duration_s") or 0
         if t.get("isrc") or not duracion:
             continue
-        codigos = {
-            x["isrc"]
-            for x in por_titulo.get(comparable(t["track"]), [])
-            if abs(x["duracion_s"] - duracion) <= MARGEN_DURACION and misma_version(x["titulo"], t["track"])
-        }
-        if len(codigos) == 1:
-            t["isrc"], t["match"] = codigos.pop(), "alta"
+        candidatos = _candidatos_de(t, por_titulo, duracion)
+        if len(candidatos) == 1:
+            t["isrc"], t["match"], t["isrc_como"] = candidatos[0]["isrc"], "alta", "discografia"
             completados += 1
+        elif candidatos:
+            # No se elige, pero se deja dicho entre cuáles: es una decisión que
+            # una persona puede tomar mirando los dos, y antes el tema quedaba
+            # «sin ISRC» sin que nada contara que había candidatos.
+            t["isrc_candidatos"] = [
+                {"isrc": x["isrc"], "titulo": x["titulo"], "duracion_s": x["duracion_s"]} for x in candidatos
+            ]
     return completados
+
+
+def _candidatos_de(t: Track, por_titulo, duracion) -> list[TemaFaltante]:
+    """Las grabaciones de la discografía que pueden ser este tema: el mismo
+    título, la misma versión y la misma duración. Una por ISRC."""
+    out: dict[str, TemaFaltante] = {}
+    for x in por_titulo.get(comparable(t["track"]), []):
+        if abs(x["duracion_s"] - duracion) <= MARGEN_DURACION and misma_version(x["titulo"], t["track"]):
+            out.setdefault(x["isrc"], x)
+    return list(out.values())
 
 
 class _Relevado:
@@ -445,7 +458,7 @@ def _poner(t: Track, x: TemaFaltante, album_id, con_isrc=True):
     # Ubicado por título y duración en el tracklist de su propio disco, el
     # código de ese lugar es el suyo. No si se lo ubicó por descarte.
     if con_isrc and not t.get("isrc") and x["isrc"]:
-        t["isrc"], t["match"] = x["isrc"], "alta"
+        t["isrc"], t["match"], t["isrc_como"] = x["isrc"], "alta", "tracklist"
 
 
 def _soltar_los_que_chocan(grupo: list[Track]):
@@ -844,6 +857,8 @@ def verificar_por_tracklist(
                 _poner(t, x, album_id, con_isrc=i not in descarte)
                 t["upc"] = info.get("upc", "") or ("" if actuales else t["upc"])
                 t.pop("upc_descartado", None)
+                if t["upc"]:
+                    t["upc_como"] = forma
                 if forma != "fecha":
                     t["upc_por_tracklist"] = f"{a.get('title') or ''} ({a.get('release_date') or ''})"
             ocupados.setdefault(album_id, set()).add(clave)
@@ -1059,6 +1074,8 @@ def _track_de_deezer(tema: TemaFaltante, **datos) -> Track:
         "album_deezer_id": datos["aid"],
         "origen": "deezer",
     }
+    if tema["isrc"]:
+        t["isrc_como"] = "deezer"
     return t
 
 

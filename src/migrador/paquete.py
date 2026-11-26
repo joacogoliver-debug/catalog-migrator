@@ -37,6 +37,7 @@ from openpyxl.utils import get_column_letter
 # De contratos y no de audio: armar el entregable es el núcleo, y el módulo
 # de audio es opcional. Atarlos significaba que un import mal puesto en
 # audio.py rompiera la variante esencial, que ni siquiera lo usa.
+from . import ediciones
 from .contratos import FORMATOS_LOSSLESS, Producto
 from .i18n import T
 from .texto import mmss as _mmss
@@ -92,7 +93,16 @@ def columnas():
         (T("paq.col_archivo"), 30),
         (T("paq.col_reproducciones"), 14),
         (T("paq.col_url"), 30),
+        # Al final, para no correr de lugar las que ya había: qué tan comprobado
+        # está cada código (ver `evidencia`).
+        (T("paq.col_evidencia_isrc"), 22),
+        (T("paq.col_evidencia_upc"), 22),
     ]
+
+
+def nivel_legible(nivel):
+    """El nivel de un código, en palabras del idioma elegido, o ""."""
+    return T("paq.nivel_" + nivel) if nivel else ""
 
 
 # ============================================================
@@ -160,6 +170,8 @@ def _filas_producto(ws, fila, p, archivo=None):
             archivo(t) if archivo else "",
             t.get("views", 0),
             t.get("url", ""),
+            nivel_legible(t.get("isrc_nivel")),
+            nivel_legible(p.get("upc_nivel")),
         ]
         for i, v in enumerate(valores, 1):
             c = _celda(ws, fila, i, v)
@@ -275,8 +287,23 @@ COLUMNAS_INGESTA = [
     # estimado se deja en «Track Number» porque suele acertar y sacarlo obliga a
     # tipear todo el orden; esta columna es la que dice que hay que mirarlo.
     "Track Order",
+    # Qué tan comprobado está cada código: confirmed, inferred, doubtful,
+    # manual o imported (ver `evidencia`). Es para quien revisa la hoja, igual
+    # que «Track Order»: dice cuáles conviene mirar antes de cargarla.
+    "ISRC Evidence",
+    "UPC Evidence",
     "YouTube URL",
 ]
+
+# Los niveles en la hoja de ingesta, que no se traduce: son valores de una
+# columna, como «confirmed (Deezer)» en «Track Order».
+NIVELES_EN_HOJA = {
+    "confirmado": "confirmed",
+    "inferido": "inferred",
+    "dudoso": "doubtful",
+    "manual": "manual",
+    "importado": "imported",
+}
 
 
 def _creditos_de(t, columna):
@@ -349,13 +376,16 @@ def filas_ingesta(productos, artista, incluir_audio=True, incluir_portadas=True)
                     p.get("release_date") or MARCA_COMPLETAR,
                     sello,
                     p_line,
-                    MARCA_COMPLETAR,  # C Line: no sale de YouTube
-                    MARCA_COMPLETAR,  # Genre
-                    MARCA_COMPLETAR,  # Language
+                    # Lo que sigue no sale de ninguna fuente pública: lleva lo
+                    # que el usuario cargó en la app (ver `ediciones`), o la
+                    # marca para completarlo.
+                    ediciones.dato(p, "C Line") or MARCA_COMPLETAR,
+                    ediciones.dato(p, "Genre") or MARCA_COMPLETAR,
+                    ediciones.dato(p, "Language") or MARCA_COMPLETAR,
                     # Los territorios del release original no salen de ningún
                     # lado público. Poner «Worldwide» era inventar derechos: un
                     # catálogo licenciado sólo para una región se abría al mundo.
-                    MARCA_COMPLETAR,
+                    ediciones.dato(p, "Territories") or MARCA_COMPLETAR,
                     disco_de(p, t),
                     t.get("track_number") or "",
                     # En mayúsculas y sin guiones, que es como lo pide la ingesta.
@@ -363,12 +393,12 @@ def filas_ingesta(productos, artista, incluir_audio=True, incluir_portadas=True)
                     t.get("track", ""),
                     *artistas_de(t, artista),
                     _mmss(t.get("duration_s")),
-                    MARCA_COMPLETAR,  # Explicit
+                    ediciones.dato(p, "Explicit") or MARCA_COMPLETAR,
                     _creditos_de(t, "composers"),
                     _creditos_de(t, "lyricists"),
                     _creditos_de(t, "producers"),
                     _creditos_de(t, "publishers"),
-                    MARCA_COMPLETAR,  # Lyrics Language
+                    ediciones.dato(p, "Lyrics Language") or MARCA_COMPLETAR,
                     # Los nombres con que los archivos quedan adentro del
                     # ZIP, relativos a su raíz. Antes era el nombre del
                     # temporal («tidal_998877.flac») y «portada.jpg» fijo,
@@ -378,6 +408,8 @@ def filas_ingesta(productos, artista, incluir_audio=True, incluir_portadas=True)
                     archivo_portada(p, incluir_portadas),
                     _fuente_corta(t),
                     orden_de(p, t),
+                    NIVELES_EN_HOJA.get(t.get("isrc_nivel") or "", ""),
+                    NIVELES_EN_HOJA.get(p.get("upc_nivel") or "", ""),
                     t.get("url", ""),
                 ]
             )
@@ -426,6 +458,105 @@ def hoja_ingesta_xlsx_bytes(productos, artista, incluir_audio=True, incluir_port
                 c.fill = PatternFill("solid", fgColor=AMBAR)
     ws.freeze_panes = "A2"
     ws.auto_filter.ref = f"A1:{get_column_letter(len(COLUMNAS_INGESTA))}{max(1, ws.max_row)}"
+    buf = BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
+
+
+# ============================================================
+# Hoja de pedido, para la distribuidora actual
+# ============================================================
+#
+# Lo que falta, y lo que no quedó confirmado, se le pide a la distribuidora que
+# hoy tiene el catálogo. Esta hoja es ese pedido, ya armado: una fila por tema,
+# con lo que la app tiene a un costado y las columnas «UPC» e «ISRC» vacías
+# para que las complete quien tiene el dato. Cuando vuelve, se importa en la
+# app (ver `importar`), que reconoce estas mismas columnas.
+#
+# Las columnas a completar van vacías a propósito, también donde la app ya
+# tiene un código: si fueran precargadas, una hoja devuelta sin tocar
+# «confirmaría» cada código con su propio eco.
+
+_SIN_CONFIRMAR = ("inferido", "dudoso")
+
+
+def que_pedir(p, t):
+    """Qué se le pide a la distribuidora sobre un tema: "", "confirmar" o "falta"."""
+    if not t.get("isrc") or not p.get("upc"):
+        return "falta"
+    if t.get("isrc_nivel") in _SIN_CONFIRMAR or p.get("upc_nivel") in _SIN_CONFIRMAR:
+        return "confirmar"
+    return ""
+
+
+def columnas_pedido():
+    return [
+        (T("paq.ped_distribuidora"), 22),
+        (T("paq.ped_release"), 34),
+        (T("paq.ped_upc_tenemos"), 20),
+        ("UPC", 16),
+        ("#", 4),
+        (T("paq.ped_tema"), 34),
+        (T("paq.col_duracion"), 9),
+        (T("paq.ped_isrc_tenemos"), 20),
+        ("ISRC", 16),
+        (T("paq.ped_pedido"), 26),
+    ]
+
+
+def hay_que_pedir(productos):
+    return any(que_pedir(p, t) for p in productos for t in p["tracks"])
+
+
+def hoja_pedido_bytes(productos, artista):
+    """La hoja para mandarle a la distribuidora actual, en Excel."""
+    from io import BytesIO
+
+    wb = Workbook()
+    ws = _hoja(wb)
+    ws.title = T("paq.hoja_pedido")
+    _celda(ws, 1, 1, T("paq.ped_titulo", artista=artista)).font = Font(size=14, bold=True, color=NAVY)
+    instrucciones = T("paq.ped_instrucciones").split("\n")
+    for n, linea in enumerate(instrucciones, 2):
+        _celda(ws, n, 1, linea).font = Font(size=9, color="666666")
+    fila = 2 + len(instrucciones) + 1
+    cols = columnas_pedido()
+    for i, (nombre, ancho) in enumerate(cols, 1):
+        c = _celda(ws, fila, i, nombre)
+        c.font = Font(size=10, bold=True, color="FFFFFF")
+        c.fill = PatternFill("solid", fgColor=NAVY)
+        c.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        ws.column_dimensions[get_column_letter(i)].width = ancho
+    ws.freeze_panes = f"A{fila + 1}"
+    encabezado = fila
+    # Los que piden algo, primero: es lo que quien recibe la hoja tiene que ver.
+    orden = sorted(productos, key=lambda p: not any(que_pedir(p, t) for t in p["tracks"]))
+    for p in orden:
+        for t in p["tracks"]:
+            fila += 1
+            pedido = que_pedir(p, t)
+            valores = [
+                p.get("distributor", ""),
+                p.get("title", ""),
+                p.get("upc", ""),
+                "",
+                t.get("track_number") or "",
+                t.get("track", ""),
+                _mmss(t.get("duration_s")),
+                re.sub(r"[\s\-]", "", t.get("isrc") or "").upper(),
+                "",
+                T("paq.ped_" + pedido) if pedido else "",
+            ]
+            for i, v in enumerate(valores, 1):
+                c = _celda(ws, fila, i, "" if v is None else str(v))
+                c.number_format = "@"
+                # En ámbar, las dos celdas que tiene que llenar la distribuidora
+                # cuando hay algo que pedir.
+                falta_upc = i == 4 and (not p.get("upc") or p.get("upc_nivel") in _SIN_CONFIRMAR)
+                falta_isrc = i == 9 and (not t.get("isrc") or t.get("isrc_nivel") in _SIN_CONFIRMAR)
+                if falta_upc or falta_isrc:
+                    c.fill = PatternFill("solid", fgColor=AMBAR)
+    ws.auto_filter.ref = f"A{encabezado}:{get_column_letter(len(cols))}{max(encabezado, fila)}"
     buf = BytesIO()
     wb.save(buf)
     return buf.getvalue()
@@ -626,6 +757,8 @@ def nombres_archivos():
         "catalogo": T("paq.f_catalogo"),
         "ingesta": T("paq.f_ingesta"),
         "ingesta_xlsx": T("paq.f_ingesta_xlsx"),
+        "pedido": T("paq.f_pedido"),
+        "instantanea": T("paq.f_instantanea"),
     }
 
 
@@ -742,6 +875,13 @@ def build_zip(
             reporte_texto(productos, artista, entorno, con_tidal, diag).encode("utf-8-sig"),
         )
 
+        # El relevamiento tal como quedó, para reabrirlo en la app o
+        # compararlo después de migrar (ver `instantanea`). Va siempre: pesa
+        # poco y es lo único del paquete que la app puede volver a leer.
+        from . import instantanea
+
+        z.writestr(entrada_zip(raiz, F["instantanea"]), instantanea.volcar(productos, artista, diag))
+
         # La validación va siempre: es lo que evita que la entrega se rechace.
         from . import validar as V
 
@@ -760,6 +900,10 @@ def build_zip(
             )
             hoja = hoja_ingesta_xlsx_bytes(productos, artista, incluir_audio, incluir_portadas)
             z.writestr(entrada_zip(raiz, F["ingesta_xlsx"]), hoja)
+            # La hoja de pedido va sólo si hay algo que pedir: un archivo de
+            # más en la raíz, cuando no hace falta, es uno más que abrir.
+            if hay_que_pedir(productos):
+                z.writestr(entrada_zip(raiz, F["pedido"]), hoja_pedido_bytes(productos, artista))
 
         for n, p in enumerate(productos, 1):
             if avance:

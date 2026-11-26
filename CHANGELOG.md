@@ -6,6 +6,65 @@ Lo que cambió en cada versión publicada. Los números siguen
 [SemVer](https://semver.org/lang/es/), y las descargas están en
 [Releases](https://github.com/joacogoliver-debug/catalog-migrator/releases).
 
+## [Sin publicar]
+
+### Agregado
+- **Qué tan comprobado está cada código.** Un ISRC que salió de buscar «título
+  artista» en Deezer y uno que además figura con ese mismo código en el
+  tracklist de su release se veían iguales: doce caracteres en una celda. Ahora
+  cada tema y cada producto dice si su código está **confirmado** (dos caminos
+  independientes dan el mismo), es **inferido** (una sola fuente) o **dudoso**
+  (coincidencia parecida). Va en la tabla, en la planilla, en dos columnas
+  nuevas de la hoja de ingesta (`ISRC Evidence`, `UPC Evidence`) y en la
+  validación. En el catálogo con que se midió, de 221 temas, 205 ISRC quedaron
+  confirmados y 14 inferidos: los catorce, remixes sueltos.
+- **Importar los códigos de tu distribuidora actual.** La planilla que te manda
+  tu distribuidora (o el export de su panel) se lee tal como viene, en xlsx o
+  CSV, y se concilia contra el catálogo. Lo que coincide pasa a confirmado, lo
+  que faltaba se completa, y lo que no coincide no se toca: se muestran los dos
+  códigos y decidís vos. También lista lo que tu distribuidora tiene y el
+  relevamiento no encontró.
+- **La hoja de pedido.** El paquete trae `_Pedido a la distribuidora actual.xlsx`
+  con lo que falta y lo que no quedó confirmado, lista para mandar. Cuando
+  vuelve completa, se importa.
+- **Corregir un código a mano**, desplegando el producto. Se valida el formato
+  antes de aceptarlo y se puede deshacer.
+- **Elegir entre candidatos.** Cuando hay dos grabaciones que pueden ser el
+  mismo tema, la app sigue sin elegir, pero ahora las muestra para que elijas.
+  Antes el tema quedaba «sin ISRC» sin que nada contara que había candidatos.
+- **Completar en la app los datos que ninguna fuente trae.** Género, idioma,
+  explicit, línea ©, territorios e idioma de la letra se cargan una vez, para
+  lo elegido o para todo el catálogo, y van a la hoja de ingesta en vez de
+  quedar como `<<COMPLETAR>>`. La línea © se puede armar sola con el año y el
+  titular de cada producto.
+- **Reabrir un relevamiento sin gastar cupo.** Cada paquete trae el
+  relevamiento tal como quedó, con lo que cargaste. «Abrir un relevamiento
+  guardado», en el paso 1, lo devuelve a la pantalla sin pedirle nada a YouTube
+  ni a Deezer.
+- **Verificar la migración.** «Comparar con un relevamiento guardado» dice,
+  release por release, si ya está en la distribuidora nueva con su mismo UPC y
+  sus mismos ISRC, si sigue en las dos, si no se migró, si no aparece, o si
+  cambió de código.
+
+### Mejorado
+- **Deezer deja de cortar los pedidos por exceso.** La app le pedía más rápido
+  de lo que permite (cincuenta cada cinco segundos): en el catálogo medido, 28
+  de 422 pedidos volvían rechazados y se reintentaban con esperas de hasta ocho
+  segundos, y cuando no alcanzaba el tema quedaba sin código con el aviso
+  «Deezer no respondió». Ahora va al ritmo que Deezer admite y no le pide dos
+  veces lo mismo en un relevamiento.
+- **El aviso de campos a completar nombra los que quedan**, y desaparece cuando
+  están todos cargados.
+
+### Para quien desarrolla
+- Cuatro módulos nuevos en el motor: `evidencia`, `ediciones`, `importar` e
+  `instantanea`. Ninguno toca la red.
+- 120 tests nuevos de Python y 8 de la interfaz. El archivo que se importa y el
+  relevamiento guardado son datos de afuera: hay tests de que nada de lo que
+  traen se ejecuta, se usa como ruta ni entra sin escapar.
+- `docs/MEJORAS-3.md` deja el registro del ciclo: qué se midió, qué se decidió
+  y qué queda.
+
 ## [1.3.5] — 2026-11-24
 
 ### Cambiado
