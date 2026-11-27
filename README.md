@@ -196,7 +196,10 @@ el link de cualquiera de sus temas: la app busca el canal que lo subió.
 **2. Elegís qué productos migrar.** El catálogo aparece agrupado en productos
 (álbum / EP / single). Podés marcarlos uno por uno, filtrar por rango de años,
 por distribuidora, o buscar por título, ISRC o UPC. Cada producto se puede
-desplegar para ver sus tracks.
+desplegar para ver sus tracks, con qué tan comprobado está cada código. Ahí
+mismo se importan los códigos de tu distribuidora, se corrige uno a mano y se
+cargan los datos que faltan: está en
+[Confirmar, completar y verificar](#confirmar-completar-y-verificar).
 
 ![La tabla del catálogo, con lo que le falta a cada producto](docs/capturas/05-catalogo-2.png)
 
@@ -214,6 +217,8 @@ Artista - Migracion 2026-09-14/
 ├── _Validacion pre-entrega.txt    ← empezá por acá
 ├── _Hoja de ingesta.csv           ← el archivo para cargar en la distribuidora
 ├── _Hoja de ingesta.xlsx          ← la misma, para completarla en Excel
+├── _Pedido a la distribuidora actual.xlsx   ← lo que falta, para mandárselo
+├── _Relevamiento (para reabrir en la app).json
 ├── _Catalogo completo.xlsx
 ├── _Reporte de migracion.txt
 ├── _LEEME.txt
@@ -225,6 +230,61 @@ Artista - Migracion 2026-09-14/
 Es una carpeta por producto porque en una migración cada release se entrega como
 una unidad: un UPC, una portada, sus datos. Así cada carpeta ya queda lista para
 subir, y el UPC en el nombre evita confundir un álbum con su reedición.
+
+## Confirmar, completar y verificar
+
+Relevar es la mitad del trabajo. La otra mitad es lo que sólo sabés vos o tu
+distribuidora, y comprobar después que la migración salió bien. Todo esto se
+hace en el paso 2, arriba de la tabla.
+
+**Qué tan comprobado está cada código.** No todos los códigos merecen la misma
+confianza, y la app lo dice en cada tema y en cada producto:
+
+| Nivel | Qué quiere decir |
+|---|---|
+| **confirmado** | Es el código que lleva ese tema en el tracklist del álbum de Deezer verificado como su release, casi siempre el mismo que la búsqueda por texto había encontrado por su cuenta; o lo confirmó el archivo de tu distribuidora. |
+| **inferido** | Salió de una sola fuente (la búsqueda por título, artista y duración) y nada más lo respalda. Casi siempre es el correcto; es el que conviene confirmar. |
+| **dudoso** | La coincidencia fue parecida y no idéntica. |
+| **a mano** / **de tu archivo** | Lo cargaste vos, o salió de la planilla que importaste. |
+
+En los dos catálogos con que se midió, uno de 221 temas y otro de 268, quedaron
+confirmados 205 y 235 ISRC, e inferidos 14 y 6. Los catorce del primero son
+remixes sueltos, que es justo donde un cruce por título se puede equivocar. La hoja de ingesta lleva el nivel en dos columnas,
+`ISRC Evidence` y `UPC Evidence`. Cuando el relevamiento encuentra dos
+grabaciones posibles para un tema no elige: las muestra, y elegís vos.
+
+**Importar los códigos de tu distribuidora.** El paquete trae una hoja de
+pedido (`_Pedido a la distribuidora actual.xlsx`) con lo que falta y lo que no
+quedó confirmado, lista para mandar. Cuando vuelve completa, o si ya tenés un
+export de su panel, «Importar códigos de tu distribuidora» lo lee (xlsx o CSV,
+sin pedirle un formato: reconoce las columnas por su nombre, en castellano o en
+inglés) y lo concilia contra el catálogo. Lo que coincide pasa a confirmado, lo
+que faltaba se completa, y **lo que no coincide no se toca**: se muestra el
+código del archivo al lado del que había, y decidís vos. Una versión en vivo no
+se queda con el código de la de estudio, que es el error clásico de copiar y
+pegar.
+
+**Corregir un código a mano.** Desplegando un producto, cada ISRC y el UPC se
+pueden cambiar. Se valida el formato antes de aceptarlo (un ISRC mal tipeado se
+rechaza ahí y no en la ingesta) y siempre se puede deshacer.
+
+**Completar los datos que ninguna fuente trae.** Género, idioma, explicit,
+línea ©, territorios e idioma de la letra se cargan una vez, para los productos
+elegidos o para todo el catálogo, y van a la hoja de ingesta en vez de quedar
+como `<<COMPLETAR>>`.
+
+**Reabrir un relevamiento sin gastar cupo.** Cada paquete trae el relevamiento
+tal como quedó (`_Relevamiento (para reabrir en la app).json`), con lo que
+cargaste. «Abrir un relevamiento guardado», en el paso 1, lo devuelve a la
+pantalla sin pedirle nada a YouTube ni a Deezer.
+
+**Verificar la migración.** Con el catálogo ya en la distribuidora nueva,
+relevá el canal de nuevo y usá «Comparar con un relevamiento guardado» con el
+archivo del paquete viejo. La app dice, release por release, si ya está en la
+distribuidora nueva con su mismo UPC y sus mismos ISRC, si todavía está en las
+dos (falta la baja en la anterior), si sigue sin migrar, si no aparece, o si
+cambió de código, que es lo que una migración tiene que evitar. Los códigos de
+hoy salen de Deezer, que puede tardar unos días en mostrar una entrega nueva.
 
 ## La validación pre-entrega
 
@@ -254,6 +314,12 @@ informe dice siempre qué no mira.
   que después entró en el álbum. No es un error: es lo correcto, y el aviso
   está para que nadie lo «arregle» pidiendo un código nuevo
 - Un ISRC que salió de una coincidencia parecida pero no idéntica
+- Los ISRC de un producto que salieron de una sola fuente, y el UPC que
+  coincide sólo por el título del release: se exportan igual, y conviene
+  confirmarlos
+- Un tema con más de una grabación candidata, entre las que no se eligió
+- Una grabación que está en las tiendas con dos ISRC, uno por cada entrega: se
+  usa el del release, y conviene avisarle a la distribuidora
 - La portada está en escala de grises, en colores indexados o con transparencia
 - El paquete trae audio que es sólo de referencia
 - Los campos que ninguna fuente pública trae (género, idioma, explicit, línea C,
@@ -316,6 +382,13 @@ Deezer es el mismo release que el producto: si no, queda en blanco y la
 validación dice en qué otro release lo encontró, en vez de entregar el código
 de otro producto.
 
+El ISRC tiene el mismo cuidado. Una grabación puede estar entregada dos veces
+con dos códigos: el disco original de un sello y su reentrega por otro. La
+búsqueda devuelve cualquiera de las dos, así que cuando el tema quedó ubicado
+en el tracklist de su release, el código que vale es el de ese lugar. El otro
+no se pierde: la validación avisa que esa grabación tiene dos ISRC en las
+tiendas.
+
 YouTube muestra el título de un disco sin su versión: la edición aniversario
 se llama igual que el original. Cuando los temas de un disco no entran todos
 en el álbum de Deezer que se llama igual, la app busca en la discografía la
@@ -372,8 +445,10 @@ artista que se llama igual, el aviso tiene «Usar otro perfil».
 
 **Me faltan ISRC o UPC. ¿Qué hago?** Pedíselos a tu distribuidora actual antes
 de aceptar códigos nuevos: un código nuevo es un release nuevo, que arranca sin
-las reproducciones ni las playlists del anterior. La pantalla del catálogo dice
-si faltan porque el artista no está en Deezer o porque Deezer no respondió.
+las reproducciones ni las playlists del anterior. El paquete trae la hoja de
+pedido ya armada, y cuando te la devuelven se importa en la app, que carga los
+códigos y te muestra los que no coinciden. La pantalla del catálogo dice si
+faltan porque el artista no está en Deezer o porque Deezer no respondió.
 
 ## Si algo no anda
 
@@ -429,6 +504,12 @@ y no incluye tu clave.
 - **Tu clave de la API queda en tu computadora**, nunca se manda a ningún lado
   que no sea Google.
 - **No se guarda el catálogo.** Vive en memoria mientras la app está abierta.
+  Lo único que queda es lo que vos bajás: el paquete trae el relevamiento en
+  un archivo, que es tuyo y queda donde lo guardes, para reabrirlo o
+  compararlo más adelante.
+- **Los archivos que importás no salen de tu máquina.** La planilla de tu
+  distribuidora y el relevamiento guardado los lee el servidor local, y nada
+  más.
 - Deezer e iTunes se consultan con datos públicos del catálogo (nombre de
   artista, título, duración).
 - **No busca actualizaciones por su cuenta.** Sólo cuando tocás «Buscar
@@ -588,6 +669,10 @@ un solo sentido, y por eso el núcleo se puede probar sin levantar un servidor.
 | `src/migrador/migrar_core.py` | Orquesta los 4 pasos |
 | `src/migrador/relevar_core.py` | Relevamiento de YouTube + ISRC/UPC por Deezer |
 | `src/migrador/completitud.py` | Qué tiene la discografía de Deezer que no apareció en YouTube |
+| `src/migrador/evidencia.py` | Qué tan comprobado está cada código: confirmado, inferido o dudoso |
+| `src/migrador/ediciones.py` | Lo que carga el usuario: un código corregido, y los campos que nadie más trae |
+| `src/migrador/importar.py` | La planilla de la distribuidora actual, leída y conciliada contra el catálogo |
+| `src/migrador/instantanea.py` | El relevamiento guardado: volcarlo, reabrirlo y compararlo con uno nuevo |
 | `src/migrador/productos.py` | Agrupa tracks en productos y filtra la selección |
 | `src/migrador/validar.py` | Validación pre-entrega |
 | `src/migrador/portadas.py` | Portadas vía iTunes Search API |
@@ -670,6 +755,12 @@ pytest -q --cov
 | `tests/test_concurrencia.py` | Un trabajo por vez de verdad, catálogo identificado y temporales que no quedan |
 | `tests/test_progreso.py` | Avance real, cancelación que responde y reintentos sólo donde sirven |
 | `tests/test_listado.py` | Cómo se lista un canal: por el buscador cuando YouTube no publica la lista de subidas, con su tope, su cuota y los lanzamientos sin distribuidora |
+| `tests/test_propiedades.py` | Lo que tiene que ser cierto para cualquier entrada: nombres adentro del ZIP, códigos, la planilla importada y el relevamiento guardado |
+| `tests/test_evidencia.py` | Qué código está confirmado y cuál sólo inferido, y el ritmo y la memoria de los pedidos a Deezer |
+| `tests/test_ediciones.py` | Lo que se carga a mano: validado, marcado, que se pueda deshacer, y que llegue a la hoja |
+| `tests/test_importar.py` | La planilla de la distribuidora: qué confirma, qué completa, y que un conflicto no se aplique solo |
+| `tests/test_instantanea.py` | El relevamiento guardado: que vuelva igual, que un archivo ajeno no haga daño, y la comparación |
+| `tests/test_rutas_edicion.py` | Las rutas por las que se cambia el catálogo, con las mismas defensas que el resto |
 | `tests/test_completitud.py` | Qué falta respecto de la discografía de Deezer: de quién es, qué cuenta como la misma grabación y hasta dónde llega el aviso |
 | `tests/test_ci.py` | Las reglas de supply chain del CI: acciones por SHA, permisos, timeouts, auditoría |
 | `tests/test_secretos.py` | Que la clave no salga de donde tiene que estar: cabecera, permisos, historia |

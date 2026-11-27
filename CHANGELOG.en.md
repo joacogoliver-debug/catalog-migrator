@@ -6,6 +6,86 @@ What changed in every published version. The numbers follow
 [SemVer](https://semver.org/), and the downloads are in
 [Releases](https://github.com/joacogoliver-debug/catalog-migrator/releases).
 
+## [Unreleased]
+
+### Added
+- **How well checked each code is.** An ISRC that came from searching “title
+  artist” on Deezer and one that also appears with that same code in its
+  release's tracklist looked the same: twelve characters in a cell. Now every
+  track and every release says whether its code is **confirmed** (it is the
+  one in its release's tracklist), **inferred** (a single source, with nothing
+  else behind it) or
+  **doubtful** (a close match). It is in the table, the spreadsheet, two new
+  columns of the ingestion sheet (`ISRC Evidence`, `UPC Evidence`) and the
+  validation. In the catalog it was measured with, 221 tracks, 205 ISRCs came
+  out confirmed and 14 inferred: all fourteen, stray remixes.
+- **Import your current distributor's codes.** The spreadsheet your distributor
+  sends you (or the export from their dashboard) is read as it comes, xlsx or
+  CSV, and reconciled against the catalog. What matches becomes confirmed, what
+  was missing is filled in, and what does not match is left alone: both codes
+  are shown and you decide. It also lists what your distributor has that the
+  survey did not find.
+- **The request sheet.** The package includes
+  `_Request for your current distributor.xlsx` with what is missing and what
+  could not be confirmed, ready to send. When it comes back filled in, you
+  import it.
+- **Fix a code by hand**, with the release expanded. The format is validated
+  before it is accepted and it can be undone.
+- **Pick between candidates.** When two recordings could be the same track, the
+  app still does not choose, but it now shows them so you can. Before, the
+  track was left with “no ISRC” and nothing said there were candidates.
+- **Fill in, in the app, the fields no source has.** Genre, language, explicit,
+  C line, territories and lyrics language are entered once, for the selection
+  or the whole catalog, and go into the ingestion sheet instead of staying as
+  `<<COMPLETAR>>`. The C line can be built from each release's year and rights
+  holder.
+- **Reopen a survey without using quota.** Every package carries the survey as
+  it stood, with what you entered. “Open a saved survey”, in step 1, brings it
+  back without asking YouTube or Deezer for anything.
+- **Verify the migration.** “Compare with a saved survey” says, release by
+  release, whether it is at the new distributor with the same UPC and ISRCs,
+  still at both, not migrated, missing, or with a changed code.
+
+### Improved
+- **Deezer no longer throttles the requests.** The app asked faster than it
+  allows (fifty every five seconds): in the measured catalog, 28 of 422
+  requests came back rejected and were retried with waits of up to eight
+  seconds, and when that was not enough the track was left with no code and the
+  notice “Deezer did not answer”. It now keeps to the pace Deezer allows and
+  never asks for the same thing twice in one survey.
+- **The fields-to-fill-in notice names the ones left**, and goes away when they
+  are all entered.
+
+### Fixed
+- **Each track carries its own release's ISRC, not that of another delivery of
+  the same recording.** A record can be in stores twice, delivered by two
+  labels with different codes: the original, and a redelivery that was given
+  new ISRCs. The app already picked correctly which of the two was the
+  channel's (by title, date and label), and took the UPC and the order from
+  it. But each track kept the ISRC the search returned, which could be the
+  other delivery's. In a real catalog, 43 tracks of 268 came out with one
+  release's UPC and another's ISRC. The code is now the one the track carries
+  in its release's tracklist, and the validation tells you that recording has
+  two codes in stores, which is something to raise with the distributor.
+- **A pasted link with a bracket no longer gives an error in library English.**
+  Pasting “[link]”, the way a chat copies it with its formatting, ended in
+  “Invalid IPv6 URL”. It now says the same as any other text that is not a
+  link.
+
+### For developers
+- **Property-based tests**, with Hypothesis (development only: the app neither
+  uses nor ships it). Instead of hand-written cases, rules (“a folder name
+  never leaves the root”, “reconciling never changes the catalog”) and a tool
+  that looks for the input that breaks them. They found the fix above, and two
+  more in the spreadsheet reader before it shipped.
+- Four new engine modules: `evidencia`, `ediciones`, `importar` and
+  `instantanea`. None of them touches the network.
+- 145 new Python tests and 8 for the interface. The imported file and the saved
+  survey are outside data: there are tests that nothing they carry is executed,
+  used as a path or let in unescaped.
+- `docs/MEJORAS-3.md` keeps the record of the cycle: what was measured, what
+  was decided and what is left.
+
 ## [1.3.5] — 2026-11-24
 
 ### Changed

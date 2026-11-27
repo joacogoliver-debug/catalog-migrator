@@ -47,6 +47,9 @@ before it.
 2. **Choose products.** This is where most of the time goes. The catalog shows up
    grouped into products (album, EP, single), with what each one is missing
    flagged. It can be filtered by year, by distributor, or searched.
+   It is also where what only the person using the app knows comes in: the
+   codes their distributor sent (imported from its spreadsheet), a code fixed
+   by hand, and the fields no public source has.
 3. **Choose what to download.** Spreadsheet, artwork, audio.
 4. **Download** a ZIP with one folder per product, plus the validation report.
 
@@ -70,13 +73,25 @@ These are not edge cases: they are half the product.
   the Deezer discography and goes in flagged. What may not belong to the
   catalog, such as a release found on Deezer only, is left unselected: a person
   picks it.
+- **A code that is not confirmed.** Not all of them deserve the same trust.
+  The one in its release's tracklist is confirmed; the one that came from a
+  single search is inferred, and each track says so. It is neither an error
+  nor a gap: it is what is worth confirming, and it is shown in neutral.
+- **The file does not match the catalog.** The distributor's spreadsheet has
+  one code and the survey another. Nothing is chosen: both are shown.
+- **After migrating.** The journey does not end at the ZIP. With the catalog at
+  the new distributor, it is compared against the survey kept in the package,
+  and the app says what kept its codes and what did not.
 - **Empty because of a filter.** Too much was filtered out and nothing is left.
 - **First time.** Terms of use, and the API key if this copy does not carry one.
 
 ## What does not get touched
 
+- **It never overwrites a code silently or picks between two.** Whatever is not
+  certain is shown, and a person decides.
 - **It does not invent metadata.** Whatever does not come from a public source is
-  marked `<<COMPLETAR>>`. An empty field is information; one filled in by eye is
+  marked `<<COMPLETAR>>`, unless the person using the app enters it, and then it
+  says where it came from. An empty field is information; one filled in by eye is
   a lie that someone later delivers.
 - **What is reported is what was measured, not what was asked for.** Artwork is
   requested at 3000×3000 and the size Apple actually returned is what gets

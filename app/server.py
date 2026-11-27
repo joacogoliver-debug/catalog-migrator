@@ -41,6 +41,11 @@ Endpoints:
   POST /api/clave             guardar la clave de YouTube
   POST /api/relevar           {url, con_codigos, de_cero} -> {job}    (asincrónico)
   POST /api/validar           {ids} -> hallazgos               (sincrónico)
+  POST /api/editar            un ISRC, un UPC o los campos a completar -> catálogo
+  POST /api/importar          {nombre, contenido} la planilla de la distribuidora -> propuesta
+  POST /api/importar/aplicar  {id, elegidos, elecciones} -> catálogo
+  POST /api/abrir             {contenido} un relevamiento guardado -> catálogo
+  POST /api/comparar          {contenido} un relevamiento guardado -> comparación con el de ahora
   POST /api/preparar          {ids, opciones} -> {job}        (asincrónico)
   GET  /api/job/<id>          estado del trabajo
   POST /api/job/<id>/cancelar
@@ -52,6 +57,8 @@ Endpoints:
   POST /api/tidal/...         conexión opcional de Tidal
 """
 
+import base64
+import binascii
 import json
 import mimetypes
 import os
@@ -68,7 +75,7 @@ import time
 import urllib.parse
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from typing import TypedDict, cast, override
+from typing import Any, TypedDict, cast, override
 
 # `app/` consume el paquete `migrador`, que vive en `src/`. Los dos caminos
 # tienen que andar: corriendo desde el repositorio sin instalar nada, y adentro
@@ -86,7 +93,12 @@ for _p in (_AQUI, os.path.join(_RAIZ, "src"), _RAIZ):
 
 from jobs import Ocupado, Registry  # noqa: E402
 from migrador import audio as audio_mod  # noqa: E402
+from migrador import completitud as completitud_mod  # noqa: E402
+from migrador import ediciones as ED  # noqa: E402
+from migrador import evidencia as EV  # noqa: E402
 from migrador import i18n  # noqa: E402
+from migrador import importar as IMP  # noqa: E402
+from migrador import instantanea as INS  # noqa: E402
 from migrador import migrar_core as M  # noqa: E402
 from migrador import productos as P  # noqa: E402
 from migrador import relevar_core as R  # noqa: E402
@@ -435,6 +447,9 @@ class Estado:
         # (p001, p002…) y se regeneran, así que una pestaña que quedó con el
         # catálogo de antes pedía el ZIP de otro artista con sus ids viejos.
         self.catalogo_id = ""
+        # La propuesta de la última planilla importada, hasta que se aplique o
+        # se descarte: {"id", "catalogo_id", "propuesta"}. Una sola por vez.
+        self.importacion: dict[str, Any] | None = None
         # Sin anotar, el tipo deducido sería None y guardar la sesión daría
         # error de tipos. Se escribe suelto para no importar `audio` acá.
         self.tidal: "audio_mod.TidalSession | None" = None
@@ -467,6 +482,8 @@ class Estado:
             self.artista = artista
             self.diagnostico = diag
             self.catalogo_id = secrets.token_hex(6)
+            # La propuesta de una planilla era sobre el catálogo de antes.
+            self.importacion = None
 
     def zips_anteriores(self):
         """Borra los ZIP de paquetes anteriores. Se llama al armar uno nuevo: la
@@ -571,6 +588,12 @@ def producto_json(p):
         "origen": p.get("origen") or "",
         "de_deezer": int(p.get("de_deezer") or 0),
         "artista": p.get("artist") or "",
+        # Qué tan comprobados están los códigos (ver `evidencia`), y lo que
+        # cargó el usuario (ver `ediciones`).
+        "upc_nivel": p.get("upc_nivel") or "",
+        "upc_editado": "upc_previo" in p,
+        "sin_confirmar": int(p.get("isrc_sin_confirmar") or 0),
+        "datos": dict(p.get("datos") or {}),
         "detalle": [
             {
                 "n": t.get("track_number") or "",
@@ -580,6 +603,12 @@ def producto_json(p):
                 "views": t.get("views", 0),
                 "url": t.get("url", ""),
                 "origen": t.get("origen") or "",
+                "nivel": t.get("isrc_nivel") or "",
+                "editado": "isrc_previo" in t,
+                "candidatos": [
+                    {"isrc": c.get("isrc", ""), "duracion": _mmss(c.get("duracion_s"))}
+                    for c in (t.get("isrc_candidatos") or [])
+                ],
             }
             for t in p.get("tracks", [])
         ],
@@ -594,6 +623,9 @@ def catalogo_json(productos, artista, diag=None):
         "diagnostico": diag or {},
         "productos": [producto_json(p) for p in productos],
         "resumen": P.summarize(productos),
+        "evidencia": EV.resumen(productos),
+        # Los campos que el usuario puede cargar, en el orden de la hoja.
+        "campos": list(ED.CAMPOS_A_COMPLETAR),
         "filtros": {
             "distribuidoras": P.distributor_options(productos),
             "anio_min": desde,
@@ -846,6 +878,165 @@ def api_validar(body) -> ValidacionParaUI:
     }
 
 
+# ============================================================
+# Lo que carga el usuario: códigos, datos y archivos
+# ============================================================
+
+
+def _catalogo_actual() -> dict[str, Any]:
+    return catalogo_json(ESTADO.productos, ESTADO.artista, ESTADO.diagnostico)
+
+
+def _para_editar(body):
+    """Lo común a todo lo que cambia el catálogo: que sea el de ahora, que
+    exista, y que no se esté armando un paquete con él en este momento."""
+    _mismo_catalogo(body)
+    if not ESTADO.productos:
+        raise ValueError(T("srv.sin_catalogo"))
+    _sin_trabajo_en_curso()
+
+
+def api_editar(body) -> dict[str, Any]:
+    """Un cambio hecho a mano sobre el catálogo. Devuelve el catálogo entero.
+
+    `tipo` dice qué: "isrc" y "upc" cargan un código (vacío, lo restauran),
+    "datos" carga los campos a completar en los productos de `ids`. Lo que no
+    se puede aceptar levanta `EdicionInvalida`, que es un ValueError y llega a
+    la interfaz como un 400 con su mensaje.
+    """
+    _para_editar(body)
+    tipo = body.get("tipo")
+    with ESTADO.lock:
+        productos = ESTADO.productos
+        if tipo == "isrc":
+            ED.poner_isrc(productos, body.get("producto"), body.get("indice"), body.get("valor"))
+        elif tipo == "upc":
+            ED.poner_upc(productos, body.get("producto"), body.get("valor"))
+        elif tipo == "datos":
+            datos = body.get("datos")
+            ids = body.get("ids")
+            if not isinstance(datos, dict) or not isinstance(ids, list):
+                raise ValueError(T("srv.json_invalido"))
+            datos = {str(k): v for k, v in datos.items() if isinstance(v, str)}
+            ED.poner_datos(productos, [str(i) for i in ids], datos)
+            if body.get("c_sugerida"):
+                # La línea © armada con el año y el titular de cada producto:
+                # no es un valor para todos, es uno por release.
+                for p in productos:
+                    if p["product_id"] in ids and ED.sugerir_linea_c(p):
+                        ED.poner_datos([p], [p["product_id"]], {"c_line": ED.sugerir_linea_c(p)})
+        else:
+            raise ValueError(T("srv.json_invalido"))
+    return _catalogo_actual()
+
+
+def _archivo(body, tope):
+    """Los bytes del archivo que mandó la interfaz, en base64.
+
+    Viene adentro del JSON y no como un upload aparte para que pase por las
+    mismas tres defensas que cualquier otro pedido, sin una ruta que las
+    saltee. El tope se controla antes de decodificar.
+    """
+    contenido = body.get("contenido")
+    if not isinstance(contenido, str) or not contenido:
+        raise ValueError(T("srv.archivo_vacio"))
+    if len(contenido) > tope * 4 // 3 + 16:
+        raise ValueError(T("srv.archivo_grande"))
+    try:
+        return base64.b64decode(contenido, validate=True)
+    except (ValueError, binascii.Error):
+        raise ValueError(T("srv.archivo_vacio")) from None
+
+
+def api_importar(body) -> dict[str, Any]:
+    """Lee la planilla de la distribuidora y propone qué hacer. No cambia nada."""
+    _para_editar(body)
+    datos = _archivo(body, IMP.MAX_BYTES)
+    filas, columnas = IMP.leer(datos, str(body.get("nombre") or "")[:200])
+    with ESTADO.lock:
+        propuesta = IMP.conciliar(ESTADO.productos, filas)
+        importacion_id = secrets.token_hex(6)
+        ESTADO.importacion = {"id": importacion_id, "catalogo_id": ESTADO.catalogo_id, "propuesta": propuesta}
+    return {
+        "id": importacion_id,
+        "nombre": str(body.get("nombre") or "")[:200],
+        "columnas": columnas,
+        "elegidos": IMP.elegidos_por_defecto(propuesta),
+        **propuesta,
+    }
+
+
+def api_importar_aplicar(body) -> dict[str, Any]:
+    _para_editar(body)
+    with ESTADO.lock:
+        imp = ESTADO.importacion
+        if not imp or imp["id"] != body.get("id") or imp["catalogo_id"] != ESTADO.catalogo_id:
+            raise ValueError(T("srv.importacion_vencida"))
+        elegidos = [str(x) for x in (body.get("elegidos") or []) if isinstance(x, str)]
+        elecciones = body.get("elecciones") if isinstance(body.get("elecciones"), dict) else {}
+        elecciones = {str(k): str(v) for k, v in elecciones.items()}
+        hechos = IMP.aplicar(ESTADO.productos, imp["propuesta"], elegidos, elecciones)
+        ESTADO.importacion = None
+    return {"catalogo": _catalogo_actual(), "hechos": hechos}
+
+
+def _diagnostico_de_archivo(info, productos):
+    """El diagnóstico de un catálogo que se abrió de un archivo.
+
+    No se relevó nada: no hay cuota gastada ni comparación con Deezer hecha
+    ahora. `abierto` es lo que la interfaz mira para decirlo, en vez de los
+    avisos del relevamiento.
+    """
+    con_isrc = sum(1 for p in productos for t in p["tracks"] if t.get("isrc"))
+    return {
+        "es_topic": True,
+        "canal": info.get("canal", ""),
+        "via_topic": False,
+        "canal_pedido": info.get("canal", ""),
+        "descartados": 0,
+        "codigos": {"pedidos": True, "encontrados": con_isrc, "fallas": 0, "motivo": ""},
+        "via": info.get("via") or "subidas",
+        "total_estimado": 0,
+        "cortado_por_cuota": False,
+        "unidades": 0,
+        "reusado": False,
+        "sin_distribuidora": 0,
+        "temas": info.get("temas") or sum(len(p["tracks"]) for p in productos),
+        "completitud": completitud_mod.completitud_vacia(),
+        "abierto": {"fecha": info.get("fecha", ""), "app": info.get("app", "")},
+    }
+
+
+def api_abrir(body) -> dict[str, Any]:
+    """Reabre un relevamiento guardado en un paquete, sin pedirle nada a nadie."""
+    _sin_trabajo_en_curso()
+    productos, artista, info = INS.abrir(_archivo(body, INS.MAX_BYTES))
+    diag = _diagnostico_de_archivo(info, productos)
+    ESTADO.guardar_catalogo(productos, artista, diag)
+    return catalogo_json(productos, artista, diag)
+
+
+def api_comparar(body) -> dict[str, Any]:
+    """Compara un relevamiento guardado contra el catálogo que está en pantalla."""
+    _mismo_catalogo(body)
+    if not ESTADO.productos:
+        raise ValueError(T("srv.sin_catalogo"))
+    antes, artista, info = INS.abrir(_archivo(body, INS.MAX_BYTES))
+    with ESTADO.lock:
+        comparacion = INS.comparar(antes, list(ESTADO.productos))
+        ahora = ESTADO.artista
+    from migrador.texto import comparable
+
+    return {
+        **comparacion,
+        "fecha": info.get("fecha", ""),
+        "artista": artista,
+        # El archivo es de otro artista: la comparación no dice nada, y hay
+        # que avisarlo antes de que alguien lea «no aparece» en cada fila.
+        "otro_artista": bool(artista and ahora and comparable(artista) != comparable(ahora)),
+    }
+
+
 def _revisar_espacio(con_audio):
     minimo = MIN_LIBRE_AUDIO if con_audio else MIN_LIBRE_BASE
     try:
@@ -1081,6 +1272,11 @@ RUTAS_POST = {
     "/api/clave": api_guardar_clave,
     "/api/relevar": api_relevar,
     "/api/validar": api_validar,
+    "/api/editar": api_editar,
+    "/api/importar": api_importar,
+    "/api/importar/aplicar": api_importar_aplicar,
+    "/api/abrir": api_abrir,
+    "/api/comparar": api_comparar,
     "/api/preparar": api_preparar,
     "/api/tidal/confirmar": api_tidal_confirmar,
     "/api/mostrar": api_mostrar,

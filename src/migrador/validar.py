@@ -19,7 +19,14 @@ import re
 from difflib import SequenceMatcher
 from datetime import date
 
-from .contratos import FORMATOS_LOSSLESS, Hallazgo, NivelHallazgo, Producto, ResultadoValidacion
+from .contratos import (
+    CAMPOS_A_COMPLETAR,
+    FORMATOS_LOSSLESS,
+    Hallazgo,
+    NivelHallazgo,
+    Producto,
+    ResultadoValidacion,
+)
 from .i18n import T
 from .texto import comparable, misma_version, parece_formula, sin_decorado
 
@@ -345,6 +352,31 @@ def validar(productos: list[Producto], artista="") -> ResultadoValidacion:
         if upc and por_tracklist:
             texto = T("val.upc_por_tracklist", album=por_tracklist[0])
             out.append(_hallazgo("aviso", "upc_por_tracklist", texto, nombre))
+        elif upc and p.get("upc_nivel") == "inferido":
+            # El UPC salió de un álbum de Deezer que se llama igual, y nada más
+            # lo respalda (ver `evidencia.nivel_upc`). Se exporta como
+            # cualquier otro: hay que decir que conviene confirmarlo.
+            out.append(_hallazgo("aviso", "upc_inferido", T("val.upc_inferido", upc=upc), nombre))
+
+        # La misma grabación con dos códigos en las tiendas: el del release,
+        # que es el que se usa, y el de otra entrega. No es un error de este
+        # paquete, pero es lo primero que hay que saber antes de migrarla.
+        otra_entrega = [t for t in p.get("tracks", []) if t.get("isrc_otra_entrega")]
+        if otra_entrega:
+            texto = T(
+                "val.isrc_otra_entrega",
+                n=len(otra_entrega),
+                temas=lista_corta(t.get("track", "") for t in otra_entrega),
+                ejemplo=f"{otra_entrega[0].get('isrc_otra_entrega')} → {otra_entrega[0].get('isrc')}",
+            )
+            out.append(_hallazgo("aviso", "isrc_otra_entrega", texto, nombre))
+
+        # Los ISRC que salieron de un solo camino, juntos: uno por tema eran
+        # quince avisos iguales en un disco de remixes.
+        inferidos = [t.get("track", "") for t in p.get("tracks", []) if t.get("isrc_nivel") == "inferido"]
+        if inferidos:
+            texto = T("val.isrc_inferido", n=len(inferidos), temas=lista_corta(inferidos))
+            out.append(_hallazgo("aviso", "isrc_inferido", texto, nombre))
 
         de_deezer = [t.get("track", "") for t in p.get("tracks", []) if t.get("origen") == "deezer"]
         if p.get("origen") == "deezer":
@@ -377,7 +409,14 @@ def validar(productos: list[Producto], artista="") -> ResultadoValidacion:
                 out.append(_hallazgo("error", "track_sin_titulo", T("val.track_sin_titulo"), nombre, titulo))
 
             isrc = (t.get("isrc") or "").strip()
-            if not isrc:
+            candidatos = t.get("isrc_candidatos") or []
+            if not isrc and candidatos:
+                # No es que falte: hay más de una grabación que puede ser, y
+                # no se eligió. Se dice entre cuáles, que es lo que hace falta
+                # para resolverlo.
+                texto = T("val.isrc_ambiguo", codigos=", ".join(c["isrc"] for c in candidatos[:4]))
+                out.append(_hallazgo("aviso", "isrc_ambiguo", texto, nombre, titulo))
+            elif not isrc:
                 out.append(_hallazgo("aviso", "isrc_falta", T("val.isrc_falta"), nombre, titulo))
             elif not isrc_valido(isrc):
                 out.append(
@@ -427,9 +466,20 @@ def validar(productos: list[Producto], artista="") -> ResultadoValidacion:
         out.append(_hallazgo("aviso", "fecha_de_deezer", texto, ""))
 
     # Lo que la hoja no puede traer nunca, dicho una vez para todo el catálogo:
-    # sin esto, «sin errores» se leía como «lista para cargar».
+    # sin esto, «sin errores» se leía como «lista para cargar». Si el usuario
+    # ya cargó algunos en la app (ver `ediciones`), se nombran los que quedan;
+    # y si los cargó todos, no hay nada que avisar.
     if productos:
-        out.append(_hallazgo("aviso", "campos_a_completar", T("val.campos_a_completar"), ""))
+        pendientes = [
+            columna
+            for clave, columna in CAMPOS_A_COMPLETAR.items()
+            if any(not (p.get("datos") or {}).get(clave) for p in productos)
+        ]
+        if len(pendientes) == len(CAMPOS_A_COMPLETAR) and not any(p.get("datos") for p in productos):
+            out.append(_hallazgo("aviso", "campos_a_completar", T("val.campos_a_completar"), ""))
+        elif pendientes:
+            texto = T("val.campos_a_completar_parcial", campos=", ".join(pendientes))
+            out.append(_hallazgo("aviso", "campos_a_completar", texto, ""))
 
     errores = [h for h in out if h["nivel"] == "error"]
     avisos = [h for h in out if h["nivel"] == "aviso"]

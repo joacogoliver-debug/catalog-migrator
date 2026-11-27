@@ -20,10 +20,12 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from collections import Counter
+from collections import Counter, deque
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 from datetime import date, timedelta
 from difflib import SequenceMatcher
+from typing import Any
 
 from .contratos import (
     Creditos,
@@ -211,8 +213,15 @@ _RE_ID_VIDEO = re.compile(r"^[\w-]{11}$")
 def _id_de_video(url):
     """El id del video de un link a un tema (`watch?v=`, `youtu.be/`,
     `/shorts/`), o None. Sirve para llegar al canal que lo subió."""
-    partes = urllib.parse.urlsplit(url if "://" in url else "https://" + url)
-    host = (partes.hostname or "").lower()
+    # `urlsplit` levanta ValueError con un corchete suelto («Invalid IPv6 URL»),
+    # y lo pegado es texto libre: «[link]», copiado de un chat con su formato,
+    # terminaba en ese mensaje en inglés en vez de «no reconozco ese link». Lo
+    # encontró un test de propiedades, con la entrada «[».
+    try:
+        partes = urllib.parse.urlsplit(url if "://" in url else "https://" + url)
+        host = (partes.hostname or "").lower()
+    except ValueError:
+        return None
     candidato = None
     if host.endswith("youtu.be"):
         candidato = partes.path.strip("/").split("/")[0]
@@ -858,6 +867,96 @@ class _Fallas:
 FALLAS_DEEZER = _Fallas()
 
 
+class _Ritmo:
+    """El paso al que se le pide a Deezer, para no pasarse de su límite.
+
+    Deezer acepta cincuenta pedidos cada cinco segundos por IP. Con seis hilos
+    pidiendo tan rápido como contesta se lo pasaba siempre: en el catálogo con
+    que se midió, de 221 temas, 28 de los 422 pedidos volvieron con «Quota limit
+    exceeded», y cada uno se reintentaba con una espera que crece hasta ocho
+    segundos. Cuando los seis reintentos no alcanzaban, el tema quedaba sin
+    código y la pantalla decía «Deezer no respondió», por un límite que la
+    propia app había provocado.
+
+    Es una ventana deslizante: se anota cuándo salió cada pedido y, con la
+    ventana llena, el siguiente espera a que venza el más viejo. Va un poco
+    por debajo del límite publicado porque el reloj de Deezer no es el de acá.
+    """
+
+    def __init__(self, maximo=45, ventana=5.0):
+        self.maximo, self.ventana = maximo, ventana
+        self._marcas: deque[float] = deque()
+        self._lock = threading.Lock()
+
+    def esperar(self, reloj=time.monotonic, dormir=time.sleep):
+        while True:
+            with self._lock:
+                ahora = reloj()
+                while self._marcas and ahora - self._marcas[0] >= self.ventana:
+                    self._marcas.popleft()
+                if len(self._marcas) < self.maximo:
+                    self._marcas.append(ahora)
+                    return
+                falta = self.ventana - (ahora - self._marcas[0])
+            # En tramos cortos: quien espera acá es un hilo de un trabajo que
+            # se puede cancelar, y no tiene que quedar dormido cinco segundos.
+            dormir(min(max(falta, 0.01), 0.25))
+
+
+RITMO_DEEZER = _Ritmo()
+
+
+class _Memo:
+    """Lo que Deezer ya contestó en este relevamiento, por ruta.
+
+    El cruce, la verificación por tracklist y la comparación con la
+    discografía piden muchas veces la misma ficha: en el catálogo medido, 38 de
+    422 pedidos repetían uno anterior. Con un límite de pedidos por segundo,
+    cada repetido es tiempo de espera puro.
+
+    Vale sólo adentro de `sesion_deezer()`, que es un relevamiento: afuera no
+    se guarda nada, así dos relevamientos (o dos tests) no se contaminan. Se
+    guardan sólo las respuestas buenas; una falla se vuelve a pedir.
+    """
+
+    def __init__(self):
+        self._datos: dict[str, Any] = {}
+        self._abiertas = 0
+        self._lock = threading.Lock()
+
+    def buscar(self, ruta) -> Any:
+        with self._lock:
+            return self._datos.get(ruta) if self._abiertas else None
+
+    def guardar(self, ruta, datos):
+        with self._lock:
+            if self._abiertas:
+                self._datos[ruta] = datos
+
+    def abrir(self):
+        with self._lock:
+            self._abiertas += 1
+
+    def cerrar(self):
+        with self._lock:
+            self._abiertas = max(0, self._abiertas - 1)
+            if not self._abiertas:
+                self._datos.clear()
+
+
+MEMO_DEEZER = _Memo()
+
+
+@contextmanager
+def sesion_deezer():
+    """Un relevamiento: mientras dura, no se le pide a Deezer dos veces lo mismo."""
+    MEMO_DEEZER.abrir()
+    try:
+        yield
+    finally:
+        MEMO_DEEZER.cerrar()
+
+
 def _deezer_json(path):
     """GET a Deezer, o None si no hubo respuesta útil.
 
@@ -865,6 +964,9 @@ def _deezer_json(path):
     ({"error": {"code": 4}}). Se reintenta sólo eso y el servicio ocupado, con
     espera creciente; un «no hay datos» se devuelve enseguida.
     """
+    guardado = MEMO_DEEZER.buscar(path)
+    if guardado is not None:
+        return guardado
     url = f"{DEEZER_API}/{path}"
     for intento in range(6):
         _ULTIMA_FALLA.motivo = ""
@@ -874,6 +976,7 @@ def _deezer_json(path):
             return None
         err = data.get("error") if isinstance(data, dict) else None
         if not err:
+            MEMO_DEEZER.guardar(path, data)
             return data
         codigo = err.get("code") if isinstance(err, dict) else None
         if codigo not in _DEEZER_PASAJEROS:
@@ -940,6 +1043,8 @@ def _http_json(url, headers=None, retries=3):
     # lo primero que bloquea un filtro de tráfico automático.
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, **(headers or {})})
     for intento in range(retries):
+        if url.startswith(DEEZER_API):
+            RITMO_DEEZER.esperar()
         try:
             with urllib.request.urlopen(req, timeout=25) as r:
                 return json.loads(r.read().decode("utf-8"))
@@ -1304,6 +1409,8 @@ def enrich_with_codes(
                     avance(i, n)
                 if conf:
                     t["isrc"], t["match"] = isrc, conf
+                    if isrc:
+                        t["isrc_como"] = "busqueda"
                     if album_id:
                         album_ids.setdefault(album_id, []).append(t)
                     matched += 1
@@ -1322,6 +1429,11 @@ def enrich_with_codes(
             )
             if info.get("upc") and coincide:
                 t["upc"] = info["upc"]
+                # Con las dos fechas a la vista, `album_coincide` ya exigió que
+                # fueran la misma: el release está comprobado por título y
+                # fecha. Sin alguna de las dos, sólo por el título.
+                con_fechas = bool(t.get("release_date") and info.get("release_date"))
+                t["upc_como"] = "fecha" if con_fechas else "titulo"
             elif info.get("upc"):
                 # Se deja constancia de por qué no hay UPC, para que la
                 # validación lo diga en vez de un «falta» sin explicación.
@@ -1371,6 +1483,7 @@ def enrich_with_codes(
                 if isrc:
                     t["isrc"] = isrc
                     t["match"] = t["match"] or "media"
+                    t["isrc_como"] = "musicbrainz"
                 time.sleep(1.1)  # 1 pedido/seg
 
     isrc_n = sum(1 for t in tracks if t["isrc"])

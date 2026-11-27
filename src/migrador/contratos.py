@@ -34,6 +34,20 @@ from typing import Any, Literal, NotRequired, TypedDict
 # el módulo de audio, que es opcional y puede no estar instalado.
 FORMATOS_LOSSLESS = {".flac"}
 
+# Los campos que la hoja de ingesta deja en <<COMPLETAR>> porque no salen de
+# ninguna fuente pública, y que el usuario puede cargar en la app (ver
+# `ediciones`): clave interna -> columna de la hoja. El orden es el de la hoja,
+# y es el orden en que la interfaz los pide. Vive acá porque lo usan `ediciones`,
+# `validar` y `paquete`, y entre ellos no se pueden importar en redondo.
+CAMPOS_A_COMPLETAR = {
+    "c_line": "C Line",
+    "genre": "Genre",
+    "language": "Language",
+    "territories": "Territories",
+    "explicit": "Explicit",
+    "lyrics_language": "Lyrics Language",
+}
+
 # El formato del release. Sale de la cantidad de tracks (1-3 / 4-6 / 7+), que es
 # la convención de las distribuidoras y sigue siendo una heurística, no un dato
 # declarado por YouTube. Ver `productos.MAX_TRACKS_SINGLE`.
@@ -146,6 +160,34 @@ class Track(TypedDict):
     # release, para los temas de los que YouTube no publica la suya.
     fecha_deezer: NotRequired[str]
 
+    # Por qué camino llegó el ISRC: "busqueda" (el buscador de Deezer, por
+    # texto), "tracklist" (su lugar en el álbum verificado), "discografia"
+    # (título y duración en la discografía), "deezer" (el tema es de Deezer),
+    # "tidal", "musicbrainz", "manual" o "importado". Ver `evidencia`.
+    isrc_como: NotRequired[str]
+    # Qué tan comprobado está: "confirmado", "inferido", "dudoso", "manual" o
+    # "importado". Lo pone `evidencia.clasificar`, y `ediciones` los dos últimos.
+    isrc_nivel: NotRequired[str]
+    # "archivo" cuando la planilla de la distribuidora trae ese mismo código
+    # para este tema (ver `importar`): con eso queda confirmado.
+    isrc_respaldo: NotRequired[str]
+    # El ISRC que había encontrado la búsqueda, cuando era el de otra entrega
+    # de la misma grabación y se lo reemplazó por el de su release (ver
+    # `completitud.alinear_con_el_release`).
+    isrc_otra_entrega: NotRequired[str]
+    # Las grabaciones entre las que no se pudo elegir: el mismo título y la
+    # misma duración con ISRC distintos. El tema queda sin código, y esto es lo
+    # que deja a una persona elegir mirando los candidatos.
+    isrc_candidatos: NotRequired[list["CandidatoISRC"]]
+    # Lo que tenía antes de que el usuario lo cambiara, para deshacer: el
+    # ISRC, cómo se había obtenido, su nivel y la confianza del cruce.
+    isrc_previo: NotRequired[dict[str, str]]
+    # Cómo se comprobó que el álbum del que salió el UPC es este release:
+    # "fecha" (título y fecha), "titulo" (sólo el título), una de las formas de
+    # `completitud.verificar_por_tracklist` ("exacto", "sin_fecha", "isrc",
+    # "casi"), "deezer" o "tidal".
+    upc_como: NotRequired[str]
+
     # El número de track. Lo pone `relevar_core.enrich_with_codes` con el real,
     # del tracklist de Deezer, cuando el álbum se verificó como este release; si
     # no, `productos.group_products` lo estima por fecha de subida y el
@@ -175,6 +217,21 @@ class Track(TypedDict):
     # El motivo por el que no se pudo bajar, que el reporte transcribe para
     # que se pueda decidir si buscarlo por otro lado.
     audio_error: NotRequired[str]
+
+
+class CandidatoISRC(TypedDict):
+    """Una grabación de Deezer que puede ser un tema, cuando hay más de una."""
+
+    isrc: str
+    titulo: str
+    duracion_s: int
+
+
+class ResumenEvidencia(TypedDict):
+    """Cuántos códigos hay de cada nivel (ver `evidencia`): nivel -> cantidad."""
+
+    isrc: dict[str, int]
+    upc: dict[str, int]
 
 
 class Producto(TypedDict):
@@ -238,6 +295,96 @@ class Producto(TypedDict):
     # Deezer contra el que se verificó el release.
     fecha_fuente: NotRequired[str]
     origen: NotRequired[str]
+
+    # Los pone `evidencia.marcar_productos`. `upc_nivel` es qué tan comprobado
+    # está el UPC ("confirmado", "inferido", "manual" o "importado");
+    # `isrc_sin_confirmar`, cuántos de sus ISRC son inferidos o dudosos.
+    upc_nivel: NotRequired[str]
+    isrc_sin_confirmar: NotRequired[int]
+    # "archivo" cuando la planilla de la distribuidora trae ese mismo UPC.
+    upc_respaldo: NotRequired[str]
+    # El UPC y su nivel de antes de que el usuario lo cambiara, para deshacer.
+    upc_previo: NotRequired[dict[str, str]]
+    # Lo que el usuario completó de lo que ninguna fuente pública trae (género,
+    # idioma, explicit, línea ©, territorios…), por columna de la hoja de
+    # ingesta. Ver `ediciones.CAMPOS_A_COMPLETAR`.
+    datos: NotRequired[dict[str, str]]
+
+
+class FilaImportada(TypedDict):
+    """Una fila de la planilla de la distribuidora, ya leída (ver `importar`).
+
+    Lo que el archivo no trae queda vacío o en cero. Los códigos que no tienen
+    formato válido se descartan al leer: `isrc` y `upc` son válidos o "".
+    """
+
+    fila: int  # el número de fila en el archivo, para poder ir a mirarla
+    isrc: str
+    upc: str
+    track: str
+    album: str
+    duracion_s: int
+    numero: int
+
+
+class ItemImportacion(TypedDict):
+    """Lo que el archivo propone para un código del catálogo.
+
+    `tipo` es "confirma", "completa", "conflicto" o "ambiguo"; `codigo`, "isrc"
+    o "upc". Para un UPC, `indice` es -1 y `track` va vacío.
+    """
+
+    id: str
+    tipo: str
+    codigo: str
+    producto_id: str
+    producto: str
+    indice: int
+    track: str
+    actual: str  # el código que tiene hoy el catálogo, o ""
+    nuevo: str  # el que trae el archivo, o "" si es ambiguo
+    fila: int
+    candidatos: list[dict[str, Any]]
+    nivel: str  # el nivel del código actual, para decidir un conflicto
+
+
+class PropuestaImportacion(TypedDict):
+    """Lo que devuelve `importar.conciliar`: nada se aplicó todavía."""
+
+    items: list[ItemImportacion]
+    filas: int
+    # Filas del archivo con códigos que no corresponden a nada del catálogo:
+    # las primeras, y cuántas son en total.
+    sin_correspondencia: list[dict[str, Any]]
+    sin_correspondencia_total: int
+    resumen: dict[str, int]
+
+
+class ReleaseComparado(TypedDict):
+    """Qué pasó con un release de un relevamiento guardado (ver `instantanea`)."""
+
+    titulo: str
+    anio: Anio
+    # "migrado", "en_las_dos", "igual", "sin_youtube", "falta" o
+    # "codigos_cambiados".
+    estado: str
+    distribuidora_antes: str
+    distribuidoras_ahora: list[str]
+    upc_antes: str
+    upc_ahora: str
+    isrc_cambiados: list[dict[str, str]]  # tema, antes, ahora
+    isrc_perdidos: list[str]  # temas que tenían ISRC y hoy no
+    temas_que_faltan: list[str]
+
+
+class Comparacion(TypedDict):
+    """Lo que devuelve `instantanea.comparar`."""
+
+    releases: list[ReleaseComparado]
+    resumen: dict[str, int]  # estado -> cantidad
+    # Lo que hay hoy y no estaba en el relevamiento guardado.
+    nuevos: list[dict[str, str]]
+    nuevos_total: int
 
 
 class Hallazgo(TypedDict):
@@ -465,6 +612,9 @@ class Completitud(TypedDict):
     # Discos que el cruce no había verificado y que se verificaron por su lista
     # de temas (ver `completitud.verificar_por_tracklist`).
     verificados_por_tracklist: int
+    # Temas a los que se les puso el ISRC de su release en vez del de otra
+    # entrega de la misma grabación (ver `completitud.alinear_con_el_release`).
+    isrc_del_release: int
     recortada: bool  # la discografía superó el tope y se revisó una parte
     faltan: list[ReleaseIncompleto]
 

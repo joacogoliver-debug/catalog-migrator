@@ -951,6 +951,88 @@ details.acordeon > summary .cuenta.negativo { color: var(--negativo); }
   color: var(--acento); text-decoration: underline;
 }
 
+/* ---------------------------------------------------------- evidencia */
+/* Qué tan comprobado está un código. No es un badge: va al lado de un dato, en
+   una fila de datos, y si pesara como un estado la tabla de tracks sería una
+   columna de pastillas. Es texto chico en mono, y sólo lo que hay que mirar
+   lleva color. «Confirmado» es lo normal y va apagado. */
+
+.nivel {
+  font-family: var(--mono); font-size: var(--t-nano);
+  letter-spacing: var(--tracking-mono); text-transform: uppercase;
+  color: var(--texto-3); white-space: nowrap; cursor: help;
+}
+.nivel-neutro { color: var(--texto-2); }
+.nivel-warn   { color: var(--atencion); }
+.nivel-propio { color: var(--texto-acento); }
+.lectura-evidencia { margin-top: var(--e-1); font-size: var(--t-ui); line-height: var(--i-ui); color: var(--texto-3); }
+
+/* ---------------------------------------------------------- edición en el lugar */
+/* Las acciones sobre un código aparecen al pasar por la fila o al enfocarlas:
+   doscientas filas con «cambiar» a la vista serían doscientos enlaces. Con
+   teclado se llega igual, porque el foco las muestra. */
+
+.celda-codigo { white-space: nowrap; }
+.accion-codigo {
+  margin-left: var(--e-2);
+  font-family: var(--sans); font-size: var(--t-micro);
+  opacity: 0; transition: opacity var(--m-rapido);
+}
+table.sub tbody tr:hover .accion-codigo, .fila-upc:hover .accion-codigo,
+.accion-codigo:focus-visible, .celda-codigo:focus-within .accion-codigo { opacity: 1; }
+/* Sin puntero fino no hay hover: ahí se ven siempre. */
+@media (hover: none) { .accion-codigo { opacity: 1; } }
+
+.editor-codigo { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--e-2); white-space: normal; }
+.input-codigo { width: 17ch; height: var(--h-denso); padding: 0 var(--e-2); font-size: var(--t-dato); }
+.editor-codigo .hint-error { flex-basis: 100%; white-space: normal; max-width: 60ch; font-family: var(--sans); }
+.candidatos { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--e-2); white-space: normal; }
+.candidato { font-family: var(--mono); }
+.fila-upc { margin: var(--e-3) 0 0; padding: 0 var(--e-3); color: var(--texto-2); }
+.fila-upc .rotulo {
+  font-family: var(--mono); font-size: var(--t-nano);
+  letter-spacing: var(--tracking-mono); text-transform: uppercase; color: var(--texto-3);
+  margin-right: var(--e-2);
+}
+
+/* ---------------------------------------------------------- herramientas */
+/* Lo que se puede hacer con el catálogo además de mirarlo. Una fila de botones
+   chicos entre el resumen y la tabla; cada uno abre su panel ahí mismo, sin
+   sacar la tabla de la vista. */
+
+/* Pegada a lo de arriba y con poco aire: cada renglón que se suma acá es uno
+   menos de tabla a la vista al entrar. */
+.herramientas { margin-top: var(--e-3); display: grid; gap: var(--e-3); }
+.herramientas + .seccion { margin-top: var(--e-5); }
+.panel-herramienta { padding: var(--e-5); }
+.panel-herramienta h3 { margin: 0 0 var(--e-2); color: var(--texto); }
+.panel-herramienta > p { max-width: var(--medida-ancha); }
+.panel-herramienta .n { font-family: var(--mono); color: var(--texto); }
+
+.grupo-importacion { border-top: 1px solid var(--borde); padding: var(--e-3) 0; }
+.grupo-importacion:first-of-type { margin-top: var(--e-4); }
+.grupo-importacion > summary { cursor: pointer; color: var(--texto-2); }
+.grupo-importacion > summary strong { color: var(--texto); margin-right: var(--e-1); }
+.grupo-importacion > summary .muted { margin-left: var(--e-2); }
+.lista-importacion {
+  list-style: none; margin: var(--e-3) 0 0; padding: 0;
+  max-height: 340px; overflow-y: auto;
+}
+.item-importacion {
+  display: grid; grid-template-columns: 28px minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: var(--e-3); align-items: start;
+  padding: var(--e-2) 0; border-top: 1px solid var(--borde-suave);
+  font-size: var(--t-dato); color: var(--texto-2);
+}
+.item-importacion strong { color: var(--texto); font-weight: var(--p-medio); }
+.item-donde { overflow-wrap: anywhere; }
+.item-cambio .check-suelto { display: flex; margin: 0 0 var(--e-1); }
+.flecha-cambio { color: var(--texto-3); margin: 0 var(--e-1); }
+
+.grilla-datos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--e-4); }
+.tabla-comparacion { max-height: 460px; overflow-y: auto; }
+.tabla-comparacion .celda-sub { line-height: var(--i-ui); margin-top: var(--e-1); }
+
 /* ---------------------------------------------------------- ventana angosta */
 /* Esto es una app de escritorio: no hay versión para teléfono, y la única
    razón por la que el ancho baja es que alguien achicó la ventana. Lo que hace
@@ -973,4 +1055,7 @@ details.acordeon > summary .cuenta.negativo { color: var(--negativo); }
   .card-head.row { display: block; }
   .card-head.row > .btn { margin-top: var(--e-3); }
   .lista-hallazgos { columns: 1; }
+  .grilla-datos { grid-template-columns: 1fr; }
+  .item-importacion { grid-template-columns: 28px minmax(0, 1fr); }
+  .item-importacion .item-cambio { grid-column: 2; }
 }
